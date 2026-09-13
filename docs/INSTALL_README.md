@@ -11,9 +11,9 @@ displays, T, L, or gesture recognition. The setting saves without a tracker rest
 
 For an existing installation, this update changes controller transport on both computers. Stop controller output, update both to matching software, then start and test input. Mixed old/new versions do not deliver input with the default settings. See [signed controller transport and upgrades](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades) for staged upgrades and rollback.
 
-## Try release candidate v0.4.1-rc.1
+## Try release candidate v0.4.1-rc.2
 
-Release candidate **v0.4.1-rc.1** adds Programs 1–14 and their official game
+Release candidate **v0.4.1-rc.2** adds Programs 1–14 and their official game
 mappings, the Ready-to-Play guide, the live joystick dead-zone camera grid, and
 the complete `virtualglove-*` runtime-name migration. Close games and stop
 controller output, then run the matching command on each device. These explicit
@@ -24,17 +24,17 @@ On the VirtualGlove Controller:
 
 ```sh
 cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-uno-q.sh
-bash install-uno-q.sh --development v0.4.1-rc.1
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-uno-q.sh
+bash install-uno-q.sh --development v0.4.1-rc.2
 ```
 
 On RetroPie:
 
 ```sh
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-retropie.sh && bash install-retropie.sh --development v0.4.1-rc.1
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-retropie.sh && bash install-retropie.sh --development v0.4.1-rc.2
 ```
 
-Verify both report `v0.4.1-rc.1`, then follow the pairing/first-game checks below.
+Verify both report `v0.4.1-rc.2`, then follow the pairing/first-game checks below.
 Existing hand settings and pairing files are preserved. The Controller installer
 also updates the matrix firmware. Review [coordinated transport upgrades and
 rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
@@ -346,10 +346,11 @@ assuming every numeric profile uses ordinary hand-position movement:
 | 13 | VirtualGlove supplies A/B while the merged physical Player 1 controller supplies movement. |
 | 14 | Camera and VirtualGlove output intentionally stay off; use the physical Player 1 controller. |
 
-Programs 1-8 and 10-14 normally pulse A and B. Registered exceptions are
+Programs 1–8 and 10–13 normally pulse A and B. Programs 9 and 14 report rapid
+fire off. Registered exceptions are
 applied automatically for Blaster Master, Double Dribble, Racket Attack, Ice
 Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
-official game index](GAMEPLAY_GUIDE.md#original-programs-114) when confirming a
+official game index](GAMEPLAY_GUIDE.md#quick-selector-programs-1-14) when confirming a
 compound action.
 
 **Checkpoint:** A gesture changes the intended control in the running game.

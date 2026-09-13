@@ -73,7 +73,7 @@ endobj
 11 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#original-programs-114)
+/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#program-cards-1-14)
 >> /Border [ 0 0 0 ] /Rect [ 286.2255 311.5 355.6282 322.6 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -156,7 +156,7 @@ endobj
 endobj
 22 0 obj
 <<
-/Author (Iain Bennett) /CreationDate (D:20260913155433-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260913155433-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (Iain Bennett) /CreationDate (D:20260913194834-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260913194834-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (Follow hand recognition through joystick and native game input.) /Title (How native Power Glove emulation works) /Trapped /False
 >>
 endobj
@@ -214,27 +214,27 @@ xref
 0001995951 00000 n 
 0001996066 00000 n 
 0001996325 00000 n 
-0001996511 00000 n 
-0001996726 00000 n 
-0001996897 00000 n 
-0001997097 00000 n 
-0001997319 00000 n 
-0001997523 00000 n 
-0001997737 00000 n 
-0001997915 00000 n 
-0001998089 00000 n 
-0001998325 00000 n 
-0001998395 00000 n 
-0001998767 00000 n 
-0001998855 00000 n 
-0001999571 00000 n 
-0002001525 00000 n 
-0002003959 00000 n 
-0002007352 00000 n 
+0001996508 00000 n 
+0001996723 00000 n 
+0001996894 00000 n 
+0001997094 00000 n 
+0001997316 00000 n 
+0001997520 00000 n 
+0001997734 00000 n 
+0001997912 00000 n 
+0001998086 00000 n 
+0001998322 00000 n 
+0001998392 00000 n 
+0001998764 00000 n 
+0001998852 00000 n 
+0001999568 00000 n 
+0002001522 00000 n 
+0002003956 00000 n 
+0002007349 00000 n 
 trailer
 <<
 /ID 
-[<92aca7c0385221eae3b350cada37c0b4><92aca7c0385221eae3b350cada37c0b4>]
+[<83cb552c994db1367e5a90a2cc37b826><83cb552c994db1367e5a90a2cc37b826>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 22 0 R
@@ -242,5 +242,5 @@ trailer
 /Size 29
 >>
 startxref
-2010469
+2010466
 %%EOF

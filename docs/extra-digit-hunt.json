@@ -3,7 +3,7 @@
   "rule": "Count every hand showing five fingers plus a thumb once per appearance, including repeated artwork.",
   "guides": {
     "GAMEPLAY_GUIDE.md": {
-      "answer": 24,
+      "answer": 28,
       "images": {
         "images/gestures/v2/closed-hand.png": {
           "hands_per_appearance": 1,
@@ -11,11 +11,11 @@
         },
         "images/gestures/actions/finger-curl.png": {
           "hands_per_appearance": 1,
-          "occurrences": 9
+          "occurrences": 11
         },
         "images/gestures/actions/close-all-fingers.png": {
           "hands_per_appearance": 1,
-          "occurrences": 13
+          "occurrences": 15
         },
         "images/gestures/actions/index-push-combination.png": {
           "hands_per_appearance": 1,
@@ -32,12 +32,15 @@
         "Sesame Street 1-2-3",
         "Gesture reference closed hand",
         "Gun Smoke",
-        "Start with A, D, and H",
+        "Off-script Program H - general play",
         "Gesture reference middle curl",
         "Gesture reference ring curl",
         "Program B - Joust rig",
         "Program E - Defender rig",
         "Program F - Yes / No rig",
+        "Program 7 - closed-fist setup",
+        "Gun Smoke index curl",
+        "Off-script Program 13 - finger action",
         "Program 1 - last-three turn",
         "Program 2 - last-three turn",
         "Program 4 - four-finger close",
@@ -46,7 +49,8 @@
         "Program 10 - conflicting steering",
         "Program 11 - sustained fast turn",
         "Program 12 - middle-finger speed",
-        "Program 12 - last-three slow travel"
+        "Program 12 - last-three slow travel",
+        "Off-script Program 11 - fast-turn action"
       ]
     }
   }

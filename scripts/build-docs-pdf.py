@@ -410,7 +410,8 @@ def markdown_story(source: Path, styles: dict[str, ParagraphStyle]):
                 title.startswith("Stage ")
                 or title.startswith("Daily ")
                 or title.startswith("Workshop")
-                or title in {"Troubleshooting", "Program cards", "How VirtualGlove selects a program"}
+                or title.startswith("Program cards")
+                or title in {"Troubleshooting", "How VirtualGlove selects a program"}
             ):
                 story.append(CondPageBreak(2.25 * inch))
             story.append(CondPageBreak((1.6 if level == 2 else 1.25) * inch))
@@ -476,6 +477,9 @@ def markdown_story(source: Path, styles: dict[str, ParagraphStyle]):
             story.append(listing)
             continue
 
+        if line == "**First round:**":
+            # Keep the card's exercise label with its short numbered exercise.
+            story.append(CondPageBreak(1.35 * inch))
         parts = [line]
         index += 1
         while index < len(lines) and lines[index].strip():

@@ -31,10 +31,22 @@ authoritative record for line-level and file-level history.
   camera-off behavior. Synchronized the installation, configuration, matrix,
   architecture, native-emulation, quick-reference, and project guides. Updated
   Pixel Pal's Extra-Digit Hunt for the added illustrations; its verified answer
-  is now 24.
+  is now 25.
 - Added a consistent **Profile / See it** matrix preview to every Program 1–14
   and A–I card. Numeric previews are generated from the exact one- and two-digit
   glyph placement used by the UNO Q matrix firmware.
+- Reorganized the Gameplay Guide into explicit Program-card sections for 1–14
+  and A–I, and added Programs 2, 11, and 13 to the off-script starter cards.
+  Renamed the Super Glove Ball research-core wording to describe the supported
+  native system component and clarified that only unused, unconfirmed raw
+  packet codes remain neutral; all confirmed native game actions are mapped.
+- Rebuilt the numbered-program presentation to match the guide's established
+  game-card design, added a complete Programs 1–14 quick selector, and replaced
+  numeric matrix art in the off-script table with representative hand controls.
+- Added dedicated closed-fist push, pull, left-punch, and right-punch artwork so
+  compound numbered-program controls no longer reuse open-hand depth drawings.
+  The deliberately incorrect six-digit illustrations and all 25 appearances in
+  Pixel Pal's Extra-Digit Hunt remain unchanged.
 
 - Added a visual-only Vulcan-salute easter egg to live camera experiences.
   Holding an extended hand with a deliberate middle/ring split briefly shows
@@ -103,6 +115,12 @@ authoritative record for line-level and file-level history.
   Super Glove Ball X/Y calibration and reach.
 
 ### Fixed
+
+- Distinguished **Gestures off — no active profile** from **Program 14 — Physical
+  controller only** throughout Dashboard and the guides. Program 14 now reports
+  rapid A/B off and keeps its steady **14** matrix profile display while its camera
+  and VirtualGlove output remain closed. Both states leave RetroPie's merged
+  physical Player 1 joypad available.
 
 - Made fresh installations emit only `virtualglove-*` service, executable,
   runtime, and managed-metadata names. Coordinated upgrades migrate existing

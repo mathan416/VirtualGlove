@@ -500,11 +500,15 @@ it does not open the camera, create a hand tracker, or process images. The
 website and profile controls remain responsive while imports run. A failed
 preload is logged; a later activation retries loading and reports any error.
 
-If **Gestures off** is selected at startup, the camera stays closed until you
+If **Gestures off — no active profile** is selected at startup, the camera stays closed until you
 select an active profile or open Glove Academy. An active startup profile requests
 capture automatically after preloading. The player's explicit controller choice is
 restored as **armed** or **stopped**, but an armed worker does not transmit until a
 live registered game session or intentional manual Dashboard profile exists.
+Gestures off affects only VirtualGlove-generated input; the merged physical
+Player 1 joypad on RetroPie remains available. **Program 14 — Physical controller
+only** has the same neutral camera/output behavior while deliberately retaining
+the numbered profile and authenticated registered-game session.
 
 Activation waits for any unfinished preload, verifies the saved model, opens
 and configures the camera, waits for a usable frame, and creates the tracker.
@@ -963,7 +967,7 @@ The numeric portion of the shipped registry is:
 Every listed title has explicit `.nes`, `.zip`, and `.7z` filenames; known
 region, revision, punctuation, and `Robo Warrior` variants are additional exact
 aliases rather than fuzzy matching. The [Gameplay Guide's numeric Program
-cards](GAMEPLAY_GUIDE.md#original-programs-114) are the authoritative
+cards](GAMEPLAY_GUIDE.md#program-cards-1-14) are the authoritative
 gesture-to-controller reference.
 
 Programs A, D, and H are fully implemented profiles rather than omitted games:
@@ -1802,7 +1806,7 @@ history.
 | `--token-file PATH` | None | Reads the shared token from a protected file. Supply exactly one of this flag and `--token`. The token must contain at least 16 characters. |
 | `--allow-legacy-controller` | Off | Temporary version-1 receiver compatibility during a staged upgrade; closes after the first signed state until process restart. Remove after upgrading. |
 | `--timeout-ms NUMBER` | `250` | Socket receive timeout in milliseconds; a timeout releases held controls. Use a positive value. |
-| `--native-state PATH` | `/run/virtualglove/native-state` | Versioned latest-sample record for the optional custom Nestopia research core. Failure to create it does not disable FCEUmm/uinput. |
+| `--native-state PATH` | `/run/virtualglove/native-state` | Versioned latest-sample record for the VirtualGlove Nestopia native core. Failure to create it does not disable FCEUmm/uinput. |
 | `--dry-run` | Off | Prints received controls instead of creating a virtual input device. |
 | `-h`, `--help` | — | Prints usage and exits. |
 
@@ -2020,7 +2024,7 @@ they may still perform their normal work.
 | `scripts/check-documentation.py` | `--require-pdfs`; `-h`, `--help` | Checks Markdown, links, and coverage. The optional flag also inspects the PDF set and needs `pypdf`. Returns `0` on success, `1` on failure. |
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
 | `scripts/build-docs-pdf.py` | No flags or positional arguments | Rebuilds all registered PDF editions; requires ReportLab. Use only when ready to regenerate the PDFs. |
-| `scripts/build-nestopia-powerglove.sh` | Optional build-directory positional argument | Clones a pinned official Nestopia revision, applies the isolated research patch, and builds a separately named core. It does not install or promote the core. |
+| `scripts/build-nestopia-powerglove.sh` | Optional build-directory positional argument | Clones a pinned official Nestopia revision, applies the isolated native-compatibility patch, and builds the separately named VirtualGlove native core. It does not install the core by itself. |
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
 | `scripts/install-nestopia-powerglove.sh` | Optional build-directory positional argument | Run with `sudo` on RetroPie after exact-ROM validation. Builds and installs only `lr-nestopia-powerglove`, plus its upstream GPLv2 license and distribution note; stock Nestopia remains untouched. The normal RetroPie installer offers this step when a registered Super Glove Ball ROM is found. |
 | `scripts/install-powerglove-dot.sh` | Optional RetroPie prefix positional argument | Builds and installs the project-owned, ROM-free `lr-powerglove-dot` calibration core. The release installer offers it independently of Super Glove Ball and adds its fixed launcher to Ports. |

@@ -20,8 +20,9 @@ one contradictory or unusually distant non-forward result after a brief loss;
 ordinary tracking and strongly aligned forward recovery remain direct. FCEUmm handles standard mappings and remains the explicit
 Super Glove Ball fallback. lr-nestopia-powerglove supports native Super Glove
 Ball; a completed live game confirmed Start, continuous X/Y, release/throw,
-grab/catch, index-point fire, and fist-plus-forward Power Punch. Unused fields
-remain deliberately neutral. Latency and stationary jitter still need the
+grab/catch, index-point fire, and fist-plus-forward Power Punch. All confirmed
+game actions are mapped; raw packet codes with no observed game action remain
+neutral. Latency and stationary jitter still need the
 planned external hand-and-screen recording; no measured improvement is claimed.
 
 The shared website provides Dashboard, local Rock Paper Scissors at /play,

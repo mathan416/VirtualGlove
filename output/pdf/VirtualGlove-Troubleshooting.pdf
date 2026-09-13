@@ -136,14 +136,14 @@ endobj
 19 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#original-programs-114)
+/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#program-cards-1-14)
 >> /Border [ 0 0 0 ] /Rect [ 470.2727 357.3 550.461 368.4 ] /Subtype /Link /Type /Annot
 >>
 endobj
 20 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#original-programs-114)
+/S /URI /Type /Action /URI (GAMEPLAY_GUIDE.md#program-cards-1-14)
 >> /Border [ 0 0 0 ] /Rect [ 56.4 344.1 133.5172 355.2 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -195,7 +195,7 @@ endobj
 endobj
 27 0 obj
 <<
-/Author (Iain Bennett) /CreationDate (D:20260913155433-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260913155433-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (Iain Bennett) /CreationDate (D:20260913194835-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260913194835-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (Find the first failing stage, from the camera to the displayed game.) /Title (Troubleshooting by symptom) /Trapped /False
 >>
 endobj
@@ -268,25 +268,25 @@ xref
 0003354624 00000 n 
 0003354853 00000 n 
 0003355034 00000 n 
-0003355219 00000 n 
-0003355401 00000 n 
-0003355630 00000 n 
-0003355806 00000 n 
-0003356023 00000 n 
-0003356185 00000 n 
-0003356414 00000 n 
-0003356484 00000 n 
-0003356849 00000 n 
-0003356944 00000 n 
-0003357642 00000 n 
-0003360308 00000 n 
-0003363175 00000 n 
-0003366139 00000 n 
-0003369566 00000 n 
+0003355216 00000 n 
+0003355395 00000 n 
+0003355624 00000 n 
+0003355800 00000 n 
+0003356017 00000 n 
+0003356179 00000 n 
+0003356408 00000 n 
+0003356478 00000 n 
+0003356843 00000 n 
+0003356938 00000 n 
+0003357636 00000 n 
+0003360302 00000 n 
+0003363169 00000 n 
+0003366133 00000 n 
+0003369560 00000 n 
 trailer
 <<
 /ID 
-[<0012239fcb4e41dfee71422b7f03421e><0012239fcb4e41dfee71422b7f03421e>]
+[<0494c654dc46ce3ed18e67871dc9ec45><0494c654dc46ce3ed18e67871dc9ec45>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 27 0 R
@@ -294,5 +294,5 @@ trailer
 /Size 35
 >>
 startxref
-3372255
+3372249
 %%EOF

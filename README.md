@@ -16,7 +16,7 @@ VirtualGlove recognizes the pose, sends authenticated controller input across
 your local network, and lets RetroArch see a virtual gamepad or a native
 Power Glove controller.
 
-**Current project version: 0.4.1 · Next candidate: v0.4.1-rc.1**
+**Current project version: 0.4.1 · Release candidate: v0.4.1-rc.2**
 
 ## Why VirtualGlove?
 
@@ -72,8 +72,8 @@ Open a terminal on the UNO Q and run:
 ```sh
 cd /home/arduino
 curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-uno-q.sh
-bash install-uno-q.sh --development v0.4.1-rc.1
+  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-uno-q.sh
+bash install-uno-q.sh --development v0.4.1-rc.2
 ```
 
 On a first installation, the installer suggests **virtualglove** as the
@@ -94,8 +94,8 @@ Open a terminal on the Raspberry Pi and run:
 
 ```sh
 curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-retropie.sh
-bash install-retropie.sh --development v0.4.1-rc.1
+  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-retropie.sh
+bash install-retropie.sh --development v0.4.1-rc.2
 ```
 
 If an older Buster-based RetroPie reports that its Raspbian repository has no
@@ -147,12 +147,13 @@ gestures send to the console.
 | Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
 | Super Glove Ball with `lr-nestopia-powerglove` | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. |
 
-Programs 1-8 and 10-14 normally pulse their mapped A/B actions. The registered
+Programs 1–8 and 10–13 normally pulse their mapped A/B actions. Programs 9 and
+14 report rapid fire off. The registered
 Blaster Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission
 entries apply Mattel's documented exceptions automatically. Programs 13 and 14
 also support deliberate physical-controller and gestures-off play.
 
-The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#original-programs-114) shows every
+The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
 numeric Program gesture, compound action, release rule, indexed game, exception,
 objective, and practice challenge. The
 [Native Emulation guide](docs/NATIVE_EMULATION_EXPLAINED.md) explains why the

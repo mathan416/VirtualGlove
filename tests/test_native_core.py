@@ -95,9 +95,10 @@ class NativeCoreTests(unittest.TestCase):
             record,
         )
         self.assertIn(
-            "Native wrist rotation and remaining action buttons | Not mapped; deliberately neutral",
+            "Native roll byte and unobserved button codes | Neutral; no confirmed game action is missing",
             record,
         )
+        self.assertIn("## Build and install the native core", record)
         self.assertIn(
             "Shared five-finger recognition determines compound poses before transmission",
             record,

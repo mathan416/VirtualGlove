@@ -68,7 +68,7 @@ Program 2 adds live centering feedback without changing the saved calibration;
 Program 13 emits gesture-based A/B and leaves D-pad movement to the merged
 physical Player 1 controller; Program 14 closes the camera and emits no
 VirtualGlove controls while keeping the game session visible. The detailed
-gesture and game tables are in the [Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114).
+gesture and game tables are in the [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14).
 
 <!-- PAGEBREAK -->
 

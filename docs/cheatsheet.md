@@ -368,8 +368,12 @@ When you select an active profile or open Glove Academy, the app may display
 the tracker. The elapsed time shows how long initialization has been running.
 Wait for the live camera view before calibrating.
 
-**Gestures off** closes the camera. Glove Academy temporarily opens it for practice and
-suppresses game input. Leaving Glove Academy restores the selected profile.
+**Gestures off — no active profile** closes the camera and stops only
+VirtualGlove-generated input. The merged physical Player 1 joypad remains available.
+Glove Academy temporarily opens the camera for practice and suppresses game input.
+Leaving Glove Academy restores the selected profile. **Program 14 — Physical
+controller only** also closes the camera, but retains the numbered profile and
+authenticated registered-game session.
 
 RetroPie launch hooks select the registered profile when a recognized game
 starts. A detached monitor waits until RetroArch is running, then renews a bounded
@@ -415,10 +419,11 @@ wrist, depth, or other finger states.
 | 13 | Mixed physical control | Thumb A and index B; camera D-pad stays neutral for the merged physical controller. |
 | 14 | Anticipation; manual menus/passwords | Camera and all VirtualGlove output off; game session and physical controller remain active. |
 
-Programs 1-8 and 10-14 pulse A/B by default. Automatic exceptions are:
+Programs 1–8 and 10–13 pulse A/B by default. Programs 9 and 14 report rapid A/B
+off. Automatic game exceptions are:
 Blaster Master and Alpha Mission disable rapid A; Ice Hockey disables rapid B;
 Double Dribble and Racket Attack disable both. See the
-[full gesture cards and official index](GAMEPLAY_GUIDE.md#original-programs-114)
+[full gesture cards and official index](GAMEPLAY_GUIDE.md#program-cards-1-14)
 before playing a compound-action Program.
 
 ### Start with these reusable profiles
@@ -438,7 +443,7 @@ the games use standard NES controller input through FCEUmm.
 The shipped registry also maps Mattel's full index to Programs 1, 3–10, 12,
 and 14, with exact `.nes`, `.zip`, and `.7z` filenames. Programs 2, 11, and 13
 remain selectable alternatives without an indexed game. See the
-[Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114) for the complete
+[Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14) for the complete
 game list and gesture mappings. The five documented rapid-fire exceptions are
 selected automatically from structured registry entries.
 

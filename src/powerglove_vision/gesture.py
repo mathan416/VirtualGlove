@@ -85,7 +85,7 @@ RECOGNITION_PROFILES = SUPPORTED_PROFILES + ("practice",)
 
 def rapid_fire_defaults(profile: str) -> tuple[bool, bool]:
     """Return the original built-in program's default A/B pulse switches."""
-    if profile in NUMBER_PROGRAM_PROFILES and profile != "program_9":
+    if profile in NUMBER_PROGRAM_PROFILES and profile not in {"program_9", "program_14"}:
         return True, True
     return False, False
 
