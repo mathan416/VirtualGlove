@@ -603,12 +603,12 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"Pixel Pal&#x27;s Extra-Digit Hunt", page)
         self.assertIn(b"<details class=extra-digit-answer>", page)
         self.assertIn(b"<summary>Reveal Pixel Pal's answer</summary>", page)
-        self.assertIn(b"Pixel Pal&#x27;s answer: 24 six-digit hands.", page)
+        self.assertIn(b"Pixel Pal&#x27;s answer: 28 six-digit hands.", page)
 
         programs = help_document_page("programs")
         self.assertIsNotNone(programs)
         assert programs is not None
-        self.assertIn(b"Pixel Pal&#x27;s answer: 24 six-digit hands.", programs)
+        self.assertIn(b"Pixel Pal&#x27;s answer: 28 six-digit hands.", programs)
 
     def test_extra_digit_answer_is_collapsed_and_omitted_from_contents(self):
         rendered, headings = render_markdown(
@@ -919,7 +919,8 @@ class ControlStateTests(unittest.TestCase):
 
     def test_runtime_profile_selector_is_dashboard_only(self):
         self.assertIn(b"id=profile-selector", DASHBOARD)
-        self.assertIn(b"Gestures off", DASHBOARD)
+        self.assertIn(b"Gestures off \xe2\x80\x94 no active profile", DASHBOARD)
+        self.assertIn(b"14: Physical controller only", DASHBOARD)
         self.assertIn(b"/api/profile", DASHBOARD)
         self.assertNotIn(b"/api/profile", SETUP)
 
@@ -1007,6 +1008,8 @@ class ControlStateTests(unittest.TestCase):
                 self.assertIn(b"<optgroup label='" + group + b"'>", page)
             for profile, label in expected.items():
                 self.assertIn(b"value=" + profile + b">" + label, page)
+            self.assertIn(b"value=off>Gestures off</option>", page)
+            self.assertNotIn(b"value=off>Gestures off \xe2\x80\x94", page)
             self.assertNotIn(b">Program A<", page)
 
     def test_runtime_profile_route_rejects_unknown_profiles(self):
@@ -1182,7 +1185,12 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(status["vision_profile"], "off")
         self.assertFalse(status["camera_available"])
         self.assertEqual(status["receiver_error"], "Gestures are paused")
-        self.assertEqual(status["rapid_fire"], {"a": True, "b": True})
+        self.assertEqual(status["rapid_fire"], {"a": False, "b": False})
+        overridden = _base_status(
+            "program_14", "Anticipation", "RetroPie launch hook", True,
+            rapid_a=True, rapid_b=True,
+        )
+        self.assertEqual(overridden["rapid_fire"], {"a": False, "b": False})
 
     def test_status_reports_applied_rapid_fire_overrides_during_startup(self):
         status = _base_status(

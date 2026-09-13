@@ -145,30 +145,30 @@ pause in all controller delivery while you reposition, use **Stop controller**.
 
 <!-- PAGEBREAK -->
 
-## Original Programs 1–14
+## Quick selector - Programs 1–14
 
 These profiles reproduce the built-in Power Glove programs with camera gestures
-and ordinary NES controller output. Numeric programs pulse A and B by default,
-except Program 9. Program 14 stops camera tracking and sends no VirtualGlove
+and ordinary NES controller output. Programs 1–8 and 10–13 pulse A and B by
+default. Program 9 uses held controls without rapid fire. Program 14 stops camera tracking and sends no VirtualGlove
 input so a conventional controller can be used without ending the authenticated
 game session.
 
-| Program | Core controls | Games in Mattel's index |
-| --- | --- | --- |
-| 1 | Hand position is the D-pad; thumb is rapid A; index is rapid B; curling the last three fingers performs one bounded turn-and-B action. | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link |
-| 2 | Program 1 movement and buttons, plus live **Centered** / **Return to centre** feedback in place of the physical glove's beeper. | Centering-practice alternative; no indexed title |
-| 3 | Push / pull sends Up / Down; side movement sends Left / Right; thumb / index sends rapid A / B. | Ice Hockey; Top Gun. Gauntlet may also use this as an alternative top-view layout, although the index assigns it to Program 1. |
-| 4 | Open or close all four fingers for Up / Down; index-versus-last-three poses steer the treads; thumb sends rapid A; wrist poses send held B or Up plus Left / Right. | Iron Tank |
-| 5 | Push / pull and bank / side movement fly the craft; thumb / index sends rapid A / B. | Alpha Mission; Life Force; Xevious; 1943 |
-| 6 | Position and depth move; index sends A; thumb sends B; last three sends A+B; forward fist holds Up; clockwise twist turns rapidly twice. | Double Dragon |
-| 7 | Open-hand movement dodges and ducks; forward fists punch high or low; clockwise wrist blocks; pull-back fist sends Select; thumb sends rapid A. | Mike Tyson's Punch-Out!! |
-| 8 | Position and depth select bases or fielding direction; thumb, index, counter-clockwise wrist, and pull-back produce the documented offense / defense A and B actions. | Baseball; Bases Loaded; R.B.I. Baseball |
-| 9 | Make a fist to ready the profile. Wrist rotation steers; forward fist is turbo; raising the hand sends Down; lowering sends B; fist sends A. No rapid fire. | Rad Racer |
-| 10 | Index / last-three curls steer Left / Right; thumb sends rapid A; B is held automatically until the hand is lowered. | R.C. Pro-Am |
-| 11 | Program 1 controls, but the last-three-finger pose turns rapidly in both directions while firing B. | Fast-turn alternative; no indexed title |
-| 12 | Position moves Mario; thumb / index sends rapid A / B; middle curl adds B for fast travel; last-three curl slows horizontal travel. | Super Mario Bros. |
-| 13 | Thumb / index sends rapid A / B. Camera D-pad output is neutral, leaving movement and menus to a conventional controller. | No indexed title |
-| 14 | VirtualGlove camera and output are paused while the selected profile and game session remain visible. | Anticipation; temporary manual menu or password entry |
+| Program | See it | Core controls | Games in Mattel's index |
+| --- | --- | --- | --- |
+| 1 | <img src="images/matrix/programs/1.png" alt="1 matrix display illustration" width="104"> | Hand position is the D-pad; thumb is rapid A; index is rapid B; curling the last three fingers performs one bounded turn-and-B action. | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link |
+| 2 | <img src="images/matrix/programs/2.png" alt="2 matrix display illustration" width="104"> | Program 1 movement and buttons, plus live **Centered** / **Return to centre** feedback in place of the physical glove's beeper. | Centering-practice alternative; no indexed title |
+| 3 | <img src="images/matrix/programs/3.png" alt="3 matrix display illustration" width="104"> | Push / pull sends Up / Down; side movement sends Left / Right; thumb / index sends rapid A / B. | Ice Hockey; Top Gun. Gauntlet may also use this as an alternative top-view layout, although the index assigns it to Program 1. |
+| 4 | <img src="images/matrix/programs/4.png" alt="4 matrix display illustration" width="104"> | Open or close all four fingers for Up / Down; index-versus-last-three poses steer the treads; thumb sends rapid A; wrist poses send held B or Up plus Left / Right. | Iron Tank |
+| 5 | <img src="images/matrix/programs/5.png" alt="5 matrix display illustration" width="104"> | Push / pull and bank / side movement fly the craft; thumb / index sends rapid A / B. | Alpha Mission; Life Force; Xevious; 1943 |
+| 6 | <img src="images/matrix/programs/6.png" alt="6 matrix display illustration" width="104"> | Position and depth move; index sends A; thumb sends B; last three sends A+B; forward fist holds Up; clockwise twist turns rapidly twice. | Double Dragon |
+| 7 | <img src="images/matrix/programs/7.png" alt="7 matrix display illustration" width="104"> | Open-hand movement dodges and ducks; forward fists punch high or low; clockwise wrist blocks; pull-back fist sends Select; thumb sends rapid A. | Mike Tyson's Punch-Out!! |
+| 8 | <img src="images/matrix/programs/8.png" alt="8 matrix display illustration" width="104"> | Position and depth select bases or fielding direction; thumb, index, counter-clockwise wrist, and pull-back produce the documented offense / defense A and B actions. | Baseball; Bases Loaded; R.B.I. Baseball |
+| 9 | <img src="images/matrix/programs/9.png" alt="9 matrix display illustration" width="104"> | Make a fist to ready the profile. Wrist rotation steers; forward fist is turbo; raising the hand sends Down; lowering sends B; fist sends A. No rapid fire. | Rad Racer |
+| 10 | <img src="images/matrix/programs/10.png" alt="10 matrix display illustration" width="104"> | Index / last-three curls steer Left / Right; thumb sends rapid A; B is held automatically until the hand is lowered. | R.C. Pro-Am |
+| 11 | <img src="images/matrix/programs/11.png" alt="11 matrix display illustration" width="104"> | Program 1 controls, but the last-three-finger pose turns rapidly in both directions while firing B. | Fast-turn alternative; no indexed title |
+| 12 | <img src="images/matrix/programs/12.png" alt="12 matrix display illustration" width="104"> | Position moves Mario; thumb / index sends rapid A / B; middle curl adds B for fast travel; last-three curl slows horizontal travel. | Super Mario Bros. |
+| 13 | <img src="images/matrix/programs/13.png" alt="13 matrix display illustration" width="104"> | Thumb / index sends rapid A / B. Camera D-pad output is neutral, leaving movement and menus to a conventional controller. | No indexed title |
+| 14 | <img src="images/matrix/programs/14.png" alt="14 matrix display illustration" width="104"> | VirtualGlove camera and output are paused while the selected profile and game session remain visible. | Anticipation; temporary manual menu or password entry |
 
 The shipped exact-filename registry supplies `.nes`, `.zip`, and `.7z` entries.
 It also applies Mattel's rapid-fire exceptions: rapid A is off for Alpha Mission
@@ -177,11 +177,12 @@ Dribble and Racket Attack.
 
 <!-- PAGEBREAK -->
 
-### How rapid fire behaves
+## How rapid fire behaves
 
-Programs 1-8 and 10-14 use the original rapid-fire style for A and B: keep the
+Programs 1–8 and 10–13 use the original rapid-fire style for A and B: keep the
 assigned finger pose held and VirtualGlove pulses that button. Program 9 holds
-its controls normally and never pulses them. A registered game's exception is
+its controls normally and never pulses them. Program 14 has no VirtualGlove
+button output, so both rapid-fire indicators remain off. A registered game's exception is
 part of its signed launch request, so the Dashboard's **Rapid fire** status is
 the value actually applied for that game rather than a guess based on its
 Program number.
@@ -198,13 +199,27 @@ Start, Select, Menu Guard, calibration, tracking-loss release, and the saved
 joystick dead zone remain shared across every camera-active numeric Program.
 Return to an open hand near the saved center between compound actions.
 
+<!-- PAGEBREAK -->
+
+## Program cards 1–14
+
+Each card follows the same design as the game-specific cards: the exact
+Dashboard profile and matrix display, a mission, illustrated controls, practical
+play advice, and a first-round exercise. Programs without an official indexed
+title remain complete, selectable profiles and are especially useful for
+off-script experiments.
+
 ### Program 1 - positional control
 
 | Profile | See it |
 | --- | --- |
 | `program_1` | <img src="images/matrix/programs/1.png" alt="1 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Use the original all-purpose mapping to move in every
+direction, operate both action buttons, and learn its bounded turn-and-fire
+combination.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its saved center" width="96"> | Ordinary D-pad, including diagonals |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
@@ -212,15 +227,19 @@ Return to an open hand near the saved center between compound actions.
 | Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers together" width="72"> | Briefly turns opposite the last horizontal direction and sends B |
 | Return to the saved center | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="72"> | Releases positional movement |
 
-The turn-and-B combination lasts about 0.18 seconds and triggers once per fresh
-last-three-finger pose. Release those fingers before trying it again.
+**Play smart:** The turn-and-B combination lasts about 0.18 seconds and triggers
+once per fresh last-three-finger pose. Release those fingers before trying it
+again. Registered games may disable rapid A or B when Mattel specified held
+buttons instead. The complete official Program 1 game list is in the numbered
+[Quick selector](#quick-selector-programs-1-14).
 
-**Official Program 1 games:** Blades of Steel, Blaster Master, Bubble Bobble,
-Castlevania, Castlevania II: Simon's Quest, Contra, Deadly Towers, Donkey Kong
-Classics, Double Dribble, Gauntlet, Gradius, Jackal, Kid Icarus, Kung-Fu Heroes,
-Metal Gear, Metroid, Mickey Mousecapade, Operation Wolf, Platoon, Racket Attack,
-Rampage, RoboWarrior, Rygar, Seicross, Star Force, Superman, Xenophobe, and
-Zelda II: The Adventure of Link.
+**First round:**
+
+1. Move across all four sides of the saved center and return to neutral.
+2. Try thumb A and index B separately.
+3. Curl the last three fingers once, release them, and confirm the bounded turn-and-B action ends.
+
+<!-- PAGEBREAK -->
 
 ### Program 2 - positional control with centering feedback
 
@@ -228,7 +247,10 @@ Zelda II: The Adventure of Link.
 | --- | --- |
 | `program_2` | <img src="images/matrix/programs/2.png" alt="2 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Keep an exact sense of neutral while using Program 1's
+movement, buttons, and bounded turn-and-fire action in an unassigned game.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its saved center" width="96"> | Ordinary D-pad, including diagonals |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
@@ -236,10 +258,18 @@ Zelda II: The Adventure of Link.
 | Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers together" width="72"> | Briefly turns opposite the last horizontal direction and sends B |
 | Return to the saved center | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="72"> | Releases movement and shows **Centered**; leaving the box shows **Return to centre** |
 
-Program 2 has no indexed title and is the centering-practice alternative to
-Program 1. It uses live Dashboard feedback instead of attempting to reproduce
-the physical glove's beeper and stores no new centering measurement. Its bounded
-turn-and-B action follows the same 0.18-second fresh-pose and release rules.
+**Play smart:** Program 2 has no indexed title and is the centering-practice
+alternative to Program 1. Dashboard's live feedback replaces the physical
+glove's beeper and stores no new centering measurement. Its turn-and-B action
+uses the same 0.18-second fresh-pose and release rules.
+
+**First round:**
+
+1. Rest inside the saved box and confirm Dashboard shows **Centered**.
+2. Cross one side of the box, return until **Centered** reappears, then repeat on the other sides.
+3. Try A, B, and one released turn-and-B action without losing the neutral reference.
+
+<!-- PAGEBREAK -->
 
 ### Program 3 - depth and side movement
 
@@ -247,7 +277,10 @@ turn-and-B action follows the same 0.18-second fresh-pose and release rules.
 | --- | --- |
 | `program_3` | <img src="images/matrix/programs/3.png" alt="3 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Combine sideways hand travel with deliberate push/pull depth
+control for Ice Hockey, Top Gun, or a similar top-view game.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Left or Right |
 | Push toward the camera | <img src="images/gestures/v2/push-toward-camera.png" alt="Push the hand toward the camera" width="72"> | Up |
@@ -255,10 +288,18 @@ turn-and-B action follows the same 0.18-second fresh-pose and release rules.
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
 
-Use Program 3 for **Ice Hockey** and **Top Gun**. Ice Hockey automatically
-disables rapid B. Mattel also described Program 3 as an alternative top-view
-scheme for Gauntlet, but the official index and shipped registry assign Gauntlet
-to Program 1.
+**Play smart:** Use Program 3 for **Ice Hockey** and **Top Gun**. Ice Hockey
+automatically disables rapid B. Mattel also described Program 3 as an
+alternative top-view scheme for Gauntlet, but the official index and shipped
+registry assign Gauntlet to Program 1.
+
+**First round:**
+
+1. Move left and right while keeping a steady camera distance.
+2. Push once for Up, return to neutral depth, then pull once for Down.
+3. Add thumb A and index B only after the four directions release reliably.
+
+<!-- PAGEBREAK -->
 
 ### Program 4 - Iron Tank tread control
 
@@ -266,23 +307,34 @@ to Program 1.
 | --- | --- |
 | `program_4` | <img src="images/matrix/programs/4.png" alt="4 matrix display illustration" width="104"> |
 
+**Your mission:** Drive Iron Tank with finger-tread poses, fire independently,
+and use the higher-priority wrist actions without leaving a direction held.
+
 Program 4 does not use ordinary camera-position D-pad movement. Its finger and
 wrist poses drive the tank directly, in the following priority order.
 
-| Gesture | See it | Controller result |
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Keep index, middle, ring, and pinky open | <img src="images/gestures/v2/show-your-hand.png" alt="Open four fingers" width="72"> | Up |
 | Curl all four fingers | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling all four fingers" width="72"> | Down |
-| Keep index open; curl middle, ring, and pinky | <img src="images/gestures/actions/keep-index-straight.png" alt="Keep the index open and curl the last three fingers" width="72"> | Right tread turn |
-| Curl index; keep middle, ring, and pinky open | <img src="images/gestures/v2/curl-index.png" alt="Curl only the index finger" width="72"> | Left tread turn |
-| Roll wrist right | <img src="images/gestures/v2/wrist-roll-right.png" alt="Roll the wrist right" width="72"> | Up+Right |
-| Roll wrist left | <img src="images/gestures/v2/wrist-roll-left.png" alt="Roll the wrist left" width="72"> | Up+Left |
+| Keep index open and curl the last three; or curl index and keep the last three open | <img src="images/gestures/actions/keep-index-straight.png" alt="Keep the index open and curl the last three fingers" width="60"> <img src="images/gestures/v2/curl-index.png" alt="Curl only the index finger" width="60"> | Right tread turn; or Left tread turn, respectively |
+| Roll wrist right or left | <img src="images/gestures/v2/wrist-roll-right.png" alt="Roll the wrist right" width="60"> <img src="images/gestures/v2/wrist-roll-left.png" alt="Roll the wrist left" width="60"> | Up+Right; or Up+Left, respectively |
 | Turn the wrist almost upside down | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist close to upside down" width="96"> | B |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A alongside the active movement, except while pulling back |
 | Pull away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull away from the camera" width="72"> | Neutralizes the Program 4 action output |
 
-Program 4 is assigned to **Iron Tank**. Release a wrist pose before changing to
-a finger-tread pose so the higher-priority wrist action clears first.
+**Play smart:** Program 4 is assigned to **Iron Tank**. Release a wrist pose
+before changing to a finger-tread pose so the higher-priority wrist action
+clears first. Pulling back is the dependable way to neutralize its special
+action output.
+
+**First round:**
+
+1. Test open-four Up and closed-four Down, returning to a relaxed hand between them.
+2. Try each asymmetric tread pose separately.
+3. Add thumb fire, then practise each wrist action and pull back to neutralize it.
+
+<!-- PAGEBREAK -->
 
 ### Program 5 - aircraft control
 
@@ -290,7 +342,10 @@ a finger-tread pose so the higher-priority wrist action clears first.
 | --- | --- |
 | `program_5` | <img src="images/matrix/programs/5.png" alt="5 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Fly with horizontal movement, wrist bank, and depth while
+keeping both firing gestures available.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move or bank left/right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move or roll left whole hand left or right" width="96"> | Left or Right; a wrist bank can add the same direction |
 | Push toward the camera | <img src="images/gestures/v2/push-toward-camera.png" alt="Push toward the camera" width="72"> | Up |
@@ -298,8 +353,16 @@ a finger-tread pose so the higher-priority wrist action clears first.
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
 
-Use Program 5 for **Alpha Mission**, **Life Force**, **Xevious**, and **1943:
-The Battle of Midway**. Alpha Mission automatically disables rapid A.
+**Play smart:** Use Program 5 for **Alpha Mission**, **Life Force**, **Xevious**,
+and **1943: The Battle of Midway**. Keep the wrist level when you want plain
+side movement; a bank can reinforce the same direction. Alpha Mission
+automatically disables rapid A.
+
+**First round:**
+
+1. Fly left and right with a level wrist.
+2. Push and pull once each, returning to the saved distance after both actions.
+3. Add thumb A, index B, and then a small wrist bank while moving.
 
 <!-- PAGEBREAK -->
 
@@ -309,17 +372,30 @@ The Battle of Midway**. Alpha Mission automatically disables rapid A.
 | --- | --- |
 | `program_6` | <img src="images/matrix/programs/6.png" alt="6 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Chain Double Dragon's movement, single-button attacks,
+combined attack, forward-fist action, and bounded turning combination without
+carrying one pose into the next.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move left/right; push/pull | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move sideways or in depth" width="96"> | Left/Right; push is Up and pull is Down |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | A |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | B |
 | Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers" width="72"> | A+B |
-| Make a fist and push | <img src="images/gestures/v2/push-toward-camera.png" alt="Push a closed fist toward the camera" width="72"> | Up only; A and B release |
+| Make a fist and push | <img src="images/gestures/v2/push-closed-fist.png" alt="Push a closed fist toward the camera" width="72"> | Up only; A and B release |
 | Roll wrist right | <img src="images/gestures/v2/wrist-roll-right.png" alt="Roll the wrist right" width="72"> | A bounded four-phase Left/Right/Left/Right turn over about 0.32 seconds |
 
-Program 6 is assigned to **Double Dragon**. The wrist combination begins on a
-fresh right-roll hold; release the roll before repeating it.
+**Play smart:** Program 6 is assigned to **Double Dragon**. The wrist
+combination begins on a fresh right-roll hold; release the roll before repeating
+it. The pushed fist deliberately releases A and B while holding Up.
+
+**First round:**
+
+1. Walk in four directions, then test index A and thumb B separately.
+2. Curl the last three fingers for A+B and fully reopen them.
+3. Try one pushed fist and one right-roll combination, returning to neutral after each.
+
+<!-- PAGEBREAK -->
 
 ### Program 7 - Punch-Out!! offense and defense
 
@@ -327,17 +403,30 @@ fresh right-roll hold; release the roll before repeating it.
 | --- | --- |
 | `program_7` | <img src="images/matrix/programs/7.png" alt="7 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Use open-hand defense and positioned fist attacks to complete
+a controlled round in Mike Tyson's Punch-Out!!.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | With four fingers open, move left/right or lower the hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move an open hand left, right, or down" width="96"> | Dodge Left/Right or duck Down |
 | With four fingers open, curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb while the fingers stay open" width="72"> | A |
-| Make a fist, push, and hold it right of center | <img src="images/gestures/v2/push-toward-camera.png" alt="Push a fist on the right side" width="72"> | A punch; raising it above center adds Up for a high punch |
-| Make a fist, push, and hold it left of center | <img src="images/gestures/v2/push-toward-camera.png" alt="Push a fist on the left side" width="72"> | B punch; raising it above center adds Up for a high punch |
+| Make a fist, push, and hold it right of center | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing every finger into a fist" width="60"> <img src="images/gestures/v2/push-closed-fist-right.png" alt="Push a closed fist on the right side of center" width="60"> | A punch; raising it above center adds Up for a high punch |
+| Make a fist, push, and hold it left of center | <img src="images/gestures/v2/push-closed-fist-left.png" alt="Push a closed fist on the left side of center" width="88"> | B punch; raising it above center adds Up for a high punch |
 | Roll wrist right | <img src="images/gestures/v2/wrist-roll-right.png" alt="Roll the wrist right" width="72"> | Down block |
-| Make a fist and pull back | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull a closed fist away from the camera" width="72"> | One Select pulse for the star-punch action |
+| Make a fist and pull back | <img src="images/gestures/v2/pull-closed-fist.png" alt="Pull a closed fist away from the camera" width="88"> | One Select pulse for the star-punch action |
 
-Program 7 is assigned to **Mike Tyson's Punch-Out!!**. The pull-back Select is
-edge-triggered: return from the pull before requesting another star punch.
+**Play smart:** Program 7 is assigned to **Mike Tyson's Punch-Out!!**. Keep the
+fist clearly left or right of center so the intended punch is unambiguous. The
+pull-back Select is edge-triggered: return from the pull before requesting
+another star punch.
+
+**First round:**
+
+1. With an open hand, dodge left and right and lower the hand to duck.
+2. Push a fist on each side for low punches, then raise it for high punches.
+3. Practise one wrist block and one pull-back star-punch pulse.
+
+<!-- PAGEBREAK -->
 
 ### Program 8 - baseball offense and defense
 
@@ -345,7 +434,10 @@ edge-triggered: return from the pull before requesting another star punch.
 | --- | --- |
 | `program_8` | <img src="images/matrix/programs/8.png" alt="8 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Learn when the baseball mapping changes the thumb from B to
+direction-plus-A, then use the same profile for batting, running, and fielding.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move left/right; push/pull | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move sideways or in depth" width="96"> | Left/Right; push is Up and pull is Down |
 | Curl the thumb while stationary | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb while stationary" width="72"> | B |
@@ -354,9 +446,18 @@ edge-triggered: return from the pull before requesting another star punch.
 | Roll wrist left | <img src="images/gestures/v2/wrist-roll-left.png" alt="Roll the wrist left" width="72"> | B |
 | Pull away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull away from the camera" width="72"> | Down+B |
 
-Use Program 8 for **Baseball**, **Bases Loaded**, and **R.B.I. Baseball**. The
-same thumb pose intentionally changes button meaning depending on whether a
-direction is active.
+**Play smart:** Use Program 8 for **Baseball**, **Bases Loaded**, and **R.B.I.
+Baseball**. The same thumb pose intentionally changes button meaning depending
+on whether a direction is active. Establish movement first, then add the thumb
+when you need direction-plus-A.
+
+**First round:**
+
+1. Move in each direction with an open thumb and return to neutral.
+2. Curl the thumb while stationary to confirm B.
+3. Move and curl the thumb for direction-plus-A, then test index B and pull-back Down+B.
+
+<!-- PAGEBREAK -->
 
 ### Program 9 - Rad Racer
 
@@ -364,20 +465,31 @@ direction is active.
 | --- | --- |
 | `program_9` | <img src="images/matrix/programs/9.png" alt="9 matrix display illustration" width="104"> |
 
+**Your mission:** Arm the Rad Racer profile, steer by wrist angle, and combine
+its held throttle, turbo, brake, and unusual raise-to-Down mapping.
+
 Program 9 begins unready. Make one fist to arm it; Dashboard then shows the
 ready state for the remainder of that profile session. It has no rapid fire.
 
-| Gesture | See it | Controller result after arming |
+| Do this | See it | Controller result after arming |
 | --- | --- | --- |
 | Roll wrist left/right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Steer Left/Right |
 | Keep a fist closed | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove holding a closed fist" width="72"> | A |
-| Push the closed fist | <img src="images/gestures/v2/push-toward-camera.png" alt="Push a closed fist toward the camera" width="72"> | Up+A turbo combination |
+| Push the closed fist | <img src="images/gestures/v2/push-closed-fist.png" alt="Push a closed fist toward the camera" width="72"> | Up+A turbo combination |
 | Raise the hand | <img src="images/gestures/v2/move-up.png" alt="Raise the hand" width="72"> | Down |
 | Lower the hand | <img src="images/gestures/v2/move-down.png" alt="Lower the hand" width="72"> | B |
 
-Program 9 is assigned to **Rad Racer**. Its unusual raise-to-Down mapping is
-intentional and follows the documented program rather than the general movement
-convention.
+**Play smart:** Program 9 is assigned to **Rad Racer**. Its unusual
+raise-to-Down mapping is intentional and follows the documented program rather
+than the general movement convention. All inputs are held rather than pulsed.
+
+**First round:**
+
+1. Make one fist and confirm the profile becomes ready.
+2. Hold the fist for A and make small wrist rolls to steer.
+3. Push the fist for turbo, then separately raise for Down and lower for B.
+
+<!-- PAGEBREAK -->
 
 ### Program 10 - R.C. Pro-Am
 
@@ -385,7 +497,10 @@ convention.
 | --- | --- |
 | `program_10` | <img src="images/matrix/programs/10.png" alt="10 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Drive R.C. Pro-Am using finger-tread steering while hand
+height controls the automatically held B action.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Curl only the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Left |
 | Keep index open; curl middle, ring, and pinky | <img src="images/gestures/actions/keep-index-straight.png" alt="Keep index open and curl the last three fingers" width="72"> | Right |
@@ -394,8 +509,15 @@ convention.
 | Keep the hand above the lower movement region | <img src="images/gestures/v2/find-neutral.png" alt="Keep the hand at or above center" width="72"> | B is held automatically |
 | Lower the hand outside the center box | <img src="images/gestures/v2/move-down.png" alt="Lower the hand" width="72"> | Releases B |
 
-Program 10 is assigned to **R.C. Pro-Am**. Hand position does not steer; use the
-two mutually exclusive finger poses.
+**Play smart:** Program 10 is assigned to **R.C. Pro-Am**. Hand position does
+not steer; use the two mutually exclusive finger poses. Curling both steering
+patterns releases direction instead of sending an impossible Left+Right pair.
+
+**First round:**
+
+1. Keep the hand above the lower region and confirm B is held.
+2. Alternate the index-only and last-three steering poses, reopening between them.
+3. Lower the hand to release B, then add thumb A when the steering feels reliable.
 
 <!-- PAGEBREAK -->
 
@@ -405,16 +527,29 @@ two mutually exclusive finger poses.
 | --- | --- |
 | `program_11` | <img src="images/matrix/programs/11.png" alt="11 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Apply Program 1's familiar movement and buttons to an
+unassigned game, then decide whether its sustained alternating turn-and-B
+action fits the game's mechanics.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its center" width="96"> | Ordinary D-pad, including diagonals |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
 | Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers" width="72"> | Overrides positional movement, alternates Left and Right, and sends B while held |
 
-Program 11 has no indexed title. It is a Program 1-style alternative for games
-where a sustained rapid-turn action is useful. Unlike Program 1's short turn,
-the alternating turn continues until the last three fingers are released.
+**Play smart:** Program 11 has no indexed title. It is a Program 1-style
+alternative for games where a sustained rapid-turn action is useful. Unlike
+Program 1's short turn, the alternating turn continues until the last three
+fingers are released, so test it briefly before relying on it.
+
+**First round:**
+
+1. Confirm ordinary hand-position movement and thumb/index buttons first.
+2. Curl the last three fingers for a short fast-turn burst.
+3. Reopen fully and verify movement and B release before trying a longer burst.
+
+<!-- PAGEBREAK -->
 
 ### Program 12 - Super Mario Bros.
 
@@ -422,7 +557,10 @@ the alternating turn continues until the last three fingers are released.
 | --- | --- |
 | `program_12` | <img src="images/matrix/programs/12.png" alt="12 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Move Mario with hand position, combine action buttons for
+running and jumping, and deliberately switch between fast and slow travel.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its center" width="96"> | Ordinary D-pad |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
@@ -430,8 +568,17 @@ the alternating turn continues until the last three fingers are released.
 | Curl the middle finger without curling all three last fingers | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling the middle finger" width="72"> | B for fast travel |
 | Curl middle, ring, and pinky together while moving sideways | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers while moving" width="72"> | Pulses only the active horizontal direction for slower travel; vertical movement is unchanged |
 
-Program 12 is assigned to **Super Mario Bros.** Release the last-three pose to
-return immediately to ordinary horizontal movement.
+**Play smart:** Program 12 is assigned to **Super Mario Bros.** Use middle curl
+for fast travel and the last-three pose only while you want slower horizontal
+movement. Release the last-three pose to return immediately to ordinary travel.
+
+**First round:**
+
+1. Walk in both directions and try thumb A and index B separately.
+2. Curl the middle finger while moving to practise fast travel.
+3. Use the last-three pose during a safe horizontal stretch, then reopen to restore full movement.
+
+<!-- PAGEBREAK -->
 
 ### Program 13 - finger buttons with physical movement
 
@@ -439,15 +586,27 @@ return immediately to ordinary horizontal movement.
 | --- | --- |
 | `program_13` | <img src="images/matrix/programs/13.png" alt="13 matrix display illustration" width="104"> |
 
-| Gesture | See it | Controller result |
+**Your mission:** Split Player 1 cleanly between gesture action buttons and the
+merged physical controller's movement and menus.
+
+| Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the hand anywhere | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand" width="96"> | No camera D-pad output |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
 
-Program 13 has no indexed title. Use it when VirtualGlove should provide the two
-action buttons while the merged physical Player 1 controller supplies movement
-or menu combinations. Shared Start, Select, and Menu Guard remain available.
+**Play smart:** Program 13 has no indexed title. Use it when VirtualGlove should
+provide the two action buttons while the merged physical Player 1 controller
+supplies movement or menu combinations. Shared gesture Start, Select, and Menu
+Guard remain available, but camera movement never sends a D-pad direction.
+
+**First round:**
+
+1. Move the physical controller in all four directions and confirm hand movement stays neutral.
+2. Keep the physical controller centered and try thumb A and index B separately.
+3. Combine one physical direction with one gesture button, then release both.
+
+<!-- PAGEBREAK -->
 
 ### Program 14 - gestures off for the active game
 
@@ -455,12 +614,208 @@ or menu combinations. Shared Start, Select, and Menu Guard remain available.
 | --- | --- |
 | `program_14` | <img src="images/matrix/programs/14.png" alt="14 matrix display illustration" width="104"> |
 
-Program 14 is assigned to **Anticipation** and can be selected temporarily for
-manual menu or password entry. It preserves the visible profile and authenticated
-game session but closes the camera and neutralizes VirtualGlove D-pad, A, B,
-Start, and Select. The physical Player 1 controller remains usable. Selecting a
-camera-active profile later starts recognition again; no calibration or player
-data is erased.
+**Your mission:** Pause every VirtualGlove gesture safely while keeping the
+authenticated game session and physical Player 1 controller available.
+
+| Do this | See it | Controller result |
+| --- | --- | --- |
+| Select Program 14 | <img src="images/matrix/programs/14.png" alt="14 matrix display illustration" width="104"> | Camera tracking stops and every VirtualGlove control releases |
+| Use the physical Player 1 controller | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand while the physical controller is used" width="72"> | Physical D-pad and buttons remain available |
+| Select any camera-active profile | <img src="images/gestures/v2/show-your-hand.png" alt="Show the hand after selecting a camera-active profile" width="72"> | Recognition starts again using saved calibration |
+
+**Play smart:** Program 14 is assigned to **Anticipation** and can be selected
+temporarily for manual menu or password entry. It preserves the visible profile
+and authenticated game session but neutralizes VirtualGlove D-pad, A, B, Start,
+and Select. No calibration or player data is erased.
+
+**First round:**
+
+1. Select Program 14 and confirm the camera closes and Dashboard controls are neutral.
+2. Complete one menu action with the physical Player 1 controller.
+3. Select a camera-active profile and confirm recognition returns with the saved player calibration.
+
+<!-- PAGEBREAK -->
+
+
+## Programs A-I
+
+The original Power Glove could load nine reusable mappings from Bad Street
+Brawler and retain one while the player changed cartridges. VirtualGlove
+keeps all nine available at once: choose one on Dashboard or let RetroPie select
+one from the registered ROM filename. These mappings produce ordinary NES
+controller inputs, so they can be tried with games beyond the tested play cards.
+
+## Where the programs came from
+
+Bad Street Brawler contained nine configuration programs labelled A through I.
+The player loaded one into the Power Glove, switched off the NES, swapped to a
+different cartridge within roughly 30 seconds, and kept using the downloaded
+mapping.
+
+These programs were not replacement firmware. They were small configurations
+for the glove's resident gesture interpreter. Each program mapped hand position, depth, wrist angle, and finger bends to
+ordinary NES controller inputs. The
+next game therefore did not need special Power Glove support.
+
+VirtualGlove keeps all nine profiles ready at once. Select one on
+Dashboard or let RetroPie choose it when a game launches. You do not need to
+open Bad Street Brawler first.
+
+## Quick selector - Programs A–I
+
+| Program | See it | Best fit | Main controls |
+| --- | --- | --- | --- |
+| **A** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | Pinball | Two finger flippers, wrist tilt, combined-flipper mode |
+| **B** | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> | Joust | Steer by position; curl a finger to flap |
+| **C** | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> | Gyruss | Rotate by wrist angle; fire and bomb gestures |
+| **D** | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> | Challenge mode | Reversed directions with thumb/index buttons |
+| **E** | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> | Defender II | Ship movement, fire, smart bomb, evasive movement |
+| **F** | <img src="images/matrix/programs/F.png" alt="F matrix display illustration" width="104"> | Sesame Street 1-2-3 | Open-hand Yes and closed-hand No |
+| **G** | <img src="images/matrix/programs/G.png" alt="G matrix display illustration" width="104"> | Gun Smoke | Walk by position; combine index curl and a forward push to fire |
+| **H** | <img src="images/matrix/programs/H.png" alt="H matrix display illustration" width="104"> | Training / general play | Familiar controls with pulsed buttons |
+| **I** | <img src="images/matrix/programs/I.png" alt="I matrix display illustration" width="104"> | Knight Rider / driving | Wrist steering, throttle, brake, and turbo |
+
+<!-- PAGEBREAK -->
+
+## Program cards A–I
+
+### A - Pinball rig
+
+| Profile | See it |
+| --- | --- |
+| `program_a` | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Right flipper / A |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Left flipper / Up |
+| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist" width="96"> | Tilt / B |
+| Pull the hand away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull the hand away from the camera" width="72"> | Toggle combined-flipper behaviour |
+
+Use this profile for pinball tables and games that benefit from two independent
+finger actions.
+
+### B - Joust rig
+
+| Profile | See it |
+| --- | --- |
+| `program_b` | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Steer left or right |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | B button; see the [Joust play card](GAMEPLAY_GUIDE.md#joust) for its in-game use |
+| Curl the index or middle finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Pulsed flap input |
+
+Use this profile for Joust and any game where rhythmic, repeated presses matter.
+
+### C - Gyruss rig
+
+| Profile | See it |
+| --- | --- |
+| `program_c` | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Rotate counter-clockwise or clockwise |
+| Keep the index finger straight | <img src="images/gestures/actions/keep-index-straight.png" alt="Keep the index finger straight" width="72"> | Continuous fire |
+| Pull the hand away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull the hand away from the camera" width="72"> | Launch a bomb |
+
+Use this profile for circular shooters and games with rotation plus rapid fire.
+
+### D - Mirror-world rig
+
+| Profile | See it |
+| --- | --- |
+| `program_d` | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Reversed right or left direction |
+| Raise or lower the hand | <img src="images/gestures/actions/vertical-movement.png" alt="Raise or lower the whole hand" width="96"> | Reversed down or up direction |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | First action button |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Second action button |
+
+Use this profile for deliberate chaos, party challenges, or accessibility
+experiments that need inverted direction mappings.
+
+### E - Defender rig
+
+| Profile | See it |
+| --- | --- |
+| `program_e` | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Move the ship |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Fire |
+| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist" width="96"> | Smart bomb |
+| Curl the ring finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Rapid horizontal movement |
+
+Use this profile for Defender II and multi-action shooters.
+
+### F - Yes / No rig
+
+| Profile | See it |
+| --- | --- |
+| `program_f` | <img src="images/matrix/programs/F.png" alt="F matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Close every finger into a fist | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing all fingers" width="72"> | No |
+| Move an open hand in any direction | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move an open hand in any direction" width="96"> | Yes |
+
+Use this profile for Sesame Street 1-2-3 and simple choice-driven games.
+
+### G - Gun Smoke rig
+
+| Profile | See it |
+| --- | --- |
+| `program_g` | <img src="images/matrix/programs/G.png" alt="G matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Walk using horizontal and vertical hand movement |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Fire |
+| Roll the wrist | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Add left or right movement |
+| Curl the thumb and ring finger | <img src="images/gestures/actions/menu-guard.png" alt="Menu guard with thumb and ring finger curled" width="96"> | Suppress all ordinary controller output |
+
+A forward push sends B. Combine it with index curl (A) to send A+B.
+
+Use this profile for Gun Smoke and shooters with movement plus directional fire.
+
+### H - Training rig
+
+| Profile | See it |
+| --- | --- |
+| `program_h` | <img src="images/matrix/programs/H.png" alt="H matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Conventional directions |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Pulsed B |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Pulsed A |
+| Return the hand to center | <img src="images/gestures/actions/whole-hand-movement.png" alt="Return the whole hand to center" width="96"> | Release directional input |
+
+Use this profile for learning the system or giving an unmapped game a sensible
+general-purpose starting point.
+
+### I - Driving rig
+
+| Profile | See it |
+| --- | --- |
+| `program_i` | <img src="images/matrix/programs/I.png" alt="I matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Steer |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Throttle |
+| Lower the hand | <img src="images/gestures/v2/move-down.png" alt="Lower the whole hand" width="72"> | Brake |
+| Push the hand toward the camera | <img src="images/gestures/v2/push-toward-camera.png" alt="Push the hand toward the camera" width="72"> | Turbo |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Auxiliary action |
+
+Use this profile for Knight Rider and driving games that need steering, speed, and
+one extra action.
 
 <!-- PAGEBREAK -->
 
@@ -522,7 +877,7 @@ output active for the whole session. The V sign sends Start in both modes.
 | Open hand | <img src="images/gestures/actions/show-your-hand.png" alt="Open hand" width="72"> | Nestopia (VirtualGlove): release or throw a held ball. |
 | Close hand | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing into a fist" width="72"> | Nestopia (VirtualGlove): grab or catch the ball. |
 | Point index; curl middle, ring, and pinky | <img src="images/gestures/actions/keep-index-straight.png" alt="Point with the index finger while the other fingers are curled" width="72"> | Nestopia (VirtualGlove): fire a Robo-Bullet. |
-| Close hand and push forward | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing into a fist" width="68"> <img src="images/gestures/actions/push-toward-camera.png" alt="Push toward the camera" width="68"> | Nestopia (VirtualGlove): Power Punch. |
+| Close hand and push forward | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing into a fist" width="60"> <img src="images/gestures/v2/push-closed-fist.png" alt="Push a closed fist toward the camera" width="60"> | Nestopia (VirtualGlove): Power Punch. |
 
 **Play smart:** Pick one wall and finish it, then follow the revealed arrow.
 With FCEUmm, use Select to take the exit. Native gameplay has been completed
@@ -668,7 +1023,7 @@ each wanted poster, and collect the bounty by beating the stage boss.
 | Do this | See it | Result |
 | --- | --- | --- |
 | Move whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Walk in that direction |
-| Curl index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | A: shoot diagonally right |
+| Curl index finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling the index finger" width="72"> | A: shoot diagonally right |
 | Push toward camera | <img src="images/gestures/v2/push-toward-camera.png" alt="Push the hand toward the camera" width="72"> | B: shoot diagonally left |
 | Curl index while pushing | <img src="images/gestures/actions/index-push-combination.png" alt="One six-digit glove curling a finger beside a glove pushing toward the camera" width="96"> | A+B: shoot straight ahead |
 | Curl thumb and ring finger | <img src="images/gestures/actions/menu-guard.png" alt="Menu guard with thumb and ring finger curled" width="96"> | Suppress D-pad, A/B, Start, and Select |
@@ -812,186 +1167,6 @@ pixels, startup animations, and the full display reference.
 
 <!-- PAGEBREAK -->
 
-## Programs A-I
-
-The original Power Glove could load nine reusable mappings from Bad Street
-Brawler and retain one while the player changed cartridges. VirtualGlove
-keeps all nine available at once: choose one on Dashboard or let RetroPie select
-one from the registered ROM filename. These mappings produce ordinary NES
-controller inputs, so they can be tried with games beyond the tested play cards.
-
-## Where the programs came from
-
-Bad Street Brawler contained nine configuration programs labelled A through I.
-The player loaded one into the Power Glove, switched off the NES, swapped to a
-different cartridge within roughly 30 seconds, and kept using the downloaded
-mapping.
-
-These programs were not replacement firmware. They were small configurations
-for the glove's resident gesture interpreter. Each program mapped hand position, depth, wrist angle, and finger bends to
-ordinary NES controller inputs. The
-next game therefore did not need special Power Glove support.
-
-VirtualGlove keeps all nine profiles ready at once. Select one on
-Dashboard or let RetroPie choose it when a game launches. You do not need to
-open Bad Street Brawler first.
-
-## Quick selector
-
-| Program | See it | Best fit | Main controls |
-| --- | --- | --- | --- |
-| **A** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | Pinball | Two finger flippers, wrist tilt, combined-flipper mode |
-| **B** | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> | Joust | Steer by position; curl a finger to flap |
-| **C** | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> | Gyruss | Rotate by wrist angle; fire and bomb gestures |
-| **D** | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> | Challenge mode | Reversed directions with thumb/index buttons |
-| **E** | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> | Defender II | Ship movement, fire, smart bomb, evasive movement |
-| **F** | <img src="images/matrix/programs/F.png" alt="F matrix display illustration" width="104"> | Sesame Street 1-2-3 | Open-hand Yes and closed-hand No |
-| **G** | <img src="images/matrix/programs/G.png" alt="G matrix display illustration" width="104"> | Gun Smoke | Walk by position; combine index curl and a forward push to fire |
-| **H** | <img src="images/matrix/programs/H.png" alt="H matrix display illustration" width="104"> | Training / general play | Familiar controls with pulsed buttons |
-| **I** | <img src="images/matrix/programs/I.png" alt="I matrix display illustration" width="104"> | Knight Rider / driving | Wrist steering, throttle, brake, and turbo |
-
-<!-- PAGEBREAK -->
-
-## Program cards
-
-### A - Pinball rig
-
-| Profile | See it |
-| --- | --- |
-| `program_a` | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Right flipper / A |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Left flipper / Up |
-| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist" width="96"> | Tilt / B |
-| Pull the hand away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull the hand away from the camera" width="72"> | Toggle combined-flipper behaviour |
-
-Use this profile for pinball tables and games that benefit from two independent
-finger actions.
-
-### B - Joust rig
-
-| Profile | See it |
-| --- | --- |
-| `program_b` | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Steer left or right |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | B button; see the [Joust play card](GAMEPLAY_GUIDE.md#joust) for its in-game use |
-| Curl the index or middle finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Pulsed flap input |
-
-Use this profile for Joust and any game where rhythmic, repeated presses matter.
-
-### C - Gyruss rig
-
-| Profile | See it |
-| --- | --- |
-| `program_c` | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Rotate counter-clockwise or clockwise |
-| Keep the index finger straight | <img src="images/gestures/actions/keep-index-straight.png" alt="Keep the index finger straight" width="72"> | Continuous fire |
-| Pull the hand away from the camera | <img src="images/gestures/v2/pull-away-from-camera.png" alt="Pull the hand away from the camera" width="72"> | Launch a bomb |
-
-Use this profile for circular shooters and games with rotation plus rapid fire.
-
-### D - Mirror-world rig
-
-| Profile | See it |
-| --- | --- |
-| `program_d` | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Reversed right or left direction |
-| Raise or lower the hand | <img src="images/gestures/actions/vertical-movement.png" alt="Raise or lower the whole hand" width="96"> | Reversed down or up direction |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | First action button |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Second action button |
-
-Use this profile for deliberate chaos, party challenges, or accessibility
-experiments that need inverted direction mappings.
-
-### E - Defender rig
-
-| Profile | See it |
-| --- | --- |
-| `program_e` | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Move the ship |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Fire |
-| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist" width="96"> | Smart bomb |
-| Curl the ring finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Rapid horizontal movement |
-
-Use this profile for Defender II and multi-action shooters.
-
-### F - Yes / No rig
-
-| Profile | See it |
-| --- | --- |
-| `program_f` | <img src="images/matrix/programs/F.png" alt="F matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Close every finger into a fist | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing all fingers" width="72"> | No |
-| Move an open hand in any direction | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move an open hand in any direction" width="96"> | Yes |
-
-Use this profile for Sesame Street 1-2-3 and simple choice-driven games.
-
-### G - Gun Smoke rig
-
-| Profile | See it |
-| --- | --- |
-| `program_g` | <img src="images/matrix/programs/G.png" alt="G matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Walk using horizontal and vertical hand movement |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Fire |
-| Roll the wrist | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Add left or right movement |
-| Curl the thumb and ring finger | <img src="images/gestures/actions/menu-guard.png" alt="Menu guard with thumb and ring finger curled" width="96"> | Suppress all ordinary controller output |
-
-A forward push sends B. Combine it with index curl (A) to send A+B.
-
-Use this profile for Gun Smoke and shooters with movement plus directional fire.
-
-### H - Training rig
-
-| Profile | See it |
-| --- | --- |
-| `program_h` | <img src="images/matrix/programs/H.png" alt="H matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Conventional directions |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Pulsed B |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Pulsed A |
-| Return the hand to center | <img src="images/gestures/actions/whole-hand-movement.png" alt="Return the whole hand to center" width="96"> | Release directional input |
-
-Use this profile for learning the system or giving an unmapped game a sensible
-general-purpose starting point.
-
-### I - Driving rig
-
-| Profile | See it |
-| --- | --- |
-| `program_i` | <img src="images/matrix/programs/I.png" alt="I matrix display illustration" width="104"> |
-
-| Gesture | See it | Controller result |
-| --- | --- | --- |
-| Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Steer |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Throttle |
-| Lower the hand | <img src="images/gestures/v2/move-down.png" alt="Lower the whole hand" width="72"> | Brake |
-| Push the hand toward the camera | <img src="images/gestures/v2/push-toward-camera.png" alt="Push the hand toward the camera" width="72"> | Turbo |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Auxiliary action |
-
-Use this profile for Knight Rider and driving games that need steering, speed, and
-one extra action.
-
 ## How VirtualGlove selects a program
 
 Choose the current profile on Dashboard; choose the saved startup profile on
@@ -1034,22 +1209,27 @@ controls. Programs 2, 11, 13, A, D, and H have no default ROM assignment and
 are useful starting points for these experiments. Program 14 is the deliberate
 camera-and-output-off choice rather than a general gesture mapping.
 
-### Start with A, D, and H
+### Start with 2, 11, 13, A, D, and H
 
 | Program | See it | Try it with | Know before playing |
 | --- | --- | --- | --- |
+| **2 - Centering coach** | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="104"> | Maze, platform, and precision-movement games where a clear neutral position helps | It uses Program 1's D-pad and A/B gestures, while Dashboard adds live **Centered** / **Return to centre** feedback. |
+| **11 - Fast turn** | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers for the fast-turn action" width="104"> | Arena action and shooters that benefit from a repeated left/right turn while firing | Hand position and thumb/index curls follow Program 1. Curling the last three fingers alternates Left/Right and fires B until released. |
+| **13 - Finger buttons** | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling the index finger for a gesture action button" width="104"> | Games where you want gesture A/B while keeping movement and menus on the physical Player 1 controller | Thumb and index curls provide A and B. Camera movement sends no D-pad, so the merged physical controller remains in charge of direction. |
 | **A - Pinball** | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist for the pinball tilt action" width="176"> | Pinball and games driven by two independent actions | Index curl is A, thumb curl is Up, wrist tilt is B, and pulling back toggles combined flippers. Ordinary directional movement is disabled. |
 | **D - Mirror world** | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="176"> | A game you already know well, a party challenge, or an inverted-direction accessibility experiment | Every direction is reversed. Thumb and index provide A and B. Expect your muscle memory to complain loudly. |
 | **H - General play** | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger for a general-purpose action button" width="176"> | Two-button platform, maze, puzzle, and action games | Hand movement supplies the D-pad. Index and thumb pulse A and B, so games that require a long held button may be a poor fit. |
 
-Try Program H first for general play, or Program A for pinball controls.
-Program D turns a familiar game into a new coordination challenge without
+Try Program H for general play, Program 2 when neutral-position feedback would
+help, or Program 13 when you want the physical controller to handle movement.
+Program 11 supplies a sustained fast turn, Program A covers pinball controls,
+and Program D turns a familiar game into a new coordination challenge without
 changing the ROM or emulator.
 
 ### Try a combination
 
 1. Launch the NES or Famicom game normally. An unregistered game safely turns gesture output off instead of inheriting the previous game's controls.
-2. Open the VirtualGlove Controller **Dashboard** and choose **A: Pinball**, **D: Challenge**, **H: General**, or another Program A-I profile from **Active profile**.
+2. Open the VirtualGlove Controller **Dashboard** and choose **2: Centering coach**, **11: Fast turn**, **13: Finger buttons**, **A: Pinball**, **D: Challenge**, **H: General**, or another Program 1–14 or A–I profile from **Active profile**.
 3. Use **Center hand** if your resting hand position produces unwanted movement or your physical setup has changed. Hold a relaxed open hand still at your intended centre and distance until calibration finishes, then select **Start controller** and return to the game.
 4. Test movement, both action gestures, Start, and Select before committing to a long session. Stop the controller immediately if a gesture remains active.
 
@@ -1113,10 +1293,11 @@ their respective owners. No ROM images or original game artwork are distributed.
 
 <img src="images/gestures/v2/pixel-pal.png" alt="Pixel Pal reveals the Extra-Digit Hunt answer" width="180">
 
-**Pixel Pal's answer: 24 six-digit hands.**
+**Pixel Pal's answer: 28 six-digit hands.**
 
-One appears in the opening Rock, Paper, Scissors table. Eight appear in the new
-numeric Program cards: Programs 1, 4, 6, 9, 10, 11, and twice in Program 12.
-The remaining fourteen appear in the shared gesture reference, dedicated game
-cards, Programs B, E, and F, and the **Start with A, D, and H** table. Every
+One appears in the opening Rock, Paper, Scissors table. Ten appear in the
+numbered Program cards: Programs 1, 2, 4, 6, 7, 9, 10, and 11, with Program 12
+appearing twice. Two more appear in the Program 11 and Program 13 off-script
+cards. The remaining fifteen appear in the shared gesture reference, dedicated
+game cards, Programs B, E, and F, and the Program H off-script card. Every
 appearance counts, even when the same artwork returns.

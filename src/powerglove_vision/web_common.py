@@ -22,7 +22,7 @@ PROFILE_GROUPS = (
             4: "Iron Tank", 5: "Flight", 6: "Double Dragon",
             7: "Punch-Out!!", 8: "Baseball", 9: "Rad Racer",
             10: "R.C. Pro-Am", 11: "Fast turn", 12: "Super Mario Bros.",
-            13: "Finger buttons", 14: "Manual controls",
+            13: "Finger buttons", 14: "Physical controller only",
         }[number]) for number in range(1, 15)
     )),
     ("Cartridge programs A–I", (

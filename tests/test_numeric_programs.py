@@ -22,7 +22,7 @@ class NumericProgramTests(unittest.TestCase):
         self.assertTrue(all(f"program_{number}" in SUPPORTED_PROFILES
                             for number in range(1, 15)))
         for number in range(1, 15):
-            expected = (False, False) if number == 9 else (True, True)
+            expected = (False, False) if number in {9, 14} else (True, True)
             self.assertEqual(rapid_fire_defaults(f"program_{number}"), expected)
 
     def test_program_1_turns_opposite_and_respects_rapid_override(self):

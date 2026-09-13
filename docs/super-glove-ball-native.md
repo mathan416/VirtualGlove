@@ -1,7 +1,8 @@
 # Super Glove Ball native-input compatibility record
 
-This document records evidence for the separately named `lr-nestopia-powerglove`
-core. It intentionally separates observations from hypotheses. Native detection,
+This document records compatibility evidence for the VirtualGlove system's
+`lr-nestopia-powerglove` native core. It intentionally separates observations
+from hypotheses. Native detection,
 Start, continuous X/Y, orientation, stale-state safety, and live cabinet control
 are confirmed for the exact tested ROM. Signed Z and open/fist/index packet bytes
 are confirmed in exact-ROM headless traces. A completed live game also confirmed
@@ -49,13 +50,13 @@ implementation.
 | Shared camera recognition can supply continuous normalized X/Y | Confirmed in application tests | The authenticated receiver publishes the same calibrated axes used by gameplay. |
 | A custom core can consume one coherent latest sample per emulated frame | Confirmed in build and unit tests | Versioned 64-byte read-only record with matching even guards; there is no queue or second smoothing stage. |
 | Missing, uncalibrated, wrong-profile, or older-than-250 ms samples are neutral | Confirmed in implementation tests | The receiver also publishes a neutral record on transport timeout and shutdown. |
-| The candidate core builds separately from stock Nestopia | Confirmed at pinned revision `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` | Its library name is `Nestopia PowerGlove`; stock source and installed cores are not modified. |
+| The native core builds separately from stock Nestopia | Confirmed at pinned revision `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` | Its library name is `Nestopia PowerGlove`; stock source and installed cores are not modified. |
 | Candidate X/Y encoding reaches Nestopia's existing Power Glove device | Confirmed for the exact ROM | Minimum, center, and maximum X/Y each produced distinct packets. Cabinet validation corrected the camera-to-Nestopia Y orientation. |
 | Detection signature, packet length, boundaries, and bit order | Confirmed | The ROM assembled inverse `$A0` as `$5F`, strobed once per byte, read ten bytes/80 bits per sample MSB first, and required the final stored byte to be `$3F`. |
 | Start encoding | Confirmed | Native byte 6 value `$82` left the title screen and began play while the controller stayed in native mode. |
 | Native Z encoding | Confirmed headlessly and in live gameplay | Calibrated camera depth is sign-reversed into the hardware convention. Neutral produced `$00`; maximum forward motion produced `$81`. Fist plus forward motion triggered Power Punch during a completed game. |
 | Native open, fist, and index-point encoding | Confirmed headlessly and in live gameplay | The exact ROM repeatedly received `$00` open, `$FF` fist, and `$0F` index-point samples. Shared five-finger recognition determines compound poses before transmission. Live play confirmed release/throw, grab/catch, and Robo-Bullet behavior. |
-| Native wrist rotation and remaining action buttons | Not mapped; deliberately neutral | Roll and action recognition are confirmed in the shared layer and FCEUmm output. These packet fields are outside the Super Glove Ball actions confirmed during the completed game. Vary a field independently before enabling it only if a repeatable game behavior is identified. |
+| Native roll byte and unobserved button codes | Neutral; no confirmed game action is missing | Native X/Y, depth, open hand, fist, index point, and Start are mapped. Super Glove Ball has shown no repeatable action for packet byte 4 or for other byte-6 codes. Standard A, B, Select, and wrist-to-button mappings remain available in the FCEUmm joystick mode; sending guessed native codes could create unintended input. |
 | Poll timing tolerances | Confirmed for tested sessions | Headless runs sustained ten-byte polling throughout native phases, and live cabinet sessions remained stable. Broader hardware and timing stress coverage remains useful. |
 | Headless X/Y activation and release responsiveness | Confirmed for the exact ROM | All four axes visibly diverged by frame 3; a 3.1% positive-X step also diverged by frame 3. See the [direction-response benchmark](direction-response-benchmark.md). |
 | Cabinet field mapping and stabilization | Implemented and live-tested; synchronized physical latency remains open | Continuous X/Y uses fresh, geometry-validated MediaPipe palm observations, capture timestamps, per-player asymmetric reach, and an edge clamp. Latest coordinate is direct during continuous tracking and is the only live response path. Brief loss holds only X/Y for up to 180 ms and releases actions immediately. Strongly aligned forward recovery is accepted at once, while one contradictory or unusually distant non-forward recovery waits for the next fresh result. The bounded and optical-flow experiments are archived. FCEUmm D-pad thresholds are unchanged. |
@@ -80,7 +81,7 @@ ROM while assembling the byte:
 | 1 | X | `$80` minimum, `$00` center, `$7F` maximum |
 | 2 | Y | `$80` minimum, `$00` center, `$7F` maximum |
 | 3 | Signed Z/depth | `$00` neutral; forward camera motion maps toward `$81`; away maps positive |
-| 4 | Roll candidate | `$00`; deliberately neutral pending exact-ROM mapping |
+| 4 | Unused roll candidate | `$00`; the exact ROM has shown no separate wrist-roll action |
 | 5 | Hand gesture | `$00` open, `$FF` fist, `$0F` index point |
 | 6 | Button | `$FF` neutral; `$82` Start confirmed |
 | 7–8 | No gameplay role established | Both remain `$00`, matching Nestopia’s fixed initialization |
@@ -126,10 +127,11 @@ That timestamp is not the socket receive time or the core-consumption time.
 The [live baseline procedure](direction-response-benchmark.md#collect-a-live-status-baseline)
 keeps those stages separate before movement-latency tuning.
 
-## Build the research core
+## Build and install the native core
 
-The build script clones the official libretro Nestopia repository at the pinned
-revision into a dedicated build directory, applies the local patch, and emits
+The native core is a supported VirtualGlove system component. Its build script
+clones the official libretro Nestopia repository at the pinned revision into a
+dedicated build directory, applies the local patch, and emits
 `nestopia_powerglove_libretro.so` without changing a stock installation:
 
 ```sh

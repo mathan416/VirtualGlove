@@ -346,10 +346,11 @@ assuming every numeric profile uses ordinary hand-position movement:
 | 13 | VirtualGlove supplies A/B while the merged physical Player 1 controller supplies movement. |
 | 14 | Camera and VirtualGlove output intentionally stay off; use the physical Player 1 controller. |
 
-Programs 1-8 and 10-14 normally pulse A and B. Registered exceptions are
+Programs 1–8 and 10–13 normally pulse A and B. Programs 9 and 14 report rapid
+fire off. Registered exceptions are
 applied automatically for Blaster Master, Double Dribble, Racket Attack, Ice
 Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
-official game index](GAMEPLAY_GUIDE.md#original-programs-114) when confirming a
+official game index](GAMEPLAY_GUIDE.md#quick-selector-programs-1-14) when confirming a
 compound action.
 
 **Checkpoint:** A gesture changes the intended control in the running game.

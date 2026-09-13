@@ -307,7 +307,7 @@ async def main():
             assert config['matrix_attract']==mode
         n=len(calls);await page.goto('http://pairing.test/setup')
         await expect(page.locator('#pair-wizard')).to_be_hidden()
-        await expect(page.get_by_role('link',name='Open secure Setup')).to_be_visible()
+        await expect(page.get_by_role('link',name='Open secure Setup',exact=True)).to_be_visible()
         assert len(calls)==n
         assert not errors,errors
         await browser.close()

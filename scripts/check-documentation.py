@@ -241,7 +241,8 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         if normalize_title(display_title) not in normalized_gameplay:
             errors.append(f"registered game is missing from the gameplay guide: {title}")
     required_numeric_sections = (
-        "### How rapid fire behaves",
+        "## How rapid fire behaves",
+        "## Program cards 1–14",
         "### Program 1 - positional control",
         "### Program 2 - positional control with centering feedback",
         "### Program 3 - depth and side movement",
@@ -260,17 +261,86 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     for heading in required_numeric_sections:
         if heading not in gameplay:
             errors.append(f"numeric Program guide section is missing: {heading}")
+    if "## Quick selector - Programs 1–14" not in gameplay:
+        errors.append("numeric Program quick selector is missing")
+    quick_selector = gameplay.split("## Quick selector - Programs 1–14", 1)[-1]
+    quick_selector = quick_selector.split("## How rapid fire behaves", 1)[0]
+    if "| Program | See it | Core controls | Games in Mattel's index |" not in quick_selector:
+        errors.append("numeric Program quick selector is missing its display-image column")
+    for number in range(1, 15):
+        quick_image = f'images/matrix/programs/{number}.png'
+        if quick_image not in quick_selector:
+            errors.append(f"numeric Program {number} quick-selector display is missing")
+    for cartridge_heading in (
+        "## Programs A-I",
+        "## Quick selector - Programs A–I",
+        "## Program cards A–I",
+    ):
+        if cartridge_heading not in gameplay:
+            errors.append(f"cartridge Program guide section is missing: {cartridge_heading}")
+    ordered_gameplay_sections = (
+        "## Program cards 1–14",
+        "## Programs A-I",
+        "## Quick selector - Programs A–I",
+        "## Program cards A–I",
+        "## Bad Street Brawler",
+        "## Super Glove Ball",
+        "## Joust",
+        "## Gyruss",
+        "## Defender II",
+        "## Sesame Street 1-2-3",
+        "## Gun Smoke",
+        "## Knight Rider",
+    )
+    gameplay_positions = [gameplay.find(heading) for heading in ordered_gameplay_sections]
+    if all(position >= 0 for position in gameplay_positions):
+        if gameplay_positions != sorted(gameplay_positions):
+            errors.append(
+                "Gameplay Guide must place Programs A–I after Programs 1–14, "
+                "then dedicated profiles, then game-control cards"
+            )
+    compound_art = {
+        "images/gestures/v2/push-closed-fist.png": "closed-fist push",
+        "images/gestures/v2/pull-closed-fist.png": "closed-fist pull",
+        "images/gestures/v2/push-closed-fist-right.png": "right-of-center fist push",
+        "images/gestures/v2/push-closed-fist-left.png": "left-of-center fist push",
+    }
+    for image, label in compound_art.items():
+        if image not in gameplay:
+            errors.append(f"Gameplay Guide is missing dedicated {label} artwork")
     for number in range(1, 15):
         profile_row = (f'| `program_{number}` | <img '
                        f'src="images/matrix/programs/{number}.png"')
         if profile_row not in gameplay:
             errors.append(f"numeric Program {number} profile preview is missing")
+        match = re.search(
+            rf"### Program {number} - .*?(?=\n### |\n## |\Z)", gameplay, re.S,
+        )
+        if not match:
+            continue
+        for card_element in (
+            "**Your mission:**", "| See it |", "**Play smart:**", "**First round:**",
+        ):
+            if card_element not in match.group(0):
+                errors.append(
+                    f"numeric Program {number} card is missing {card_element}"
+                )
     for letter in "abcdefghi":
         image = "A.jpg" if letter == "a" else f"programs/{letter.upper()}.png"
         profile_row = (f'| `program_{letter}` | <img '
                        f'src="images/matrix/{image}"')
         if profile_row not in gameplay:
             errors.append(f"cartridge Program {letter.upper()} profile preview is missing")
+    for profile in (
+        "2 - Centering coach", "11 - Fast turn", "13 - Finger buttons",
+        "A - Pinball", "D - Mirror world", "H - General play",
+    ):
+        if f"| **{profile}** |" not in gameplay:
+            errors.append(f"off-script Program card is missing: {profile}")
+    off_script = gameplay.split("## Take VirtualGlove off-script", 1)[-1]
+    for number in (2, 11, 13):
+        if f'images/matrix/programs/{number}.png' in off_script:
+            errors.append(f"off-script Program {number} must show a hand control, not a matrix number")
 
 
 def build_parser() -> argparse.ArgumentParser:

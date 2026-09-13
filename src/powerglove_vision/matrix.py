@@ -48,7 +48,10 @@ def status_from_worker(status: dict) -> MatrixStatus:
         return MatrixStatus.LEARNING
     if status.get("practice_mode"):
         return MatrixStatus.ERROR
-    if status.get("active_profile") == "off" or vision_state == "idle":
+    active_profile = status.get("active_profile")
+    if active_profile == "program_14" and vision_state == "idle":
+        return MatrixStatus.READY
+    if active_profile == "off" or vision_state == "idle":
         return MatrixStatus.GESTURES_IDLE
     if vision_state == "starting":
         return MatrixStatus.LOADING

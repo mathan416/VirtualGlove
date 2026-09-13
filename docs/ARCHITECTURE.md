@@ -106,7 +106,7 @@ sockets. These functions are kept separate from camera inference.
    camera D-pad neutral for the merged physical controller, and Program 14
    closes vision and neutralizes all VirtualGlove output. These are mapping and
    lifecycle decisions; none rewrites player calibration or recognition tuning.
-   The [Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114) documents every
+   The [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14) documents every
    numeric Program's gesture priority, compound-action release rule, and indexed
    game assignment.
 
@@ -299,6 +299,7 @@ empty first frame as completed initialization.
 | Mode | Vision profile and camera | Controller delivery | Matrix |
 | --- | --- | --- | --- |
 | Gestures off | Camera closed; selected profile off | No gameplay states | VirtualGlove attract animation |
+| Program 14 - physical controller only | Camera closed; selected profile remains Program 14 | No VirtualGlove gameplay states; merged physical Player 1 joypad remains available | Steady **14** profile display |
 | Active profile | Selected game profile; camera requested | Only when armed and a game/manual context is active | Ready/tracking status and profile display |
 | Glove Academy learning | General practice profile; camera requested | Paused | Scanning L |
 | Tune gestures | Practice with selected tuning scope and preview | Paused, including after a game-launch request | Scanning T |
@@ -486,7 +487,7 @@ the next launch; it does not rewrite the running game's mapping immediately.
 ### Optional native Super Glove Ball path
 
 The supported FCEUmm path consumes the same virtual gamepad as every other game.
-For native research, the authenticated RetroPie receiver also publishes a
+For native Super Glove Ball input, the authenticated RetroPie receiver also publishes a
 versioned, fixed-size latest-sample record in `/run/virtualglove/native-state`.
 The separately built `lr-nestopia-powerglove` core maps that file read-only,
 copies at most one coherent current sample per emulated frame, and adds no queue
@@ -501,9 +502,10 @@ that FCEUmm requests only ordinary joypad input while both cores visibly respond
 to all four directions by frame 3. Stale, uncalibrated, lost, and
 wrong-profile samples produce a neutral packet. The shared layer publishes its
 five-finger closed-hand and index-point decisions explicitly so the core does
-not reconstruct compound poses from partial finger data. Native wrist rotation
-and remaining unused packet fields stay evidence-gated. They are outside the
-Super Glove Ball actions confirmed in live play. Stock Nestopia remains untouched; the custom core
+not reconstruct compound poses from partial finger data. All confirmed Super
+Glove Ball actions are mapped. The raw roll byte and unobserved button codes
+remain neutral because the exact ROM has shown no separate action for them;
+guessing values could create unintended input. Stock Nestopia remains untouched; the custom core
 is enabled only through a Super Glove Ball per-ROM emulator choice after it is
 built locally from pinned GPLv2 source and verified on the cabinet. The ordinary
 release carries the patch and build recipe, not a compiled core. See the

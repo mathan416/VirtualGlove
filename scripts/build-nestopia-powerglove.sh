@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Project: VirtualGlove
 # File: scripts/build-nestopia-powerglove.sh
-# Purpose: Build the isolated evidence-gated Nestopia PowerGlove research core.
+# Purpose: Build the isolated evidence-gated Nestopia PowerGlove native core.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT

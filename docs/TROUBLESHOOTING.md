@@ -172,7 +172,7 @@ A profile such as Program D intentionally reverses controls. Native Super Glove
 Ball and joystick-style mappings behave differently, so verify the selected core.
 Programs 4, 9, 10, 13, and 14 also use deliberately specialized controls rather
 than the ordinary position-based D-pad. Before retuning recognition, compare the
-selected profile with the [complete Programs 1-14 gesture cards](GAMEPLAY_GUIDE.md#original-programs-114).
+selected profile with the [complete Programs 1-14 gesture cards](GAMEPLAY_GUIDE.md#program-cards-1-14).
 If ordinary movement is correct but a gesture is unreliable, use **Glove Academy
 → Tune gestures** and describe that symptom to Pixel Pal.
 

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "push-closed-fist",
+    "purpose": "Closed-fist push used by Programs 6 and 9 and Super Glove Ball",
+    "prompt": "Create one transparent square VirtualGlove arcade-manual illustration of an anatomically correct five-digit futuristic white-gloved right hand closed into a fist and pushing toward the camera. Show one solid foreground fist, a smaller faint earlier position, and a cyan perspective arrow. Use bold navy outlines, cyan cuff light, tiny magenta pixel sparks, restrained cel shading, generous margins, and no text, border, watermark, or checkerboard."
+  },
+  {
+    "name": "pull-closed-fist",
+    "purpose": "Closed-fist pull used by Program 7",
+    "prompt": "Create one transparent square VirtualGlove arcade-manual illustration of an anatomically correct five-digit futuristic white-gloved right hand closed into a fist and pulling away from the camera. Show a smaller solid distant fist, a larger faint earlier position, and a cyan perspective arrow toward the distant fist. Use bold navy outlines, cyan cuff light, tiny magenta pixel sparks, restrained cel shading, generous margins, and no text, border, watermark, or checkerboard."
+  },
+  {
+    "name": "push-closed-fist-right",
+    "purpose": "Right-of-center pushed fist used by Program 7",
+    "prompt": "Create one transparent square VirtualGlove arcade-manual illustration of an anatomically correct five-digit futuristic white-gloved right fist pushing toward the camera on the viewer's right of a subtle cyan vertical center marker. Include one faint earlier fist and a cyan forward-motion arrow. Use bold navy outlines, cyan cuff light, tiny magenta pixel sparks, restrained cel shading, generous margins, and no text, border, watermark, or checkerboard."
+  },
+  {
+    "name": "push-closed-fist-left",
+    "purpose": "Left-of-center pushed fist used by Program 7",
+    "prompt": "Create one transparent square VirtualGlove arcade-manual illustration of an anatomically correct five-digit futuristic white-gloved right fist pushing toward the camera on the viewer's left of a subtle cyan vertical center marker. Include one faint earlier fist and a cyan forward-motion arrow. Use bold navy outlines, cyan cuff light, tiny magenta pixel sparks, restrained cel shading, generous margins, and no text, border, watermark, or checkerboard."
+  }
+]

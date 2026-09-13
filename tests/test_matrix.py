@@ -155,6 +155,16 @@ class MatrixTests(unittest.TestCase):
         matrix.set_status(MatrixStatus.TUNING)
         self.assertEqual(calls[-1], ("set_virtualglove_status", 8))
 
+    def test_program_14_keeps_profile_display_while_camera_is_idle(self):
+        self.assertEqual(status_from_worker({
+            "active_profile": "program_14",
+            "vision_state": "idle",
+        }), MatrixStatus.READY)
+        self.assertEqual(status_from_worker({
+            "active_profile": "off",
+            "vision_state": "idle",
+        }), MatrixStatus.GESTURES_IDLE)
+
     def test_duplicate_status_is_not_resent(self):
         calls = []
         matrix = UnoQMatrix(call=lambda *args: calls.append(args))

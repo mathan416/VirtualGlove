@@ -942,6 +942,8 @@ def _base_status(
         "input_mode": _input_mode(profile, emulator),
     })
     default_a, default_b = rapid_fire_defaults(profile or "off")
+    if profile == "program_14":
+        rapid_a = rapid_b = False
     status["rapid_fire"] = {
         "a": default_a if rapid_a is None else rapid_a,
         "b": default_b if rapid_b is None else rapid_b,
@@ -1011,8 +1013,12 @@ def main() -> int:
     active_game_lease = ActiveGameLease()
     last_launch_session = None
 
-    matrix.set_status(MatrixStatus.GESTURES_IDLE if current_profile is None else MatrixStatus.LOADING)
     matrix.set_profile(current_profile)
+    matrix.set_status(
+        MatrixStatus.READY if current_profile == "program_14"
+        else MatrixStatus.GESTURES_IDLE if current_profile is None
+        else MatrixStatus.LOADING
+    )
     signal.signal(signal.SIGTERM, _shutdown_on_signal)
 
     try:
@@ -1062,6 +1068,8 @@ def main() -> int:
                 current_emulator = requested_emulator
                 current_rapid_a = requested_rapid_a
                 current_rapid_b = requested_rapid_b
+                if current_profile == "program_14":
+                    current_rapid_a = current_rapid_b = False
                 if profile_requested:
                     if request is not None:
                         current_game = request.rom or request.system or "No game"
@@ -1110,7 +1118,10 @@ def main() -> int:
                 if practice_mode:
                     matrix.set_status(MatrixStatus.TUNING if shared.tuning.active() else MatrixStatus.LEARNING)
                 elif vision_profile is None:
-                    matrix.set_status(MatrixStatus.GESTURES_IDLE)
+                    matrix.set_status(
+                        MatrixStatus.READY if current_profile == "program_14"
+                        else MatrixStatus.GESTURES_IDLE
+                    )
                 elif vision_profile != old_vision_profile:
                     matrix.set_status(MatrixStatus.LOADING)
                 elif engine is not None:
@@ -1187,7 +1198,10 @@ def main() -> int:
                 )
                 status["vision_state"] = "idle"
                 status_publisher.submit(status, clear_frame=True)
-                matrix.set_status(MatrixStatus.GESTURES_IDLE)
+                matrix.set_status(
+                    MatrixStatus.READY if current_profile == "program_14"
+                    else MatrixStatus.GESTURES_IDLE
+                )
                 time.sleep(0.1)
                 continue
 
