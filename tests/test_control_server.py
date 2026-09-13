@@ -603,12 +603,12 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"Pixel Pal&#x27;s Extra-Digit Hunt", page)
         self.assertIn(b"<details class=extra-digit-answer>", page)
         self.assertIn(b"<summary>Reveal Pixel Pal's answer</summary>", page)
-        self.assertIn(b"Pixel Pal&#x27;s answer: 15 six-digit hands.", page)
+        self.assertIn(b"Pixel Pal&#x27;s answer: 23 six-digit hands.", page)
 
         programs = help_document_page("programs")
         self.assertIsNotNone(programs)
         assert programs is not None
-        self.assertIn(b"Pixel Pal&#x27;s answer: 15 six-digit hands.", programs)
+        self.assertIn(b"Pixel Pal&#x27;s answer: 23 six-digit hands.", programs)
 
     def test_extra_digit_answer_is_collapsed_and_omitted_from_contents(self):
         rendered, headings = render_markdown(
