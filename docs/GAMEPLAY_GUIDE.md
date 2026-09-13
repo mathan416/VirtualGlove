@@ -198,30 +198,54 @@ Start, Select, Menu Guard, calibration, tracking-loss release, and the saved
 joystick dead zone remain shared across every camera-active numeric Program.
 Return to an open hand near the saved center between compound actions.
 
-### Programs 1 and 2 - positional control and centering
+### Program 1 - positional control
 
-| Gesture | See it | Program 1 result | Program 2 result |
-| --- | --- | --- | --- |
-| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its saved center" width="96"> | Ordinary D-pad, including diagonals | Same D-pad mapping |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A | A |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B | B |
-| Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers together" width="72"> | Briefly turns opposite the last horizontal direction and sends B | Same bounded turn-and-B action |
-| Return to the saved center | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="72"> | Releases positional movement | Releases movement and shows **Centered**; leaving the box shows **Return to centre** |
+| Profile | See it |
+| --- | --- |
+| `program_1` | <img src="images/matrix/programs/1.png" alt="1 matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its saved center" width="96"> | Ordinary D-pad, including diagonals |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
+| Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers together" width="72"> | Briefly turns opposite the last horizontal direction and sends B |
+| Return to the saved center | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="72"> | Releases positional movement |
 
 The turn-and-B combination lasts about 0.18 seconds and triggers once per fresh
-last-three-finger pose. Release those fingers before trying it again. Program 2
-uses live Dashboard feedback instead of attempting to reproduce the physical
-glove's beeper; it stores no new centering measurement.
+last-three-finger pose. Release those fingers before trying it again.
 
 **Official Program 1 games:** Blades of Steel, Blaster Master, Bubble Bobble,
 Castlevania, Castlevania II: Simon's Quest, Contra, Deadly Towers, Donkey Kong
 Classics, Double Dribble, Gauntlet, Gradius, Jackal, Kid Icarus, Kung-Fu Heroes,
 Metal Gear, Metroid, Mickey Mousecapade, Operation Wolf, Platoon, Racket Attack,
 Rampage, RoboWarrior, Rygar, Seicross, Star Force, Superman, Xenophobe, and
-Zelda II: The Adventure of Link. Program 2 has no indexed title and is intended
-as the centering-practice alternative.
+Zelda II: The Adventure of Link.
+
+### Program 2 - positional control with centering feedback
+
+| Profile | See it |
+| --- | --- |
+| `program_2` | <img src="images/matrix/programs/2.png" alt="2 matrix display illustration" width="104"> |
+
+| Gesture | See it | Controller result |
+| --- | --- | --- |
+| Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its saved center" width="96"> | Ordinary D-pad, including diagonals |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
+| Curl middle, ring, and pinky together | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers together" width="72"> | Briefly turns opposite the last horizontal direction and sends B |
+| Return to the saved center | <img src="images/gestures/v2/find-neutral.png" alt="Relaxed hand at the saved center" width="72"> | Releases movement and shows **Centered**; leaving the box shows **Return to centre** |
+
+Program 2 has no indexed title and is the centering-practice alternative to
+Program 1. It uses live Dashboard feedback instead of attempting to reproduce
+the physical glove's beeper and stores no new centering measurement. Its bounded
+turn-and-B action follows the same 0.18-second fresh-pose and release rules.
 
 ### Program 3 - depth and side movement
+
+| Profile | See it |
+| --- | --- |
+| `program_3` | <img src="images/matrix/programs/3.png" alt="3 matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -237,6 +261,10 @@ scheme for Gauntlet, but the official index and shipped registry assign Gauntlet
 to Program 1.
 
 ### Program 4 - Iron Tank tread control
+
+| Profile | See it |
+| --- | --- |
+| `program_4` | <img src="images/matrix/programs/4.png" alt="4 matrix display illustration" width="104"> |
 
 Program 4 does not use ordinary camera-position D-pad movement. Its finger and
 wrist poses drive the tank directly, in the following priority order.
@@ -258,6 +286,10 @@ a finger-tread pose so the higher-priority wrist action clears first.
 
 ### Program 5 - aircraft control
 
+| Profile | See it |
+| --- | --- |
+| `program_5` | <img src="images/matrix/programs/5.png" alt="5 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move or bank left/right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move or roll left whole hand left or right" width="96"> | Left or Right; a wrist bank can add the same direction |
@@ -273,6 +305,10 @@ The Battle of Midway**. Alpha Mission automatically disables rapid A.
 
 ### Program 6 - Double Dragon combinations
 
+| Profile | See it |
+| --- | --- |
+| `program_6` | <img src="images/matrix/programs/6.png" alt="6 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move left/right; push/pull | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move sideways or in depth" width="96"> | Left/Right; push is Up and pull is Down |
@@ -286,6 +322,10 @@ Program 6 is assigned to **Double Dragon**. The wrist combination begins on a
 fresh right-roll hold; release the roll before repeating it.
 
 ### Program 7 - Punch-Out!! offense and defense
+
+| Profile | See it |
+| --- | --- |
+| `program_7` | <img src="images/matrix/programs/7.png" alt="7 matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -301,6 +341,10 @@ edge-triggered: return from the pull before requesting another star punch.
 
 ### Program 8 - baseball offense and defense
 
+| Profile | See it |
+| --- | --- |
+| `program_8` | <img src="images/matrix/programs/8.png" alt="8 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move left/right; push/pull | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move sideways or in depth" width="96"> | Left/Right; push is Up and pull is Down |
@@ -315,6 +359,10 @@ same thumb pose intentionally changes button meaning depending on whether a
 direction is active.
 
 ### Program 9 - Rad Racer
+
+| Profile | See it |
+| --- | --- |
+| `program_9` | <img src="images/matrix/programs/9.png" alt="9 matrix display illustration" width="104"> |
 
 Program 9 begins unready. Make one fist to arm it; Dashboard then shows the
 ready state for the remainder of that profile session. It has no rapid fire.
@@ -333,6 +381,10 @@ convention.
 
 ### Program 10 - R.C. Pro-Am
 
+| Profile | See it |
+| --- | --- |
+| `program_10` | <img src="images/matrix/programs/10.png" alt="10 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Curl only the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Left |
@@ -349,6 +401,10 @@ two mutually exclusive finger poses.
 
 ### Program 11 - rapid turn alternative
 
+| Profile | See it |
+| --- | --- |
+| `program_11` | <img src="images/matrix/programs/11.png" alt="11 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its center" width="96"> | Ordinary D-pad, including diagonals |
@@ -361,6 +417,10 @@ where a sustained rapid-turn action is useful. Unlike Program 1's short turn,
 the alternating turn continues until the last three fingers are released.
 
 ### Program 12 - Super Mario Bros.
+
+| Profile | See it |
+| --- | --- |
+| `program_12` | <img src="images/matrix/programs/12.png" alt="12 matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -375,6 +435,10 @@ return immediately to ordinary horizontal movement.
 
 ### Program 13 - finger buttons with physical movement
 
+| Profile | See it |
+| --- | --- |
+| `program_13` | <img src="images/matrix/programs/13.png" alt="13 matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the hand anywhere | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand" width="96"> | No camera D-pad output |
@@ -386,6 +450,10 @@ action buttons while the merged physical Player 1 controller supplies movement
 or menu combinations. Shared Start, Select, and Menu Guard remain available.
 
 ### Program 14 - gestures off for the active game
+
+| Profile | See it |
+| --- | --- |
+| `program_14` | <img src="images/matrix/programs/14.png" alt="14 matrix display illustration" width="104"> |
 
 Program 14 is assigned to **Anticipation** and can be selected temporarily for
 manual menu or password entry. It preserves the visible profile and authenticated
@@ -788,6 +856,10 @@ open Bad Street Brawler first.
 
 ### A - Pinball rig
 
+| Profile | See it |
+| --- | --- |
+| `program_a` | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Right flipper / A |
@@ -800,6 +872,10 @@ finger actions.
 
 ### B - Joust rig
 
+| Profile | See it |
+| --- | --- |
+| `program_b` | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Steer left or right |
@@ -810,6 +886,10 @@ Use this profile for Joust and any game where rhythmic, repeated presses matter.
 
 ### C - Gyruss rig
 
+| Profile | See it |
+| --- | --- |
+| `program_c` | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Roll the wrist left or right | <img src="images/gestures/actions/wrist-roll.png" alt="Roll the wrist left or right" width="96"> | Rotate counter-clockwise or clockwise |
@@ -819,6 +899,10 @@ Use this profile for Joust and any game where rhythmic, repeated presses matter.
 Use this profile for circular shooters and games with rotation plus rapid fire.
 
 ### D - Mirror-world rig
+
+| Profile | See it |
+| --- | --- |
+| `program_d` | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -832,6 +916,10 @@ experiments that need inverted direction mappings.
 
 ### E - Defender rig
 
+| Profile | See it |
+| --- | --- |
+| `program_e` | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Move the ship |
@@ -843,6 +931,10 @@ Use this profile for Defender II and multi-action shooters.
 
 ### F - Yes / No rig
 
+| Profile | See it |
+| --- | --- |
+| `program_f` | <img src="images/matrix/programs/F.png" alt="F matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Close every finger into a fist | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing all fingers" width="72"> | No |
@@ -851,6 +943,10 @@ Use this profile for Defender II and multi-action shooters.
 Use this profile for Sesame Street 1-2-3 and simple choice-driven games.
 
 ### G - Gun Smoke rig
+
+| Profile | See it |
+| --- | --- |
+| `program_g` | <img src="images/matrix/programs/G.png" alt="G matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -865,6 +961,10 @@ Use this profile for Gun Smoke and shooters with movement plus directional fire.
 
 ### H - Training rig
 
+| Profile | See it |
+| --- | --- |
+| `program_h` | <img src="images/matrix/programs/H.png" alt="H matrix display illustration" width="104"> |
+
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Conventional directions |
@@ -876,6 +976,10 @@ Use this profile for learning the system or giving an unmapped game a sensible
 general-purpose starting point.
 
 ### I - Driving rig
+
+| Profile | See it |
+| --- | --- |
+| `program_i` | <img src="images/matrix/programs/I.png" alt="I matrix display illustration" width="104"> |
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
@@ -1009,7 +1113,7 @@ their respective owners. No ROM images or original game artwork are distributed.
 
 <img src="images/gestures/v2/pixel-pal.png" alt="Pixel Pal reveals the Extra-Digit Hunt answer" width="180">
 
-**Pixel Pal's answer: 23 six-digit hands.**
+**Pixel Pal's answer: 24 six-digit hands.**
 
 One appears in the opening Rock, Paper, Scissors table. Eight appear in the new
 numeric Program cards: Programs 1, 4, 6, 9, 10, 11, and twice in Program 12.

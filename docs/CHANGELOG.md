@@ -31,7 +31,10 @@ authoritative record for line-level and file-level history.
   camera-off behavior. Synchronized the installation, configuration, matrix,
   architecture, native-emulation, quick-reference, and project guides. Updated
   Pixel Pal's Extra-Digit Hunt for the added illustrations; its verified answer
-  is now 23.
+  is now 24.
+- Added a consistent **Profile / See it** matrix preview to every Program 1–14
+  and A–I card. Numeric previews are generated from the exact one- and two-digit
+  glyph placement used by the UNO Q matrix firmware.
 
 - Added a visual-only Vulcan-salute easter egg to live camera experiences.
   Holding an extended hand with a deliberate middle/ring split briefly shows

@@ -242,7 +242,8 @@ def check_gameplay_coverage(errors: list[str]) -> None:
             errors.append(f"registered game is missing from the gameplay guide: {title}")
     required_numeric_sections = (
         "### How rapid fire behaves",
-        "### Programs 1 and 2 - positional control and centering",
+        "### Program 1 - positional control",
+        "### Program 2 - positional control with centering feedback",
         "### Program 3 - depth and side movement",
         "### Program 4 - Iron Tank tread control",
         "### Program 5 - aircraft control",
@@ -259,6 +260,17 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     for heading in required_numeric_sections:
         if heading not in gameplay:
             errors.append(f"numeric Program guide section is missing: {heading}")
+    for number in range(1, 15):
+        profile_row = (f'| `program_{number}` | <img '
+                       f'src="images/matrix/programs/{number}.png"')
+        if profile_row not in gameplay:
+            errors.append(f"numeric Program {number} profile preview is missing")
+    for letter in "abcdefghi":
+        image = "A.jpg" if letter == "a" else f"programs/{letter.upper()}.png"
+        profile_row = (f'| `program_{letter}` | <img '
+                       f'src="images/matrix/{image}"')
+        if profile_row not in gameplay:
+            errors.append(f"cartridge Program {letter.upper()} profile preview is missing")
 
 
 def build_parser() -> argparse.ArgumentParser:
