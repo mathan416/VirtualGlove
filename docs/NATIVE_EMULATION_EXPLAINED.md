@@ -55,6 +55,21 @@ registered titles can also apply the documented rapid-fire exceptions. They do
 not teach the game to understand continuous hand coordinates. FCEUmm remains an
 explicit, complete joystick-style fallback for Super Glove Ball.
 
+The numeric set also includes deliberate hybrid and no-gesture modes. Program 2
+keeps Program 1 joystick output while adding live centering feedback. Program 13
+keeps the camera active for gesture A/B but emits no camera D-pad, allowing the
+merged physical Player 1 controller to provide movement. Program 14 closes the
+camera and neutralizes every VirtualGlove control while retaining the visible
+profile and authenticated game session. These are still joystick-session
+profiles; none activates the native packet path.
+
+Three numeric profiles deliberately change how the camera participates:
+Program 2 adds live centering feedback without changing the saved calibration;
+Program 13 emits gesture-based A/B and leaves D-pad movement to the merged
+physical Player 1 controller; Program 14 closes the camera and emits no
+VirtualGlove controls while keeping the game session visible. The detailed
+gesture and game tables are in the [Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114).
+
 <!-- PAGEBREAK -->
 
 ## Native input: a position inside a packet

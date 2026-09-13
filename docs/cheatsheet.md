@@ -396,6 +396,31 @@ Start and Select poses suppress A/B while they form. Keep your hand near its
 calibrated center because some profiles can still produce auxiliary output from
 wrist, depth, or other finger states.
 
+### Original Programs 1-14 at a glance
+
+| Program | Games or purpose | Essential controls |
+| --- | --- | --- |
+| 1 | 28 indexed general-action games | Position is D-pad; thumb A; index B; last three fingers trigger a short opposite-turn+B action. |
+| 2 | Centering practice | Program 1 controls plus live **Centered** / **Return to centre** feedback. |
+| 3 | Ice Hockey; Top Gun | Side movement Left/Right; push/pull Up/Down; thumb A; index B. |
+| 4 | Iron Tank | Four-finger and wrist poses drive treads; thumb A; near-inverted wrist B. |
+| 5 | Alpha Mission; Life Force; Xevious; 1943 | Side movement or wrist bank Left/Right; push/pull Up/Down; thumb A; index B. |
+| 6 | Double Dragon | Movement plus index A, thumb B, last-three A+B, fist-push Up, and bounded wrist turn. |
+| 7 | Mike Tyson's Punch-Out!! | Open-hand dodge/duck, positioned fist punches, wrist block, fist-pull Select. |
+| 8 | Baseball; Bases Loaded; R.B.I. Baseball | Position/depth selects direction; thumb changes between stationary B and moving A. |
+| 9 | Rad Racer | Make a fist to arm; wrist steers; fist A; fist-push Up+A; raise Down; lower B. No rapid fire. |
+| 10 | R.C. Pro-Am | Index Left; last-three Right; thumb A; B stays held until the hand is lowered. |
+| 11 | Fast-turn alternative | Program 1 controls; last-three hold alternates Left/Right while sending B. |
+| 12 | Super Mario Bros. | Position moves; thumb A; index or middle B; last-three slows horizontal travel. |
+| 13 | Mixed physical control | Thumb A and index B; camera D-pad stays neutral for the merged physical controller. |
+| 14 | Anticipation; manual menus/passwords | Camera and all VirtualGlove output off; game session and physical controller remain active. |
+
+Programs 1-8 and 10-14 pulse A/B by default. Automatic exceptions are:
+Blaster Master and Alpha Mission disable rapid A; Ice Hockey disables rapid B;
+Double Dribble and Racket Attack disable both. See the
+[full gesture cards and official index](GAMEPLAY_GUIDE.md#original-programs-114)
+before playing a compound-action Program.
+
 ### Start with these reusable profiles
 
 | Program | Useful for | Controls |

@@ -333,6 +333,25 @@ test profile.
 5. Check the D-pad, A, B, Start, and Select assignments. The installer provides an automatic mapping; adjust bindings only if needed, then save the controller profile or RetroArch configuration.
 6. Test movement and buttons in a game. If your cabinet merges multiple controllers, also configure that merger to accept the virtual device.
 
+For the first test, confirm the selected Program's control style rather than
+assuming every numeric profile uses ordinary hand-position movement:
+
+| Programs | What to expect |
+| --- | --- |
+| 1, 2, 11, 12 | Position-based D-pad with additional finger combinations; Program 2 also reports centering. |
+| 3, 5, 6, 8 | Side movement plus push/pull depth controls. |
+| 4, 10 | Finger and wrist poses replace ordinary positional steering. |
+| 7 | Open-hand dodging/ducking plus positioned fist punches. |
+| 9 | Make a fist once to arm Rad Racer controls; this Program has no rapid fire. |
+| 13 | VirtualGlove supplies A/B while the merged physical Player 1 controller supplies movement. |
+| 14 | Camera and VirtualGlove output intentionally stay off; use the physical Player 1 controller. |
+
+Programs 1-8 and 10-14 normally pulse A and B. Registered exceptions are
+applied automatically for Blaster Master, Double Dribble, Racket Attack, Ice
+Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
+official game index](GAMEPLAY_GUIDE.md#original-programs-114) when confirming a
+compound action.
+
 **Checkpoint:** A gesture changes the intended control in the running game.
 Seeing the device name or a running service alone is not an end-to-end test.
 Bad Street Brawler's Glove Zap uses simultaneous Left + Right through the
@@ -472,7 +491,7 @@ For diagnostic commands or manual repair, use the
 | Lightning and animated glove | <img src="images/matrix/idle-glove.png" alt="Simulated glove matrix display" width="104"> | Gestures are off. The revised animation requires updated matrix firmware. |
 | Scanning `L` | <img src="images/matrix/L.jpg" alt="L matrix display" width="104"> | Play or Glove Academy practice is active; controller output is paused. |
 | Scanning `T` | <img src="images/matrix/T.jpg" alt="T matrix display" width="104"> | Tune gestures is active; controller output is paused. |
-| `1`–`14` | Numeric program code | The corresponding original Program 1–14 profile is selected. Older firmware safely leaves this display blank. |
+| `1`–`14` | Numeric program code | The corresponding original Programs 1–14 profile is selected. Older firmware safely leaves this display blank. |
 | `A`–`I` | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The corresponding profile is selected; Program A is shown. |
 | `BS` | <img src="images/matrix/BS.jpg" alt="BS matrix display" width="104"> | Bad Street Brawler is selected. |
 | `GB` | <img src="images/matrix/GB.jpg" alt="GB matrix display" width="104"> | Super Glove Ball is selected. |
