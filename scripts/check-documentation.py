@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-13 - Required complete Programs 1-14 gesture coverage in the gameplay guide.
 #   2026-09-11 - Registered the Engineering Toolkit manual and PDF.
 #   2026-09-10 - Consolidated Programs into Gameplay and registered the Engineering Journey.
 #   2026-09-05 - Kept Pixel Pal's Extra-Digit Hunt counts synchronized with guide art.
@@ -239,6 +240,25 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         display_title = title_aliases.get(title, title)
         if normalize_title(display_title) not in normalized_gameplay:
             errors.append(f"registered game is missing from the gameplay guide: {title}")
+    required_numeric_sections = (
+        "### How rapid fire behaves",
+        "### Programs 1 and 2 - positional control and centering",
+        "### Program 3 - depth and side movement",
+        "### Program 4 - Iron Tank tread control",
+        "### Program 5 - aircraft control",
+        "### Program 6 - Double Dragon combinations",
+        "### Program 7 - Punch-Out!! offense and defense",
+        "### Program 8 - baseball offense and defense",
+        "### Program 9 - Rad Racer",
+        "### Program 10 - R.C. Pro-Am",
+        "### Program 11 - rapid turn alternative",
+        "### Program 12 - Super Mario Bros.",
+        "### Program 13 - finger buttons with physical movement",
+        "### Program 14 - gestures off for the active game",
+    )
+    for heading in required_numeric_sections:
+        if heading not in gameplay:
+            errors.append(f"numeric Program guide section is missing: {heading}")
 
 
 def build_parser() -> argparse.ArgumentParser:

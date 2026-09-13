@@ -143,14 +143,25 @@ gestures send to the console.
 
 | Path | What it provides |
 | --- | --- |
-| FCEUmm | The selected Program 1–14 or A–I mapping, including positional movement, mapped A/B actions, and documented compound gestures. |
+| FCEUmm | The selected Programs 1–14 or A–I mapping, including positional movement, mapped A/B actions, and documented compound gestures. |
 | Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
 | Super Glove Ball with `lr-nestopia-powerglove` | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. |
 
-The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md) shows every gesture, Program, game
-mapping, objective, and practice challenge. The
+Programs 1-8 and 10-14 normally pulse their mapped A/B actions. The registered
+Blaster Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission
+entries apply Mattel's documented exceptions automatically. Programs 13 and 14
+also support deliberate physical-controller and gestures-off play.
+
+The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#original-programs-114) shows every
+numeric Program gesture, compound action, release rule, indexed game, exception,
+objective, and practice challenge. The
 [Native Emulation guide](docs/NATIVE_EMULATION_EXPLAINED.md) explains why the
 two emulator paths feel different.
+
+The numeric Program section includes gesture-by-gesture controls, compound
+action timing, the complete official game index, and the five automatic
+rapid-fire exceptions. Program 13 is the mixed physical-controller option;
+Program 14 deliberately turns camera gestures off for the active game.
 
 ## How it works
 

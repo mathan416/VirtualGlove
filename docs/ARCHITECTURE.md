@@ -95,10 +95,20 @@ sockets. These functions are kept separate from camera inference.
 3. The gesture engine compares that observation with the saved neutral calibration and effective thresholds. Directions are relative to the calibrated palm; apparent hand-size change supplies forward/backward movement.
 
 4. Shared activation/release states and held menu poses feed the selected
-   Program 1–14, Program A–I, or game-specific profile mapping. Per-game rapid
+   Programs 1–14, Programs A–I, or game-specific profile mapping. Numeric
+   mappings can replace positional movement with depth, wrist, finger-tread,
+   compound, or intentionally neutral output. Per-game rapid
    A/B exceptions arrive with the authenticated game lease. The result is a
    `ControllerState`, including buttons, D-pad, axes, finger values, events,
    sequence, and tracking/calibration metadata.
+
+   Program 2 also derives transient centering feedback, Program 13 leaves the
+   camera D-pad neutral for the merged physical controller, and Program 14
+   closes vision and neutralizes all VirtualGlove output. These are mapping and
+   lifecycle decisions; none rewrites player calibration or recognition tuning.
+   The [Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114) documents every
+   numeric Program's gesture priority, compound-action release rule, and indexed
+   game assignment.
 
 5. The worker sends the state only if controller delivery is armed, a live
    registered-game lease or intentional manual Dashboard context exists, and neither

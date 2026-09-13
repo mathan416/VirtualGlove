@@ -18,8 +18,8 @@ what to do next.
 | Lightning flash, moving cuff, curling glove, and a spark | <img src="images/matrix/idle-glove.png" alt="Simulated idle glove display" width="104"> | Gestures are off; the app is in its idle mode. | Open Glove Academy to practice, or choose a game profile on Dashboard. |
 | A large scanning **L** | <img src="images/matrix/L.jpg" alt="L matrix display" width="104"> | Play or Glove Academy lessons are active. L stands for local play or lessons. | Follow the game or practice moves shown in your browser; controller output is paused. |
 | A large scanning **T** | <img src="images/matrix/T.jpg" alt="T matrix display" width="104"> | Gesture tuning is active, including hand setup. | Follow the recording, preview, and save instructions in Glove Academy. Controller output is paused. |
-| A steady **A-I**, **BS**, or **GB** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | A game profile is selected, but a calibrated hand is not currently being reported as tracked. | Show your hand and check tracking/calibration on Dashboard. |
-| **A-I**, **BS**, or **GB** gently changing brightness | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The app reports a detected, calibrated hand for that profile. | Check Dashboard's controller status before playing. This pulse alone does not mean controls are enabled. |
+| A steady **1-14**, **A-I**, **BS**, or **GB** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | A game profile is selected, but a calibrated hand is not currently being reported as tracked. | Show your hand and check tracking/calibration on Dashboard. Program 14 intentionally keeps the camera off. |
+| **1-13**, **A-I**, **BS**, or **GB** gently changing brightness | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The app reports a detected, calibrated hand for that profile. | Check Dashboard's controller status before playing. This pulse alone does not mean controls are enabled. |
 | **ID**, characters, **PN**, and digits repeating | — | Secure pairing is showing the device identity and temporary PIN. | Follow the Setup page; read each group in order. |
 | A flashing **X** | <img src="images/matrix/X.jpg" alt="X matrix display" width="104"> | The app has requested an error display. | Read Dashboard's error message before deciding whether to reconnect the camera or restart. |
 | A blank matrix | <img src="images/matrix/Blank.jpg" alt="Blank matrix display" width="104"> | The display has been turned off, the app is stopping, or the board is still starting. It may also have lost power. | Use the browser and board power indicators to distinguish these cases. Blank does not prove shutdown is complete. |
@@ -122,11 +122,12 @@ delivery when ready to play. A pairing display can temporarily cover either
 letter. Tracking details and pose failures remain in the browser rather than
 being spelled out on the matrix.
 
-## Game profile letters
+## Game profile codes
 
-| Letters | See it | Selected profile |
+| Code | See it | Selected profile |
 | --- | --- | --- |
-| **1** through **14** | Numeric program code | The corresponding original Program 1-14 profile; older firmware safely shows blank |
+| **1** through **13** | Numeric program code | The corresponding original camera-active numeric profile; older firmware safely shows blank |
+| **14** | Numeric program code | Program 14 is selected; camera and VirtualGlove output intentionally stay off while the game session remains visible |
 | **A** through **I** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The corresponding reusable Program A-I profile; A is shown |
 | **BS** | <img src="images/matrix/BS.jpg" alt="BS matrix display" width="104"> | Bad Street Brawler |
 | **GB** | <img src="images/matrix/GB.jpg" alt="GB matrix display" width="104"> | Super Glove Ball |
@@ -142,7 +143,8 @@ The matrix does not acknowledge RetroPie receipt or the game's response.
 
 A generic **PG** ready symbol or a small pulsing tracking symbol can appear when
 no recognized profile identifier is available. These are fallback displays;
-normal named game profiles use their letters. They do not represent extra games
+normal named game profiles use their numeric, letter, or dedicated two-character
+codes. They do not represent extra games
 or new gesture commands. If you expected **GB** or **BS**, check the selected
 profile on Dashboard.
 

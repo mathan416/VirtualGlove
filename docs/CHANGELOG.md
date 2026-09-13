@@ -25,6 +25,11 @@ authoritative record for line-level and file-level history.
   are reported read-only in live status; existing string entries remain valid.
 - Added numeric Program 1–14 displays to the matrix protocol without renumbering
   existing Program A–I, Bad Street Brawler, or Super Glove Ball codes.
+- Expanded the Game and Gesture Guide with gesture-by-gesture Programs 1–14
+  cards, compound-action timing and release rules, the complete official game
+  index, rapid-fire exceptions, physical-controller use, and Program 14's
+  camera-off behavior. Synchronized the installation, configuration, matrix,
+  architecture, native-emulation, quick-reference, and project guides.
 
 - Added a visual-only Vulcan-salute easter egg to live camera experiences.
   Holding an extended hand with a deliberate middle/ring split briefly shows

@@ -941,20 +941,37 @@ renewal. Read-only `/status` reports the applied values as
 | Gun Smoke | `program_g` |
 | Knight Rider | `program_i` |
 
-The shipped registry also contains every title in Mattel's official index under
-Programs 1, 3–10, 12, and 14, with explicit `.nes`, `.zip`, and `.7z` filenames.
-Programs 2, 11, and 13 are selectable alternatives without a default indexed
-title. Programs A, D, and H are fully implemented profiles rather
-than omitted games: `program_a` is a pinball control scheme, `program_d` reverses
-all four directions for challenge or accessibility use, and `program_h` provides
-general-purpose movement with pulsed buttons. They deliberately have no default
-ROM assignment.
+The numeric portion of the shipped registry is:
 
-The indexed rapid-fire exceptions are applied automatically: Alpha Mission and
-Blaster Master disable rapid A; Ice Hockey disables rapid B; Double Dribble and
-Racket Attack disable both. Any appropriate NES or Famicom ROM can use one of
-the profiles after you add
-its exact basename to the `games` object. Every profile value must be one of the
+| Profile | Mattel-indexed titles | Structured rapid-fire entries |
+| --- | --- | --- |
+| `program_1` | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link | Blaster Master: `rapid_a=false`; Double Dribble and Racket Attack: `rapid_a=false`, `rapid_b=false` |
+| `program_2` | No indexed title; centering-practice alternative | None |
+| `program_3` | Ice Hockey; Top Gun | Ice Hockey: `rapid_b=false` |
+| `program_4` | Iron Tank | None |
+| `program_5` | Alpha Mission; Life Force; Xevious; 1943: The Battle of Midway | Alpha Mission: `rapid_a=false` |
+| `program_6` | Double Dragon | None |
+| `program_7` | Mike Tyson's Punch-Out!! | None |
+| `program_8` | Baseball; Bases Loaded; R.B.I. Baseball | None |
+| `program_9` | Rad Racer | No rapid fire by profile default |
+| `program_10` | R.C. Pro-Am | None |
+| `program_11` | No indexed title; sustained fast-turn alternative | None |
+| `program_12` | Super Mario Bros. | None |
+| `program_13` | No indexed title; gesture A/B with physical-controller movement | None |
+| `program_14` | Anticipation; temporary manual menu/password entry | Output is neutral; camera is stopped |
+
+Every listed title has explicit `.nes`, `.zip`, and `.7z` filenames; known
+region, revision, punctuation, and `Robo Warrior` variants are additional exact
+aliases rather than fuzzy matching. The [Gameplay Guide's numeric Program
+cards](GAMEPLAY_GUIDE.md#original-programs-114) are the authoritative
+gesture-to-controller reference.
+
+Programs A, D, and H are fully implemented profiles rather than omitted games:
+`program_a` is a pinball control scheme, `program_d` reverses all four directions
+for challenge or accessibility use, and `program_h` provides general-purpose
+movement with pulsed buttons. They deliberately have no default ROM assignment.
+Any appropriate NES or Famicom ROM can use one of the profiles after you add its
+exact basename to the `games` object. Every profile value must be one of the
 supported identifiers; an unknown value invalidates the registry.
 
 ```sh
