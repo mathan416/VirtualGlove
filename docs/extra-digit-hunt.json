@@ -3,7 +3,7 @@
   "rule": "Count every hand showing five fingers plus a thumb once per appearance, including repeated artwork.",
   "guides": {
     "GAMEPLAY_GUIDE.md": {
-      "answer": 23,
+      "answer": 24,
       "images": {
         "images/gestures/v2/closed-hand.png": {
           "hands_per_appearance": 1,
@@ -15,7 +15,7 @@
         },
         "images/gestures/actions/close-all-fingers.png": {
           "hands_per_appearance": 1,
-          "occurrences": 12
+          "occurrences": 13
         },
         "images/gestures/actions/index-push-combination.png": {
           "hands_per_appearance": 1,
@@ -39,6 +39,7 @@
         "Program E - Defender rig",
         "Program F - Yes / No rig",
         "Program 1 - last-three turn",
+        "Program 2 - last-three turn",
         "Program 4 - four-finger close",
         "Program 6 - last-three attack",
         "Program 9 - closed-fist A",
