@@ -62,6 +62,7 @@ from .setup_web import SETUP_CONTENT, SETUP_SCRIPT
 from .games_web import GAMES_CONTENT, GAMES_SCRIPT
 from .statistics_web import STATISTICS_CONTENT, STATISTICS_SCRIPT
 from .web_common import _page, _profile_options, PROFILE_LABELS, VISION_STARTUP_SCRIPT
+from .gesture import SUPPORTED_PROFILES
 from .dashboard_web import DASHBOARD
 from .academy_web import LEARN
 from . import __version__
@@ -112,10 +113,7 @@ CAMERA_PROFILE_STAGES = (
 )
 CAMERA_PROFILE_MEASURE_SECONDS = sum(stage[1] for stage in CAMERA_PROFILE_STAGES)
 LOGO_PATH = Path(__file__).resolve().parents[2] / "assets" / "virtualglove-logo-web.png"
-PROFILES = {
-    "bad_street_brawler", "super_glove_ball", "off",
-    *(f"program_{letter}" for letter in "abcdefghi"),
-}
+PROFILES = {*SUPPORTED_PROFILES, "off"}
 
 
 def _camera_fps(value: Any, *, strict: bool = False) -> str | int:
@@ -500,7 +498,7 @@ class ControlState:
         return {
             "receiver": config.get("receiver", ""),
             "port": int(config.get("port", 55355)),
-            "profile": config.get("profile", "bad_street_brawler"),
+            "profile": config.get("profile", "off"),
             "glove_color": config.get("glove_color", "none"),
             "camera": str(config.get("camera", "auto")),
             "camera_options": camera_device_options(),

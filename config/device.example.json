@@ -1,7 +1,7 @@
 {
   "receiver": "",
   "token": "replace-with-the-same-long-random-value-used-by-the-receiver",
-  "profile": "bad_street_brawler",
+  "profile": "off",
   "glove_color": "none",
   "camera": "auto",
   "camera_fps": "auto",

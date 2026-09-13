@@ -78,7 +78,7 @@ def load_device_config() -> dict:
     settings = {
         "receiver": "",
         "token": secrets.token_urlsafe(24),
-        "profile": "bad_street_brawler",
+        "profile": "off",
         "glove_color": "none",
         "camera": "auto",
         "matrix_attract": "on",
@@ -122,7 +122,7 @@ def worker_command(settings: dict, model_path: Path, controller_enabled: bool = 
         "--receiver", str(settings.get("receiver", "")),
         "--port", str(settings.get("port", 55355)),
         "--device-config", str(CONFIG_PATH),
-        "--profile", str(settings.get("profile", "bad_street_brawler")),
+        "--profile", str(settings.get("profile", "off")),
         "--glove-color", str(settings.get("glove_color", "none")),
         "--camera", str(settings.get("camera", "auto")),
         "--camera-format", "MJPG",
@@ -238,7 +238,7 @@ def main() -> int:
         APP_ROOT / "data" / ".camera-recovery-enabled",
         APP_ROOT / "data" / "camera-recovery-request",
     )
-    matrix.set_profile(str(settings.get("profile", "bad_street_brawler")))
+    matrix.set_profile(str(settings.get("profile", "off")))
 
     control.connection_probe = matrix.connection_status
     environment = dict(os.environ)
@@ -260,7 +260,7 @@ def main() -> int:
         # are paused and owns lazy camera/model activation for active profiles.
         while True:
             settings = load_device_config()
-            matrix.set_profile(str(settings.get("profile", "bad_street_brawler")))
+            matrix.set_profile(str(settings.get("profile", "off")))
             matrix.set_status(MatrixStatus.LOADING)
             revision = control.revision
             process = subprocess.Popen(

@@ -133,14 +133,15 @@ backups, and troubleshooting. Use it as the authoritative setup reference.
 
 ## What can you play?
 
-VirtualGlove includes nine reusable Programs A–I plus dedicated mappings for
-Bad Street Brawler and Super Glove Ball. The same recognition settings follow
+VirtualGlove includes the original Programs 1–14, nine reusable cartridge
+Programs A–I, plus dedicated mappings for Bad Street Brawler and Super Glove
+Ball. The same recognition settings follow
 the player across games; profiles change only what the recognized movements and
 gestures send to the console.
 
 | Path | What it provides |
 | --- | --- |
-| FCEUmm | A nine-region joystick layout: centre stop, four directions, four diagonals, plus mapped A/B and special gestures. |
+| FCEUmm | The selected Program 1–14 or A–I mapping, including positional movement, mapped A/B actions, and documented compound gestures. |
 | Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
 | Super Glove Ball with `lr-nestopia-powerglove` | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. |
 

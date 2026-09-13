@@ -650,7 +650,7 @@ def main():
     build(
         gameplay, OUTPUT / "VirtualGlove-Gameplay-Guide.pdf",
         "Play with VirtualGlove",
-        "Eight ready-made play cards, nine reusable programs, and a whole library to rediscover.",
+        "Programs 1-14, nine cartridge programs, and a whole library to rediscover.",
         "Illustrated game handbook",
     )
     build(docs / "ARCHITECTURE.md", OUTPUT / "VirtualGlove-Architecture.pdf",

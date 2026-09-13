@@ -13,7 +13,7 @@
 GAMES_CONTENT = """<section id=games-section style="margin-top:28px;scroll-margin-top:20px"><h2>Games</h2>
 <p class=lead>Edit the game mappings installed on your RetroPie. Saving affects the next game launch.</p>
 <section class=card><p>Use the exact ROM filename, including its extension: <code>Joust (USA).7z</code> and <code>Joust (USA).nes</code> need separate entries. Matching ignores letter case. Only NES and Famicom launches use these mappings.</p>
-<details><summary>Available profile identifiers</summary><p id=game-profiles></p><p>Example: <code>{"games": {"Joust (USA).7z": "program_b"}}</code>. Remove a mapping to leave that game off.</p></details>
+<details><summary>Available profile identifiers</summary><p id=game-profiles></p><p>Simple mapping: <code>{"games": {"Joust (USA).7z": "program_b"}}</code>. A game can also override the original rapid-fire switches: <code>{"games": {"Blaster Master (USA).nes": {"profile": "program_1", "rapid_a": false}}}</code>. Remove a mapping to leave that game off.</p></details>
 <label for=game-json>Game mappings JSON</label><textarea id=game-json spellcheck=false rows=22 style="width:100%;font:14px/1.5 monospace;tab-size:2;background:#090b11;color:#f7f8ff;border:1px solid #303748;border-radius:8px;padding:12px" aria-describedby=games-notice></textarea>
 <div class=controls><button id=games-validate>Validate</button><button id=games-format>Format</button><button id=games-save>Save</button><button id=games-reload>Reload</button><button id=games-backup>Download backup</button><button id=games-restore>Restore previous save</button></div>
 <p id=games-notice role=status aria-live=polite>Loading the installed RetroPie registry…</p></section></section>"""

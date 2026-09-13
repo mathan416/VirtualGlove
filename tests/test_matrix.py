@@ -176,11 +176,15 @@ class MatrixTests(unittest.TestCase):
         matrix.set_profile("program_c")
         matrix.set_profile("bad_street_brawler")
         matrix.set_profile("super_glove_ball")
+        matrix.set_profile("program_1")
+        matrix.set_profile("program_14")
         matrix.set_profile(None)
         self.assertEqual(calls, [
             ("set_powerglove_profile", 3),
             ("set_powerglove_profile", 10),
             ("set_powerglove_profile", 11),
+            ("set_powerglove_profile", 12),
+            ("set_powerglove_profile", 25),
             ("set_powerglove_profile", 0),
         ])
 

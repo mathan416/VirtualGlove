@@ -25,7 +25,7 @@ import time
 import uuid
 from pathlib import Path
 
-from .profile_control import load_registry, read_token, select_profile, send_request
+from .profile_control import load_registry, read_token, select_profile_settings, send_request
 
 
 DEFAULT_SESSION_FILE = Path.home() / ".cache" / "powerglove-vision" / "active-game.json"
@@ -140,8 +140,11 @@ def _start_session_process(args: argparse.Namespace, session_id: str) -> None:
     )
 
 
-def _run_session(args: argparse.Namespace, settings: dict, token: str, profile: str) -> int:
+def _run_session(args: argparse.Namespace, settings: dict, token: str,
+                 selection: dict) -> int:
     """Renew one game lease while its marker and RetroArch process remain active."""
+    if isinstance(selection, str):  # Preserve the internal helper's older test/caller contract.
+        selection = {"profile": selection}
     session_id = args.session_id
     if (not session_id or not session_id.isascii() or not session_id.isalnum()
             or not 16 <= len(session_id) <= 64):
@@ -157,9 +160,12 @@ def _run_session(args: argparse.Namespace, settings: dict, token: str, profile: 
         try:
             send_request(
                 settings["uno_q"], int(settings.get("port", 55356)), token,
-                profile, args.system, args.rom, float(settings.get("timeout", 0.4)),
+                selection["profile"], args.system, args.rom,
+                float(settings.get("timeout", 0.4)),
                 session_id=session_id, lease_seconds=args.lease_seconds,
                 emulator=emulator,
+                rapid_a=selection.get("rapid_a"),
+                rapid_b=selection.get("rapid_b"),
             )
         except (OSError, TimeoutError, ValueError, KeyError, TypeError):
             pass
@@ -199,15 +205,18 @@ def main() -> int:
     try:
         settings = json.loads(args.settings.read_text())
         token = read_token(None, Path(settings["token_file"]))
-        profile = None
+        selection = None
         if args.action in ("start", "session"):
             registry_path = Path(settings.get("registry", "/etc/powerglove/games.json"))
-            profile = select_profile(load_registry(registry_path), args.system, args.rom)
+            selection = select_profile_settings(
+                load_registry(registry_path), args.system, args.rom
+            )
+        profile = selection["profile"] if selection else None
         if args.action == "session":
             if profile is None:
                 _clear_session(args.session_file, args.session_id)
                 return 0
-            return _run_session(args, settings, token, profile)
+            return _run_session(args, settings, token, selection)
         if args.action == "start" and profile is not None:
             if not 0.25 <= args.heartbeat_seconds <= 5.0:
                 raise ValueError("heartbeat interval is out of range")
@@ -224,6 +233,8 @@ def main() -> int:
         ack = send_request(
             settings["uno_q"], int(settings.get("port", 55356)), token,
             profile, args.system, args.rom, float(settings.get("timeout", 0.4)),
+            rapid_a=selection.get("rapid_a") if selection else None,
+            rapid_b=selection.get("rapid_b") if selection else None,
         )
     except (OSError, TimeoutError, ValueError, KeyError, TypeError) as exc:
         # Never prevent a game from launching if the gesture controller is down.

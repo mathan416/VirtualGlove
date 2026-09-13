@@ -41,6 +41,9 @@ class HandObservation:
     ring_curl: float = 0.0
     pinky_curl: float = 0.0
     confidence_source: str = "generic"
+    index_middle_spread: float = 0.0
+    middle_ring_spread: float = 0.0
+    ring_pinky_spread: float = 0.0
 
     @property
     def fingers(self) -> dict[str, float]:

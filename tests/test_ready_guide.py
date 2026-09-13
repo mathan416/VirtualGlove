@@ -158,6 +158,15 @@ class ReadyGuardTests(unittest.TestCase):
                         dict(worker_controller_enabled=False),dict(launch_guard_active=True)]:
             self.assertIsNotNone(game_gate(dict(good,**changes)),changes)
         self.assertIsNone(game_gate(dict(good,emulator='lr-fceumm',input_mode='joystick')))
+        numeric = dict(good, active_profile='program_1', emulator='lr-fceumm',
+                       input_mode='joystick')
+        self.assertIsNone(game_gate(numeric))
+        manual = dict(good, active_profile='program_14', emulator='lr-fceumm',
+                      input_mode='joystick', vision_state='idle',
+                      camera_available=False, calibrated=False,
+                      receiver_available=False, controller_enabled=False,
+                      worker_controller_enabled=False)
+        self.assertIsNone(game_gate(manual))
 
 
 @unittest.skipUnless(shutil.which('node'), 'Node needed for guide JavaScript checks')

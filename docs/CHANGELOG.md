@@ -9,6 +9,28 @@ authoritative record for line-level and file-level history.
 
 ### Added
 
+- Added exact Program 1–10 filename aliases observed in the NES library for
+  revision-tagged, alternate-region, and `Robo Warrior` spelling variants.
+  These aliases retain the official profile and rapid-fire behavior.
+
+- Added the original Power Glove Programs 1–14 as first-class profiles, with
+  their documented movement, finger, wrist, depth, compound-action, rapid-fire,
+  centering, and manual-control behavior. Added Mattel's indexed game mappings,
+  exact case-insensitive `.nes`, `.zip`, and `.7z` aliases, and per-game rapid
+  A/B exceptions without changing Programs A–I or the dedicated game profiles.
+- Added validated structured game-registry entries with optional `rapid_a` and
+  `rapid_b` switches. Overrides travel with the authenticated game lease and
+  are reported read-only in live status; existing string entries remain valid.
+- Added numeric Program 1–14 displays to the matrix protocol without renumbering
+  existing Program A–I, Bad Street Brawler, or Super Glove Ball codes.
+
+- Added a visual-only Vulcan-salute easter egg to live camera experiences.
+  Holding an extended hand with a deliberate middle/ring split briefly shows
+  **Live long and prosper** with Pixel Pal, then fades without changing or
+  suppressing controller input. It requires a release before rearming, has a
+  30-second cooldown, stores no hand data, and announces the phrase politely to
+  screen readers.
+
 - Added **Center hand** directly to the Joystick dead-zone camera test. It is
   available only while that panel owns an active safe-practice camera session,
   keeps controller output paused, and redraws the grid from the newly saved
@@ -35,6 +57,9 @@ authoritative record for line-level and file-level history.
   readiness checks remain explicitly unverified.
 
 ### Changed
+
+- Changed the fresh-install startup profile to **Gestures off**. Existing saved
+  startup profiles remain unchanged during upgrades.
 
 - Moved **Joystick dead zone** directly below **Players** in Setup so player
   selection, centering, and movement-box adjustment stay together.

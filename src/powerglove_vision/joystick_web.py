@@ -130,6 +130,7 @@ function redraw(){
  if(viewReady)el('joystick-live').textContent=d?(dirty?'Camera test active. Unsaved preview — Save dead zone to apply to gameplay.':'Camera test active. Directions use your saved dead-zone settings.'):'Camera test active. Waiting for a visible, calibrated hand and current practice feedback.';
 }
 function feedback(s){
+ window.updateEasterEgg?.(s);
  const own=cameraWanted&&leaseAt!==null&&clock()-leaseAt<4500;
  const ready=own&&s.practice_mode===true&&s.vision_state==='active';
  gridStatus=s;updateCenter(s);

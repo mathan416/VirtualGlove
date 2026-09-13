@@ -39,10 +39,11 @@ function readyGameReason(s){
  if(s.practice_mode||s.tuning?.active)return 'Waiting for all practice and tuning sessions to end.';
  if(s.game_session_active!==true)return 'Launch a registered game on RetroPie. Unregistered games cannot complete this guide.';
  const profile=s.active_profile||s.profile,core=s.emulator;
- if(!['super_glove_ball','bad_street_brawler',...'abcdefghi'.split('').map(x=>'program_'+x)].includes(profile))return 'This game has no supported mapping. Review Games in Setup.';
+ if(!['super_glove_ball','bad_street_brawler',...Array.from({length:14},(_,i)=>'program_'+(i+1)),...'abcdefghi'.split('').map(x=>'program_'+x)].includes(profile))return 'This game has no supported mapping. Review Games in Setup.';
  if(!core||core==='unknown')return 'Waiting for the game’s emulator identity.';
  const expected=profile==='super_glove_ball'&&['lr-nestopia-powerglove','lr-powerglove-dot'].includes(core)?'native':'joystick';
  if(s.input_mode!==expected)return 'The game profile and input mode disagree. Review Games and the emulator selection.';
+ if(profile==='program_14')return s.launch_guard_active||s.controller_context_active!==true?'Waiting for the game’s controller context and launch delay.':null;
  if(s.vision_state!=='active'||s.camera_available!==true)return 'Waiting for the game camera to become ready.';
  if(s.calibrated!==true||s.calibrating||s.player?.needs_center||s.calibration_save_error)return 'Centering is required. Return to safe practice.';
  if(s.launch_guard_active||s.controller_context_active!==true)return 'Waiting for the game’s launch delay and controller context.';
@@ -141,7 +142,7 @@ async function poll(){
   if(!guarded&&!lease.game_stage){practice=false;stage='player';resetLive();tell('Another guide visit took over. Reload this page to begin safely.');draw();return;}
   const next=await api('/api/players',{action:'read'}),id=next.active+':'+next.generation;
   if(identity!==id){const changed=identity!==null;player=next;identity=id;resetLive();if(changed){await guide('begin');guarded=true;practice=false;stage='player';tell('Player changed. Confirm the active player again.');}const selected=$('ready-player');selected.replaceChildren(...next.players.map(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;return o}));selected.value=next.active;}else player=next;
-  status=await api('/status');
+  status=await api('/status');window.updateEasterEgg?.(status);
   if(practice&&performance.now()-lastLease>1500){const result=await api('/api/practice',{session,enabled:true});practice=result.practice_mode===true;lastLease=performance.now();}
   if(!fresh()||!status.detected)matcher.reset();
   if(centerStarted!==null){if(status.calibrating)centerSeen=true;if(centerSeen&&calibratedNow()){centerStarted=null;centerSeen=false;centerRequired=false;tell('Center saved.');}else if(status.calibration_save_error||performance.now()-centerStarted>20000){centerStarted=null;centerSeen=false;stage='camera';tell('Centering did not finish. Hold an open hand and select Center hand to retry.');}}

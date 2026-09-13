@@ -126,6 +126,7 @@ being spelled out on the matrix.
 
 | Letters | See it | Selected profile |
 | --- | --- | --- |
+| **1** through **14** | Numeric program code | The corresponding original Program 1-14 profile; older firmware safely shows blank |
 | **A** through **I** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The corresponding reusable Program A-I profile; A is shown |
 | **BS** | <img src="images/matrix/BS.jpg" alt="BS matrix display" width="104"> | Bad Street Brawler |
 | **GB** | <img src="images/matrix/GB.jpg" alt="GB matrix display" width="104"> | Super Glove Ball |

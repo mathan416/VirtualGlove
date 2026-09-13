@@ -24,6 +24,7 @@ from powerglove_vision.profile_control import (
     ActiveGameLease,
     load_registry,
     select_profile,
+    select_profile_settings,
     sign_message,
     send_request,
     verify_message,
@@ -56,6 +57,36 @@ class ProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_registry(path)
 
+    def test_structured_registry_preserves_rapid_fire_overrides(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "games.json"
+            path.write_text(json.dumps({"games": {
+                "Blaster Master (USA).nes": {
+                    "profile": "program_1", "rapid_a": False,
+                }
+            }}))
+            registry = load_registry(path)
+        self.assertEqual(
+            select_profile_settings(registry, "nes", "Blaster Master (USA).nes"),
+            {"profile": "program_1", "rapid_a": False},
+        )
+        self.assertEqual(
+            select_profile(registry, "nes", "Blaster Master (USA).nes"),
+            "program_1",
+        )
+
+    def test_structured_registry_rejects_unknown_or_non_boolean_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "games.json"
+            for value in (
+                {"profile": "program_1", "rapid_a": 0},
+                {"profile": "program_1", "extra": False},
+                {"rapid_a": False},
+            ):
+                path.write_text(json.dumps({"games": {"Example.nes": value}}))
+                with self.subTest(value=value), self.assertRaises(ValueError):
+                    load_registry(path)
+
     def test_request_is_acknowledged_while_worker_is_busy(self):
         server = ProfileCommandServer("127.0.0.1", 0, "a-long-test-token")
         try:
@@ -75,12 +106,15 @@ class ProfileTests(unittest.TestCase):
                 "127.0.0.1", server.socket.getsockname()[1],
                 "a-long-test-token", "program_h", "nes", "Example.7z", 0.2,
                 session_id="a" * 32, lease_seconds=6.0, emulator="lr-fceumm",
+                rapid_a=False, rapid_b=True,
             )
             self.assertTrue(ack["accepted"])
             request = server.take()
             self.assertEqual(request.session_id, "a" * 32)
             self.assertEqual(request.lease_seconds, 6.0)
             self.assertEqual(request.emulator, "lr-fceumm")
+            self.assertIs(request.rapid_a, False)
+            self.assertIs(request.rapid_b, True)
         finally:
             server.close()
 
@@ -132,6 +166,20 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(lease.expire(17.9))
         self.assertTrue(lease.expire(18.0))
         self.assertFalse(lease.snapshot(18.0)["game_session_active"])
+
+    def test_rapid_fire_change_is_a_game_lease_transition(self):
+        lease = ActiveGameLease()
+        first = ProfileRequest(
+            "one", "program_1", "nes", "Example.nes", ("127.0.0.1", 1),
+            session_id="r" * 32, lease_seconds=6.0, rapid_a=False,
+        )
+        changed = ProfileRequest(
+            "two", "program_1", "nes", "Example.nes", ("127.0.0.1", 1),
+            session_id="r" * 32, lease_seconds=6.0, rapid_a=True,
+        )
+        self.assertTrue(lease.refresh(first, 10.0))
+        self.assertFalse(lease.refresh(first, 11.0))
+        self.assertTrue(lease.refresh(changed, 12.0))
 
     def test_request_carries_emulator_and_core_change_is_a_transition(self):
         lease = ActiveGameLease()

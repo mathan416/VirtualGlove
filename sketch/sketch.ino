@@ -127,8 +127,9 @@ const uint16_t idleFrameDurations[] = {
   100, 120, 150, 180, 220, 700, // gradual glow and resting hold
 };
 
-// Five-pixel-wide glyphs A-I, B, S, and G. Program profiles use a large
-// centred letter; the dedicated game profiles display BS and GB.
+// Five-pixel-wide glyphs A-I, B, S, G, and 0-9. Letter programs use a large
+// centred glyph, dedicated game profiles display BS/GB, and numeric programs
+// use one or two digits.
 const uint8_t programGlyphs[9][7] = {
   {14,17,17,31,17,17,17}, {30,17,17,30,17,17,30},
   {14,17,16,16,16,17,14}, {30,17,17,17,17,17,30},
@@ -209,6 +210,14 @@ void drawProfile(int profile, bool pulse) {
   } else if (profile == 11) {
     placeGlyph(pixels, glyphG, 1, brightness);
     placeGlyph(pixels, glyphB, 7, brightness);
+  } else if (profile >= 12 && profile <= 25) {
+    const int program = profile - 11;
+    if (program < 10) {
+      placeGlyph(pixels, digitGlyphs[program], 4, brightness);
+    } else {
+      placeGlyph(pixels, digitGlyphs[1], 1, brightness);
+      placeGlyph(pixels, digitGlyphs[program - 10], 7, brightness);
+    }
   } else {
     drawRows(readyFrame);
     return;
@@ -386,7 +395,7 @@ void set_powerglove_pairing(int pairingId, int pairingPin) {
 
 // Router Bridge endpoint: select the active gesture-profile display.
 void set_powerglove_profile(int profile) {
-  requestedProfile = (profile >= 0 && profile <= 11) ? profile : 0;
+  requestedProfile = (profile >= 0 && profile <= 25) ? profile : 0;
 }
 
 // Report the identity compiled into the running microcontroller firmware.

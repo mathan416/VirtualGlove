@@ -15,27 +15,42 @@ import html
 from .play_game import PLAY_STYLE
 from . import __version__
 
-PROFILE_LABELS = (
-    ("bad_street_brawler", "Bad Street Brawler"),
-    ("super_glove_ball", "Super Glove Ball"),
-    ("off", "Gestures off"),
-    ("program_a", "A: Pinball"),
-    ("program_b", "B: Joust"),
-    ("program_c", "C: Gyruss"),
-    ("program_d", "D: Challenge"),
-    ("program_e", "E: Defender II"),
-    ("program_f", "F: Sesame Street"),
-    ("program_g", "G: Gun Smoke"),
-    ("program_h", "H: General"),
-    ("program_i", "I: Knight Rider"),
+PROFILE_GROUPS = (
+    ("Original programs 1–14", tuple(
+        (f"program_{number}", f"{number}: " + {
+            1: "General side view", 2: "Centering coach", 3: "Top view",
+            4: "Iron Tank", 5: "Flight", 6: "Double Dragon",
+            7: "Punch-Out!!", 8: "Baseball", 9: "Rad Racer",
+            10: "R.C. Pro-Am", 11: "Fast turn", 12: "Super Mario Bros.",
+            13: "Finger buttons", 14: "Manual controls",
+        }[number]) for number in range(1, 15)
+    )),
+    ("Cartridge programs A–I", (
+        ("program_a", "A: Pinball"), ("program_b", "B: Joust"),
+        ("program_c", "C: Gyruss"), ("program_d", "D: Challenge"),
+        ("program_e", "E: Defender II"), ("program_f", "F: Sesame Street"),
+        ("program_g", "G: Gun Smoke"), ("program_h", "H: General"),
+        ("program_i", "I: Knight Rider"),
+    )),
+    ("Game-specific", (
+        ("bad_street_brawler", "Bad Street Brawler"),
+        ("super_glove_ball", "Super Glove Ball"),
+    )),
+    ("Gestures off", (("off", "Gestures off"),)),
 )
+PROFILE_LABELS = tuple(item for _group, items in PROFILE_GROUPS for item in items)
+
+EASTER_EGG_SCRIPT = r"""(()=>{let initialized=false,last=0,lastShown=-Infinity,hideTimer=0;window.updateEasterEgg=s=>{const sequence=Number(s?.easter_egg?.spock_sequence);if(!Number.isInteger(sequence)||sequence<0)return;if(!initialized||sequence<last){initialized=true;last=sequence;return}if(sequence<=last)return;last=sequence;if(document.hidden||Date.now()-lastShown<30000)return;lastShown=Date.now();const toast=document.getElementById('spock-toast'),announcement=document.getElementById('spock-announcement');if(!toast||!announcement)return;toast.dataset.visible='true';announcement.textContent='';setTimeout(()=>{announcement.textContent='Live long and prosper.'},0);clearTimeout(hideTimer);hideTimer=setTimeout(()=>{delete toast.dataset.visible},2500)}})();"""
 
 
 def _profile_options() -> str:
     """Render the shared profile list while preserving stable configuration IDs."""
     return "".join(
-        f"<option value={profile}>{html.escape(label)}</option>"
-        for profile, label in PROFILE_LABELS
+        f"<optgroup label='{html.escape(group)}'>" + "".join(
+            f"<option value={profile}>{html.escape(label)}</option>"
+            for profile, label in items
+        ) + "</optgroup>"
+        for group, items in PROFILE_GROUPS
     )
 
 
@@ -76,6 +91,7 @@ main{{padding:16px 0 30px}}h1{{font:900 clamp(28px,5vw,42px)/1 system-ui;margin:
 .status-grid{{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}}.status-grid .card{{padding:12px;min-height:82px}}.status-grid .value{{font-size:17px}}
 .label{{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1.5px}}.value{{font:800 21px system-ui;margin-top:6px;overflow-wrap:anywhere}}.good{{color:var(--green)}}.warn{{color:#ffd75e}}.bad{{color:#ff6f75}}
 .camera{{width:100%;aspect-ratio:4/3;object-fit:contain;background:#050608;border:1px solid var(--line);border-radius:14px;margin-top:14px}}
+.spock-toast{{position:fixed;z-index:50;left:50%;top:18px;max-width:min(440px,calc(100% - 28px));padding:14px 22px 15px 72px;border:1px solid #8edfff;border-radius:16px;background:radial-gradient(circle at 18% 22%,#ffffffcc 0 1px,transparent 2px),radial-gradient(circle at 82% 30%,#ffffff99 0 1px,transparent 2px),linear-gradient(145deg,#17284bf2,#090b11f5);box-shadow:0 18px 55px #000b,0 0 28px #36dbe844;color:var(--ink);pointer-events:none;opacity:0;transform:translate(-50%,-18px) scale(.96);transition:opacity .22s,transform .22s}}.spock-toast[data-visible=true]{{opacity:1;transform:translate(-50%,0) scale(1)}}.spock-toast .spock-hand{{position:absolute;left:19px;top:50%;transform:translateY(-50%);font-size:38px}}.spock-toast strong,.spock-toast small{{display:block}}.spock-toast strong{{font:900 19px/1.2 system-ui;color:#8edfff}}.spock-toast small{{margin-top:4px;color:var(--muted);font:13px/1.35 ui-monospace,monospace}}.visually-hidden{{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}}@media(prefers-reduced-motion:reduce){{.spock-toast{{transition:none}}}}
 .dashboard-workspace{{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(430px,.95fr);gap:14px;align-items:start;margin-top:14px}}.dashboard-workspace .camera{{height:min(38vh,340px);aspect-ratio:auto;margin:0}}.dashboard-controls{{margin:10px 0 0}}
 .program-card h2{{margin-bottom:4px}}.program-card .program-purpose{{color:var(--cyan);font:800 16px system-ui;margin:0 0 14px}}.program-card .program-summary{{color:var(--muted);margin:0 0 14px}}.program-mappings{{display:grid;gap:7px;margin:0 0 16px;padding:0;list-style:none}}.program-mappings li{{display:grid;grid-template-columns:minmax(100px,.8fr) minmax(0,1.2fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}}.program-mappings strong{{color:var(--ink)}}.program-mappings span{{color:var(--muted)}}.program-help{{color:var(--cyan)}}
 .camera-stage{{position:relative}}.camera-centre-target{{position:absolute;inset:7%;border:2px solid rgba(73,231,183,.7);border-radius:8px;pointer-events:none;z-index:1}}.camera-centre-target::before,.camera-centre-target::after{{content:"";position:absolute;background:rgba(73,231,183,.8)}}.camera-centre-target::before{{left:50%;top:42%;width:2px;height:16%;transform:translateX(-1px)}}.camera-centre-target::after{{top:50%;left:44%;height:2px;width:12%;transform:translateY(-1px)}}.camera-idle{{display:none;height:min(38vh,340px);align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px;background:radial-gradient(circle,#17284b,#050608 62%);border:1px solid var(--line);border-radius:14px;color:var(--cyan);font:900 24px/1.25 system-ui}}.camera-idle small{{display:block;margin-top:10px;color:var(--muted);font:14px/1.45 ui-monospace,monospace}}.profile-select{{margin-top:6px;padding:7px 9px;font:800 15px system-ui}}
@@ -99,7 +115,7 @@ details.advanced{{margin-top:18px;padding-top:14px;border-top:1px solid var(--li
 @media(max-width:900px){{.status-grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}.dashboard-workspace,.learn-grid,.rps-layout{{grid-template-columns:1fr}}.dashboard-workspace .camera,.learn-camera .camera,.rps-camera .camera{{height:auto;aspect-ratio:4/3}}}}
 @media(max-width:900px){{.help-layout{{grid-template-columns:1fr}}.help-sidebar{{position:static;max-height:none}}.guide-nav{{grid-template-columns:repeat(2,minmax(0,1fr))}}.toc{{display:none}}}}
 @media(max-width:600px){{header{{align-items:center}}.brand{{max-width:58%}}nav{{display:grid;grid-template-columns:repeat(2,auto);gap:5px 12px}}nav a{{margin:0}}.diagnostic-grid{{grid-template-columns:1fr}}.guide-nav{{grid-template-columns:1fr}}.markdown-body{{padding:20px 17px}}}}
-</style></head><body><header><a class=brand href=/dashboard aria-label='VirtualGlove dashboard'><img src=/assets/virtualglove-logo.png alt='VirtualGlove'></a><nav><a href=/dashboard>Dashboard</a><a href=/play>Play</a><a href=/learn>Glove Academy</a><a href=/help>Help</a><a href="/setup">Setup</a></nav></header><main>{content}</main><footer class=app-footer><span>VirtualGlove v{html.escape(__version__)}</span>{started}<details class=build-details><summary>Software and matrix firmware</summary><p id=build-identity>Checking installed versions…</p></details></footer><script>{metadata_script}</script><script>{script}</script></body></html>""".encode()
+</style></head><body><header><a class=brand href=/dashboard aria-label='VirtualGlove dashboard'><img src=/assets/virtualglove-logo.png alt='VirtualGlove'></a><nav><a href=/dashboard>Dashboard</a><a href=/play>Play</a><a href=/learn>Glove Academy</a><a href=/help>Help</a><a href="/setup">Setup</a></nav></header><main>{content}</main><div id=spock-toast class=spock-toast aria-hidden=true><span class=spock-hand>&#x1F596;</span><strong>Live long and prosper.</strong><small>Pixel Pal recognizes impeccable logic.</small></div><span id=spock-announcement class=visually-hidden aria-live=polite aria-atomic=true></span><footer class=app-footer><span>VirtualGlove v{html.escape(__version__)}</span>{started}<details class=build-details><summary>Software and matrix firmware</summary><p id=build-identity>Checking installed versions…</p></details></footer><script>{EASTER_EGG_SCRIPT}</script><script>{metadata_script}</script><script>{script}</script></body></html>""".encode()
 
 
 VISION_STARTUP_SCRIPT = r"""

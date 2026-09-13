@@ -409,6 +409,13 @@ These assignments select recognition output only; calibration and gesture
 thresholds remain shared. Except for Super Glove Ball's optional native path,
 the games use standard NES controller input through FCEUmm.
 
+The shipped registry also maps Mattel's full index to Programs 1, 3–10, 12,
+and 14, with exact `.nes`, `.zip`, and `.7z` filenames. Programs 2, 11, and 13
+remain selectable alternatives without an indexed game. See the
+[Gameplay Guide](GAMEPLAY_GUIDE.md#original-programs-114) for the complete
+game list and gesture mappings. The five documented rapid-fire exceptions are
+selected automatically from structured registry entries.
+
 | Game | Profile | Emulator path |
 | --- | --- | --- |
 | Bad Street Brawler | `bad_street_brawler` | FCEUmm |

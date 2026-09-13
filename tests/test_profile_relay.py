@@ -181,12 +181,16 @@ class HookTests(unittest.TestCase):
                     patch.object(retropie_hook, "send_request", return_value={"accepted": True}) as send, \
                     patch.object(retropie_hook.time, "sleep"):
                 self.assertEqual(
-                    retropie_hook._run_session(args, settings, "test-profile-token", "program_h"), 0
+                    retropie_hook._run_session(
+                        args, settings, "test-profile-token",
+                        {"profile": "program_1", "rapid_a": False},
+                    ), 0
                 )
             self.assertEqual(send.call_count, 2)
             self.assertEqual(send.call_args_list[0][1]["session_id"], session_id)
             self.assertEqual(send.call_args_list[0][1]["lease_seconds"], 6.0)
             self.assertEqual(send.call_args_list[0][1]["emulator"], "")
+            self.assertIs(send.call_args_list[0][1]["rapid_a"], False)
             self.assertIsNone(send.call_args_list[1][0][3])
             self.assertFalse(session_file.exists())
 

@@ -58,7 +58,7 @@ from .tuning import TuningManager
 from .camera import CameraUnavailableError, camera_candidates
 from .debug_server import SharedDebugState, start_debug_server
 from .gesture import (GestureConfig, GestureEngine, joystick_deadzone_bounds,
-                      load_calibration, save_calibration)
+                      load_calibration, rapid_fire_defaults, save_calibration)
 from .matrix import MatrixStatus, UnoQMatrix
 from .diagnostic_trace import session_key
 from .model import ControllerState
@@ -153,7 +153,7 @@ def build_parser() -> argparse.ArgumentParser:
     tokens.add_argument("--token", help="shared receiver token (prefer a private file)")
     tokens.add_argument("--token-file", type=Path, help="private file containing the shared token")
     tokens.add_argument("--device-config", type=Path, help="private device JSON containing the shared token")
-    parser.add_argument("--profile", default="bad_street_brawler", help="startup profile; may be changed by RetroPie")
+    parser.add_argument("--profile", default="off", help="startup profile; may be changed by RetroPie")
     parser.add_argument("--camera", default="auto", help="camera index, or 'auto'")
     parser.add_argument("--width", type=int, default=640)
     parser.add_argument("--height", type=int, default=480)
@@ -715,7 +715,9 @@ def _prepare_vision(args):
 
 def _effective_profile(profile: str | None, practice_mode: bool) -> str | None:
     """Choose a tracking profile while preserving an intentionally selected off state."""
-    return PRACTICE_PROFILE if practice_mode else profile
+    return PRACTICE_PROFILE if practice_mode else (
+        None if profile == "program_14" else profile
+    )
 
 
 def _native_xy_active(engine: GestureEngine, practice_mode: bool,
@@ -896,6 +898,15 @@ def _controller_context_active(lease: ActiveGameLease, profile_source: str) -> b
     }
 
 
+def _requested_rapid_fire(request, dashboard_request, lease_expired, current):
+    """Preserve a game's switches across practice and clear them on manual/off changes."""
+    if lease_expired or dashboard_request is not None:
+        return None, None
+    if request is not None:
+        return request.rapid_a, request.rapid_b
+    return current
+
+
 def _base_status(
     profile: str | None,
     game: str,
@@ -904,6 +915,8 @@ def _base_status(
     *,
     practice_mode: bool = False,
     emulator: str = "",
+    rapid_a: bool | None = None,
+    rapid_b: bool | None = None,
 ) -> dict:
     """Build a neutral dashboard state for idle, starting, and error modes."""
     vision_profile = _effective_profile(profile, practice_mode)
@@ -919,7 +932,8 @@ def _base_status(
         "receiver_error": (
             "Practice mode; controller transmission is paused"
             if practice_mode
-            else ("Gestures are paused" if profile is None else "Vision is not ready")
+            else ("Gestures are paused" if profile in (None, "program_14")
+                  else "Vision is not ready")
         ),
         "controller_enabled": controller_enabled,
         "camera_available": False,
@@ -927,6 +941,11 @@ def _base_status(
         "emulator": emulator,
         "input_mode": _input_mode(profile, emulator),
     })
+    default_a, default_b = rapid_fire_defaults(profile or "off")
+    status["rapid_fire"] = {
+        "a": default_a if rapid_a is None else rapid_a,
+        "b": default_b if rapid_b is None else rapid_b,
+    }
     return status
 
 
@@ -946,6 +965,8 @@ def main() -> int:
     calibration_save_error = None
     matrix = UnoQMatrix(enabled=not args.no_matrix)
     current_profile: str | None = None if args.profile == "off" else args.profile
+    current_rapid_a: bool | None = None
+    current_rapid_b: bool | None = None
     current_game = "Startup default"
     profile_source = "startup"
     current_emulator = ""
@@ -997,6 +1018,7 @@ def main() -> int:
     try:
         while True:
             old_vision_profile = _effective_profile(current_profile, practice_mode)
+            old_rapid_fire = (current_rapid_a, current_rapid_b)
             request, lease_expired = _consume_game_lease(
                 profile_server.take(), active_game_lease, time.monotonic()
             )
@@ -1010,6 +1032,10 @@ def main() -> int:
             requested_emulator = (
                 "" if lease_expired or dashboard_request is not None
                 else request.emulator if request is not None else current_emulator
+            )
+            requested_rapid_a, requested_rapid_b = _requested_rapid_fire(
+                request, dashboard_request, lease_expired,
+                (current_rapid_a, current_rapid_b),
             )
             profile_requested = request is not None or dashboard_request is not None or lease_expired
             practice_request = shared.take_practice_request()
@@ -1034,6 +1060,8 @@ def main() -> int:
                 sender.new_session()
                 current_profile = requested_profile
                 current_emulator = requested_emulator
+                current_rapid_a = requested_rapid_a
+                current_rapid_b = requested_rapid_b
                 if profile_requested:
                     if request is not None:
                         current_game = request.rom or request.system or "No game"
@@ -1061,7 +1089,8 @@ def main() -> int:
                     practice_mode = practice_request
 
                 vision_profile = _effective_profile(current_profile, practice_mode)
-                if vision_profile != old_vision_profile:
+                if (vision_profile != old_vision_profile
+                        or (current_rapid_a, current_rapid_b) != old_rapid_fire):
                     # Reuse camera/tracker between active profiles; I/O cleanup is asynchronous.
                     engine = None
                     status_publisher.submit(
@@ -1069,6 +1098,7 @@ def main() -> int:
                             current_profile, current_game, profile_source,
                             controller_enabled, practice_mode=practice_mode,
                             emulator=current_emulator,
+                            rapid_a=current_rapid_a, rapid_b=current_rapid_b,
                         ),
                         clear_frame=True,
                     )
@@ -1092,8 +1122,11 @@ def main() -> int:
                     shared.request_controller(False)
                     retained_calibration = restored_calibration
                     if engine is not None:
-                        engine = GestureEngine(engine.profile, config=engine.config,
-                                               calibration=restored_calibration)
+                        engine = GestureEngine(
+                            engine.profile, config=engine.config,
+                            calibration=restored_calibration,
+                            rapid_a=engine.rapid_a, rapid_b=engine.rapid_b,
+                        )
                     last_controller_signature = None
                     calibration_save_error = None
             except OSError as exc:
@@ -1144,8 +1177,9 @@ def main() -> int:
                     vision_operation = "close"
                     capture = tracker = engine = cv2 = None
                 status = _base_status(
-                    None, current_game, profile_source, controller_enabled,
+                    current_profile, current_game, profile_source, controller_enabled,
                     emulator=current_emulator,
+                    rapid_a=current_rapid_a, rapid_b=current_rapid_b,
                 )
                 status.update(active_game_lease.snapshot(time.monotonic()))
                 status["controller_context_active"] = _controller_context_active(
@@ -1160,7 +1194,9 @@ def main() -> int:
             if capture is None or tracker is None or cv2 is None:
                 status = _base_status(current_profile, current_game, profile_source,
                                       controller_enabled, practice_mode=practice_mode,
-                                      emulator=current_emulator)
+                                      emulator=current_emulator,
+                                      rapid_a=current_rapid_a,
+                                      rapid_b=current_rapid_b)
                 status.update(active_game_lease.snapshot(time.monotonic()))
                 status["controller_context_active"] = _controller_context_active(
                     active_game_lease, profile_source
@@ -1182,8 +1218,12 @@ def main() -> int:
 
             if engine is None:
                 engine_base_config = _load_config(vision_profile, args.config)
-                engine = GestureEngine(vision_profile, shared.tuning.configuration(engine_base_config),
-                                       calibration=retained_calibration)
+                engine = GestureEngine(
+                    vision_profile, shared.tuning.configuration(engine_base_config),
+                    calibration=retained_calibration,
+                    rapid_a=None if practice_mode else current_rapid_a,
+                    rapid_b=None if practice_mode else current_rapid_b,
+                )
             captured_frame = capture.latest_after(last_capture_sequence)
             if captured_frame is None:
                 time.sleep(0.001)
@@ -1207,6 +1247,7 @@ def main() -> int:
                         current_profile, current_game, profile_source,
                         controller_enabled, practice_mode=practice_mode,
                         emulator=current_emulator,
+                        rapid_a=current_rapid_a, rapid_b=current_rapid_b,
                     )
                     status.update(active_game_lease.snapshot(time.monotonic()))
                     status["controller_context_active"] = _controller_context_active(
@@ -1342,10 +1383,13 @@ def main() -> int:
                 controller_transition_age_ms=transition_age_ms,
             )
             statistics_requested = shared.statistics_requested()
+            easter_egg = engine.easter_egg_feedback()
             dashboard_signature = _dashboard_event_signature(
                 state, receiver_available, controller_enabled,
                 controller_context_active, launch_guard_active,
                 practice_mode, tuning_active, native_source,
+                engine.rapid_a, engine.rapid_b,
+                easter_egg["spock_sequence"],
             )
             status_due = dashboard_cadence.due(
                 sent_at, dashboard_signature,
@@ -1468,6 +1512,7 @@ def main() -> int:
                 status["performance"] = performance_snapshot
                 status.update(preview_encoder.metrics())
             status["calibration_save_error"] = calibration_save_error
+            status["easter_egg"] = easter_egg
             status["calibration_retained"] = retained_calibration is not None
             status["calibrating"] = bool(engine is not None and not engine.calibrated)
             status["game"] = current_game
@@ -1477,6 +1522,10 @@ def main() -> int:
             status["profile_source"] = profile_source
             status["emulator"] = current_emulator
             status["input_mode"] = _input_mode(current_profile, current_emulator)
+            status["rapid_fire"] = {"a": engine.rapid_a, "b": engine.rapid_b}
+            program_feedback = engine.program_feedback(state)
+            if program_feedback:
+                status["program_feedback"] = program_feedback
             status["receiver_available"] = receiver_available
             status["receiver_active_address"] = getattr(sender, "active_address", None)
             status["receiver_error"] = (

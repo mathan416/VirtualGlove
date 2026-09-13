@@ -15,7 +15,7 @@ import vm from "node:vm";
 
 const html = fs.readFileSync(0, "utf8");
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-assert.equal(scripts.length, 4, "expected metadata, Academy, tuning, and player scripts");
+assert.equal(scripts.length, 5, "expected easter egg, metadata, Academy, tuning, and player scripts");
 
 class FakeClassList {
   constructor() { this.values = new Set(); }
@@ -168,9 +168,10 @@ const context = vm.createContext({
   confirm: () => true,
 });
 
-vm.runInContext(scripts[1], context, {filename: "rendered-academy.js"});
-vm.runInContext(scripts[2], context, {filename: "rendered-tuning.js"});
-vm.runInContext(scripts[3], context, {filename: "rendered-players.js"});
+vm.runInContext(scripts[0], context, {filename: "rendered-easter-egg.js"});
+vm.runInContext(scripts[2], context, {filename: "rendered-academy.js"});
+vm.runInContext(scripts[3], context, {filename: "rendered-tuning.js"});
+vm.runInContext(scripts[4], context, {filename: "rendered-players.js"});
 const settle = async () => { for (let index = 0; index < 8; index++) await Promise.resolve(); };
 await settle();
 

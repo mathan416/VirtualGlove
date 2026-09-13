@@ -3,8 +3,8 @@
 The **VirtualGlove Controller (Arduino UNO Q)** watches your hand and sends
 the recognized controls to RetroPie.
 
-This guide provides eight game-specific play cards and explains how to use
-the nine reusable programs. It shows you which gestures to make, what controls
+This guide provides game-specific play cards and explains how to use the
+original Programs 1–14 and cartridge Programs A–I. It shows you which gestures to make, what controls
 they produce, and how to try them with other games in your library.
 
 Find your game below, check its profile, and try the first-round exercise.
@@ -142,6 +142,38 @@ physical controller if a game requires Select and a direction together.
 Menu guard suppresses D-pad, A/B, Start, and Select, and cancels a pending Start
 press. It does **not** freeze native continuous hand positioning. For a dependable
 pause in all controller delivery while you reposition, use **Stop controller**.
+
+<!-- PAGEBREAK -->
+
+## Original Programs 1–14
+
+These profiles reproduce the built-in Power Glove programs with camera gestures
+and ordinary NES controller output. Numeric programs pulse A and B by default,
+except Program 9. Program 14 stops camera tracking and sends no VirtualGlove
+input so a conventional controller can be used without ending the authenticated
+game session.
+
+| Program | Core controls | Games in Mattel's index |
+| --- | --- | --- |
+| 1 | Hand position is the D-pad; thumb is rapid A; index is rapid B; curling the last three fingers performs one bounded turn-and-B action. | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link |
+| 2 | Program 1 movement and buttons, plus live **Centered** / **Return to centre** feedback in place of the physical glove's beeper. | Centering-practice alternative; no indexed title |
+| 3 | Push / pull sends Up / Down; side movement sends Left / Right; thumb / index sends rapid A / B. | Ice Hockey; Top Gun. Gauntlet may also use this as an alternative top-view layout, although the index assigns it to Program 1. |
+| 4 | Open or close all four fingers for Up / Down; index-versus-last-three poses steer the treads; thumb sends rapid A; wrist poses send held B or Up plus Left / Right. | Iron Tank |
+| 5 | Push / pull and bank / side movement fly the craft; thumb / index sends rapid A / B. | Alpha Mission; Life Force; Xevious; 1943 |
+| 6 | Position and depth move; index sends A; thumb sends B; last three sends A+B; forward fist holds Up; clockwise twist turns rapidly twice. | Double Dragon |
+| 7 | Open-hand movement dodges and ducks; forward fists punch high or low; clockwise wrist blocks; pull-back fist sends Select; thumb sends rapid A. | Mike Tyson's Punch-Out!! |
+| 8 | Position and depth select bases or fielding direction; thumb, index, counter-clockwise wrist, and pull-back produce the documented offense / defense A and B actions. | Baseball; Bases Loaded; R.B.I. Baseball |
+| 9 | Make a fist to ready the profile. Wrist rotation steers; forward fist is turbo; raising the hand sends Down; lowering sends B; fist sends A. No rapid fire. | Rad Racer |
+| 10 | Index / last-three curls steer Left / Right; thumb sends rapid A; B is held automatically until the hand is lowered. | R.C. Pro-Am |
+| 11 | Program 1 controls, but the last-three-finger pose turns rapidly in both directions while firing B. | Fast-turn alternative; no indexed title |
+| 12 | Position moves Mario; thumb / index sends rapid A / B; middle curl adds B for fast travel; last-three curl slows horizontal travel. | Super Mario Bros. |
+| 13 | Thumb / index sends rapid A / B. Camera D-pad output is neutral, leaving movement and menus to a conventional controller. | No indexed title |
+| 14 | VirtualGlove camera and output are paused while the selected profile and game session remain visible. | Anticipation; temporary manual menu or password entry |
+
+The shipped exact-filename registry supplies `.nes`, `.zip`, and `.7z` entries.
+It also applies Mattel's rapid-fire exceptions: rapid A is off for Alpha Mission
+and Blaster Master; rapid B is off for Ice Hockey; both are off for Double
+Dribble and Racket Attack.
 
 <!-- PAGEBREAK -->
 

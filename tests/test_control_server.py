@@ -46,7 +46,10 @@ from powerglove_vision.control_server import (
 from powerglove_vision.debug_server import SharedDebugState
 from powerglove_vision.help_content import guide_pdf, help_asset, render_markdown
 from powerglove_vision.help_content import cabinet_reference_content, request_browser_address
-from powerglove_vision.vision_app import _base_status, _effective_profile
+from powerglove_vision.vision_app import (
+    _base_status, _effective_profile, _requested_rapid_fire,
+)
+from powerglove_vision.profile_control import ProfileRequest
 
 
 class AutomaticGameControllerTests(unittest.TestCase):
@@ -183,7 +186,9 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(loader()["receiver"], "retropieconsole.local")
         self.assertEqual(self.path.read_bytes(), before)
         self.path.unlink()
-        self.assertEqual(loader()["receiver"], "")
+        fresh = loader()
+        self.assertEqual(fresh["receiver"], "")
+        self.assertEqual(fresh["profile"], "off")
         self.assertFalse(self.state.public_config()["connection_configured"])
         self.assertFalse(self.state.public_config()["paired"])
         with self.assertRaisesRegex(ValueError, "Connection"):
@@ -846,6 +851,8 @@ class ControlStateTests(unittest.TestCase):
         self.assertIsNone(_effective_profile(None, False))
         self.assertEqual(_effective_profile("bad_street_brawler", True), "practice")
         self.assertEqual(_effective_profile("bad_street_brawler", False), "bad_street_brawler")
+        self.assertEqual(_effective_profile("program_14", True), "practice")
+        self.assertIsNone(_effective_profile("program_14", False))
         status = _base_status(
             None, "Startup default", "startup", True, practice_mode=True,
         )
@@ -853,6 +860,25 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(status["vision_profile"], "practice")
         self.assertTrue(status["practice_mode"])
         self.assertIn("Practice mode", status["receiver_error"])
+
+    def test_practice_preserves_active_game_rapid_fire_switches(self):
+        self.assertEqual(
+            _requested_rapid_fire(None, None, False, (False, True)),
+            (False, True),
+        )
+        request = ProfileRequest(
+            "one", "program_1", "nes", "Example.nes", ("127.0.0.1", 1),
+            rapid_a=True, rapid_b=False,
+        )
+        self.assertEqual(
+            _requested_rapid_fire(request, None, False, (False, True)),
+            (True, False),
+        )
+        self.assertEqual(
+            _requested_rapid_fire(None, ("program_1", "Dashboard", "Manual"),
+                                  False, (False, True)),
+            (None, None),
+        )
 
     def test_password_pairing_requires_certificate_comparison(self):
         self.assertIn(b"browser certificate fingerprint", SETUP)
@@ -960,6 +986,8 @@ class ControlStateTests(unittest.TestCase):
 
     def test_profile_selectors_use_descriptive_names_and_stable_ids(self):
         expected = {
+            **{f"program_{number}".encode(): f"{number}:".encode()
+               for number in range(1, 15)},
             b"program_a": b"A: Pinball",
             b"program_b": b"B: Joust",
             b"program_c": b"C: Gyruss",
@@ -970,7 +998,13 @@ class ControlStateTests(unittest.TestCase):
             b"program_h": b"H: General",
             b"program_i": b"I: Knight Rider",
         }
-        for page in (DASHBOARD,):
+        for page in (DASHBOARD, SETUP):
+            for group in (
+                b"Original programs 1\xe2\x80\x9314",
+                b"Cartridge programs A\xe2\x80\x93I",
+                b"Game-specific", b"Gestures off",
+            ):
+                self.assertIn(b"<optgroup label='" + group + b"'>", page)
             for profile, label in expected.items():
                 self.assertIn(b"value=" + profile + b">" + label, page)
             self.assertNotIn(b">Program A<", page)
@@ -1141,6 +1175,21 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(status["active_profile"], "off")
         self.assertFalse(status["camera_available"])
         self.assertEqual(status["receiver_error"], "Gestures are paused")
+
+    def test_program_14_retains_profile_while_camera_and_output_are_paused(self):
+        status = _base_status("program_14", "Anticipation", "RetroPie launch hook", True)
+        self.assertEqual(status["active_profile"], "program_14")
+        self.assertEqual(status["vision_profile"], "off")
+        self.assertFalse(status["camera_available"])
+        self.assertEqual(status["receiver_error"], "Gestures are paused")
+        self.assertEqual(status["rapid_fire"], {"a": True, "b": True})
+
+    def test_status_reports_applied_rapid_fire_overrides_during_startup(self):
+        status = _base_status(
+            "program_1", "Blaster Master", "RetroPie launch hook", True,
+            rapid_a=False, rapid_b=True,
+        )
+        self.assertEqual(status["rapid_fire"], {"a": False, "b": True})
 
     def test_pairing_credentials_are_rejected_over_plain_http(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)

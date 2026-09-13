@@ -239,7 +239,7 @@ from camera frames and controller packets, which remain newest-state-only.
 | --- | --- | --- |
 | Console hostname or IP | Empty (not configured) | Set your RetroPie hostname (`RETROPIE-NAME.local` in examples) or a reserved LAN address and pair through Connection before starting controls. Glove Academy and local settings work without a destination. Existing saved destinations are preserved. |
 | Receiver UDP port | `55355` | VirtualGlove Controller to RetroPie controller-state port. Leave it at the default unless both ends are changed. |
-| Startup game profile | `bad_street_brawler` | Profile used before a registered game selects another one. |
+| Startup game profile | `off` | Fresh installations keep gestures and the camera off until the user selects a profile or launches a registered game. Existing saved startup profiles are preserved during upgrades. |
 | Hand or glove (diagnostic label) | `none` | `none`, `white`, or `black`. In the current release this is an informational diagnostic label; it does not change MediaPipe tracking. |
 | Camera | Automatic | Setup lists the currently discovered usable cameras. Prefer **Automatic — choose the connected camera**; choose a named camera only when more than one is attached or automatic selection is wrong. A saved disconnected camera remains visible as unavailable, and the list refreshes while Setup is open. |
 | Camera frame rate | Automatic | Tries 30 fps first, then accepts the camera driver's usable rate if necessary. Explicit 30- and 60-fps requests are available for comparison and fall back safely when unsupported. The live negotiated rate appears below the setting while tracking is active. |
@@ -673,7 +673,7 @@ A typical device configuration file contains the following fields:
   "receiver": "RETROPIE-NAME.local",
   "port": 55355,
   "token": "private-random-value-created-by-the-application",
-  "profile": "bad_street_brawler",
+  "profile": "off",
   "glove_color": "none",
   "camera": "auto",
   "camera_fps": "auto",
@@ -769,6 +769,8 @@ The valid startup profile identifiers are:
 off
 bad_street_brawler
 super_glove_ball
+program_1  program_2  program_3  program_4  program_5  program_6  program_7
+program_8  program_9  program_10 program_11 program_12 program_13 program_14
 program_a  program_b  program_c  program_d  program_e
 program_f  program_g  program_h  program_i
 ```
@@ -910,13 +912,23 @@ selection currently applies only when RetroPie reports the system as `nes` or
   "games": {
     "Bad Street Brawler (USA).nes": "bad_street_brawler",
     "Super Glove Ball (USA).zip": "super_glove_ball",
-    "Joust (USA).nes": "program_b"
+    "Joust (USA).nes": "program_b",
+    "Blaster Master (USA).nes": {
+      "profile": "program_1",
+      "rapid_a": false
+    }
   }
 }
 ```
 
 Add the exact filename shown in EmulationStation. Zipped and 7-Zip copies need
 their own entries because `.nes`, `.zip`, and `.7z` are different basenames.
+The legacy string form remains valid. The structured form accepts exactly one
+valid `profile` plus optional Boolean `rapid_a` and `rapid_b` switches. Unknown
+fields and non-Boolean switch values invalidate the registry.
+The launch hook carries these switches in every authenticated game-session
+renewal. Read-only `/status` reports the applied values as
+`rapid_fire.a` and `rapid_fire.b`; neither value changes player data.
 
 | Included game | Profile |
 | --- | --- |
@@ -929,14 +941,19 @@ their own entries because `.nes`, `.zip`, and `.7z` are different basenames.
 | Gun Smoke | `program_g` |
 | Knight Rider | `program_i` |
 
-The table above is the complete set of games recognized automatically by the
-shipped registry. Programs A, D, and H are fully implemented profiles rather
+The shipped registry also contains every title in Mattel's official index under
+Programs 1, 3–10, 12, and 14, with explicit `.nes`, `.zip`, and `.7z` filenames.
+Programs 2, 11, and 13 are selectable alternatives without a default indexed
+title. Programs A, D, and H are fully implemented profiles rather
 than omitted games: `program_a` is a pinball control scheme, `program_d` reverses
 all four directions for challenge or accessibility use, and `program_h` provides
 general-purpose movement with pulsed buttons. They deliberately have no default
 ROM assignment.
 
-Any appropriate NES or Famicom ROM can use one of those profiles after you add
+The indexed rapid-fire exceptions are applied automatically: Alpha Mission and
+Blaster Master disable rapid A; Ice Hockey disables rapid B; Double Dribble and
+Racket Attack disable both. Any appropriate NES or Famicom ROM can use one of
+the profiles after you add
 its exact basename to the `games` object. Every profile value must be one of the
 supported identifiers; an unknown value invalidates the registry.
 
@@ -1807,7 +1824,7 @@ does not change the saved startup profile or turn controller delivery on.
 | `--registry PATH` | `/etc/powerglove/games.json` | Registry used when `--profile` is omitted. |
 | `--system NAME` | `nes` | System used for registry selection and request metadata. Automatic selection accepts `nes` or `famicom`. |
 | `--rom PATH` | `Manual selection` | ROM path or filename used for registry lookup and displayed game metadata. |
-| `--profile NAME` | None | Overrides registry lookup. Accepts `program_a` through `program_i`, `bad_street_brawler`, `super_glove_ball`, or `off`. |
+| `--profile NAME` | None | Overrides registry lookup. Accepts `program_1` through `program_14`, `program_a` through `program_i`, `bad_street_brawler`, `super_glove_ball`, or `off`. |
 | `--timeout SECONDS` | `0.4` | Wait for each acknowledgement; the sender makes up to three attempts. |
 | `-h`, `--help` | — | Prints usage and exits. |
 
@@ -1892,7 +1909,7 @@ before using it. Normal VirtualGlove Controller use should start through App Lab
 | `--token VALUE` | None | Legacy direct shared token; exposes the value in process arguments. Prefer a private-file option. |
 | `--token-file PATH` | None | Read the shared token from a private text file. |
 | `--device-config PATH` | Supervisor: `data/device.json` | Read the shared token from private device JSON. Supply exactly one of the three token options. Other worker settings still come from their flags. |
-| `--profile NAME` | `bad_street_brawler` | Initial profile, one of the eleven supported profiles or `off`. |
+| `--profile NAME` | `off` | Initial profile, one of the 25 supported profiles or `off`. |
 | `--camera VALUE` | `auto` | Camera selection; use `auto` or a camera index. |
 | `--width PIXELS` | `640` | Requested capture width; the camera may negotiate another size. |
 | `--height PIXELS` | `480` | Requested capture height. |

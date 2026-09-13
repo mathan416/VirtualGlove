@@ -86,7 +86,7 @@ async def capture():
                 if path == '/api/connection-status':
                     return await request.fulfill(json=dict(app=True,console_configured=True,console_service=True,console_authenticated=True,networking='connected',checked_seconds_ago=1))
                 if path == '/api/games':
-                    return await request.fulfill(json=dict(document=(ROOT/'config/games.json').read_text(),revision='example',has_backup=False,profiles=['bad_street_brawler','super_glove_ball']+[f'program_{c}' for c in 'abcdefghi']))
+                    return await request.fulfill(json=dict(document=(ROOT/'config/games.json').read_text(),revision='example',has_backup=False,profiles=[f'program_{n}' for n in range(1,15)]+[f'program_{c}' for c in 'abcdefghi']+['bad_street_brawler','super_glove_ball']))
                 if path == '/api/practice':
                     return await request.fulfill(json={'practice_mode':True})
                 if path == '/stream':

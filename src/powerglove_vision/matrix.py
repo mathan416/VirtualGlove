@@ -234,6 +234,7 @@ class UnoQMatrix:
             **{f"program_{letter}": index for index, letter in enumerate("abcdefghi", 1)},
             "bad_street_brawler": 10,
             "super_glove_ball": 11,
+            **{f"program_{number}": 11 + number for number in range(1, 15)},
         }
         if profile == self.last_profile:
             return self.available
