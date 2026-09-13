@@ -29,7 +29,9 @@ authoritative record for line-level and file-level history.
   cards, compound-action timing and release rules, the complete official game
   index, rapid-fire exceptions, physical-controller use, and Program 14's
   camera-off behavior. Synchronized the installation, configuration, matrix,
-  architecture, native-emulation, quick-reference, and project guides.
+  architecture, native-emulation, quick-reference, and project guides. Updated
+  Pixel Pal's Extra-Digit Hunt for the added illustrations; its verified answer
+  is now 23.
 
 - Added a visual-only Vulcan-salute easter egg to live camera experiences.
   Holding an extended hand with a deliberate middle/ring split briefly shows
