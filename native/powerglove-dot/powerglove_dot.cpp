@@ -56,8 +56,8 @@ uint64_t now_ns() {
 }
 
 bool sample(int16_t& x, int16_t& y) {
-  const char* configured = std::getenv("POWERGLOVE_NATIVE_STATE");
-  const char* path = configured && *configured ? configured : "/run/powerglove/native-state";
+  const char* configured = std::getenv("VIRTUALGLOVE_NATIVE_STATE");
+  const char* path = configured && *configured ? configured : "/run/virtualglove/native-state";
   const int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
   if (fd < 0) return false;
   uint8_t data[64];

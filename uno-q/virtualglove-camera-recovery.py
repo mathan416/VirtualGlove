@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
-# File: uno-q/powerglove-camera-recovery.py
+# File: uno-q/virtualglove-camera-recovery.py
 # Purpose: Recover the single UVC camera through its most recently observed parent USB hub.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -34,9 +34,9 @@ RESULT = APP_DATA / "camera-recovery-result"
 USB_DEVICES = Path("/sys/bus/usb/devices")
 VIDEO_CLASS = Path("/sys/class/video4linux")
 USB_DRIVER = Path("/sys/bus/usb/drivers/usb")
-CONFIG = Path("/etc/powerglove-camera-recovery.json")
-LOCK = Path("/run/powerglove-camera-recovery.lock")
-STAMP = Path("/run/powerglove-camera-recovery.stamp")
+CONFIG = Path("/etc/virtualglove-camera-recovery.json")
+LOCK = Path("/run/virtualglove-camera-recovery.lock")
+STAMP = Path("/run/virtualglove-camera-recovery.stamp")
 COOLDOWN_SECONDS = 60.0
 USB_NAME = re.compile(r"^[0-9]+-[0-9]+(?:\.[0-9]+)*$")
 USB_PORT = re.compile(r"^[1-9][0-9]*$")
@@ -462,7 +462,7 @@ def main(argv: list[str] | None = None) -> int:
     if arguments == ["--configure-if-present"]:
         return _enroll_if_present(required=False)
     if arguments:
-        raise SystemExit("usage: powerglove-camera-recovery [--configure|--configure-if-present]")
+        raise SystemExit("usage: virtualglove-camera-recovery [--configure|--configure-if-present]")
     try:
         method = _recover()
     except Exception:

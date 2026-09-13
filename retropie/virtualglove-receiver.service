@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: retropie/powerglove-receiver.service
+# File: retropie/virtualglove-receiver.service
 # Purpose: Run the privileged uinput receiver under systemd with automatic failure recovery.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -13,14 +13,14 @@
 Description=VirtualGlove virtual gamepad receiver
 Wants=network-online.target
 After=network-online.target
-ConditionFileNotEmpty=/etc/powerglove/token
+ConditionFileNotEmpty=/etc/virtualglove/token
 
 [Service]
 Type=simple
 User=root
-RuntimeDirectory=powerglove
+RuntimeDirectory=virtualglove
 RuntimeDirectoryMode=0755
-ExecStart=/opt/powerglove/bin/powerglove-receiver --listen 0.0.0.0 --token-file /etc/powerglove/token
+ExecStart=/opt/virtualglove/bin/virtualglove-receiver --listen 0.0.0.0 --token-file /etc/virtualglove/token
 Restart=on-failure
 RestartSec=2
 

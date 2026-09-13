@@ -59,7 +59,7 @@ both paired hosts.
 
 The VirtualGlove Controller and RetroPie share one random token of at least 16 characters. The
 active token belongs only in the VirtualGlove Controller's private `data/device.json` and
-RetroPie's `/etc/powerglove/token`. It must not be committed, placed in a shell
+RetroPie's `/etc/virtualglove/token`. It must not be committed, placed in a shell
 argument, stored in `launcher.json`, or included in a screenshot or log.
 
 The supervised vision worker reads its token using `--device-config`, keeping
@@ -173,7 +173,7 @@ Camera recovery follows the same fixed-request pattern with separate path and
 service units. Installation may occur without a camera. When exactly one UVC
 camera is healthy, the root-owned helper writes its identity and its actual
 parent hub's identity and physical USB path to the root-owned
-`/etc/powerglove-camera-recovery.json` allowlist. A later healthy sighting safely
+`/etc/virtualglove-camera-recovery.json` allowlist. A later healthy sighting safely
 updates that association if the camera has moved. During an outage the helper
 validates both the stored path and hub identity and resets only that hub; it
 never accepts a device path from the web application or guesses among hubs.

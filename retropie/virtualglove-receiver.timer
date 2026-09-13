@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: retropie/powerglove-receiver.timer
+# File: retropie/virtualglove-receiver.timer
 # Purpose: Delay receiver startup until the RetroPie boot and EmulationStation device scan settle.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -14,7 +14,7 @@ Description=Start VirtualGlove receiver after EmulationStation settles
 [Timer]
 OnBootSec=45s
 AccuracySec=1s
-Unit=powerglove-receiver.service
+Unit=virtualglove-receiver.service
 
 [Install]
 WantedBy=timers.target

@@ -14,10 +14,10 @@ STATISTICS_SWITCH = """<label class=check><input id=show-statistics type=checkbo
 
 STATISTICS_CONTENT = """<section class=card id=statistics-settings style="margin-top:14px" aria-labelledby=statistics-title>
 <h2 id=statistics-title>Show statistics</h2>""" + STATISTICS_SWITCH + """
-<p id=statistics-help>Show Controller output, Axes, Finger curl, Performance, and Recent events on the Dashboard. Off by default. When off, the Dashboard stops updating these details and collecting recent events. Camera and controller operation continue.</p></section>"""
+<p id=statistics-help>Show Controller output, Axes, Finger curl, Performance, and Recent events on the Dashboard. Off by default. Use the same switch on the Dashboard to show or hide details without leaving it. When off, the Dashboard stops reading, updating, and retaining these details and recent events. Camera and controller operation continue.</p></section>"""
 
 STATISTICS_SCRIPT = r"""(()=>{
-const key='powerglove.showStatistics',toggle=document.getElementById('show-statistics');
+const key='virtualglove.showStatistics',toggle=document.getElementById('show-statistics');
 let enabled=false;
 function apply(value){enabled=value;toggle.checked=value;window.dispatchEvent(new Event('statisticschange'));}
 function restore(){try{apply(localStorage.getItem(key)==='true')}catch(e){apply(enabled)}}

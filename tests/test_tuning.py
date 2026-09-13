@@ -126,7 +126,7 @@ class TuningTests(unittest.TestCase):
 
     def test_idle_manager_skips_live_measurement_work_and_reuses_configuration(self):
         manager = TuningManager(self.path, lambda: self.now)
-        config = GestureConfig()
+        config = GestureConfig(joystick_deadzone=.60)
         self.assertIs(manager.configuration(config), config)
         self.assertIs(manager.configuration(config), config)
         manager.observe(

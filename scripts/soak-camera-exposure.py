@@ -168,7 +168,7 @@ def main():
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     factory = raw_camera_class(args.source_root)
-    report = {"format": "powerglove-camera-exposure-soak/1",
+    report = {"format": "virtualglove-camera-exposure-soak/1",
               "mode": args.mode, "exposure": args.exposure,
               "gain": args.gain, "cycles": [], "stores_images": False}
     try:

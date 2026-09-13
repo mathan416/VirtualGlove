@@ -71,9 +71,9 @@ index 3c7d92f..13b4fca 100644
 +
 +static void pgv_native_open(void)
 +{
-+   const char *path = getenv("POWERGLOVE_NATIVE_STATE");
++   const char *path = getenv("VIRTUALGLOVE_NATIVE_STATE");
 +   if (!path || !*path)
-+      path = "/run/powerglove/native-state";
++      path = "/run/virtualglove/native-state";
 +   pgv_native_close();
 +   pgv_native_fd = open(path, O_RDONLY);
 +   if (pgv_native_fd < 0)
@@ -225,13 +225,13 @@ index a9b01b6..52fe5e1 100644
 +{
 +	bool PowerGloveVisionNativeEnabled()
 +	{
-+		const char* path = std::getenv("POWERGLOVE_NATIVE_STATE");
++		const char* path = std::getenv("VIRTUALGLOVE_NATIVE_STATE");
 +		return path != NULL && *path != '\0';
 +	}
 +
 +	bool PowerGloveTraceEnabled()
 +	{
-+		static const bool enabled = std::getenv("POWERGLOVE_TRACE") != NULL;
++		static const bool enabled = std::getenv("VIRTUALGLOVE_TRACE") != NULL;
 +		return enabled;
 +	}
 +}

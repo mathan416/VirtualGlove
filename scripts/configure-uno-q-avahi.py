@@ -57,11 +57,11 @@ def configure(path, interfaces):
     updated = configure_text(original, interfaces)
     if original == updated:
         return False
-    backup = path.with_name(path.name + '.powerglove-backup')
+    backup = path.with_name(path.name + '.virtualglove-backup')
     if not backup.exists():
         shutil.copy2(path, backup)
     info = path.stat()
-    fd, temporary = tempfile.mkstemp(dir=str(path.parent), prefix='.powerglove-avahi-')
+    fd, temporary = tempfile.mkstemp(dir=str(path.parent), prefix='.virtualglove-avahi-')
     try:
         with os.fdopen(fd, 'w') as stream:
             stream.write(updated)

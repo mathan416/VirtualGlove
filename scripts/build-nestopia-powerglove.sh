@@ -48,7 +48,7 @@ if ! cmp -s "$header_check/upstream" "$header_check/patched"; then
   exit 1
 fi
 # Diagnostics use a separate build directory and never replace the normal core.
-if [ "${POWERGLOVE_BUILD_DIAGNOSTICS:-0}" = 1 ]; then
+if [ "${VIRTUALGLOVE_BUILD_DIAGNOSTICS:-0}" = 1 ]; then
   cp "$root/native/nestopia-powerglove/diagnostic_trace.h" "$source_dir/libretro/pgv_diagnostic_trace.h"
   python3 "$root/scripts/instrument-native-core.py" "$source_dir/libretro/libretro.cpp"
 fi
@@ -57,7 +57,7 @@ make -C "$source_dir/libretro" -j"${JOBS:-2}" >&2
 core=$(find "$source_dir/libretro" -maxdepth 1 -type f \( -name 'nestopia_libretro.so' -o -name 'nestopia_libretro.dylib' \) -print | head -n 1)
 test -n "$core"
 core_name=nestopia_powerglove_libretro
-if [ "${POWERGLOVE_BUILD_DIAGNOSTICS:-0}" = 1 ]; then
+if [ "${VIRTUALGLOVE_BUILD_DIAGNOSTICS:-0}" = 1 ]; then
   core_name=nestopia_powerglove_diagnostic_libretro
 fi
 cp "$core" "$destination/$core_name.${core##*.}"

@@ -109,7 +109,7 @@ class UnoQMatrix:
         self._firmware_id = None
         if self.available:
             try:
-                result = self._call("get_powerglove_firmware")
+                result = self._call("get_virtualglove_firmware")
                 if isinstance(result, str) and re.fullmatch(r"[0-9a-f]{64}", result):
                     self._firmware_id = result
             except Exception:
@@ -131,7 +131,7 @@ class UnoQMatrix:
         if value == self._attract_sent or now < self._attract_retry or not self.available:
             return
         try:
-            self._call("set_powerglove_attract", *value)
+            self._call("set_virtualglove_attract", *value)
             self._attract_sent = value
         except Exception:
             # An older sketch keeps its existing animation until upgraded.
@@ -195,7 +195,7 @@ class UnoQMatrix:
             return False
         try:
             assert self._call is not None
-            self._call("set_powerglove_status", int(status))
+            self._call("set_virtualglove_status", int(status))
             self.last_status = status
             self._status_retry_at = 0.0
             self.last_error = None
@@ -219,7 +219,7 @@ class UnoQMatrix:
             return False
         try:
             assert self._call is not None
-            self._call("set_powerglove_pairing", int(certificate_id, 16), int(pin))
+            self._call("set_virtualglove_pairing", int(certificate_id, 16), int(pin))
             self.pairing_until = time.monotonic() + seconds
             self.last_status = MatrixStatus.PAIRING
             self.last_error = None
@@ -234,6 +234,7 @@ class UnoQMatrix:
             **{f"program_{letter}": index for index, letter in enumerate("abcdefghi", 1)},
             "bad_street_brawler": 10,
             "super_glove_ball": 11,
+            **{f"program_{number}": 11 + number for number in range(1, 15)},
         }
         if profile == self.last_profile:
             return self.available
@@ -243,7 +244,7 @@ class UnoQMatrix:
             return False
         try:
             assert self._call is not None
-            self._call("set_powerglove_profile", codes.get(profile, 0))
+            self._call("set_virtualglove_profile", codes.get(profile, 0))
             self.last_profile = profile
             self._profile_retry_at = 0.0
             self.last_error = None

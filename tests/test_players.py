@@ -38,7 +38,7 @@ class PlayerTests(unittest.TestCase):
         restored = TuningManager(self.path)
         self.assertEqual(restored.player_snapshot()["players"][0]["name"], "Alex")
         self.assertEqual(restored.saved, self.manager.saved)
-        self.assertEqual(json.loads(self.path.read_text())["version"], 5)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
 
     def test_version_two_player_data_migrates_with_progress_and_backup(self):
         saved={'version':2,'active':'default','generation':4,'players':{'default':{
@@ -48,7 +48,7 @@ class PlayerTests(unittest.TestCase):
         self.command('rename',name='Iain B')
         self.assertEqual(self.manager.player_snapshot()['progress']['completed'],[0,1])
         self.assertEqual(json.loads(self.path.with_name('gesture-tuning-v2-backup.json').read_text()),saved)
-        self.assertEqual(json.loads(self.path.read_text())['version'],5)
+        self.assertEqual(json.loads(self.path.read_text())['version'],6)
 
     def test_players_isolate_tuning_and_progress(self):
         self.command("progress", progress={"course":1,"completed":[0,1],"lesson":2})
@@ -144,7 +144,7 @@ class PlayerTests(unittest.TestCase):
         state=manager.player_snapshot()
         manager.player_command({'action':'rename','player':state['active'],
                                 'generation':state['generation'],'name':'Iain B'})
-        self.assertEqual(json.loads(self.path.read_text())['version'],5)
+        self.assertEqual(json.loads(self.path.read_text())['version'],6)
         self.assertEqual(json.loads(self.path.with_name('gesture-tuning-v4-backup.json').read_text()),saved)
 
     def test_version_two_backup_migrates_largest_activation(self):

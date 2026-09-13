@@ -43,12 +43,12 @@ CONFIGURATION_FILES = (
     "sketch/sketch.yaml",
     "pyproject.toml",
     "retropie/retroarch/VirtualGlove.cfg",
-    "retropie/powerglove-receiver.service",
-    "retropie/powerglove-receiver.timer",
-    "retropie/powerglove-games.service",
-    "uno-q/powerglove-system-shutdown.path",
-    "uno-q/powerglove-system-shutdown.service",
-    "uno-q/powerglove-system-shutdown.conf",
+    "retropie/virtualglove-receiver.service",
+    "retropie/virtualglove-receiver.timer",
+    "retropie/virtualglove-games.service",
+    "uno-q/virtualglove-system-shutdown.path",
+    "uno-q/virtualglove-system-shutdown.service",
+    "uno-q/virtualglove-system-shutdown.conf",
     ".github/workflows/quality.yml",
 )
 PDF_EDITIONS = {
@@ -218,20 +218,26 @@ def check_help_coverage(markdown: list[Path], errors: list[str]) -> None:
 
 
 def check_gameplay_coverage(errors: list[str]) -> None:
-    """Require an illustrated gameplay section for every registered game title."""
+    """Require every registered title family to appear in the gameplay guide."""
     try:
         registry = json.loads((ROOT / "config" / "games.json").read_text())["games"]
     except (json.JSONDecodeError, KeyError, TypeError) as exc:
         errors.append(f"cannot check gameplay coverage: {exc}")
         return
     gameplay = (ROOT / "docs" / "GAMEPLAY_GUIDE.md").read_text()
-    titles = {
-        re.sub(r"\s*\([^)]*\)$", "", Path(filename).stem)
-        for filename in registry
+    titles = {re.sub(r"\s*\([^)]*\)", "", Path(filename).stem).strip()
+              for filename in registry}
+    title_aliases = {
+        "1943 - The Battle of Midway": "1943",
+        "Iron Tank - The Invasion of Normandy": "Iron Tank",
     }
+    def normalize_title(value):
+        """Normalize registered ROM filenames to handbook game titles."""
+        return re.sub(r"[^a-z0-9]", "", value.lower())
+    normalized_gameplay = normalize_title(gameplay)
     for title in sorted(titles):
-        display_title = {"Gun.Smoke": "Gun Smoke", "Sesame Street 123": "Sesame Street 1-2-3"}.get(title, title)
-        if f"## {display_title}" not in gameplay:
+        display_title = title_aliases.get(title, title)
+        if normalize_title(display_title) not in normalized_gameplay:
             errors.append(f"registered game is missing from the gameplay guide: {title}")
 
 

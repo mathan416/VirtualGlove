@@ -42,6 +42,8 @@ class RegistryTests(unittest.TestCase):
 
     def test_rejects_bad_documents_and_casefold_collisions(self):
         for text in ('{', '[]', '{"games":[]}', '{"games":{"a":"invalid"}}',
+                     '{"games":{"a":{"profile":"program_1","rapid_a":0}}}',
+                     '{"games":{"a":{"profile":"program_1","extra":false}}}',
                      '{"games":{"a":"program_b","a":"program_c"}}',
                      '{"games":{"A":"program_b","a":"program_c"}}',
                      '{"games":{"/roms/a":"program_b","a":"program_c"}}',

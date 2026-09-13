@@ -1,6 +1,6 @@
 #!/bin/sh
 # Project: VirtualGlove
-# File: retropie/bin/powerglove-dot
+# File: retropie/bin/virtualglove-dot
 # Purpose: Launch the ROM-free VirtualGlove calibration display.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -9,5 +9,5 @@
 #   2026-09-09 - Added the calibration-test launcher.
 # Full history: docs/CHANGELOG.md and Git history.
 
-export PYTHONPATH=/opt/powerglove-src/src
+export PYTHONPATH=/opt/virtualglove-src/src
 exec /usr/bin/python3 -m powerglove_vision.dot_launcher "$@"

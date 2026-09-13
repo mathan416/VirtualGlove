@@ -35,6 +35,20 @@ spec.loader.exec_module(installer)
 
 
 class PackageContentTests(unittest.TestCase):
+    def test_retropie_upgrade_recognizes_current_and_legacy_launchers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            current = root / "etc/virtualglove/launcher.json"
+            legacy = root / "etc/powerglove/launcher.json"
+            self.assertFalse(installer.retropie_launcher_exists(current, legacy))
+            legacy.parent.mkdir(parents=True)
+            legacy.write_text('{"uno_q":"existing.local"}')
+            self.assertTrue(installer.retropie_launcher_exists(current, legacy))
+            legacy.unlink()
+            current.parent.mkdir(parents=True)
+            current.write_text('{"uno_q":"existing.local"}')
+            self.assertTrue(installer.retropie_launcher_exists(current, legacy))
+
     def test_controller_hostname_validation(self):
         for value, expected in (("VirtualGlove", "virtualglove"),
                                 ("kids-room.local", "kids-room"),
@@ -192,6 +206,21 @@ class PackageContentTests(unittest.TestCase):
             errors = verifier.archive_errors(archive)
             self.assertTrue(any('engineering-only file included' in error for error in errors))
 
+    def test_app_lab_package_rejects_legacy_service_files(self):
+        spec = importlib.util.spec_from_file_location(
+            'package_verifier_legacy_services', ROOT / 'scripts/verify-app-lab-package.py')
+        verifier = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verifier)
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / 'package.zip'
+            with zipfile.ZipFile(archive, 'w') as output:
+                output.writestr(
+                    'VirtualGlove/uno-q/powerglove-wifi-status.service', 'legacy')
+            errors = verifier.archive_errors(archive)
+            self.assertIn(
+                'legacy PowerGlove runtime file included: '
+                'VirtualGlove/uno-q/powerglove-wifi-status.service', errors)
+
 
 class ArchiveTests(unittest.TestCase):
     def package(self, directory, machine='retropie', extra=None):
@@ -212,11 +241,18 @@ class ArchiveTests(unittest.TestCase):
                          'src/powerglove_vision/retropie_hook.py',
                          'config/games.json', 'config/profiles.json',
                          'THIRD_PARTY_NOTICES.md',
-                         'retropie/powerglove-receiver.service',
-                         'retropie/bin/powerglove-retropie-hook',
-                         'retropie/bin/powerglove-dot',
-                         'retropie/runcommand-onstart-powerglove.sh',
-                         'retropie/runcommand-onend-powerglove.sh',
+                         'retropie/virtualglove-receiver.service',
+                         'retropie/virtualglove-receiver.timer',
+                         'retropie/virtualglove-games.service',
+                         'retropie/bin/virtualglove-retropie-hook',
+                         'retropie/bin/virtualglove-receiver',
+                         'retropie/bin/virtualglove-games',
+                         'retropie/bin/virtualglove-pair',
+                         'retropie/bin/virtualglove-profile',
+                         'retropie/bin/virtualglove-bsb-zap',
+                         'retropie/bin/virtualglove-dot',
+                         'retropie/runcommand-onstart-virtualglove.sh',
+                         'retropie/runcommand-onend-virtualglove.sh',
                          'native/nestopia-powerglove/nestopia-powerglove.patch',
                          'native/powerglove-dot/powerglove_dot.cpp',
                          'src/powerglove_vision/dot_launcher.py'):
@@ -224,6 +260,13 @@ class ArchiveTests(unittest.TestCase):
             if extra:
                 output.writestr(*extra)
         return archive
+
+    def test_legacy_runtime_files_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = self.package(directory, extra=(
+                'VirtualGlove/retropie/powerglove-receiver.service', 'legacy'))
+            with self.assertRaisesRegex(ValueError, 'legacy PowerGlove runtime file'):
+                installer.unpack(archive, Path(directory) / 'extract', 'retropie', 'dev-test')
 
     def test_valid_package_and_wrong_identity(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -258,7 +301,7 @@ class ArchiveTests(unittest.TestCase):
             self.assertFalse((scripts / '__pycache__').exists())
             self.assertFalse(list(source.rglob('*.pyc')))
             self.assertTrue((app / 'scripts/setup-machine.py').is_file())
-            self.assertTrue((app / '.powerglove-install.json').is_file())
+            self.assertTrue((app / '.virtualglove-install.json').is_file())
 
     def test_traversal_private_files_and_links_rejected_before_extract(self):
         link = zipfile.ZipInfo('VirtualGlove/link')
@@ -549,7 +592,7 @@ class GameSetupTests(unittest.TestCase):
             run.assert_any_call("apt-get", "install", "-y", "build-essential")
             launcher = mapped("/home/pi/RetroPie/roms/ports/VirtualGlove Calibration Test.sh")
             self.assertEqual(launcher.read_text(),
-                             "#!/bin/sh\nexec /opt/powerglove/bin/powerglove-dot\n")
+                             "#!/bin/sh\nexec /opt/virtualglove/bin/virtualglove-dot\n")
             self.assertEqual((prefix / "configs/nes/powerglove-native.cfg").read_text(),
                              'input_libretro_device_p1 = "517"\nvideo_threaded = "false"\n')
 

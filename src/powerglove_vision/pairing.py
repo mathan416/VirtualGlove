@@ -302,7 +302,7 @@ def serve_pairing(
     authorization = _code_part(secrets.token_bytes(16))
     paired = False
     rejected_attempts = 0
-    with tempfile.TemporaryDirectory(prefix="powerglove-pair-") as temporary_name:
+    with tempfile.TemporaryDirectory(prefix="virtualglove-pair-") as temporary_name:
         temporary = Path(temporary_name)
         certificate, private_key, pem = generate_certificate(temporary, "VirtualGlove-RetroPie-Pairing")
         code = display_pairing_code(certificate_code(pem), authorization)
@@ -490,9 +490,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Pair VirtualGlove with RetroPie")
     parser.add_argument("--listen", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=PAIRING_PORT)
-    parser.add_argument("--token-file", type=Path, default=Path("/etc/powerglove/token"))
+    parser.add_argument("--token-file", type=Path, default=Path("/etc/virtualglove/token"))
     parser.add_argument("--timeout", type=int, default=300)
-    parser.add_argument("--receiver-service", default="powerglove-receiver.service")
+    parser.add_argument("--receiver-service", default="virtualglove-receiver.service")
     return parser
 
 

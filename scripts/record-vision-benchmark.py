@@ -49,7 +49,7 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--camera", default="auto")
     result.add_argument("--output", type=Path,
-                        default=Path("/tmp/powerglove-vision-benchmark.avi"))
+                        default=Path("/tmp/virtualglove-vision-benchmark.avi"))
     result.add_argument("--width", type=int, default=640)
     result.add_argument("--height", type=int, default=480)
     result.add_argument("--fps", type=float, default=30)

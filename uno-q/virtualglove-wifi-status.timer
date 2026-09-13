@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-wifi-status.timer
+# File: uno-q/virtualglove-wifi-status.timer
 # Purpose: Refresh independent Wi-Fi health outside the vision application.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett

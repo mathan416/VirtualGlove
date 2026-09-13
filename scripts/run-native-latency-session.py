@@ -106,7 +106,7 @@ def main():
     if args.preflight:
         import hashlib
         preflight_digest = hashlib.sha256(args.preflight.read_bytes()).hexdigest()
-    session = {"format": "powerglove-guided-latency-session/3", "test": args.test,
+    session = {"format": "virtualglove-guided-latency-session/3", "test": args.test,
                "protocol": args.protocol, "created_unix": time.time(),
                "preflight_sha256": preflight_digest,
                "cue_clock": "Mac local pacing only; not synchronized to video or device clocks"}

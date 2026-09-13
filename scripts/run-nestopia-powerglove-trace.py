@@ -254,8 +254,8 @@ def trace_summary(path: Path) -> dict:
 
 def run(args: argparse.Namespace) -> dict:
     """Load one exact ROM and execute the controlled native-input phases."""
-    os.environ["POWERGLOVE_NATIVE_STATE"] = str(args.state)
-    os.environ["POWERGLOVE_TRACE"] = "1"
+    os.environ["VIRTUALGLOVE_NATIVE_STATE"] = str(args.state)
+    os.environ["VIRTUALGLOVE_TRACE"] = "1"
     args.scratch.mkdir(parents=True, exist_ok=True)
     args.state.parent.mkdir(parents=True, exist_ok=True)
 

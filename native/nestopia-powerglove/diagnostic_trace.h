@@ -33,9 +33,9 @@ static uint64_t pgv_diagnostic_now(void) {
       ? (uint64_t)value.tv_sec * 1000000000ULL + value.tv_nsec : 0;
 }
 static void pgv_diagnostic_open(void) {
-   const char *path = getenv("POWERGLOVE_CORE_DIAGNOSTIC_TRACE");
+   const char *path = getenv("VIRTUALGLOVE_CORE_DIAGNOSTIC_TRACE");
    if (!path || !*path || pgv_diagnostic_fd >= 0) return;
-   const char *duration = getenv("POWERGLOVE_DIAGNOSTIC_SECONDS");
+   const char *duration = getenv("VIRTUALGLOVE_DIAGNOSTIC_SECONDS");
    char *end = NULL;
    const double seconds = duration ? strtod(duration, &end) : 180.0;
    if (!(seconds >= 1 && seconds <= 600) || (duration && (!end || *end))) return;

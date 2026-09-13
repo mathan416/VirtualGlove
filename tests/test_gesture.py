@@ -202,12 +202,12 @@ class GestureTests(unittest.TestCase):
     def test_center_box_classifies_all_eight_directions_and_releases_immediately(self):
         engine = calibrated_engine()
         positions = {
-            "left": (.43, .50, {"left"}), "right": (.57, .50, {"right"}),
-            "up": (.50, .43, {"up"}), "down": (.50, .57, {"down"}),
-            "up_left": (.43, .43, {"up", "left"}),
-            "up_right": (.57, .43, {"up", "right"}),
-            "down_left": (.43, .57, {"down", "left"}),
-            "down_right": (.57, .57, {"down", "right"}),
+            "left": (.3, .50, {"left"}), "right": (.7, .50, {"right"}),
+            "up": (.50, .3, {"up"}), "down": (.50, .7, {"down"}),
+            "up_left": (.3, .3, {"up", "left"}),
+            "up_right": (.7, .3, {"up", "right"}),
+            "down_left": (.3, .7, {"down", "left"}),
+            "down_right": (.7, .7, {"down", "right"}),
         }
         for index, (name, (x, y, expected)) in enumerate(positions.items(), 1):
             with self.subTest(region=name):
@@ -217,9 +217,9 @@ class GestureTests(unittest.TestCase):
 
     def test_center_box_boundary_is_inside_and_reversal_has_no_memory(self):
         engine = calibrated_engine()
-        self.assertFalse(any(engine.update(hand(.1, palm_x=.556, palm_y=.444)).dpad.values()))
-        self.assertTrue(engine.update(hand(.2, palm_x=.57)).dpad["right"])
-        reversed_state = engine.update(hand(.3, palm_x=.43))
+        self.assertFalse(any(engine.update(hand(.1, palm_x=.64, palm_y=.36)).dpad.values()))
+        self.assertTrue(engine.update(hand(.2, palm_x=.7)).dpad["right"])
+        reversed_state = engine.update(hand(.3, palm_x=.3))
         self.assertTrue(reversed_state.dpad["left"])
         self.assertFalse(reversed_state.dpad["right"])
 
@@ -229,17 +229,43 @@ class GestureTests(unittest.TestCase):
             joystick_deadzone=.28,
             thresholds={"right": {"on": .9, "off": .8}},
         )
-        self.assertTrue(engine.update(hand(.1, palm_x=.57)).dpad["right"])
+        self.assertTrue(engine.update(hand(.1, palm_x=.7)).dpad["right"])
 
-    def test_calibration_noise_safely_enlarges_the_whole_center_box(self):
+    def test_calibrated_hand_size_but_not_noise_sets_minimum_center_box(self):
         engine = GestureEngine("program_h", calibration_frames=5)
         for t, x in enumerate((.47, .53, .48, .52, .50)):
             engine.update(hand(t / 30, palm_x=x))
         self.assertGreater(engine.calibration.noise_x, .1)
-        effective = engine.config.effective_joystick_deadzone(engine.calibration)
-        self.assertGreaterEqual(effective, engine.calibration.noise_x + .05)
-        self.assertEqual(effective, max(.28, engine.calibration.noise_x + .05,
-                                        engine.calibration.noise_y + .05))
+        self.assertAlmostEqual(engine.config.effective_joystick_deadzone(engine.calibration),.30)
+        self.assertFalse(any(engine.update(hand(1,palm_x=.65,palm_y=.35)).dpad.values()))
+        self.assertTrue(engine.update(hand(2,palm_x=.650001)).dpad['right'])
+
+    def test_joystick_box_uses_saved_center_and_translates_intact_at_edges(self):
+        from powerglove_vision.gesture import joystick_deadzone_bounds
+        from powerglove_vision.model import Calibration
+        config=GestureConfig(joystick_deadzone=.3)
+        center=Calibration(.3,.7,.1,0)
+        centered=joystick_deadzone_bounds(config,center)
+        for key,value in dict(center_x=.3,center_y=.7,half_size=.15,left=.15,
+                              right=.45,top=.55,bottom=.85).items():
+            self.assertAlmostEqual(centered[key],value)
+        edge=Calibration(.02,.97,.1,0)
+        bounds=joystick_deadzone_bounds(config,edge)
+        self.assertAlmostEqual(bounds['left'],0);self.assertAlmostEqual(bounds['right'],.3)
+        self.assertAlmostEqual(bounds['top'],.7);self.assertAlmostEqual(bounds['bottom'],1)
+        engine=GestureEngine('program_h',config,calibration=edge)
+        self.assertFalse(any(engine.update(hand(.1,palm_x=.3,palm_y=.7)).dpad.values()))
+        state=engine.update(hand(.2,palm_x=.300001,palm_y=.699999))
+        self.assertTrue(state.dpad['right']);self.assertTrue(state.dpad['up'])
+
+    def test_live_hand_size_does_not_make_joystick_bounds_breathe(self):
+        from powerglove_vision.model import Calibration
+        engine=GestureEngine('program_h',GestureConfig(joystick_deadzone=.1),
+                             calibration=Calibration(.5,.5,.2,0))
+        for index,scale in enumerate((.08,.2,.6),1):
+            with self.subTest(live_scale=scale):
+                self.assertFalse(any(engine.update(hand(index,palm_x=.65,palm_scale=scale)).dpad.values()))
+                self.assertTrue(engine.update(hand(index+.1,palm_x=.650001,palm_scale=scale)).dpad['right'])
 
     def test_middle_finger_is_a_plus_b(self):
         state = calibrated_engine().update(hand(0.1, middle_curl=0.9))
@@ -314,14 +340,14 @@ class GestureTests(unittest.TestCase):
 
     def test_tracking_loss_releases_controls(self):
         engine = calibrated_engine()
-        engine.update(hand(0.1, palm_x=0.62))
+        engine.update(hand(0.1, palm_x=0.7))
         state = engine.update(HandObservation(timestamp=0.25, detected=False))
         self.assertFalse(any(state.dpad.values()))
         self.assertFalse(state.detected)
 
     def test_brief_tracking_dropout_does_not_chatter(self):
         engine = calibrated_engine()
-        engine.update(hand(0.10, palm_x=0.62))
+        engine.update(hand(0.10, palm_x=0.7))
         state = engine.update(HandObservation(timestamp=0.15, detected=False))
         self.assertTrue(state.dpad["right"])
         self.assertFalse(state.detected)
@@ -369,7 +395,7 @@ class GestureTests(unittest.TestCase):
                 self.assertEqual(state.profile, f"program_{letter}")
 
     def test_program_d_reverses_directions(self):
-        state = calibrated_engine("program_d").update(hand(0.1, palm_x=0.62))
+        state = calibrated_engine("program_d").update(hand(0.1, palm_x=0.7))
         self.assertTrue(state.dpad["left"])
         self.assertFalse(state.dpad["right"])
 
@@ -391,7 +417,7 @@ class GestureTests(unittest.TestCase):
         weapons = engine.update(hand(0.30, thumb_curl=0.9))
         self.assertTrue(weapons.buttons["b"])
 
-        brake = engine.update(hand(0.40, palm_y=0.62))
+        brake = engine.update(hand(0.40, palm_y=0.7))
         self.assertTrue(brake.dpad["down"])
 
         steering = engine.update(hand(0.50, roll=-1.2))

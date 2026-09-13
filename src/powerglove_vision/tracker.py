@@ -439,6 +439,16 @@ def _camera_curl_points(result: Any, landmarks: list, tasks: bool,
     return [_Point(p.x, p.y * height / width, p.z) for p in landmarks]
 
 
+def _finger_spreads(points: list) -> dict:
+    """Normalize adjacent fingertip gaps by the hand's knuckle width."""
+    scale = max(_distance(points[5], points[17]), 1e-6)
+    return {
+        "index_middle_spread": _distance(points[8], points[12]) / scale,
+        "middle_ring_spread": _distance(points[12], points[16]) / scale,
+        "ring_pinky_spread": _distance(points[16], points[20]) / scale,
+    }
+
+
 def _landmarks_valid(landmarks: list) -> bool:
     """Reject malformed landmark sets without inventing a confidence score."""
     if len(landmarks) != 21:
@@ -945,6 +955,7 @@ class MediaPipeTracker:
             palm_y=palm_y,
             palm_scale=palm_scale,
             roll=roll,
+            **_finger_spreads(curl_points),
             **curls,
         )
         preview_overlay = {}

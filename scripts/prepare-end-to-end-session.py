@@ -102,7 +102,7 @@ if role == "controller":
         result["build"] = None
     result["services"] = {
         name: command("systemctl", "is-active", name)
-        for name in ("powerglove-camera-recovery.path", "powerglove-wifi-status.timer")
+        for name in ("virtualglove-camera-recovery.path", "virtualglove-wifi-status.timer")
     }
     result["files"] = {
         "vision_app_sha256": digest(base / "src/powerglove_vision/vision_app.py"),
@@ -122,14 +122,14 @@ if role == "controller":
     result["device_settings"] = {key: source.get(key) for key in allowed if key in source}
 else:
     core = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")
-    native = Path("/run/powerglove/native-state")
+    native = Path("/run/virtualglove/native-state")
     result["services"] = {
         name: command("systemctl", "is-active", name)
-        for name in ("powerglove-receiver.service", "powerglove-receiver.timer", "powerglove-games.service")
+        for name in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service")
     }
     result["files"] = {
         "core_path": str(core), "core_sha256": digest(core),
-        "receiver_sha256": digest("/opt/powerglove-src/src/powerglove_vision/receiver.py"),
+        "receiver_sha256": digest("/opt/virtualglove-src/src/powerglove_vision/receiver.py"),
         "retroarch_sha256": digest("/opt/retropie/emulators/retroarch/bin/retroarch"),
     }
     try:
@@ -288,7 +288,7 @@ def main() -> int:
                               args.retropie_host_key_alias)
     checks = evaluate(status, controller, retropie, source, args.phase == "record")
     report = {
-        "format": "powerglove-end-to-end-preflight/1",
+        "format": "virtualglove-end-to-end-preflight/1",
         "session_id": uuid.uuid4().hex,
         "phase": args.phase,
         "created_unix": time.time(),

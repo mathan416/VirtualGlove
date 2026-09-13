@@ -24,9 +24,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from .gesture import SUPPORTED_PROFILES
-from .profile_control import read_token, sign_message, verify_message
+from .profile_control import _registry_entry, read_token, sign_message, verify_message
 
-PROTOCOL = "powerglove-games/1"
+PROTOCOL = "virtualglove-games/1"
 MAX_DOCUMENT = 65536
 MAX_REQUEST = 524288
 PORT = 55358
@@ -58,8 +58,10 @@ def validate_document(text: str) -> dict:
         if key in seen:
             raise ValueError("Conflicting ROM filename: " + name)
         seen.add(key)
-        if not isinstance(profile, str) or profile not in SUPPORTED_PROFILES:
-            raise ValueError("Unknown profile for " + name)
+        try:
+            _registry_entry(profile)
+        except ValueError as exc:
+            raise ValueError("Unknown or invalid profile settings for " + name) from exc
     return data
 
 
@@ -232,12 +234,12 @@ def registry_request(settings: dict, operation: str, payload: dict | None = None
 def main() -> int:
     """Run the serial, timeout-bounded administration service from installed settings."""
     parser = argparse.ArgumentParser(description="Serve paired VirtualGlove game registry editing")
-    parser.add_argument("--settings", type=Path, default=Path("/etc/powerglove/launcher.json"))
+    parser.add_argument("--settings", type=Path, default=Path("/etc/virtualglove/launcher.json"))
     parser.add_argument("--listen", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=PORT)
     args = parser.parse_args()
     settings = json.loads(args.settings.read_text())
-    store = RegistryStore(settings.get("registry", "/etc/powerglove/games.json"))
+    store = RegistryStore(settings.get("registry", "/etc/virtualglove/games.json"))
     service = RegistryService(store, Path(settings["token_file"]))
     HTTPServer((args.listen, args.port), make_registry_handler(service)).serve_forever()
     return 0

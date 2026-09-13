@@ -39,7 +39,7 @@ CAMERA = '''<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480">
 
 async def capture():
     """Render current application HTML against temporary, non-secret fixtures."""
-    with tempfile.TemporaryDirectory(prefix='powerglove-guide-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='virtualglove-guide-') as temporary:
         manager = TuningManager(Path(temporary) / 'gesture-tuning.json')
         manager.begin_center()
         manager.finish_center(Calibration(.5, .5, .2, 0, .01, .01))
@@ -86,7 +86,7 @@ async def capture():
                 if path == '/api/connection-status':
                     return await request.fulfill(json=dict(app=True,console_configured=True,console_service=True,console_authenticated=True,networking='connected',checked_seconds_ago=1))
                 if path == '/api/games':
-                    return await request.fulfill(json=dict(document=(ROOT/'config/games.json').read_text(),revision='example',has_backup=False,profiles=['bad_street_brawler','super_glove_ball']+[f'program_{c}' for c in 'abcdefghi']))
+                    return await request.fulfill(json=dict(document=(ROOT/'config/games.json').read_text(),revision='example',has_backup=False,profiles=[f'program_{n}' for n in range(1,15)]+[f'program_{c}' for c in 'abcdefghi']+['bad_street_brawler','super_glove_ball']))
                 if path == '/api/practice':
                     return await request.fulfill(json={'practice_mode':True})
                 if path == '/stream':
@@ -151,7 +151,7 @@ async def capture():
                     # Each port must occupy one text line, even when its table scrolls.
                     assert await cell.evaluate('(e)=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1}')
                 assert await page.evaluate('document.documentElement.scrollWidth') <= width
-                await page.locator('.network-exposure').screenshot(path=f'/tmp/powerglove-security-table-{width}.png')
+                await page.locator('.network-exposure').screenshot(path=f'/tmp/virtualglove-security-table-{width}.png')
             assert not errors, errors
             await browser.close()
 

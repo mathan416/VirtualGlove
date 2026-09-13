@@ -94,7 +94,11 @@ sockets. These functions are kept separate from camera inference.
 
 3. The gesture engine compares that observation with the saved neutral calibration and effective thresholds. Directions are relative to the calibrated palm; apparent hand-size change supplies forward/backward movement.
 
-4. Shared activation/release states and held menu poses feed the selected profile's mapping. The result is a `ControllerState`, including buttons, D-pad, axes, finger values, events, sequence, and tracking/calibration metadata.
+4. Shared activation/release states and held menu poses feed the selected
+   Program 1–14, Program A–I, or game-specific profile mapping. Per-game rapid
+   A/B exceptions arrive with the authenticated game lease. The result is a
+   `ControllerState`, including buttons, D-pad, axes, finger values, events,
+   sequence, and tracking/calibration metadata.
 
 5. The worker sends the state only if controller delivery is armed, a live
    registered-game lease or intentional manual Dashboard context exists, and neither
@@ -177,10 +181,12 @@ holds the last reliable point until the next fresh measurement confirms the
 location. The guard never invents a forward coordinate or smooths normal motion.
 Longer tracking loss or stale input neutralizes the native sample and clears the
 coordinate history. Digital FCEUmm directions instead classify every fresh hand
-position in a 3×3 grid around the calibrated center. The center square releases
+position in a 3×3 grid anchored to the saved calibrated neutral palm position. The center square releases
 all positional directions, its four side regions produce cardinals, and its four
 corner regions produce diagonals. Setup's **Joystick dead zone** saves the square's
-half-width per player; measured neutral jitter may enlarge the effective square.
+chosen full-frame width and height per player. Its effective size is at least
+1.5 times the saved calibrated palm size. The full square translates inward at
+camera edges rather than clipping; live hand size and neutral jitter do not change it.
 It does not alter native reach, finger gestures, or game mappings. Re-centering clears
 saved reach spans because they belong to the old center.
 
@@ -471,7 +477,7 @@ the next launch; it does not rewrite the running game's mapping immediately.
 
 The supported FCEUmm path consumes the same virtual gamepad as every other game.
 For native research, the authenticated RetroPie receiver also publishes a
-versioned, fixed-size latest-sample record in `/run/powerglove/native-state`.
+versioned, fixed-size latest-sample record in `/run/virtualglove/native-state`.
 The separately built `lr-nestopia-powerglove` core maps that file read-only,
 copies at most one coherent current sample per emulated frame, and adds no queue
 or smoothing. Invalid, stale, uncalibrated, lost, or wrong-profile samples leave
@@ -541,7 +547,7 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | HTTP 8089, loopback | Supervisor/web proxy to worker | Internal status, frame and control requests |
 | UDP 55355 | VirtualGlove Controller to RetroPie | Signed controller states, session, challenge, and sequence; handshake replies return to the sender socket |
 | UDP 55356 | RetroPie to UNO relay to worker | Signed profile requests and acknowledgements |
-| `/run/powerglove/native-state` | Authenticated RetroPie receiver to native cores | Read-only, guarded latest sample for Super Glove Ball or the calibration display |
+| `/run/virtualglove/native-state` | Authenticated RetroPie receiver to native cores | Read-only, guarded latest sample for Super Glove Ball or the calibration display |
 | TCP 55357 | Pairing participants | Temporary one-time-code pairing service |
 | TCP 55358 | VirtualGlove Controller to RetroPie | Paired game-registry service |
 | Private Unix sockets | App resolver to host Avahi | Local hostname resolution |
@@ -676,7 +682,7 @@ Zephyr API supplied by the Arduino sketch platform.
 Python requests loading before importing the web controls, then forwards normal
 worker status. The hourglass indicates activity, not measured completion. It
 does not replace the protected system boot display. The optional host user
-service `powerglove-early-start.service` releases the installed sketch earlier
+service `virtualglove-early-start.service` releases the installed sketch earlier
 using the loader release flag, after checking the selected app and sketch
 samples. It never resets, halts, or flashes the sketch. This brings the existing
 hourglass forward while App Lab continues starting. Failure falls back to normal
@@ -685,7 +691,7 @@ App Lab startup; the cold-boot trial was confirmed on the physical board.
 ### Idle display preferences
 
 The supervisor passes the persisted `matrix_attract` setting to the sketch through
-`set_powerglove_attract(mode, connections)`. Only `PG_GESTURES_IDLE` consumes it;
+`set_virtualglove_attract(mode, connections)`. Only `PG_GESTURES_IDLE` consumes it;
 there is no global brightness change. In Off mode a bounded background probe
 checks TCP reachability and authenticates the existing RetroPie Games service.
 The supervisor publishes cached indicator bits; capture, recognition, transport,

@@ -55,7 +55,7 @@ def decode_state(payload: bytes) -> dict:
     if len(payload) > MAX_PACKET_BYTES:
         raise ValueError("controller packet exceeds size limit")
     data = json.loads(payload.decode("utf-8"))
-    if not isinstance(data, dict) or data.get("protocol") != "powerglove-vision/1":
+    if not isinstance(data, dict) or data.get("protocol") != "virtualglove-vision/1":
         raise ValueError("unsupported controller protocol")
     sequence = data.get("sequence")
     if type(sequence) is not int or not 0 <= sequence <= 2_147_483_647:

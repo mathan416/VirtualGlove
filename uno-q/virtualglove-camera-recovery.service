@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-camera-recovery.service
+# File: uno-q/virtualglove-camera-recovery.service
 # Purpose: Run the fixed-purpose VirtualGlove camera USB recovery helper as root.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -15,5 +15,5 @@ ConditionPathExists=/home/arduino/ArduinoApps/virtualglove/data/.camera-recovery
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /usr/local/libexec/powerglove-camera-recovery
+ExecStart=/usr/bin/python3 /usr/local/libexec/virtualglove-camera-recovery
 TimeoutStartSec=40

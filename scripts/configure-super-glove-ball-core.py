@@ -104,7 +104,7 @@ def native_registration(prefix: Path) -> tuple[Path, str, Path, str]:
         "--device=1:" + str(POWER_GLOVE_DEVICE) + " --appendconfig " + str(option_path) + " %ROM%",
         1,
     )
-    command = "POWERGLOVE_NATIVE_STATE=/run/powerglove/native-state " + command
+    command = "VIRTUALGLOVE_NATIVE_STATE=/run/virtualglove/native-state " + command
     return system_path, replace_setting(system_text, NATIVE, command), option_path, option_text
 
 

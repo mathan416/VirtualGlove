@@ -16,10 +16,19 @@ import unittest
 from pathlib import Path
 
 from powerglove_vision.control_server import SETUP
+from powerglove_vision.dashboard_web import DASHBOARD
 
 
 class SetupStatusHarnessTests(unittest.TestCase):
     """Verify idle output is not mistaken for an unavailable receiver."""
+
+    @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
+    def test_dashboard_statistics_tracking_switch(self):
+        result = subprocess.run(
+            [shutil.which("node"), str(Path(__file__).with_name("dashboard_statistics_harness.cjs"))],
+            input=DASHBOARD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(result.returncode, 0, (result.stdout + result.stderr).decode())
 
     @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
     def test_controller_output_states(self):

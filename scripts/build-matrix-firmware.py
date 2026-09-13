@@ -81,7 +81,7 @@ def build(prepare=True):
         if missing:
             raise ValueError("Arduino platform did not produce expected artifacts: " + ", ".join(missing))
         header = (ROOT / "sketch/firmware_version.h").read_text()
-        match = re.search(r'POWERGLOVE_FIRMWARE_ID "([0-9a-f]{64})"', header)
+        match = re.search(r'VIRTUALGLOVE_FIRMWARE_ID "([0-9a-f]{64})"', header)
         if not match:
             raise ValueError("Generated firmware source identity is missing")
         OUTPUT.mkdir(parents=True, exist_ok=True)

@@ -48,7 +48,7 @@ class TransportTests(unittest.TestCase):
         decoded = decode_state(encode_state(state, "secret", "session-one"))
         self.assertEqual(decoded["sequence"], 7)
         self.assertEqual(decoded["token"], "secret")
-        self.assertEqual(decoded["protocol"], "powerglove-vision/1")
+        self.assertEqual(decoded["protocol"], "virtualglove-vision/1")
         self.assertEqual(decoded["session"], "session-one")
         self.assertTrue(decoded["buttons"]["closed_hand"])
         self.assertTrue(decoded["buttons"]["index_point"])

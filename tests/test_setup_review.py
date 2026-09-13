@@ -150,7 +150,9 @@ class SetupReviewTests(unittest.TestCase):
         self.assertNotIn(TOKEN, command)
         self.assertNotIn('--token', command)
         self.assertIn('--device-config', command)
+        self.assertEqual(command[command.index('--profile') + 1], 'off')
         args = vision_app.build_parser().parse_args(['--receiver','cabinet.local','--device-config',str(self.path)])
+        self.assertEqual(args.profile, 'off')
         self.assertEqual(vision_app.load_worker_token(args), TOKEN)
         loader = namespace['load_device_config']; loader.__globals__['CONFIG_PATH'] = self.path.with_name('new.json')
         loader()
@@ -158,7 +160,7 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_socket_timeout_releases_native_state_before_cleanup(self):
         sock, device, native = Mock(), Mock(), Mock()
-        packet = json.dumps(dict(protocol='powerglove-vision/1',token=TOKEN,sequence=7,session='test')).encode()
+        packet = json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,sequence=7,session='test')).encode()
         def after_timeout(_size):
             native.release.assert_called_once_with(8)
             raise KeyboardInterrupt

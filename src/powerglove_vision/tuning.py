@@ -26,6 +26,7 @@ from pathlib import Path
 from .academy_diagnostics import AcademyDiagnostics
 from .players import PlayerSettings, calibration_value
 from .gesture import load_calibration, save_calibration, GestureConfig, MENU_FINGERS, MENU_GUARD_FINGERS, finger_pose_feedback
+from .model import Calibration
 
 DIRECTION_CHANNELS = ("left", "right", "up", "down")
 CHANNELS = ("thumb", "index", "middle", "ring", "pinky", "roll_left", "roll_right", "push", "pull")
@@ -232,16 +233,20 @@ class TuningManager:
             result = self.players.snapshot()
             config = replace(self.base_config, thresholds=copy.deepcopy(self.saved),
                              joystick_deadzone=self.players.active["joystick_deadzone"])
-            reference = self.calibration
-            if reference is None and self.players.active["calibration"] is not None:
-                from .model import Calibration
-                reference = Calibration(**self.players.active["calibration"]["neutral"])
             chosen = config.chosen_joystick_deadzone()
-            effective = config.effective_joystick_deadzone(reference) if reference else chosen
+            reference = self.players.active["calibration"]
+            effective = chosen
+            minimum = None
+            if not self.players.active["needs_center"] and reference is not None:
+                calibration = Calibration(**reference["neutral"])
+                minimum = min(1.0, 1.5 * calibration.palm_scale)
+                effective = config.effective_joystick_deadzone(calibration)
             result["joystick"] = {
                 "deadzone": chosen,
                 "effective_deadzone": effective,
-                "jitter_protected": effective > chosen + 1e-9,
+                "jitter_protected": False,
+                "hand_size_protected": effective > chosen + 1e-9,
+                "hand_size_minimum": minimum,
             }
             return result
 
@@ -249,7 +254,7 @@ class TuningManager:
         """Change presets without overlapping an active tuning session."""
         with self.lock:
             self._expire()
-            if self.session and data.get("action") not in ("read", "progress", "export"):
+            if self.session and data.get("action") not in ("read", "progress", "ready_progress", "export"):
                 raise ValueError("Finish tuning and switch Tune gestures off before changing players or restoring settings.")
             if data.get("action") == "joystick_deadzone" and (
                     self.center_generation is not None or self.players.data["calibration_restore"] is not None):

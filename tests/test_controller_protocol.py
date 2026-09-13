@@ -134,8 +134,8 @@ class SignedControllerTests(unittest.TestCase):
         for allow in (False,True):
             sessions=ReceiverSessions(TOKEN);session='a'*32
             challenge=handshake(sessions,session)
-            legacy=json.dumps(dict(protocol='powerglove-vision/1',token=TOKEN,session='legacy',sequence=1)).encode()
-            newer=json.dumps(dict(protocol='powerglove-vision/1',token=TOKEN,session='legacy',sequence=2)).encode()
+            legacy=json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,session='legacy',sequence=1)).encode()
+            newer=json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,session='legacy',sequence=2)).encode()
             sock,device,native=Mock(),Mock(),Mock()
             sock.recvfrom.side_effect=[(legacy,PEER),(state_packet(session,challenge),PEER),(newer,PEER),KeyboardInterrupt()]
             sock.recvmsg.side_effect=lambda size,space:(lambda pair:(pair[0],[],0,pair[1]))(sock.recvfrom(size))
@@ -165,7 +165,7 @@ class SignedControllerTests(unittest.TestCase):
 
     def test_native_profile_is_published_before_virtual_gamepad(self):
         events = []
-        state = dict(protocol='powerglove-vision/1', token=TOKEN, session='legacy',
+        state = dict(protocol='virtualglove-vision/1', token=TOKEN, session='legacy',
                      sequence=1, profile='super_glove_ball')
         sock, device, native = Mock(), Mock(), Mock()
         sock.recvfrom.side_effect = [

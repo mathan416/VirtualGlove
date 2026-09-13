@@ -22,7 +22,7 @@ import uuid
 
 from .profile_control import read_token, send_request
 
-SETTINGS = Path("/etc/powerglove/launcher.json")
+SETTINGS = Path("/etc/virtualglove/launcher.json")
 CORE = Path("/opt/retropie/libretrocores/lr-powerglove-dot/powerglove_dot_libretro.so")
 RETROARCH = Path("/opt/retropie/emulators/retroarch/bin/retroarch")
 RETROARCH_CONFIG = Path("/opt/retropie/configs/all/retroarch.cfg")
@@ -44,7 +44,7 @@ def main() -> int:
             raise SystemExit("VirtualGlove Calibration Test is incomplete; rerun the RetroPie installer.")
     session_id = uuid.uuid4().hex
     process = subprocess.Popen(command(), env={**os.environ,
-        "POWERGLOVE_NATIVE_STATE": "/run/powerglove/native-state"})
+        "VIRTUALGLOVE_NATIVE_STATE": "/run/virtualglove/native-state"})
     try:
         while process.poll() is None:
             try:

@@ -28,11 +28,11 @@ class MatrixTests(unittest.TestCase):
             matrix.set_status(MatrixStatus.TUNING)
             matrix.set_attract({'matrix_attract':'off'}, idle=False)
             thread.assert_not_called()
-            self.assertEqual(calls, [('set_powerglove_attract',2,0), ('set_powerglove_status',8)])
+            self.assertEqual(calls, [('set_virtualglove_attract',2,0), ('set_virtualglove_status',8)])
             matrix.set_attract({'matrix_attract':'off'}, idle=True)
             thread.return_value.start.assert_called_once()
         matrix.set_attract({'matrix_attract':'dim'})
-        self.assertEqual(calls[-1], ('set_powerglove_attract',1,0))
+        self.assertEqual(calls[-1], ('set_virtualglove_attract',1,0))
         self.assertEqual(matrix.last_status, MatrixStatus.TUNING)
 
     def test_setup_health_is_cached_shared_and_expires(self):
@@ -93,7 +93,7 @@ class MatrixTests(unittest.TestCase):
         matrix = UnoQMatrix(call=identify)
         self.assertEqual(matrix.firmware_identity(), 'a' * 64)
         self.assertEqual(matrix.firmware_identity(), 'a' * 64)
-        self.assertEqual(calls, [('get_powerglove_firmware',)])
+        self.assertEqual(calls, [('get_virtualglove_firmware',)])
         def old_firmware(*args):
             raise RuntimeError('Unknown endpoint')
         self.assertIsNone(UnoQMatrix(call=old_firmware).firmware_identity())
@@ -106,8 +106,8 @@ class MatrixTests(unittest.TestCase):
         self.assertEqual(
             calls,
             [
-                ("set_powerglove_status", int(MatrixStatus.LOADING)),
-                ("set_powerglove_status", int(MatrixStatus.READY)),
+                ("set_virtualglove_status", int(MatrixStatus.LOADING)),
+                ("set_virtualglove_status", int(MatrixStatus.READY)),
             ],
         )
 
@@ -117,8 +117,8 @@ class MatrixTests(unittest.TestCase):
         matrix.set_status(MatrixStatus.GESTURES_IDLE)
         matrix.set_status(MatrixStatus.OFF)
         self.assertEqual(calls, [
-            ("set_powerglove_status", int(MatrixStatus.GESTURES_IDLE)),
-            ("set_powerglove_status", int(MatrixStatus.OFF)),
+            ("set_virtualglove_status", int(MatrixStatus.GESTURES_IDLE)),
+            ("set_virtualglove_status", int(MatrixStatus.OFF)),
         ])
 
     def test_learning_is_a_dedicated_matrix_state(self):
@@ -126,7 +126,7 @@ class MatrixTests(unittest.TestCase):
         matrix = UnoQMatrix(call=lambda *args: calls.append(args))
         matrix.set_status(MatrixStatus.LEARNING)
         self.assertEqual(calls, [
-            ("set_powerglove_status", int(MatrixStatus.LEARNING)),
+            ("set_virtualglove_status", int(MatrixStatus.LEARNING)),
         ])
         self.assertEqual(status_from_worker({
             "practice_mode": True,
@@ -153,7 +153,7 @@ class MatrixTests(unittest.TestCase):
         calls = []
         matrix = UnoQMatrix(call=lambda *args: calls.append(args))
         matrix.set_status(MatrixStatus.TUNING)
-        self.assertEqual(calls[-1], ("set_powerglove_status", 8))
+        self.assertEqual(calls[-1], ("set_virtualglove_status", 8))
 
     def test_duplicate_status_is_not_resent(self):
         calls = []
@@ -176,19 +176,23 @@ class MatrixTests(unittest.TestCase):
         matrix.set_profile("program_c")
         matrix.set_profile("bad_street_brawler")
         matrix.set_profile("super_glove_ball")
+        matrix.set_profile("program_1")
+        matrix.set_profile("program_14")
         matrix.set_profile(None)
         self.assertEqual(calls, [
-            ("set_powerglove_profile", 3),
-            ("set_powerglove_profile", 10),
-            ("set_powerglove_profile", 11),
-            ("set_powerglove_profile", 0),
+            ("set_virtualglove_profile", 3),
+            ("set_virtualglove_profile", 10),
+            ("set_virtualglove_profile", 11),
+            ("set_virtualglove_profile", 12),
+            ("set_virtualglove_profile", 25),
+            ("set_virtualglove_profile", 0),
         ])
 
     def test_pairing_identity_and_pin_are_sent_to_physical_matrix(self):
         calls = []
         matrix = UnoQMatrix(call=lambda *args: calls.append(args))
         self.assertTrue(matrix.show_pairing("1A2B3C4", "001234"))
-        self.assertEqual(calls[-1], ("set_powerglove_pairing", 0x1A2B3C4, 1234))
+        self.assertEqual(calls[-1], ("set_virtualglove_pairing", 0x1A2B3C4, 1234))
         self.assertEqual(matrix.last_status, MatrixStatus.PAIRING)
         matrix.set_status(MatrixStatus.ERROR)
         self.assertEqual(len(calls), 1)
@@ -201,7 +205,7 @@ class MatrixTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         matrix.finish_pairing()
         matrix.set_status(MatrixStatus.GESTURES_IDLE)
-        self.assertEqual(calls[-1], ("set_powerglove_status", int(MatrixStatus.GESTURES_IDLE)))
+        self.assertEqual(calls[-1], ("set_virtualglove_status", int(MatrixStatus.GESTURES_IDLE)))
         matrix.set_status(MatrixStatus.TRACKING)
         self.assertEqual(matrix.last_status, MatrixStatus.TRACKING)
 

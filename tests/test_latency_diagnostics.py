@@ -80,9 +80,9 @@ class DiagnosticTests(unittest.TestCase):
         self.assertIn('KillSignal=SIGINT', trace_manager.RETROPIE_START)
         self.assertIn('retroarch_running', trace_manager.RETROPIE_PREFLIGHT)
         self.assertIn('Receiver trace did not flush', trace_manager.RETROPIE_STOP)
-        self.assertLess(trace_manager.RETROPIE_STOP.index("'stop','powerglove-receiver.service'"),
+        self.assertLess(trace_manager.RETROPIE_STOP.index("'stop','virtualglove-receiver.service'"),
                         trace_manager.RETROPIE_STOP.index("'rm','-f',drop"))
-        self.assertIn("('POWERGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder) not in shown",
+        self.assertIn("('VIRTUALGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder) not in shown",
                       trace_manager.RETROPIE_STOP)
         with tempfile.TemporaryDirectory() as folder:
             destination = Path(folder)/'state.json'
@@ -254,11 +254,11 @@ class DiagnosticTests(unittest.TestCase):
         self.assertNotEqual(session_key('a'*32), 'a'*32)
 
     def test_analysis_joins_resets_and_counts_first_consumption_only(self):
-        controller = dict(format='powerglove-diagnostic/1', role='controller', dropped=0, events=[
+        controller = dict(format='virtualglove-diagnostic/1', role='controller', dropped=0, events=[
             dict(event='send', session=s, sequence=1, start_ns=100, end_ns=200) for s in ('a','b')])
         controller['events'].append(dict(event='vision', session='a', sequence=1, capture_ns=20,
             capture_ready_ns=25, start_ns=30, tracking_end_ns=50, end_ns=70))
-        receiver = dict(format='powerglove-diagnostic/1', role='receiver', dropped=0, events=[
+        receiver = dict(format='virtualglove-diagnostic/1', role='receiver', dropped=0, events=[
             dict(event='receive', session=s, sequence=1, received_ns=900000000, validated_ns=900000100,
                  publication_start_ns=900000200, end_ns=900000400, published_ns=900000250+i,
                  native_start_ns=900000210, native_end_ns=900000260,
@@ -298,8 +298,8 @@ class DiagnosticTests(unittest.TestCase):
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]
             sock.close()
-            env = dict(os.environ, POWERGLOVE_DIAGNOSTIC_TRACE=str(root/'run'),
-                       POWERGLOVE_DIAGNOSTIC_SECONDS='10')
+            env = dict(os.environ, VIRTUALGLOVE_DIAGNOSTIC_TRACE=str(root/'run'),
+                       VIRTUALGLOVE_DIAGNOSTIC_SECONDS='10')
             process = subprocess.Popen([sys.executable, '-m', 'powerglove_vision.receiver',
                 '--listen', '127.0.0.1', '--port', str(port), '--token-file', str(root/'token'),
                 '--native-state', str(root/'native'), '--dry-run'], env=env,
@@ -389,7 +389,7 @@ class DiagnosticTests(unittest.TestCase):
                 'pgv_diagnostic_close(); return 0; }')
             subprocess.run(['c++','-std=c++11','-I',str(ROOT/'native/nestopia-powerglove'),
                 str(source),'-o',str(folder/'test')], check=True, capture_output=True)
-            env = dict(os.environ, POWERGLOVE_CORE_DIAGNOSTIC_TRACE=str(folder/'core.csv'))
+            env = dict(os.environ, VIRTUALGLOVE_CORE_DIAGNOSTIC_TRACE=str(folder/'core.csv'))
             subprocess.run([str(folder/'test')], env=env, check=True)
             lines = (folder/'core.csv').read_text().splitlines()
             self.assertEqual(len(lines), 20002)

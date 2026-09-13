@@ -35,7 +35,7 @@ from typing import Any
 from .gesture import SUPPORTED_PROFILES
 
 
-PROTOCOL = "powerglove-profile/1"
+PROTOCOL = "virtualglove-profile/1"
 MAX_PACKET_BYTES = 4096
 DISCOVERY_ADDRESS = "255.255.255.255"
 DISCOVERY_CACHE_SECONDS = 30.0
@@ -84,6 +84,8 @@ class ProfileRequest:
     emulator: str = ""
     session_id: str | None = None
     lease_seconds: float = 0.0
+    rapid_a: bool | None = None
+    rapid_b: bool | None = None
 
 
 @dataclass
@@ -94,6 +96,8 @@ class ActiveGameLease:
     system: str = ""
     rom: str = ""
     emulator: str = ""
+    rapid_a: bool | None = None
+    rapid_b: bool | None = None
     expires_at: float = 0.0
 
     def refresh(self, request: ProfileRequest, now: float) -> bool:
@@ -107,12 +111,16 @@ class ActiveGameLease:
             and self.system == request.system
             and self.rom == request.rom
             and self.emulator == request.emulator
+            and self.rapid_a == request.rapid_a
+            and self.rapid_b == request.rapid_b
         )
         self.session_id = request.session_id
         self.profile = request.profile
         self.system = request.system
         self.rom = request.rom
         self.emulator = request.emulator
+        self.rapid_a = request.rapid_a
+        self.rapid_b = request.rapid_b
         self.expires_at = now + request.lease_seconds
         return not same
 
@@ -130,6 +138,8 @@ class ActiveGameLease:
         self.system = ""
         self.rom = ""
         self.emulator = ""
+        self.rapid_a = None
+        self.rapid_b = None
         self.expires_at = 0.0
 
     def snapshot(self, now: float) -> dict[str, Any]:
@@ -226,6 +236,12 @@ class ProfileCommandServer:
                         raise ValueError("invalid game lease")
                 elif lease_seconds not in (0, 0.0, None):
                     raise ValueError("lease requires a game session")
+                rapid_a = data.get("rapid_a")
+                rapid_b = data.get("rapid_b")
+                if rapid_a is not None and type(rapid_a) is not bool:
+                    raise ValueError("invalid rapid A setting")
+                if rapid_b is not None and type(rapid_b) is not bool:
+                    raise ValueError("invalid rapid B setting")
                 self._seen.add(request_id)
                 if len(self._seen) > 256:
                     self._seen.clear()
@@ -239,6 +255,8 @@ class ProfileCommandServer:
                     emulator=emulator,
                     session_id=session_id,
                     lease_seconds=float(lease_seconds or 0.0),
+                    rapid_a=rapid_a,
+                    rapid_b=rapid_b,
                 )
                 self.requests.put(request)
                 # Camera/model startup may block the consumer; acknowledge queue admission.
@@ -278,25 +296,55 @@ class ProfileCommandServer:
         self._thread.join(timeout=1)
 
 
-def load_registry(path: Path) -> dict[str, str]:
+def _registry_entry(value: Any) -> dict[str, Any]:
+    """Normalize one legacy or structured game mapping."""
+    if isinstance(value, str):
+        entry = {"profile": value}
+    elif isinstance(value, dict) and set(value) <= {"profile", "rapid_a", "rapid_b"}:
+        entry = dict(value)
+    else:
+        raise ValueError("game mapping must be a profile or settings object")
+    profile = entry.get("profile")
+    if profile not in SUPPORTED_PROFILES:
+        raise ValueError(f"unknown profile {profile!r}")
+    for name in ("rapid_a", "rapid_b"):
+        if name in entry and type(entry[name]) is not bool:
+            raise ValueError(f"{name} must be a boolean")
+    return entry
+
+
+def load_registry(path: Path) -> dict[str, str | dict[str, Any]]:
     """Load and validate case-insensitive ROM-to-profile mappings."""
     data = json.loads(path.read_text())
     games = data.get("games")
     if not isinstance(games, dict):
         raise ValueError("profile registry must contain a games object")
-    result: dict[str, str] = {}
-    for filename, profile in games.items():
-        if profile not in SUPPORTED_PROFILES:
-            raise ValueError(f"unknown profile {profile!r} for {filename!r}")
-        result[Path(filename).name.casefold()] = profile
+    result: dict[str, str | dict[str, Any]] = {}
+    for filename, value in games.items():
+        try:
+            entry = _registry_entry(value)
+        except ValueError as exc:
+            raise ValueError(f"{exc} for {filename!r}") from exc
+        result[Path(filename).name.casefold()] = value if isinstance(value, str) else entry
     return result
 
 
-def select_profile(registry: dict[str, str], system: str, rom: str) -> str | None:
-    """Select a registered NES or Famicom profile for one ROM path."""
+def select_profile_settings(
+    registry: dict[str, str | dict[str, Any]], system: str, rom: str
+) -> dict[str, Any] | None:
+    """Select normalized profile settings for one registered NES/Famicom ROM."""
     if system.casefold() not in {"nes", "famicom"}:
         return None
-    return registry.get(Path(rom).name.casefold())
+    value = registry.get(Path(rom).name.casefold())
+    return None if value is None else _registry_entry(value)
+
+
+def select_profile(
+    registry: dict[str, str | dict[str, Any]], system: str, rom: str
+) -> str | None:
+    """Select a registered NES or Famicom profile for one ROM path."""
+    settings = select_profile_settings(registry, system, rom)
+    return None if settings is None else settings["profile"]
 
 
 def local_broadcast_addresses() -> tuple[str, ...]:
@@ -429,7 +477,9 @@ def _exchange(
 def send_request(host: str, port: int, token: str, profile: str | None,
                  system: str, rom: str, timeout: float, *,
                  session_id: str | None = None, lease_seconds: float = 0.0,
-                 emulator: str = "", discovery_addresses=None) -> dict[str, Any]:
+                 emulator: str = "", rapid_a: bool | None = None,
+                 rapid_b: bool | None = None,
+                 discovery_addresses=None) -> dict[str, Any]:
     """Send a signed profile request, discovering the paired Controller if needed."""
     request_id = uuid.uuid4().hex
     message = {
@@ -444,6 +494,10 @@ def send_request(host: str, port: int, token: str, profile: str | None,
     if session_id is not None:
         message["session_id"] = session_id
         message["lease_seconds"] = lease_seconds
+    if rapid_a is not None:
+        message["rapid_a"] = rapid_a
+    if rapid_b is not None:
+        message["rapid_b"] = rapid_b
     message = sign_message(message, token)
     payload = json.dumps(message, separators=(",", ":")).encode()
     key = _cache_key(host, port, token)
@@ -503,7 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
     tokens = parser.add_mutually_exclusive_group(required=True)
     tokens.add_argument("--token")
     tokens.add_argument("--token-file", type=Path)
-    parser.add_argument("--registry", type=Path, default=Path("/etc/powerglove/games.json"))
+    parser.add_argument("--registry", type=Path, default=Path("/etc/virtualglove/games.json"))
     parser.add_argument("--system", default="nes")
     parser.add_argument("--rom", default="Manual selection")
     parser.add_argument("--profile", choices=(*SUPPORTED_PROFILES, "off"),
@@ -516,11 +570,17 @@ def main() -> int:
     """Resolve a profile, request the change, and return a meaningful exit status."""
     args = build_parser().parse_args()
     token = read_token(args.token, args.token_file)
-    profile = (None if args.profile == "off" else args.profile) if args.profile else select_profile(
+    settings = None if args.profile else select_profile_settings(
         load_registry(args.registry), args.system, args.rom
     )
+    profile = ((None if args.profile == "off" else args.profile)
+               if args.profile else settings["profile"] if settings else None)
     try:
-        ack = send_request(args.uno_q, args.port, token, profile, args.system, args.rom, args.timeout)
+        ack = send_request(
+            args.uno_q, args.port, token, profile, args.system, args.rom, args.timeout,
+            rapid_a=settings.get("rapid_a") if settings else None,
+            rapid_b=settings.get("rapid_b") if settings else None,
+        )
     except TimeoutError as exc:
         print(str(exc))
         return 2

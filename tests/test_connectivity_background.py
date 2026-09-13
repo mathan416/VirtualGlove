@@ -91,7 +91,7 @@ class BackgroundTests(unittest.TestCase):
 
 class WifiTests(unittest.TestCase):
     def test_network_includes_usb_ethernet_but_not_virtual_interfaces(self):
-        read=runpy.run_path(str(ROOT/'uno-q/powerglove-wifi-status.py'))['link_state']
+        read=runpy.run_path(str(ROOT/'uno-q/virtualglove-wifi-status.py'))['link_state']
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             for name in ('lo','docker0','veth123'):
@@ -117,7 +117,7 @@ class WifiTests(unittest.TestCase):
                     self.assertEqual(read_network_status(path),'unavailable')
 
     def test_host_reads_only_wireless_carrier(self):
-        read=runpy.run_path(str(ROOT/'uno-q/powerglove-wifi-status.py'))['wifi_state']
+        read=runpy.run_path(str(ROOT/'uno-q/virtualglove-wifi-status.py'))['wifi_state']
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);ethernet=root/'eth0';ethernet.mkdir();(ethernet/'carrier').write_text('1')
             self.assertEqual(read(root),'unavailable')
@@ -129,7 +129,7 @@ class WifiTests(unittest.TestCase):
             self.assertEqual(read(root),'disconnected')
 
     def test_host_reports_broadcasts_only_for_connected_physical_links(self):
-        broadcasts=runpy.run_path(str(ROOT/'uno-q/powerglove-wifi-status.py'))['broadcast_addresses']
+        broadcasts=runpy.run_path(str(ROOT/'uno-q/virtualglove-wifi-status.py'))['broadcast_addresses']
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
             wifi=root/'wlan0';wifi.mkdir();(wifi/'wireless').mkdir();(wifi/'carrier').write_text('1')
@@ -168,7 +168,7 @@ class WifiTests(unittest.TestCase):
         calls=[];matrix=UnoQMatrix(call=lambda *args:calls.append(args))
         with patch('powerglove_vision.wifi_status.read_network_status',return_value='connected'):
             matrix.set_attract({'matrix_attract':'off'},idle=False)
-        self.assertEqual(calls[-1],('set_powerglove_attract',2,4))
+        self.assertEqual(calls[-1],('set_virtualglove_attract',2,4))
         with patch('powerglove_vision.wifi_status.read_network_status',return_value='disconnected'):
             matrix.set_attract({'matrix_attract':'off'},idle=False)
-        self.assertEqual(calls[-1],('set_powerglove_attract',2,0))
+        self.assertEqual(calls[-1],('set_virtualglove_attract',2,0))

@@ -153,7 +153,7 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Pinned revision | `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` |
 | Upstream license | GNU General Public License, version 2 |
 | Local modification | `native/nestopia-powerglove/nestopia-powerglove.patch` |
-| Patch SHA-256 | `1cdde475a3d0da13a51d975c1bcacaedb3b9e1324260a4575e655346fcaa692f` |
+| Patch SHA-256 | `1ed4eb4bc803a4d445b6e5a1c7b22ccb00cf8a18d465954730282212b8334c06` |
 | Modified upstream files | `libretro/libretro.cpp`; `source/core/input/NstInpPowerGlove.cpp` |
 | Modification ledger | This guide, under **Nestopia modification ledger** |
 | Build recipe | `scripts/build-nestopia-powerglove.sh` |
@@ -180,7 +180,7 @@ ROM images are never part of a source or binary core artifact.
 
 At runtime, RetroArch loads the custom core only for an explicitly selected ROM.
 The launch entry passes the read-only latest-sample file through
-`POWERGLOVE_NATIVE_STATE`; the default path is `/run/powerglove/native-state`.
+`VIRTUALGLOVE_NATIVE_STATE`; the default path is `/run/virtualglove/native-state`.
 The patch registers a separately named **VirtualGlove** controller and
 identifies the library as **Nestopia PowerGlove**. Invalid, stale, uncalibrated,
 lost-tracking, or wrong-profile samples are neutralized. The compatibility
@@ -213,7 +213,7 @@ structure; coherence, profile, calibration, detection, and freshness checks;
 neutral invalid-input behavior; a separately selectable controller; calibrated
 X/Y plus Start and Select delivery; the `Nestopia PowerGlove` identity; and
 callback cleanup. The matching `NstInpPowerGlove.cpp` changes enable native
-input only when `POWERGLOVE_NATIVE_STATE` is present, provide the exact-ROM
+input only when `VIRTUALGLOVE_NATIVE_STATE` is present, provide the exact-ROM
 ten-byte stream while retaining Nestopia's ordinary twelve-byte path, and add
 opt-in trace hooks without altering normal latch processing. Cabinet testing
 corrected camera-to-Nestopia Y orientation; unknown fields remained neutral and

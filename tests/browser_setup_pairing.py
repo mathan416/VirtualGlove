@@ -191,6 +191,8 @@ async def main():
                              profile='off',vision_profile='off')
         await page.reload()
         await expect(page.locator('#connection-section')).to_be_visible()
+        await expect(page.locator('#pairing-card #pairing-section')).to_be_visible()
+        assert await page.locator('body > main > #pairing-section').count() == 0
         await expect(page.locator('#camera-section')).to_be_visible()
         await page.get_by_text('Players and hand-setup backups',exact=True).click()
         await expect(page.locator('#player-name')).to_have_value('Iain')
@@ -203,10 +205,10 @@ async def main():
         await page.locator('#receiver').fill('draft.local')
         await expect(page.locator('#pair-begin')).to_be_disabled()
         flags['save_error']=True
-        await page.get_by_role('button',name='Save connection and startup',exact=True).click()
+        await page.get_by_role('button',name='Save connection',exact=True).click()
         await expect(page.locator('#notice')).to_contain_text('Temporary settings failure')
         await expect(page.locator('#receiver')).to_have_value('draft.local')
-        await page.get_by_role('button',name='Save connection and startup',exact=True).click()
+        await page.get_by_role('button',name='Save connection',exact=True).click()
         await expect(page.locator('#pair-begin')).to_be_enabled()
         config['receiver']='RETROPIE-NAME.local';await open_page()
         await responsive()
@@ -284,7 +286,7 @@ async def main():
         flags['expiry']=120
         config['connection_configured']=False;await open_page()
         await expect(page.locator('#pair-begin')).to_be_disabled()
-        await expect(page.locator('#pair-prerequisite')).to_contain_text('save Connection and startup')
+        await expect(page.locator('#pair-prerequisite')).to_contain_text('Save connection')
         config['connection_configured']=True;flags['load_error']=True
         await page.reload();await expect(page.locator('#setup-retry')).to_be_visible()
         await page.locator('#setup-retry').click();await expect(page.locator('#pair-begin')).to_be_enabled()

@@ -1,7 +1,7 @@
 {
   "uno_q": "192.168.1.60",
   "port": 55356,
-  "token_file": "/etc/powerglove/token",
-  "registry": "/etc/powerglove/games.json",
+  "token_file": "/etc/virtualglove/token",
+  "registry": "/etc/virtualglove/games.json",
   "timeout": 0.4
 }

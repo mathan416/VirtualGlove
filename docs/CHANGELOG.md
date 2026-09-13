@@ -7,6 +7,115 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-13
+
+### Added
+
+- Added exact Program 1–10 filename aliases observed in the NES library for
+  revision-tagged, alternate-region, and `Robo Warrior` spelling variants.
+  These aliases retain the official profile and rapid-fire behavior.
+
+- Added the original Power Glove Programs 1–14 as first-class profiles, with
+  their documented movement, finger, wrist, depth, compound-action, rapid-fire,
+  centering, and manual-control behavior. Added Mattel's indexed game mappings,
+  exact case-insensitive `.nes`, `.zip`, and `.7z` aliases, and per-game rapid
+  A/B exceptions without changing Programs A–I or the dedicated game profiles.
+- Added validated structured game-registry entries with optional `rapid_a` and
+  `rapid_b` switches. Overrides travel with the authenticated game lease and
+  are reported read-only in live status; existing string entries remain valid.
+- Added numeric Program 1–14 displays to the matrix protocol without renumbering
+  existing Program A–I, Bad Street Brawler, or Super Glove Ball codes.
+
+- Added a visual-only Vulcan-salute easter egg to live camera experiences.
+  Holding an extended hand with a deliberate middle/ring split briefly shows
+  **Live long and prosper** with Pixel Pal, then fades without changing or
+  suppressing controller input. It requires a release before rearming, has a
+  30-second cooldown, stores no hand data, and announces the phrase politely to
+  screen readers.
+
+- Added **Center hand** directly to the Joystick dead-zone camera test. It is
+  available only while that panel owns an active safe-practice camera session,
+  keeps controller output paused, and redraws the grid from the newly saved
+  player center and hand size when centering finishes.
+
+- Added a 3×3 camera grid to the dead-zone test, using the saved calibrated hand
+  center and the same translated, full-size bounds as gameplay. A subtle live direction region highlight clears on
+  tracking loss or suppressed movement; no labels or palm marker are drawn.
+  Moved the camera toggle beside **Use standard size**.
+
+- Added an off-by-default camera test to **Setup → Joystick dead zone**, with its
+  own practice lease, mirrored preview, live direction feedback,
+  heartbeat/retry handling, and isolated cleanup on stop or page exit.
+
+- Added an optional, resumable **Get ready to play** guide at `/ready`, linked
+  from Setup and Dashboard. It rechecks live readiness and uses safe practice
+  for essential gestures before an explicit transition to registered-game controls.
+- Added separate versioned per-player guide progress, lossless version-5 store
+  migration, and a persistent output inhibit that survives interrupted visits.
+
+- Added a read-only Connection Doctor to **Connect to RetroPie**, with progress,
+  separate address/service/authentication and runtime checks, plain-language next
+  actions, and a sanitized downloadable checklist report. Unsupported game-side
+  readiness checks remain explicitly unverified.
+
+### Changed
+
+- Renamed installed RetroPie and UNO Q services, executables, runtime paths,
+  configuration directories, bridge methods, protocol identifiers, and managed
+  installation metadata from `powerglove-*` to `virtualglove-*`. Upgrades move
+  pairing tokens, game registries, launcher settings, and camera enrollment
+  forward before retiring the old units and paths into rollback backups. Names
+  that specifically identify Mattel's Power Glove or the separate native
+  emulation cores remain unchanged.
+
+- Changed the fresh-install startup profile to **Gestures off**. Existing saved
+  startup profiles remain unchanged during upgrades.
+
+- Moved **Joystick dead zone** directly below **Players** in Setup so player
+  selection, centering, and movement-box adjustment stay together.
+
+- The joystick camera test now previews unsaved slider changes immediately in
+  its grid, highlight, and direction pills, using the saved hand center and
+  current live palm position. Camera toggles retain the draft; player changes discard
+  it. Saving is still required for gameplay, and feedback waits for updated
+  worker bounds before returning to saved D-pad output.
+
+- Ordered Setup with separate **Connection and startup** and **Pair with
+  RetroPie** sections. **Show statistics** remains at the very bottom, after
+  Games, and shares its default-off switch with Dashboard. Recent events is
+  retained because it reports recognized gestures such as Glove Zap.
+- Joystick dead-zone size now means a chosen width and height fraction of the
+  full camera frame, anchored to each player's saved neutral palm center in both
+  preview and gameplay. The effective square is at least 1.5 times the saved
+  calibrated hand size; near a frame edge it translates inward without clipping
+  or shrinking. Live hand size and jitter never make the box breathe. All existing
+  numeric choices and player/calibration data remain unchanged, as do native
+  Super Glove Ball X/Y calibration and reach.
+
+### Fixed
+
+- Made fresh installations emit only `virtualglove-*` service, executable,
+  runtime, and managed-metadata names. Coordinated upgrades migrate existing
+  pairing, launcher, game-registry, player, calibration, tuning, Academy, and
+  camera-enrollment data before retiring legacy paths into recovery backups.
+- Fixed RetroPie upgrades from pre-0.4.1 installations so the bootstrap
+  recognizes the existing legacy launcher before asking for a Controller
+  address. Package-source preflight now completes before the installer creates
+  or migrates VirtualGlove configuration, and existing cabinet hooks are
+  validated before that migration begins.
+- Stopped legacy systemd path and timer triggers before their services during
+  migration, preventing trigger warnings and overlapping old/new helpers.
+  Obsolete early-start trial units are retired with the other legacy helpers.
+- Refused UNO Q helper migration while a shutdown request is pending. This
+  prevents enabling the renamed `PathExists` watcher from halting the board
+  halfway through an update.
+- Changed engineering Wi-Fi deployment to include and checksum-verify the
+  compiled Matrix image, flash it before application restart, require a matched
+  firmware handshake, and use administrator access when retiring a root-owned
+  legacy application directory.
+- Strengthened release-package validation to require every renamed UNO Q and
+  RetroPie runtime file and reject legacy service, hook, or executable names.
+
 ## [0.4.0-rc.7] - 2026-09-11
 
 ### Added

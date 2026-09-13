@@ -1,0 +1,13 @@
+// Exercise the rendered Dashboard statistics switch without browser dependencies.
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync(0,'utf8'),nodes=new Map(),listeners={},storage=new Map();
+function node(){return {hidden:false,style:{},dataset:{},value:'',textContent:'',classList:{toggle(){}},setAttribute(k,v){this[k]=v},getAttribute(k){return this[k]},removeAttribute(k){delete this[k]},append(){},replaceChildren(...v){this.children=v}}}
+const get=id=>{if(!nodes.has(id))nodes.set(id,node());return nodes.get(id)};
+let reads=0,paths=[];
+const state=new Proxy({vision_state:'active',active_profile:'off',events:['glove_zap'],performance:{}},{get(t,k){if(['dpad','buttons','axes','fingers','performance','events'].includes(k))reads++;return t[k]}});
+const context={document:{hidden:false,getElementById:get,createElement:node},window:{addEventListener(k,f){(listeners[k]??=[]).push(f)},dispatchEvent(e){for(const f of listeners[e.type]||[])f(e)}},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},Event:class{constructor(type){this.type=type}},fetch:async path=>{paths.push(path);return {ok:true,json:async()=>path.startsWith('/status')?state:{}}},setInterval(){},setTimeout(){},clearTimeout(){},console,Date};
+vm.createContext(context);
+for(const [,script] of html.matchAll(/<script>([\s\S]*?)<\/script>/g))vm.runInContext(script,context);
+(async()=>{await new Promise(setImmediate);await vm.runInContext('update()',context);assert.equal(reads,0);assert(get('dashboard-statistics').hidden);
+get('show-statistics').checked=true;get('show-statistics').onchange();await vm.runInContext('update()',context);assert(reads>0);assert(paths.includes('/status?statistics=1'));assert(get('events').children.length>0);
+get('show-statistics').checked=false;get('show-statistics').onchange();const before=reads;await vm.runInContext('update()',context);assert.equal(reads,before);assert.equal(paths.at(-1),'/status');assert.equal(get('events').textContent,'');assert.equal(get('performance').textContent,'');assert(get('dashboard-statistics').hidden);assert(!get('dashboard-program').hidden);assert.equal(storage.get('virtualglove.showStatistics'),'false');storage.set('virtualglove.showStatistics','true');for(const f of listeners.storage)f({key:'virtualglove.showStatistics'});assert(get('show-statistics').checked);assert(!get('dashboard-statistics').hidden);storage.set('virtualglove.showStatistics','false');for(const f of listeners.pageshow)f({});assert(!get('show-statistics').checked);console.log('Statistics checks passed: no reads off, detailed requests on, clearing and persistence.');})().catch(e=>{console.error(e);process.exitCode=1});

@@ -17,6 +17,7 @@ import copy
 import json
 import uuid
 import math
+from datetime import datetime, timezone
 from dataclasses import asdict
 
 from .model import Calibration
@@ -24,15 +25,15 @@ from .model import Calibration
 COURSE = 1
 LESSONS = 16
 MAX_PLAYERS = 12
-DEFAULT_JOYSTICK_DEADZONE = 0.28
+DEFAULT_JOYSTICK_DEADZONE = 0.60
 DIRECTION_CHANNELS = ("left", "right", "up", "down")
 
 
 def joystick_deadzone(value):
-    """Validate the one saved centre-box half-width."""
+    """Validate the saved center-box width and height as a full-frame fraction."""
     if (isinstance(value, bool) or not isinstance(value, (int, float))
-            or not math.isfinite(value) or not 0.14 <= value <= 1.0):
-        raise ValueError("Choose a joystick dead zone between 0.14 and 1.00.")
+            or not math.isfinite(value) or not 0.10 <= value <= 1.0):
+        raise ValueError("Choose a joystick dead zone between 0.10 and 1.00.")
     return float(value)
 
 
@@ -41,7 +42,7 @@ def migrated_deadzone(thresholds):
     values = [thresholds[name]["on"] for name in DIRECTION_CHANNELS if name in thresholds]
     if not values:
         return DEFAULT_JOYSTICK_DEADZONE
-    return min(1.0, max(0.14, max(values)))
+    return min(1.0, max(0.10, max(values)))
 
 
 def without_directions(thresholds):
@@ -91,6 +92,39 @@ def progress(value):
     return {"course": COURSE, "completed": sorted(set(done)), "lesson": lesson}
 
 
+READY_COURSE = 1
+READY_CHECKS = ("neutral", "left", "right", "up", "down", "a", "b", "start", "select", "menu_guard")
+
+
+def blank_ready_progress():
+    """Return a new empty, versioned Ready-guide progress record."""
+    return {"course": READY_COURSE, "completed": [], "completed_at": None}
+
+
+def ready_progress(value):
+    """Accept only this course's bounded identifiers and a canonical UTC timestamp."""
+    if not isinstance(value, dict) or set(value) != {"course", "completed", "completed_at"}:
+        raise ValueError("Invalid ready-guide progress.")
+    if type(value["course"]) is not int or value["course"] != READY_COURSE:
+        raise ValueError("The ready-guide course changed. Reload the guide.")
+    done = value["completed"]
+    if (not isinstance(done, list) or len(done) > len(READY_CHECKS)
+            or any(type(key) is not str or key not in READY_CHECKS for key in done)
+            or len(set(done)) != len(done)):
+        raise ValueError("Invalid ready-guide check.")
+    stamp = value["completed_at"]
+    if stamp is not None:
+        if not isinstance(stamp, str) or len(stamp) != 20 or set(done) != set(READY_CHECKS):
+            raise ValueError("Invalid ready-guide completion time.")
+        try:
+            date = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            if date.strftime("%Y-%m-%dT%H:%M:%SZ") != stamp or date.timestamp() < 0:
+                raise ValueError()
+        except (ValueError, OverflowError):
+            raise ValueError("Invalid ready-guide completion time.") from None
+    return {"course": READY_COURSE, "completed": [key for key in READY_CHECKS if key in done], "completed_at": stamp}
+
+
 def blank_progress():
     """Return independent progress for a new player."""
     return {"course": COURSE, "completed": [], "lesson": 0}
@@ -106,11 +140,11 @@ class PlayerSettings:
         self.error = None
         self.legacy_backup = None
         self.legacy_backup_version = 1
-        self.data = {"version": 5, "active": "default", "generation": 0,
+        self.data = {"version": 6, "active": "default", "generation": 0,
                      "calibration_restore": None,
                      "players": {"default": {"name": "Player 1", "thresholds": {},
                          "joystick_deadzone": DEFAULT_JOYSTICK_DEADZONE,
-                         "progress": blank_progress(), "needs_center": False, "calibration": None}}}
+                         "progress": blank_progress(), "ready_progress": blank_ready_progress(), "needs_center": False, "calibration": None}}}
         try:
             if path.exists():
                 if path.stat().st_size > 65536:
@@ -125,7 +159,7 @@ class PlayerSettings:
                     self.legacy_backup = json.dumps(saved, indent=2) + "\n"
                 else:
                     self.data = self.validate_store(saved)
-                    if saved.get("version") in (2, 3, 4):
+                    if saved.get("version") in (2, 3, 4, 5):
                         self.legacy_backup = json.dumps(saved, indent=2) + "\n"
                         self.legacy_backup_version = saved["version"]
         except (OSError, ValueError, KeyError, TypeError):
@@ -155,7 +189,15 @@ class PlayerSettings:
                 item["joystick_deadzone"] = migrated_deadzone(legacy)
                 item["thresholds"] = without_directions(legacy)
             data["version"] = 5
-        if not isinstance(data, dict) or set(data) != {"version", "active", "generation", "players", "calibration_restore"} or type(data["version"]) is not int or data["version"] != 5:
+        if isinstance(data, dict) and data.get("version") == 5:
+            if not isinstance(data.get("players"), dict):
+                raise ValueError("Invalid players")
+            for item in data["players"].values():
+                if not isinstance(item, dict) or "ready_progress" in item:
+                    raise ValueError("Invalid version-5 player record")
+                item["ready_progress"] = blank_ready_progress()
+            data["version"] = 6
+        if not isinstance(data, dict) or set(data) != {"version", "active", "generation", "players", "calibration_restore"} or type(data["version"]) is not int or data["version"] != 6:
             raise ValueError("Unsupported player settings")
         players = data["players"]
         if not isinstance(players, dict) or not 1 <= len(players) <= MAX_PLAYERS or data["active"] not in players:
@@ -165,12 +207,13 @@ class PlayerSettings:
         for key, item in players.items():
             if not isinstance(key, str) or not 1 <= len(key) <= 32 or not key.isalnum():
                 raise ValueError("Invalid player identifier")
-            if not isinstance(item, dict) or set(item) != {"name", "thresholds", "joystick_deadzone", "progress", "needs_center", "calibration"} or type(item["needs_center"]) is not bool:
+            if not isinstance(item, dict) or set(item) != {"name", "thresholds", "joystick_deadzone", "progress", "ready_progress", "needs_center", "calibration"} or type(item["needs_center"]) is not bool:
                 raise ValueError("Invalid player record")
             item["name"] = player_name(item["name"])
             item["thresholds"] = self.validate(item["thresholds"])
             item["joystick_deadzone"] = joystick_deadzone(item["joystick_deadzone"])
             item["progress"] = progress(item["progress"])
+            item["ready_progress"] = ready_progress(item["ready_progress"])
             if item["calibration"] is not None:
                 item["calibration"] = calibration_value(item["calibration"])
         pending = data["calibration_restore"]
@@ -204,6 +247,7 @@ class PlayerSettings:
         return {"active": self.data["active"], "generation": self.data["generation"],
                 "players": [{"id": key, "name": item["name"]} for key, item in self.data["players"].items()],
                 "progress": copy.deepcopy(self.active["progress"]),
+                "ready_progress": copy.deepcopy(self.active["ready_progress"]),
                 "needs_center": self.active["needs_center"],
                 "has_saved_calibration": self.active["calibration"] is not None,
                 "restoring_calibration": self.data["calibration_restore"] is not None, "error": self.error}
@@ -257,6 +301,14 @@ class PlayerSettings:
             incoming = progress(request.get("progress"))
             incoming["completed"] = sorted(set(item["progress"]["completed"]) | set(incoming["completed"]))
             item["progress"] = incoming
+        elif action == "ready_progress":
+            if set(request) != {"action", "player", "generation", "progress"}:
+                raise ValueError("Invalid ready-guide update fields.")
+            incoming = ready_progress(request.get("progress"))
+            incoming["completed"] = [key for key in READY_CHECKS
+                if key in item["ready_progress"]["completed"] or key in incoming["completed"]]
+            incoming["completed_at"] = item["ready_progress"]["completed_at"] or incoming["completed_at"]
+            item["ready_progress"] = incoming
         elif action == "reset_progress":
             item["progress"] = blank_progress()
             data["generation"] += 1
@@ -266,8 +318,8 @@ class PlayerSettings:
             name = player_name(request.get("name"))
             key = uuid.uuid4().hex
             data["players"][key] = {"name": name, "thresholds": copy.deepcopy(item["thresholds"]),
-                "joystick_deadzone": item["joystick_deadzone"],
-                "progress": blank_progress(), "needs_center": True, "calibration": None}
+                "joystick_deadzone": DEFAULT_JOYSTICK_DEADZONE,
+                "progress": blank_progress(), "ready_progress": blank_ready_progress(), "needs_center": True, "calibration": None}
             data["active"] = key
             data["generation"] += 1
         elif action == "select":

@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-system-shutdown.service
+# File: uno-q/virtualglove-system-shutdown.service
 # Purpose: Consume an authorized shutdown request and initiate a non-blocking UNO Q halt.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett

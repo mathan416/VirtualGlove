@@ -193,6 +193,13 @@ class SharedDebugState:
             self._refresh_practice_locked(now)
             return self.practice_active
 
+    def practice_status(self, session: str) -> dict:
+        """Report this lease separately from practice held by other browser tabs."""
+        with self.lock:
+            self._refresh_practice_locked(time.monotonic())
+            return {"practice_mode": self.practice_active,
+                    "session_active": session in self.practice_sessions}
+
     def take_practice_request(self) -> bool | None:
         """Consume a practice transition, including one caused by lease expiry."""
         with self.lock:
@@ -335,8 +342,8 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                         or not all(character.isalnum() or character in "-_" for character in session)
                     ):
                         raise ValueError("session must be an opaque browser identifier")
-                    active = shared.request_practice(session, enabled, reset=reset)
-                    response = json.dumps({"practice_mode": active}).encode()
+                    shared.request_practice(session, enabled, reset=reset)
+                    response = json.dumps(shared.practice_status(session)).encode()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(response)))

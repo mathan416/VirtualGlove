@@ -41,6 +41,9 @@ class HandObservation:
     ring_curl: float = 0.0
     pinky_curl: float = 0.0
     confidence_source: str = "generic"
+    index_middle_spread: float = 0.0
+    middle_ring_spread: float = 0.0
+    ring_pinky_spread: float = 0.0
 
     @property
     def fingers(self) -> dict[str, float]:
@@ -113,7 +116,7 @@ class ControllerState:
     def to_dict(self, token: str | None = None) -> dict[str, Any]:
         """Serialize the state with protocol metadata and an optional transport token."""
         result = asdict(self)
-        result["protocol"] = "powerglove-vision/1"
+        result["protocol"] = "virtualglove-vision/1"
         if token:
             result["token"] = token
         return result

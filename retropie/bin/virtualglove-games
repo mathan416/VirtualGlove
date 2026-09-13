@@ -1,6 +1,6 @@
 #!/bin/sh
 # Project: VirtualGlove
-# File: retropie/bin/powerglove-games
+# File: retropie/bin/virtualglove-games
 # Purpose: Launch the paired game-registry service with the installed Python source path.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -10,5 +10,5 @@
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 # Full history: docs/CHANGELOG.md and Git history.
 
-export PYTHONPATH=/opt/powerglove-src/src
+export PYTHONPATH=/opt/virtualglove-src/src
 exec /usr/bin/python3 -m powerglove_vision.game_registry "$@"

@@ -101,6 +101,6 @@ def current_version():
         return display_version(build_identity(root))
     try:
         from importlib.metadata import version
-        return version("powerglove-vision")
+        return version("virtualglove")
     except (ImportError, LookupError):
         return "unknown"

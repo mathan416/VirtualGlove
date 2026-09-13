@@ -34,7 +34,7 @@ TOKEN = '0123456789abcdef'
 
 
 def packet(**extra):
-    return json.dumps(dict(protocol='powerglove-vision/1', token=TOKEN,
+    return json.dumps(dict(protocol='virtualglove-vision/1', token=TOKEN,
                            sequence=1, session='test', **extra)).encode()
 
 
@@ -244,7 +244,7 @@ class AuditRegressionTests(unittest.TestCase):
         module=runpy.run_path(str(ROOT/'scripts/application-payload.py'))
         selected=module['selected_files'](ROOT)
         self.assertTrue(any(name.startswith('docs/images/matrix/') for name in selected))
-        self.assertIn('uno-q/powerglove-early-start.service',selected)
+        self.assertIn('uno-q/virtualglove-early-start.service',selected)
         self.assertIn('scripts/measure-dot-input.py', selected)
         self.assertIn('scripts/measure-vision-status.py', selected)
         self.assertIn('scripts/calibrate-reach.py', selected)

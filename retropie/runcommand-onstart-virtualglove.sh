@@ -1,6 +1,6 @@
 #!/bin/sh
 # Project: VirtualGlove
-# File: retropie/runcommand-onstart-powerglove.sh
+# File: retropie/runcommand-onstart-virtualglove.sh
 # Purpose: Forward RetroPie game-launch metadata to VirtualGlove without replacing existing cabinet hooks.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -12,5 +12,5 @@
 
 # Call this from the cabinet's existing runcommand-onstart.sh, preserving its
 # controller, RGB, and trackball setup. RetroPie supplies these four arguments.
-/opt/powerglove/bin/powerglove-retropie-hook start "$1" "$2" "$3" "$4"
+/opt/virtualglove/bin/virtualglove-retropie-hook start "$1" "$2" "$3" "$4"
 exit 0

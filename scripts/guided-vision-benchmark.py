@@ -359,7 +359,7 @@ def main() -> int:
     """Start the local guided-capture web server until interrupted."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--camera", default="auto")
-    parser.add_argument("--output", type=Path, default=Path("/tmp/powerglove-guided-benchmark.avi"))
+    parser.add_argument("--output", type=Path, default=Path("/tmp/virtualglove-guided-benchmark.avi"))
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8090)
     parser.add_argument("--width", type=int, default=640)

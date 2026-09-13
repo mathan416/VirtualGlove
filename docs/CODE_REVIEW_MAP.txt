@@ -1,10 +1,11 @@
 VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
-Updated: September 10, 2026 (America/Toronto)
+Updated: September 13, 2026 (America/Toronto)
 Source: /Users/mathan/Developer/PowerGlove
-Snapshot: dev, version 0.4.0, including the native-movement efficiency,
-camera-rate, lightweight-preview, and Dashboard-statistics work. Git history is
-the exact record of commits and prior maps.
+Snapshot: dev, version 0.4.1, including Programs 1-14, official game mappings,
+Ready to Play, the joystick dead-zone camera grid, and the complete
+virtualglove runtime-name migration. Git history is the exact record of commits
+and prior maps.
 This is a reading aid, not a claim of a completed code/security audit.
 
 CURRENT SYSTEM
@@ -24,9 +25,10 @@ remain deliberately neutral. Latency and stationary jitter still need the
 planned external hand-and-screen recording; no measured improvement is claimed.
 
 The shared website provides Dashboard, local Rock Paper Scissors at /play,
-sixteen Glove Academy lessons and personalization at /learn, Help, and /setup.
-Setup contains status markers, attract settings, connection/startup, guided
-pairing, and Games. Dashboard owns arming and power controls. Pairing supports
+the resumable readiness guide at /ready, sixteen Glove Academy lessons and
+personalization at /learn, Help, and /setup. Setup contains status markers,
+players, live joystick dead-zone testing, Connect to RetroPie, guided pairing,
+Connection Doctor, and Games. Dashboard owns arming and power controls. Pairing supports
 one-time codes and SSH passwords, requires physical certificate/PIN confirmation,
 and releases its matrix display when the submitted transport attempt finishes.
 Idle display then follows On, Dim, or Off. Networking includes Wi-Fi and Ethernet.
@@ -66,9 +68,8 @@ credential handling, newest-frame/state-only behavior, and explicit fallbacks.
 DOCUMENTATION AND DELIVERY
 --------------------------
 Help renders maintained Markdown through help_content.py. Overlapping Markdown
-has been consolidated into 19 owning documents. The PDF editions intentionally
-remain at their pre-consolidation state until the next requested regeneration;
-scripts/build-docs-pdf.py will remove superseded editions at that time.
+has been consolidated into 20 owning documents, and all 20 matching PDF editions
+were regenerated for 0.4.1 on September 13, 2026.
 Keep intentional extra-finger artwork and its published count synchronized.
 Community guides cover building the hardware, native emulation, and symptom-led
 troubleshooting. Documentation screenshots use simulated, non-secret fixtures;
@@ -79,19 +80,23 @@ The cabinet-specific quick reference and this review map are not public payloads
 
 VALIDATION
 ----------
-Latest runtime checks: 496 unit tests run, one expected Linux-specific skip;
-browser interaction checks include pairing, Academy, camera-rate, and optional
-statistics behavior. Coverage includes delayed clicks, progress/errors, both methods,
-expiry/retry, duplicate requests, matrix completion cleanup, and plain/old Setup
-URLs. The user confirmed successful live pairing and the subsequent matrix/URL
-fix. This does not replace fresh-device installation or physical latency tests.
+Latest clean Python 3.12 checks: 774 tests passed with one expected
+Linux-specific skip. Browser-harness coverage includes pairing, Academy,
+Ready to Play, Connection Doctor, joystick camera leases and grid geometry,
+camera rate, and optional statistics behavior. Installer coverage includes
+fresh installs, repeat installs, pre-0.4.1 migration, manifest rollback,
+legacy-file rejection, service trigger ordering, pending shutdown protection,
+and verified Matrix firmware. The user also confirmed the 0.4.1 development
+build, renamed services, Matrix firmware, and Player 1 merged-controller path on
+the physical UNO Q and RetroPie. This does not replace a clean-device release
+candidate installation or physical latency tests.
 Before publishing, run the source/documentation audits, syntax checks, and the
 relevant tests listed in docs/CONTRIBUTING.md. Do not publish private runtime
 state, tokens, passwords, active pairing codes, or raw camera recordings.
 
 COMPLETE SOURCE INVENTORY
 -------------------------
-405 Git-visible files currently present, including the pre-consolidation PDFs.
+463 Git-visible files currently present, including the regenerated 0.4.1 PDFs.
 .
 |-- .gitattributes
 |-- .github
@@ -340,19 +345,19 @@ COMPLETE SOURCE INVENTORY
 |       `-- mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl
 |-- retropie
 |   |-- bin
-|   |   |-- powerglove-bsb-zap
-|   |   |-- powerglove-games
-|   |   |-- powerglove-pair
-|   |   |-- powerglove-profile
-|   |   |-- powerglove-receiver
-|   |   `-- powerglove-retropie-hook
-|   |-- powerglove-games.service
-|   |-- powerglove-receiver.service
-|   |-- powerglove-receiver.timer
+|   |   |-- virtualglove-bsb-zap
+|   |   |-- virtualglove-games
+|   |   |-- virtualglove-pair
+|   |   |-- virtualglove-profile
+|   |   |-- virtualglove-receiver
+|   |   `-- virtualglove-retropie-hook
+|   |-- virtualglove-games.service
+|   |-- virtualglove-receiver.service
+|   |-- virtualglove-receiver.timer
 |   |-- retroarch
 |   |   `-- VirtualGlove.cfg
-|   |-- runcommand-onend-powerglove.sh
-|   `-- runcommand-onstart-powerglove.sh
+|   |-- runcommand-onend-virtualglove.sh
+|   `-- runcommand-onstart-virtualglove.sh
 |-- scripts
 |   |-- analyze-latency-trace.py
 |   |-- analyze-latency-video.py
@@ -489,14 +494,14 @@ COMPLETE SOURCE INVENTORY
 |   |-- test_vision_benchmark_tools.py
 |   `-- test_web_features.py
 `-- uno-q
-    |-- powerglove-camera-recovery.conf
-    |-- powerglove-camera-recovery.path
-    |-- powerglove-camera-recovery.py
-    |-- powerglove-camera-recovery.service
-    |-- powerglove-early-start.service
-    |-- powerglove-system-shutdown.conf
-    |-- powerglove-system-shutdown.path
-    |-- powerglove-system-shutdown.service
-    |-- powerglove-wifi-status.py
-    |-- powerglove-wifi-status.service
-    `-- powerglove-wifi-status.timer
+    |-- virtualglove-camera-recovery.conf
+    |-- virtualglove-camera-recovery.path
+    |-- virtualglove-camera-recovery.py
+    |-- virtualglove-camera-recovery.service
+    |-- virtualglove-early-start.service
+    |-- virtualglove-system-shutdown.conf
+    |-- virtualglove-system-shutdown.path
+    |-- virtualglove-system-shutdown.service
+    |-- virtualglove-wifi-status.py
+    |-- virtualglove-wifi-status.service
+    `-- virtualglove-wifi-status.timer

@@ -1,6 +1,6 @@
 {
   "recognition": {
-    "joystick_deadzone": 0.28,
+    "joystick_deadzone": 0.60,
     "coordinate_edge_margin": 0.08,
     "coordinate_smoothing_min": 0.70,
     "coordinate_smoothing_max": 1.00,

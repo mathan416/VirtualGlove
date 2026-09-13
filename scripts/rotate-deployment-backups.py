@@ -21,7 +21,7 @@ import shutil
 
 
 PAYLOAD_BACKUP = re.compile(r"payload-(\d{8})-(\d{6})-(\d+)")
-KEEP_MARKER = ".powerglove-keep"
+KEEP_MARKER = ".virtualglove-keep"
 
 
 def _routine_backups(root: Path) -> list[Path]:

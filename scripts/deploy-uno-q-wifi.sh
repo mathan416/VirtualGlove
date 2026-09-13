@@ -48,7 +48,7 @@ Environment overrides:
   UNO_Q_SSH_TARGET  SSH destination
   UNO_Q_SSH_IDENTITY  Optional private-key path for this UNO Q
   UNO_Q_APP_DIR     Remote App Lab application directory
-  POWERGLOVE_DEPLOY_BACKUPS_KEEP  Routine payload backups to retain (default: 12)
+  VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP  Routine payload backups to retain (default: 12)
 USAGE
   exit 0
 fi
@@ -63,10 +63,10 @@ if [[ $# -eq 1 ]]; then
 fi
 
 readonly UNO_TARGET REMOTE_APP_DIR
-DEPLOY_BACKUPS_KEEP="${POWERGLOVE_DEPLOY_BACKUPS_KEEP:-12}"
+DEPLOY_BACKUPS_KEEP="${VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP:-12}"
 if [[ ! "${DEPLOY_BACKUPS_KEEP}" =~ ^[0-9]+$ ]] \
     || (( DEPLOY_BACKUPS_KEEP < 2 || DEPLOY_BACKUPS_KEEP > 100 )); then
-  echo "error: POWERGLOVE_DEPLOY_BACKUPS_KEEP must be an integer from 2 to 100" >&2
+  echo "error: VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP must be an integer from 2 to 100" >&2
   exit 2
 fi
 readonly DEPLOY_BACKUPS_KEEP
@@ -111,11 +111,12 @@ fi
 readonly UNO_CONNECTION UNO_HEALTH_HOST UNO_HEALTH_AUTHORITY
 
 echo "Uploading VirtualGlove over Wi-Fi..."
-python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" --include-engineering
+python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" \
+  --include-engineering --precompiled-matrix
 COPYFILE_DISABLE=1 tar -C "${LOCAL_METADATA_DIR}" -cf "${LOCAL_ARCHIVE}" .
 scp "${SSH_OPTIONS[@]}" "${LOCAL_ARCHIVE}" "${UNO_TARGET}:${REMOTE_ARCHIVE}"
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "set -eu; legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test ! -d '${REMOTE_APP_DIR}/data' && test -d \"\$legacy/data\"; then mkdir -p '${REMOTE_APP_DIR}'; cp -a \"\$legacy/data\" '${REMOTE_APP_DIR}/data'; fi; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/powerglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/powerglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
+  "set -eu; legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test ! -d '${REMOTE_APP_DIR}/data' && test -d \"\$legacy/data\"; then mkdir -p '${REMOTE_APP_DIR}'; cp -a \"\$legacy/data\" '${REMOTE_APP_DIR}/data'; fi; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
 
 echo "Removing legacy Controller containers..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -133,13 +134,17 @@ echo "Configuring persistent local hostname resolution..."
 ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only && { test ! -S /run/avahi-daemon/socket || python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}'; }"
 
+echo "Updating VirtualGlove host-service names..."
+ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+  "sudo python3 '${REMOTE_APP_DIR}/scripts/setup-machine.py' uno-q --runtime-names-only"
+
+echo "Flashing the compiled VirtualGlove Matrix firmware..."
+ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+  "sudo python3 '${REMOTE_APP_DIR}/scripts/flash-matrix-firmware.py' '${REMOTE_APP_DIR}/firmware/matrix'"
+
 echo "Checking the host helpers..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "mkdir -p '${REMOTE_APP_DIR}/data'; if systemctl is-active --quiet powerglove-system-shutdown.path; then touch '${REMOTE_APP_DIR}/data/.shutdown-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.shutdown-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable Dashboard shutdown' >&2; fi; if systemctl is-active --quiet powerglove-camera-recovery.path; then touch '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable guarded USB camera recovery' >&2; fi"
-
-echo "Updating the independent Wi-Fi status sampler..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "if cmp -s '${REMOTE_APP_DIR}/uno-q/powerglove-wifi-status.py' /usr/local/libexec/powerglove-wifi-status && cmp -s '${REMOTE_APP_DIR}/uno-q/powerglove-wifi-status.service' /etc/systemd/system/powerglove-wifi-status.service && cmp -s '${REMOTE_APP_DIR}/uno-q/powerglove-wifi-status.timer' /etc/systemd/system/powerglove-wifi-status.timer && systemctl is-enabled --quiet powerglove-wifi-status.timer && systemctl is-active --quiet powerglove-wifi-status.timer; then echo 'Wi-Fi status sampler is current'; else sudo python3 '${REMOTE_APP_DIR}/scripts/setup-machine.py' uno-q --wifi-status-only; fi"
+  "mkdir -p '${REMOTE_APP_DIR}/data'; if systemctl is-active --quiet virtualglove-system-shutdown.path; then touch '${REMOTE_APP_DIR}/data/.shutdown-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.shutdown-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable Dashboard shutdown' >&2; fi; if systemctl is-active --quiet virtualglove-camera-recovery.path; then touch '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable guarded USB camera recovery' >&2; fi"
 
 echo "Restarting the UNO Q application..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -245,7 +250,7 @@ fi
 
 # Retire the old directory only after the new app and every health check pass.
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test -d \"\$legacy\"; then destination=\"\$HOME/powerglove-backups/retired-controller-application-\$(date +%Y%m%d-%H%M%S)-\$\$\"; mkdir -p \"\$HOME/powerglove-backups\"; mv \"\$legacy\" \"\$destination\"; echo 'Previous Controller application migrated to VirtualGlove'; fi"
+  "legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test -d \"\$legacy\"; then destination=\"/var/backups/virtualglove/retired-controller-application-\$(date +%Y%m%d-%H%M%S)-\$\$\"; sudo mkdir -p /var/backups/virtualglove; sudo mv \"\$legacy\" \"\$destination\"; echo 'Previous Controller application migrated to VirtualGlove'; fi"
 
 echo "Deployment complete."
 echo "  Play:   http://${UNO_HOST}:8088/play"

@@ -12,6 +12,7 @@
 
 """Exercise installation without changing the host OS or invoking apt/systemd."""
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -56,6 +57,53 @@ class SetupTests(unittest.TestCase):
             "https://legacy.raspbian.org/raspbian")
         self.assertEqual(setup.retired_buster_sources([("repaired", repaired)]), [])
 
+    def test_retropie_source_preflight_fails_before_migration_or_writes(self):
+        """An obsolete package source must leave legacy configuration untouched."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith(("/etc/", "/opt/")):
+                    return root / str(path).lstrip("/")
+                return path
+
+            mapped("/opt/retropie/configs/all").mkdir(parents=True)
+            with patch.object(setup, "Path", side_effect=mapped), \
+                    patch.object(
+                        setup, "check_retropie_package_sources",
+                        side_effect=ValueError("obsolete package source"),
+                    ), \
+                    patch.object(setup, "migrate_directory") as migrate, \
+                    patch.object(setup, "write_file") as write:
+                with self.assertRaisesRegex(ValueError, "obsolete package source"):
+                    setup.install_retropie("virtualglove.local")
+            migrate.assert_not_called()
+            write.assert_not_called()
+
+    def test_retropie_hook_preflight_fails_before_configuration_migration(self):
+        """An incompatible cabinet hook must not start the legacy migration."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith(("/etc/", "/opt/")):
+                    return root / str(path).lstrip("/")
+                return path
+
+            base = mapped("/opt/retropie/configs/all")
+            base.mkdir(parents=True)
+            (base / "runcommand-onstart.sh").write_text(
+                "#!/usr/bin/python3\nprint('custom cabinet hook')\n"
+            )
+            with patch.object(setup, "Path", side_effect=mapped), \
+                    patch.object(setup, "check_retropie_package_sources"), \
+                    patch.object(setup, "migrate_directory") as migrate:
+                with self.assertRaisesRegex(ValueError, "not a supported shell script"):
+                    setup.install_retropie("virtualglove.local")
+            migrate.assert_not_called()
+
     def test_unoq_startup_requires_matching_matrix_firmware(self):
         import io
         matched = io.BytesIO(b'{"firmware":{"state":"matched"}}')
@@ -72,7 +120,7 @@ class SetupTests(unittest.TestCase):
         original = "#!/bin/bash\necho existing\nexit 0\n"
         updated = setup.hook_content(original, "start")
         self.assertIn(original.split("\n", 1)[1], updated)
-        self.assertLess(updated.index("powerglove.sh"), updated.index("exit 0"))
+        self.assertLess(updated.index("virtualglove.sh"), updated.index("exit 0"))
         self.assertEqual(setup.hook_content(updated, "start"), updated)
         with self.assertRaises(ValueError):
             setup.hook_content("#!/usr/bin/python3\nprint('custom')\n", "start")
@@ -95,6 +143,125 @@ class SetupTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     setup.write_file(link, "bad")
 
+    def test_private_legacy_settings_migrate_without_overwrite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            legacy = root / "legacy"
+            current = root / "current"
+            legacy.mkdir()
+            (legacy / "token").write_text("paired-secret")
+            self.assertTrue(setup.migrate_directory(legacy, current))
+            self.assertEqual((current / "token").read_text(), "paired-secret")
+            (current / "token").write_text("different")
+            with self.assertRaisesRegex(ValueError, "differ"):
+                setup.migrate_directory(legacy, current)
+            legacy_file = root / "powerglove-camera.json"
+            current_file = root / "virtualglove-camera.json"
+            legacy_file.write_text('{"camera":"kept"}')
+            self.assertTrue(setup.migrate_file(legacy_file, current_file))
+            self.assertEqual(current_file.read_text(), '{"camera":"kept"}')
+
+    def test_runtime_name_migration_refuses_pending_shutdown_request(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory)
+            (app / "data").mkdir()
+            (app / "data/shutdown-request").touch()
+
+            class AppPath:
+                def __str__(self):
+                    return "/home/arduino/ArduinoApps/virtualglove"
+
+                def __truediv__(self, relative):
+                    return app / relative
+
+            with patch.object(setup, "SOURCE", AppPath()):
+                with self.assertRaisesRegex(ValueError, "pending shutdown request"):
+                    setup.install_unoq_runtime_names()
+
+    def test_runtime_name_migration_stops_triggers_before_legacy_services(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            app = root / "app"
+            (app / "data").mkdir(parents=True)
+            (app / "uno-q").mkdir()
+            for original in (ROOT / "uno-q").glob("virtualglove-*"):
+                (app / "uno-q" / original.name).write_bytes(original.read_bytes())
+
+            class AppPath:
+                def __str__(self):
+                    return "/home/arduino/ArduinoApps/virtualglove"
+
+                def __truediv__(self, relative):
+                    return app / relative
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith(("/etc/", "/usr/local/")):
+                    return root / str(path).lstrip("/")
+                return path
+
+            unit_root = mapped("/etc/systemd/system")
+            unit_root.mkdir(parents=True)
+            for name in (
+                "powerglove-system-shutdown.path",
+                "powerglove-system-shutdown.service",
+                "powerglove-camera-recovery.path",
+                "powerglove-camera-recovery.service",
+            ):
+                (unit_root / name).write_text(name)
+            with patch.object(setup, "SOURCE", AppPath()), \
+                    patch.object(setup, "Path", side_effect=mapped), \
+                    patch.object(setup, "BACKUPS", root / "backups"), \
+                    patch.object(setup, "run") as command, \
+                    patch.object(setup, "install_early_start"), \
+                    patch.object(setup, "install_wifi_status"):
+                setup.install_unoq_runtime_names()
+            calls = [item.args for item in command.call_args_list]
+            stop_paths = (
+                "systemctl", "stop",
+                "powerglove-system-shutdown.path",
+                "powerglove-camera-recovery.path",
+            )
+            stop_services = (
+                "systemctl", "stop",
+                "powerglove-system-shutdown.service",
+                "powerglove-camera-recovery.service",
+            )
+            disable = (
+                "systemctl", "disable",
+                "powerglove-system-shutdown.path",
+                "powerglove-system-shutdown.service",
+                "powerglove-camera-recovery.path",
+                "powerglove-camera-recovery.service",
+            )
+            self.assertLess(calls.index(stop_paths), calls.index(stop_services))
+            self.assertLess(calls.index(stop_services), calls.index(disable))
+
+    def test_early_start_retires_legacy_trial_unit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            trial = home / ".config/systemd/user/powerglove-early-start-trial.service"
+            trial.parent.mkdir(parents=True)
+            trial.write_text("legacy trial")
+            account = SimpleNamespace(
+                pw_uid=os.getuid(), pw_gid=os.getgid(), pw_dir=str(home)
+            )
+            with patch.object(setup, "BACKUPS", root / "backups"), \
+                    patch.object(setup.pwd, "getpwnam", return_value=account), \
+                    patch.object(setup, "run") as command, \
+                    patch.object(setup.os, "chown"):
+                setup.install_early_start()
+                expected_disable = tuple(setup.user_systemctl(
+                    "disable", "--now", "powerglove-early-start-trial.service"
+                ))
+            self.assertFalse(trial.exists())
+            retired = list((root / "backups/retired").rglob(
+                "powerglove-early-start-trial.service"
+            ))
+            self.assertEqual(len(retired), 1)
+            command.assert_any_call(*expected_disable)
+
     def test_retropie_install_twice_preserves_existing_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -107,7 +274,7 @@ class SetupTests(unittest.TestCase):
             base.mkdir(parents=True)
             hook = base / "runcommand-onstart.sh"
             hook.write_text("#!/bin/sh\necho lighting\nexit 0\n")
-            config = mapped("/etc/powerglove")
+            config = mapped("/etc/virtualglove")
             config.mkdir(parents=True)
             (config / "token").write_text("existing-private-token")
             (config / "launcher.json").write_text('{"uno_q":"existing.local"}')
@@ -120,8 +287,8 @@ class SetupTests(unittest.TestCase):
             self.assertEqual((config / "token").read_text(), "existing-private-token")
             self.assertEqual((config / "launcher.json").read_text(), '{"uno_q":"existing.local"}')
             self.assertEqual((config / "games.json").read_text(), '{"custom":"game"}')
-            self.assertTrue(mapped("/opt/powerglove/bin/powerglove-receiver").exists())
-            self.assertTrue(mapped("/etc/systemd/system/powerglove-receiver.timer").exists())
+            self.assertTrue(mapped("/opt/virtualglove/bin/virtualglove-receiver").exists())
+            self.assertTrue(mapped("/etc/systemd/system/virtualglove-receiver.timer").exists())
             self.assertIn("echo lighting", first)
             command.assert_any_call("apt-get", "install", "-y", "python3", "python3-evdev", "openssl", "avahi-daemon", "libnss-mdns")
             command.assert_any_call("systemctl", "enable", "--now", "avahi-daemon")
@@ -137,7 +304,7 @@ class SetupTests(unittest.TestCase):
             (app / "data/device.json").write_text('{"token":"keep-this-private","profile":"off"}')
             compose = app / ".cache/app-compose.yaml"
             compose.write_text("services:\n  main:\n    volumes:\n    - /app:/app\n    ports:\n    - 8088:8088\n")
-            for original in (ROOT / "uno-q").glob("powerglove-*"):
+            for original in (ROOT / "uno-q").glob("virtualglove-*"):
                 (app / "uno-q" / original.name).write_bytes(original.read_bytes())
             (app / "scripts/configure-uno-q-mdns.py").write_bytes((ROOT / "scripts/configure-uno-q-mdns.py").read_bytes())
             class AppPath:
@@ -164,18 +331,18 @@ class SetupTests(unittest.TestCase):
             self.assertNotIn("name: powerglove-vision", first)
             self.assertEqual((app / "data/device.json").read_text(), '{"token":"keep-this-private","profile":"off"}')
             self.assertEqual((app / "data/controller-hostname").read_text(), "virtualglove\n")
-            self.assertTrue(mapped("/etc/systemd/system/powerglove-system-shutdown.path").exists())
-            service = mapped("/etc/systemd/system/powerglove-system-shutdown.service").read_text()
+            self.assertTrue(mapped("/etc/systemd/system/virtualglove-system-shutdown.path").exists())
+            service = mapped("/etc/systemd/system/virtualglove-system-shutdown.service").read_text()
             self.assertIn("ExecStart=/usr/bin/systemctl --no-block halt", service)
             self.assertNotIn("--no-block poweroff", service)
-            self.assertTrue(mapped("/etc/systemd/system/powerglove-camera-recovery.path").exists())
-            camera_service = mapped("/etc/systemd/system/powerglove-camera-recovery.service").read_text()
-            self.assertIn("/usr/local/libexec/powerglove-camera-recovery", camera_service)
-            self.assertTrue(mapped("/usr/local/libexec/powerglove-camera-recovery").exists())
+            self.assertTrue(mapped("/etc/systemd/system/virtualglove-camera-recovery.path").exists())
+            camera_service = mapped("/etc/systemd/system/virtualglove-camera-recovery.service").read_text()
+            self.assertIn("/usr/local/libexec/virtualglove-camera-recovery", camera_service)
+            self.assertTrue(mapped("/usr/local/libexec/virtualglove-camera-recovery").exists())
             command.assert_any_call(
-                "/usr/local/libexec/powerglove-camera-recovery", "--configure-if-present"
+                "/usr/local/libexec/virtualglove-camera-recovery", "--configure-if-present"
             )
-            command.assert_any_call("systemctl", "enable", "--now", "powerglove-camera-recovery.path")
+            command.assert_any_call("systemctl", "enable", "--now", "virtualglove-camera-recovery.path")
             command.assert_any_call(
                 "env", "APP_HOME=/home/arduino/ArduinoApps/virtualglove",
                 "docker", "compose", "-f", compose, "up", "-d", "--force-recreate"

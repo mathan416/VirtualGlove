@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import ctypes
 import hashlib
 import importlib.util
@@ -27,7 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.gesture import Calibration, GestureEngine  # noqa: E402
+from powerglove_vision.gesture import Calibration, GestureConfig, GestureEngine  # noqa: E402
 from powerglove_vision.model import HandObservation  # noqa: E402
 from powerglove_vision.native_state import NativeStateWriter  # noqa: E402
 
@@ -179,19 +180,20 @@ def observation(timestamp: float, dx: float = 0.0, dy: float = 0.0) -> HandObser
 def recognition_results() -> dict:
     """Prove each side activates and the centre box releases on the next sample."""
     result = {}
-    vectors = {"left": (-.29, 0), "right": (.29, 0), "up": (0, -.29), "down": (0, .29)}
-    releases = {"left": (-.28, 0), "right": (.28, 0), "up": (0, -.28), "down": (0, .28)}
+    vectors = {"left": (-.31, 0), "right": (.31, 0), "up": (0, -.31), "down": (0, .31)}
+    releases = {"left": (-.30, 0), "right": (.30, 0), "up": (0, -.30), "down": (0, .30)}
     calibration = Calibration(.5, .5, .2, 0, 0, 0)
     for direction in DIRECTION_IDS:
-        engine = GestureEngine("program_g", calibration=calibration)
+        engine = GestureEngine("program_g", GestureConfig(joystick_deadzone=.60), calibration=calibration)
         dx, dy = vectors[direction]
-        activated = engine.update(observation(1.0, dx, dy)).dpad
+        activated = engine.update(replace(observation(1.0), palm_x=.5+dx, palm_y=.5+dy)).dpad
         dx, dy = releases[direction]
-        released = engine.update(observation(1.1, dx, dy)).dpad
+        released = engine.update(replace(observation(1.1), palm_x=.5+dx, palm_y=.5+dy)).dpad
         result[direction] = {
-            "activation_displacement": .29,
+            "displacement_units": "camera_frame_fraction",
+            "activation_displacement": .31,
             "activated": activated[direction],
-            "release_displacement": .28,
+            "release_displacement": .30,
             "released": not any(released.values()),
         }
     return result
@@ -312,8 +314,8 @@ def prepare_native(session: Session, writer: NativeStateWriter) -> bytes:
 
 def benchmark_native(core: Path, rom: Path, state: Path, scratch: Path, frames: int) -> dict:
     """Measure signed coordinate steps through the exact-ROM native path."""
-    os.environ["POWERGLOVE_NATIVE_STATE"] = str(state)
-    os.environ.pop("POWERGLOVE_TRACE", None)
+    os.environ["VIRTUALGLOVE_NATIVE_STATE"] = str(state)
+    os.environ.pop("VIRTUALGLOVE_TRACE", None)
     writer = NativeStateWriter(state)
     session = Session(core, rom, scratch, RETRO_DEVICE_POWERGLOVE)
     try:

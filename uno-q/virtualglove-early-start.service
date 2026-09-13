@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-early-start.service
+# File: uno-q/virtualglove-early-start.service
 # Purpose: Run early startup as the Arduino user.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -13,7 +13,7 @@ Description=VirtualGlove early-start startup helper
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 %h/.local/lib/powerglove/uno-q-early-start.py --wait-router --release
+ExecStart=/usr/bin/python3 %h/.local/lib/virtualglove/uno-q-early-start.py --wait-router --release
 TimeoutStartSec=55
 
 [Install]
