@@ -35,7 +35,7 @@ from typing import Any
 from .gesture import SUPPORTED_PROFILES
 
 
-PROTOCOL = "powerglove-profile/1"
+PROTOCOL = "virtualglove-profile/1"
 MAX_PACKET_BYTES = 4096
 DISCOVERY_ADDRESS = "255.255.255.255"
 DISCOVERY_CACHE_SECONDS = 30.0
@@ -557,7 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
     tokens = parser.add_mutually_exclusive_group(required=True)
     tokens.add_argument("--token")
     tokens.add_argument("--token-file", type=Path)
-    parser.add_argument("--registry", type=Path, default=Path("/etc/powerglove/games.json"))
+    parser.add_argument("--registry", type=Path, default=Path("/etc/virtualglove/games.json"))
     parser.add_argument("--system", default="nes")
     parser.add_argument("--rom", default="Manual selection")
     parser.add_argument("--profile", choices=(*SUPPORTED_PROFILES, "off"),

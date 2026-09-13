@@ -55,6 +55,20 @@ class ManifestTests(unittest.TestCase):
         self.apply()
         self.assertEqual(before,(self.root/self.module['MANIFEST']).stat().st_mtime_ns)
 
+    def test_legacy_manifest_is_migrated_and_renamed_files_are_pruned(self):
+        self.put('uno-q/powerglove-helper.service','old');self.apply()
+        (self.root/self.module['MANIFEST']).rename(self.root/self.module['LEGACY_MANIFEST'])
+        (self.root/self.module['LOCK']).rename(self.root/self.module['LEGACY_LOCK'])
+        (self.source/'uno-q/powerglove-helper.service').unlink()
+        self.put('uno-q/virtualglove-helper.service','new')
+        result=self.apply()
+        self.assertEqual(result['removed'],['uno-q/powerglove-helper.service'])
+        self.assertFalse((self.root/'uno-q/powerglove-helper.service').exists())
+        self.assertEqual((self.root/'uno-q/virtualglove-helper.service').read_text(),'new')
+        self.assertTrue((self.root/self.module['MANIFEST']).is_file())
+        self.assertFalse((self.root/self.module['LEGACY_MANIFEST']).exists())
+        self.assertFalse((self.root/self.module['LEGACY_LOCK']).exists())
+
     def test_modified_and_mode_changed_files_stay_owned_but_are_never_pruned(self):
         for name in ('src/old.py','src/current.py','src/mode.py'):self.put(name,'original')
         self.apply();self.put('src/old.py','custom',self.root);self.put('src/current.py','custom',self.root)
@@ -68,7 +82,7 @@ class ManifestTests(unittest.TestCase):
     def test_invalid_manifest_and_symlinks_fail_before_changing_payload(self):
         self.put('src/a.py','one');self.apply();self.put('src/a.py','two')
         manifest=self.root/self.module['MANIFEST'];original=manifest.read_text()
-        for name in ('../escape','data/token','/etc/passwd','.powerglove-install.json','docs/cheatsheet.md'):
+        for name in ('../escape','data/token','/etc/passwd','.virtualglove-install.json','docs/cheatsheet.md'):
             value=json.loads(original);value['files'][name]=next(iter(value['files'].values()));manifest.write_text(json.dumps(value))
             with self.assertRaises(ValueError):self.apply()
             self.assertEqual((self.root/'src/a.py').read_text(),'one')

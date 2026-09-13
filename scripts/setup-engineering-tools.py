@@ -83,7 +83,7 @@ def frozen_packages(python: Path) -> list[str]:
     return sorted((
         item for item in frozen
         if not item.startswith("-e ")
-        and not item.casefold().startswith("powerglove-vision @ file:")
+        and not item.casefold().startswith("virtualglove @ file:")
     ), key=str.casefold)
 
 

@@ -36,7 +36,7 @@ from powerglove_vision.vision_app import _consume_game_lease, _controller_contex
 
 class ProfileTests(unittest.TestCase):
     def test_signature_detects_tampering(self):
-        message = sign_message({"protocol": "powerglove-profile/1", "profile": "program_b"}, "a-long-test-token")
+        message = sign_message({"protocol": "virtualglove-profile/1", "profile": "program_b"}, "a-long-test-token")
         self.assertTrue(verify_message(message, "a-long-test-token"))
         message["profile"] = "program_g"
         self.assertFalse(verify_message(message, "a-long-test-token"))

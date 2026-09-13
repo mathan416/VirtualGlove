@@ -122,7 +122,7 @@ class LatestFrameCapture:
                 True, first_frame, clock(),
             )
         self._thread = threading.Thread(
-            target=self._run, name="powerglove-camera", daemon=True
+            target=self._run, name="virtualglove-camera", daemon=True
         )
         self._thread.start()
 
@@ -219,7 +219,7 @@ class LatestPreviewEncoder:
         self._last_encode_ms: float | None = None
         self._last_error: str | None = None
         self._thread = threading.Thread(
-            target=self._run, name="powerglove-preview", daemon=True
+            target=self._run, name="virtualglove-preview", daemon=True
         )
         self._thread.start()
 
@@ -358,7 +358,7 @@ class LatestStatusPublisher:
         self._lock = threading.Lock()
         self._failure: BaseException | None = None
         self._thread = threading.Thread(
-            target=self._run, name="powerglove-status", daemon=True,
+            target=self._run, name="virtualglove-status", daemon=True,
         )
         self._thread.start()
 

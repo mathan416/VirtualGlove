@@ -28,7 +28,7 @@ from pathlib import Path
 from .profile_control import load_registry, read_token, select_profile_settings, send_request
 
 
-DEFAULT_SESSION_FILE = Path.home() / ".cache" / "powerglove-vision" / "active-game.json"
+DEFAULT_SESSION_FILE = Path.home() / ".cache" / "virtualglove" / "active-game.json"
 KNOWN_CORES = {
     "fceumm_libretro.so": "lr-fceumm",
     "nestopia_powerglove_libretro.so": "lr-nestopia-powerglove",
@@ -190,7 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("emulator", nargs="?", default="")
     parser.add_argument("rom", nargs="?", default="")
     parser.add_argument("command", nargs="?", default="")
-    parser.add_argument("--settings", type=Path, default=Path("/etc/powerglove/launcher.json"))
+    parser.add_argument("--settings", type=Path, default=Path("/etc/virtualglove/launcher.json"))
     parser.add_argument("--session-file", type=Path, default=DEFAULT_SESSION_FILE)
     parser.add_argument("--session-id")
     parser.add_argument("--heartbeat-seconds", type=float, default=2.0)
@@ -207,7 +207,7 @@ def main() -> int:
         token = read_token(None, Path(settings["token_file"]))
         selection = None
         if args.action in ("start", "session"):
-            registry_path = Path(settings.get("registry", "/etc/powerglove/games.json"))
+            registry_path = Path(settings.get("registry", "/etc/virtualglove/games.json"))
             selection = select_profile_settings(
                 load_registry(registry_path), args.system, args.rom
             )

@@ -39,7 +39,7 @@ CAMERA = '''<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480">
 
 async def capture():
     """Render current application HTML against temporary, non-secret fixtures."""
-    with tempfile.TemporaryDirectory(prefix='powerglove-guide-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='virtualglove-guide-') as temporary:
         manager = TuningManager(Path(temporary) / 'gesture-tuning.json')
         manager.begin_center()
         manager.finish_center(Calibration(.5, .5, .2, 0, .01, .01))
@@ -151,7 +151,7 @@ async def capture():
                     # Each port must occupy one text line, even when its table scrolls.
                     assert await cell.evaluate('(e)=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1}')
                 assert await page.evaluate('document.documentElement.scrollWidth') <= width
-                await page.locator('.network-exposure').screenshot(path=f'/tmp/powerglove-security-table-{width}.png')
+                await page.locator('.network-exposure').screenshot(path=f'/tmp/virtualglove-security-table-{width}.png')
             assert not errors, errors
             await browser.close()
 

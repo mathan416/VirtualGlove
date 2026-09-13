@@ -1,5 +1,12 @@
 # Project: VirtualGlove
+# File: tests/test_ready_guide.py
+# Purpose: Verify Ready-guide migration, isolation, browser logic, and safe output gates.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added Ready-to-Play guide coverage.
+# Full history: docs/CHANGELOG.md and Git history.
 """Ready-guide migration, isolation, safe output transitions and live gates."""
 import copy
 import io

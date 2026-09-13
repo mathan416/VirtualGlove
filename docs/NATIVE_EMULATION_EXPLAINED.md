@@ -49,17 +49,18 @@ Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated
 presses near the boundary.
 
-This is useful for games expecting a conventional controller. Programs A–I
-change which gestures produce those controls. They do not teach the game to
-understand continuous hand coordinates. FCEUmm remains an explicit, complete
-joystick-style fallback for Super Glove Ball.
+This is useful for games expecting a conventional controller. Original Programs
+1–14 and cartridge Programs A–I change which gestures produce those controls;
+registered titles can also apply the documented rapid-fire exceptions. They do
+not teach the game to understand continuous hand coordinates. FCEUmm remains an
+explicit, complete joystick-style fallback for Super Glove Ball.
 
 <!-- PAGEBREAK -->
 
 ## Native input: a position inside a packet
 
 In the native path, the receiver also publishes a small latest-state record at
-`/run/powerglove/native-state`. The custom core takes a coherent snapshot at the
+`/run/virtualglove/native-state`. The custom core takes a coherent snapshot at the
 start of its input callback and converts it into the emulated Power Glove's
 packet. It does not accumulate a queue of past movements.
 

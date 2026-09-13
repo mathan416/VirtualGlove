@@ -15,7 +15,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "powerglove-vision"
+name = "virtualglove"
 version = "0.4.1"
 description = "Camera-only hand controller for UNO Q and RetroPie"
 license = {file = "LICENSE"}
@@ -45,12 +45,12 @@ engineering = [
 dev = []
 
 [project.scripts]
-powerglove-games = "powerglove_vision.game_registry:main"
-powerglove-vision = "powerglove_vision.vision_app:main"
-powerglove-receiver = "powerglove_vision.receiver:main"
-powerglove-profile = "powerglove_vision.profile_control:main"
-powerglove-retropie-hook = "powerglove_vision.retropie_hook:main"
-powerglove-pair = "powerglove_vision.pairing:main"
+virtualglove-games = "powerglove_vision.game_registry:main"
+virtualglove = "powerglove_vision.vision_app:main"
+virtualglove-receiver = "powerglove_vision.receiver:main"
+virtualglove-profile = "powerglove_vision.profile_control:main"
+virtualglove-retropie-hook = "powerglove_vision.retropie_hook:main"
+virtualglove-pair = "powerglove_vision.pairing:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

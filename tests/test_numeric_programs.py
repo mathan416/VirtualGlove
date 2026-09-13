@@ -4,6 +4,9 @@
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added Programs 1-14 mapping and rapid-fire coverage.
+# Full history: docs/CHANGELOG.md and Git history.
 
 """Exercise numeric program mappings without camera or network dependencies."""
 

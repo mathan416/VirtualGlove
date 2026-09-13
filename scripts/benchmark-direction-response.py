@@ -314,8 +314,8 @@ def prepare_native(session: Session, writer: NativeStateWriter) -> bytes:
 
 def benchmark_native(core: Path, rom: Path, state: Path, scratch: Path, frames: int) -> dict:
     """Measure signed coordinate steps through the exact-ROM native path."""
-    os.environ["POWERGLOVE_NATIVE_STATE"] = str(state)
-    os.environ.pop("POWERGLOVE_TRACE", None)
+    os.environ["VIRTUALGLOVE_NATIVE_STATE"] = str(state)
+    os.environ.pop("VIRTUALGLOVE_TRACE", None)
     writer = NativeStateWriter(state)
     session = Session(core, rom, scratch, RETRO_DEVICE_POWERGLOVE)
     try:

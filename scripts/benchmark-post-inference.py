@@ -162,7 +162,7 @@ def main() -> int:
         run_lane(args.iterations, False, 0.0),
     ]
     report = {
-        "format": "powerglove-post-inference-benchmark/1",
+        "format": "virtualglove-post-inference-benchmark/1",
         "scope": "headless established-session synthetic post-inference boundary",
         "lanes": lanes,
         "limitations": [

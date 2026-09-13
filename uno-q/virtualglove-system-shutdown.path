@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-system-shutdown.path
+# File: uno-q/virtualglove-system-shutdown.path
 # Purpose: Watch for the fixed VirtualGlove shutdown-request file on the UNO Q host.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -13,7 +13,7 @@ Description=Watch for a VirtualGlove system shutdown request
 
 [Path]
 PathExists=/home/arduino/ArduinoApps/virtualglove/data/shutdown-request
-Unit=powerglove-system-shutdown.service
+Unit=virtualglove-system-shutdown.service
 
 [Install]
 WantedBy=multi-user.target

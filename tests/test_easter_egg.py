@@ -1,5 +1,12 @@
 # Project: VirtualGlove
+# File: tests/test_easter_egg.py
+# Purpose: Verify the non-blocking Vulcan-salute recognition and overlay.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added gesture easter-egg coverage.
+# Full history: docs/CHANGELOG.md and Git history.
 """Visual-only Vulcan-salute recognition and overlay behavior."""
 
 import json

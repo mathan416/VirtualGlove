@@ -160,7 +160,7 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_socket_timeout_releases_native_state_before_cleanup(self):
         sock, device, native = Mock(), Mock(), Mock()
-        packet = json.dumps(dict(protocol='powerglove-vision/1',token=TOKEN,sequence=7,session='test')).encode()
+        packet = json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,sequence=7,session='test')).encode()
         def after_timeout(_size):
             native.release.assert_called_once_with(8)
             raise KeyboardInterrupt

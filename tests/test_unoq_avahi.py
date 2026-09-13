@@ -35,7 +35,7 @@ class AvahiTests(unittest.TestCase):
             self.assertTrue(m.configure(p,['wlan0']))
             self.assertFalse(m.configure(p,['wlan0']))
             m.configure(p,['wlan0','eth0'])
-            self.assertEqual(p.with_name(p.name+'.powerglove-backup').read_text(),'[server]\n')
+            self.assertEqual(p.with_name(p.name+'.virtualglove-backup').read_text(),'[server]\n')
     def test_physical_interface_selection(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d)

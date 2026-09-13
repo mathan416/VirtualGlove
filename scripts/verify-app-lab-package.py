@@ -75,7 +75,7 @@ REQUIRED_FILES = {
     "VirtualGlove/scripts/install-powerglove-dot.sh",
     "VirtualGlove/native/powerglove-dot/powerglove_dot.cpp",
     "VirtualGlove/src/powerglove_vision/dot_launcher.py",
-    "VirtualGlove/retropie/bin/powerglove-dot",
+    "VirtualGlove/retropie/bin/virtualglove-dot",
     "VirtualGlove/src/powerglove_vision/controller_protocol.py",
     "VirtualGlove/src/powerglove_vision/web_common.py",
     "VirtualGlove/src/powerglove_vision/dashboard_web.py",
@@ -101,7 +101,7 @@ REQUIRED_FILES = {
     "VirtualGlove/docs/images/web/gestures/v2/pixel-pal-success.png",
     "VirtualGlove/docs/images/web/gestures/actions/v-sign.png",
     "VirtualGlove/scripts/uno-q-early-start.py",
-    "VirtualGlove/uno-q/powerglove-early-start.service",
+    "VirtualGlove/uno-q/virtualglove-early-start.service",
     "VirtualGlove/scripts/flash-matrix-firmware.py",
     "VirtualGlove/firmware/matrix/manifest.json",
     "VirtualGlove/firmware/matrix/virtualglove-matrix.elf-zsk.bin",
@@ -134,12 +134,21 @@ REQUIRED_FILES = {
     "VirtualGlove/src/powerglove_vision/web_features.py",
     "VirtualGlove/src/powerglove_vision/setup_web.py",
     "VirtualGlove/src/powerglove_vision/wifi_status.py",
-    "VirtualGlove/uno-q/powerglove-wifi-status.py",
-    "VirtualGlove/uno-q/powerglove-wifi-status.service",
-    "VirtualGlove/uno-q/powerglove-wifi-status.timer",
+    "VirtualGlove/uno-q/virtualglove-wifi-status.py",
+    "VirtualGlove/uno-q/virtualglove-wifi-status.service",
+    "VirtualGlove/uno-q/virtualglove-wifi-status.timer",
     "VirtualGlove/src/powerglove_vision/play_game.py",
-    "VirtualGlove/retropie/powerglove-games.service",
-    "VirtualGlove/retropie/bin/powerglove-games",
+    "VirtualGlove/retropie/virtualglove-receiver.service",
+    "VirtualGlove/retropie/virtualglove-receiver.timer",
+    "VirtualGlove/retropie/virtualglove-games.service",
+    "VirtualGlove/retropie/runcommand-onstart-virtualglove.sh",
+    "VirtualGlove/retropie/runcommand-onend-virtualglove.sh",
+    "VirtualGlove/retropie/bin/virtualglove-receiver",
+    "VirtualGlove/retropie/bin/virtualglove-games",
+    "VirtualGlove/retropie/bin/virtualglove-pair",
+    "VirtualGlove/retropie/bin/virtualglove-profile",
+    "VirtualGlove/retropie/bin/virtualglove-retropie-hook",
+    "VirtualGlove/retropie/bin/virtualglove-bsb-zap",
     "VirtualGlove/bricks/local/profile_control/brick_config.yaml",
     "VirtualGlove/bricks/local/profile_control/brick_compose.yaml",
     "VirtualGlove/scripts/profile-relay.py",
@@ -157,17 +166,33 @@ REQUIRED_FILES = {
     "VirtualGlove/scripts/install-uno-q-camera-recovery-helper.sh",
     "VirtualGlove/src/powerglove_vision/runtime_assets.py",
     "VirtualGlove/src/powerglove_vision/help_content.py",
-    "VirtualGlove/uno-q/powerglove-system-shutdown.conf",
-    "VirtualGlove/uno-q/powerglove-system-shutdown.path",
-    "VirtualGlove/uno-q/powerglove-system-shutdown.service",
-    "VirtualGlove/uno-q/powerglove-camera-recovery.py",
-    "VirtualGlove/uno-q/powerglove-camera-recovery.conf",
-    "VirtualGlove/uno-q/powerglove-camera-recovery.path",
-    "VirtualGlove/uno-q/powerglove-camera-recovery.service",
+    "VirtualGlove/uno-q/virtualglove-system-shutdown.conf",
+    "VirtualGlove/uno-q/virtualglove-system-shutdown.path",
+    "VirtualGlove/uno-q/virtualglove-system-shutdown.service",
+    "VirtualGlove/uno-q/virtualglove-camera-recovery.py",
+    "VirtualGlove/uno-q/virtualglove-camera-recovery.conf",
+    "VirtualGlove/uno-q/virtualglove-camera-recovery.path",
+    "VirtualGlove/uno-q/virtualglove-camera-recovery.service",
 } | {f"VirtualGlove/{path}" for path in PUBLIC_PDF_PATHS}
 FORBIDDEN_PARTS = {".git", ".venv", "__pycache__", "data", "tests", "tmp"}
 FORBIDDEN_NAMES = {"CODE_REVIEW_MAP.txt", ".DS_Store", "cheatsheet.md"}
 FORBIDDEN_SUFFIXES = {".pyc"}
+LEGACY_RUNTIME_FILES = {
+    "VirtualGlove/retropie/powerglove-receiver.service",
+    "VirtualGlove/retropie/powerglove-receiver.timer",
+    "VirtualGlove/retropie/powerglove-games.service",
+    "VirtualGlove/retropie/runcommand-onstart-powerglove.sh",
+    "VirtualGlove/retropie/runcommand-onend-powerglove.sh",
+    *{"VirtualGlove/retropie/bin/powerglove-" + name for name in (
+        "bsb-zap", "dot", "games", "pair", "profile", "receiver", "retropie-hook"
+    )},
+    *{"VirtualGlove/uno-q/powerglove-" + name for name in (
+        "early-start.service", "wifi-status.py", "wifi-status.service", "wifi-status.timer",
+        "system-shutdown.conf", "system-shutdown.path", "system-shutdown.service",
+        "camera-recovery.py", "camera-recovery.conf", "camera-recovery.path",
+        "camera-recovery.service",
+    )},
+}
 
 
 def sha256_file(path: Path) -> str:
@@ -217,6 +242,8 @@ def archive_errors(path: Path) -> list[str]:
                         errors.append("missing compact gesture image: " + compact)
             for name in sorted(REQUIRED_FILES - names):
                 errors.append(f"required package file is missing: {name}")
+            for name in sorted(LEGACY_RUNTIME_FILES & names):
+                errors.append(f"legacy PowerGlove runtime file included: {name}")
             for relative in sorted(ENGINEERING_FILES):
                 name = "VirtualGlove/" + relative
                 if name in names:

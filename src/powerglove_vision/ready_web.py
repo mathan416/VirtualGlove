@@ -1,5 +1,12 @@
 # Project: VirtualGlove
+# File: src/powerglove_vision/ready_web.py
+# Purpose: Render and operate the optional Ready-to-Play browser guide.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added the optional, resumable Ready-to-Play guide.
+# Full history: docs/CHANGELOG.md and Git history.
 """Optional guided preparation; progress and output authorization are separate."""
 from .web_common import _page
 

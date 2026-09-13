@@ -44,7 +44,7 @@ class SuperGloveBallCoreSetupTests(unittest.TestCase):
         native.parent.mkdir(parents=True)
         native.write_bytes(b"native")
         system_path, system_text, games_path, games_text = sgb.plan(self.prefix, self.rom, "native")
-        self.assertIn("POWERGLOVE_NATIVE_STATE=/run/powerglove/native-state", system_text)
+        self.assertIn("VIRTUALGLOVE_NATIVE_STATE=/run/virtualglove/native-state", system_text)
         self.assertIn("--device=1:517", system_text)
         self.assertIn(str(native), system_text)
         option_path, option_text = sgb.native_options(self.prefix)

@@ -97,6 +97,7 @@ READY_CHECKS = ("neutral", "left", "right", "up", "down", "a", "b", "start", "se
 
 
 def blank_ready_progress():
+    """Return a new empty, versioned Ready-guide progress record."""
     return {"course": READY_COURSE, "completed": [], "completed_at": None}
 
 

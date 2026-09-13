@@ -149,7 +149,7 @@ and method stay fixed during the two-minute window; change them after it ends.
 A failed submitted request also requires fresh confirmation. Save console edits
 with **Save settings** before pairing.
 The separate RetroPie one-time code remains valid for five minutes. If more than
-one RetroPie is online, run `powerglove-pair` on the exact console named in Setup;
+one RetroPie is online, run `virtualglove-pair` on the exact console named in Setup;
 a code displayed by a different console cannot open the intended listener.
 When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority. A completed attempt should not leave the old PIN scrolling for the rest of its two-minute window.
 
@@ -191,7 +191,7 @@ edges. Historical bounded-curve replay is an engineering tool, not a Dashboard
 setting. If the Robo-Glove still jumps after
 the hand leaves and re-enters the picture, confirm that the Controller and
 RetroPie are on the same current release before changing reach or smoothing.
-Version 0.4.0 guards one contradictory or unusually distant non-forward
+Version 0.4.1 retains the guard for one contradictory or unusually distant non-forward
 reacquisition for one fresh result while allowing strongly aligned forward
 movement immediately.
 

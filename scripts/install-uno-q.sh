@@ -50,7 +50,7 @@ try:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", tag):
         raise ValueError("Use a published release tag, not a branch, URL, or path")
     base = "https://github.com/mathan416/VirtualGlove/releases/download/" + tag + "/"
-    with tempfile.TemporaryDirectory(prefix="powerglove-download-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="virtualglove-download-") as temporary:
         directory = pathlib.Path(temporary)
         download(base + "SHA256SUMS", directory / "SHA256SUMS")
         sums = {}

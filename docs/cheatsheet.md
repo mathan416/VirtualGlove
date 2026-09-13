@@ -115,7 +115,7 @@ sudo python3 scripts/setup-machine.py retropie --peer UNO-Q-NAME.local
 ```
 
 The installer preserves existing tokens and settings, installs the receiver
-and pairing commands under `/opt/powerglove/bin/`, and adds the game-launch
+and pairing commands under `/opt/virtualglove/bin/`, and adds the game-launch
 hooks. It also installs the controller mapping and the 45-second startup timer.
 An **ACTION** result asking you to pair or verify gameplay is expected on first
 installation. Correct any **FAIL** result before continuing to pairing.
@@ -128,7 +128,7 @@ RetroPie's per-ROM launch menu. Declining the optional build leaves the complete
 FCEUmm fallback available.
 
 For an existing installation, `--peer` does not replace the saved VirtualGlove Controller address.
-If that address has changed, update `/etc/powerglove/launcher.json` on RetroPie.
+If that address has changed, update `/etc/virtualglove/launcher.json` on RetroPie.
 
 ### Update the VirtualGlove Controller from your computer
 
@@ -178,8 +178,8 @@ Complete both machine installations above, then use the one-time-code method:
 1. Open `https://UNO-Q-NAME.local:8443/setup`. In **Connect to RetroPie**, enter the console address and select **Save connection**.
 2. Continue to **Pair this Controller** in the same card, choose **One-time code (recommended)**, and select **Continue**. Pairing uses the saved console address.
 3. Compare the matrix `ID` with the beginning of the browser certificate's SHA-256 fingerprint. If they match, check the confirmation box, enter the six-digit **Controller approval PIN**, and select **Continue**.
-4. On RetroPie, run `sudo /opt/powerglove/bin/powerglove-pair` and leave it running. Enter its 20-character **RetroPie one-time code**, then select **Pair with RetroPie**. This is not the Controller PIN.
-5. Wait for **Pairing complete**. This includes a signed receiver-token check. Check `sudo systemctl status powerglove-receiver.service` on RetroPie; open Dashboard for controller Start/Stop and shutdown.
+4. On RetroPie, run `sudo /opt/virtualglove/bin/virtualglove-pair` and leave it running. Enter its 20-character **RetroPie one-time code**, then select **Pair with RetroPie**. This is not the Controller PIN.
+5. Wait for **Pairing complete**. This includes a signed receiver-token check. Check `sudo systemctl status virtualglove-receiver.service` on RetroPie; open Dashboard for controller Start/Stop and shutdown.
 
 For SSH, choose **SSH password** in the first step, complete the same Controller
 confirmation, then enter the RetroPie username and password in the final step.
@@ -215,9 +215,9 @@ Dashboard or open Glove Academy to check tracking.
 Run these checks **on RetroPie**:
 
 ```sh
-sudo systemctl status powerglove-receiver.service
-sudo systemctl status powerglove-receiver.timer
-sudo journalctl -u powerglove-receiver.service -n 100 --no-pager
+sudo systemctl status virtualglove-receiver.service
+sudo systemctl status virtualglove-receiver.timer
+sudo journalctl -u virtualglove-receiver.service -n 100 --no-pager
 grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices
 ```
 
@@ -357,6 +357,7 @@ when it starts. Available choices are:
 
 - Bad Street Brawler
 - Super Glove Ball
+- Original Programs 1–14
 - Programs A–I
 - Gestures off
 
@@ -474,7 +475,7 @@ or the game's automatic profile assignment.
 ### Make a game use your chosen profile automatically
 
 Once a profile works well, register the game **on RetroPie**. The launch hook
-reads `/etc/powerglove/games.json` to choose the profile each time a game starts.
+reads `/etc/virtualglove/games.json` to choose the profile each time a game starts.
 
 1. Find the game file in your RetroPie ROM folder, usually `~/RetroPie/roms/nes/`. Record its complete filename, including the extension. For example, `/home/pi/RetroPie/roms/nes/My Game (USA).zip` has the filename `My Game (USA).zip`. Use the archive filename when launching an archive, not the filename inside it.
 2. Open **Setup → Games** on the VirtualGlove Controller website and select **Download backup**.
@@ -496,7 +497,7 @@ your actual filename and merge the entry into your existing file:
 For a manual file edit outside the website, check syntax on RetroPie:
 
 ```sh
-python3 -m json.tool /etc/powerglove/games.json >/dev/null
+python3 -m json.tool /etc/virtualglove/games.json >/dev/null
 ```
 
 If the command finishes without reporting an error, the JSON syntax is valid; it does not verify that the filename
@@ -529,19 +530,19 @@ for the recording recipes, neutral calibration, image-quality advice, and shared
 | Item | Location or name |
 | --- | --- |
 | RetroPie virtual controller | `VirtualGlove` |
-| RetroPie pairing token | `/etc/powerglove/token` |
-| RetroPie game registry | `/etc/powerglove/games.json` |
-| RetroPie connection settings | `/etc/powerglove/launcher.json` |
-| Receiver service | `powerglove-receiver.service` |
-| Receiver startup timer | `powerglove-receiver.timer`; starts 45 seconds after boot |
-| VirtualGlove Controller shutdown watcher | `powerglove-system-shutdown.path` |
-| VirtualGlove Controller shutdown action | `powerglove-system-shutdown.service`; requests a Linux halt |
+| RetroPie pairing token | `/etc/virtualglove/token` |
+| RetroPie game registry | `/etc/virtualglove/games.json` |
+| RetroPie connection settings | `/etc/virtualglove/launcher.json` |
+| Receiver service | `virtualglove-receiver.service` |
+| Receiver startup timer | `virtualglove-receiver.timer`; starts 45 seconds after boot |
+| VirtualGlove Controller shutdown watcher | `virtualglove-system-shutdown.path` |
+| VirtualGlove Controller shutdown action | `virtualglove-system-shutdown.service`; requests a Linux halt |
 | VirtualGlove Controller readiness marker | `/home/arduino/ArduinoApps/virtualglove/data/.shutdown-enabled` |
-| VirtualGlove Controller boot rule that creates the marker | `/etc/tmpfiles.d/powerglove-system-shutdown.conf`; installed from `uno-q/powerglove-system-shutdown.conf` |
-| VirtualGlove Controller camera recovery watcher | `powerglove-camera-recovery.path` |
-| VirtualGlove Controller camera recovery action | `powerglove-camera-recovery.service`; power-cycles the enrolled camera port on a capability-confirmed hub, otherwise rebinds the allowlisted hub only when it does not carry networking |
-| VirtualGlove Controller camera recovery helper | `/usr/local/libexec/powerglove-camera-recovery`; enrolls the single healthy UVC camera on first use and reports USB action separately from stream verification |
-| VirtualGlove Controller camera recovery allowlist | `/etc/powerglove-camera-recovery.json`; root-owned camera identity plus hub identity/path and learned camera port |
+| VirtualGlove Controller boot rule that creates the marker | `/etc/tmpfiles.d/virtualglove-system-shutdown.conf`; installed from `uno-q/virtualglove-system-shutdown.conf` |
+| VirtualGlove Controller camera recovery watcher | `virtualglove-camera-recovery.path` |
+| VirtualGlove Controller camera recovery action | `virtualglove-camera-recovery.service`; power-cycles the enrolled camera port on a capability-confirmed hub, otherwise rebinds the allowlisted hub only when it does not carry networking |
+| VirtualGlove Controller camera recovery helper | `/usr/local/libexec/virtualglove-camera-recovery`; enrolls the single healthy UVC camera on first use and reports USB action separately from stream verification |
+| VirtualGlove Controller camera recovery allowlist | `/etc/virtualglove-camera-recovery.json`; root-owned camera identity plus hub identity/path and learned camera port |
 
 The boot rule creates the readiness marker; it does not initiate shutdown or
 prove that shutdown has completed. The watcher responds to a separate
@@ -552,10 +553,10 @@ installation command under **Install and deploy over Wi-Fi**.
 Verify the helper **on the VirtualGlove Controller** without requesting a shutdown:
 
 ```sh
-systemctl is-enabled powerglove-system-shutdown.path
-systemctl is-active powerglove-system-shutdown.path
-systemctl is-enabled powerglove-camera-recovery.path
-systemctl is-active powerglove-camera-recovery.path
+systemctl is-enabled virtualglove-system-shutdown.path
+systemctl is-active virtualglove-system-shutdown.path
+systemctl is-enabled virtualglove-camera-recovery.path
+systemctl is-active virtualglove-camera-recovery.path
 ls -l /home/arduino/ArduinoApps/virtualglove/data/.shutdown-enabled
 ```
 

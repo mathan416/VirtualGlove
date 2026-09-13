@@ -556,7 +556,7 @@ class ProcessLatestCapture:
             target=process_capture_worker,
             args=(path, buffers, self._frame, self._metadata, self._lock,
                   self._stop, child_report),
-            name='powerglove-camera-sidecar', daemon=True,
+            name='virtualglove-camera-sidecar', daemon=True,
         )
         self._process.start()
         child_report.close()
@@ -839,7 +839,7 @@ def main():
     wrap_tracker(tracker)
     # Synthetic center for cost measurement only. Never reads or changes player setup.
     engine = GestureEngine('super_glove_ball', calibration=Calibration(.5, .5, .2, 0))
-    report = dict(format='powerglove-camera-pipeline/3', opencv=cv2.__version__,
+    report = dict(format='virtualglove-camera-pipeline/3', opencv=cv2.__version__,
         mediapipe=mp.__version__, inference_threads=args.inference_threads,
         tracking_confidence=args.tracking_confidence, graph_mode=args.graph_mode,
         seconds_per_lane=args.seconds, requested_buffers=list(args.buffers),

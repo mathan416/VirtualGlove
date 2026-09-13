@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-camera-recovery.path
+# File: uno-q/virtualglove-camera-recovery.path
 # Purpose: Watch for a guarded camera-recovery request from the unprivileged app.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -13,7 +13,7 @@ Description=Watch for a VirtualGlove camera recovery request
 
 [Path]
 PathExists=/home/arduino/ArduinoApps/virtualglove/data/camera-recovery-request
-Unit=powerglove-camera-recovery.service
+Unit=virtualglove-camera-recovery.service
 
 [Install]
 WantedBy=multi-user.target

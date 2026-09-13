@@ -23,7 +23,7 @@ class DeploymentBackupRotationTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name) / "powerglove-backups"
+        self.root = Path(self.temp.name) / "virtualglove-backups"
         self.root.mkdir()
         self.module = runpy.run_path(str(MODULE))
 

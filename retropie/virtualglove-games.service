@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: retropie/powerglove-games.service
+# File: retropie/virtualglove-games.service
 # Purpose: Run fixed-purpose paired game registry administration separately from input delivery.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -15,7 +15,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/opt/powerglove/bin/powerglove-games
+ExecStart=/opt/virtualglove/bin/virtualglove-games
 Restart=on-failure
 RestartSec=3
 User=root
@@ -25,7 +25,7 @@ ProtectSystem=strict
 ProtectHome=read-only
 PrivateTmp=true
 PrivateDevices=true
-ReadWritePaths=/etc/powerglove
+ReadWritePaths=/etc/virtualglove
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 UMask=0077
 

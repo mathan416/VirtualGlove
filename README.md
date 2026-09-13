@@ -16,7 +16,7 @@ VirtualGlove recognizes the pose, sends authenticated controller input across
 your local network, and lets RetroArch see a virtual gamepad or a native
 Power Glove controller.
 
-**Current project version: 0.4.1 · Public candidate: [v0.4.0-rc.7](https://github.com/mathan416/VirtualGlove/releases/tag/v0.4.0-rc.7)**
+**Current project version: 0.4.1 · Next candidate: v0.4.1-rc.1**
 
 ## Why VirtualGlove?
 
@@ -24,6 +24,8 @@ Power Glove controller.
 - **Two styles of NES control:** ordinary joystick output through FCEUmm and
   continuous native movement for Super Glove Ball through
   `lr-nestopia-powerglove`.
+- **Original programs and game mappings:** Programs 1–14 and A–I, including
+  Mattel's indexed games and documented rapid-fire exceptions.
 - **Fast, direct tracking:** MediaPipe Hands processes the newest camera frame
   and sends the latest valid hand coordinate without a settling tail.
 - **Family-friendly learning:** Pixel Pal guides players through 16 Glove
@@ -70,8 +72,8 @@ Open a terminal on the UNO Q and run:
 ```sh
 cd /home/arduino
 curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.0-rc.7/install-uno-q.sh
-bash install-uno-q.sh --development v0.4.0-rc.7
+  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-uno-q.sh
+bash install-uno-q.sh --development v0.4.1-rc.1
 ```
 
 On a first installation, the installer suggests **virtualglove** as the
@@ -92,8 +94,8 @@ Open a terminal on the Raspberry Pi and run:
 
 ```sh
 curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.0-rc.7/install-retropie.sh
-bash install-retropie.sh --development v0.4.0-rc.7
+  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-retropie.sh
+bash install-retropie.sh --development v0.4.1-rc.1
 ```
 
 If an older Buster-based RetroPie reports that its Raspbian repository has no
@@ -223,11 +225,13 @@ its local Help page.
 
 ## Project status
 
-Version 0.4.0 freezes the proven CPU MediaPipe Hands path after extensive
-camera, tracking, reacquisition, network, emulator, and gameplay testing. The
-current candidate is ready for people who want to try VirtualGlove on their own
-UNO Q and RetroPie hardware. Different cameras, rooms, players, and Raspberry Pi
-installations remain valuable real-world tests.
+Version 0.4.1 keeps the proven CPU MediaPipe Hands path and adds the complete
+Programs 1–14 catalog, guided readiness checks, live dead-zone visualization,
+and one-way migration to `virtualglove-*` runtime names. The candidate updates
+the UNO Q and RetroPie together while preserving pairing, players, calibration,
+tuning, Academy progress, and the installed game registry. Different cameras,
+rooms, players, controllers, and Raspberry Pi installations remain valuable
+real-world tests.
 
 Use Setup's **Download system report** when asking for help. It records useful
 software, camera, controller, and connection health without including video,

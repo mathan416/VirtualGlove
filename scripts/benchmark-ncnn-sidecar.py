@@ -423,7 +423,7 @@ def main() -> None:
         tracker = NcnnTracker(worker, cv2, np)
         rows = replay_ncnn(args.clip, tracker, args.max_frames)
         report = {
-            "format": "powerglove-ncnn-sidecar-benchmark/1",
+            "format": "virtualglove-ncnn-sidecar-benchmark/1",
             "clip": str(args.clip),
             "threads": args.threads,
             "detection_threshold": tracker.detection_threshold,

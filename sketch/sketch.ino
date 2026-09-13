@@ -372,7 +372,7 @@ void drawIdleFrame(uint8_t frame, uint8_t ceiling = 7) {
 }
 
 // Router Bridge endpoint: request a bounded status code from the Linux app.
-void set_powerglove_status(int status) {
+void set_virtualglove_status(int status) {
   if (status < PG_OFF || status > PG_TUNING) {
     status = PG_ERROR;
   }
@@ -380,27 +380,27 @@ void set_powerglove_status(int status) {
 }
 
 // Only idle rendering consumes these settings; active mode artwork is unchanged.
-int set_powerglove_attract(int mode, int connections) {
+int set_virtualglove_attract(int mode, int connections) {
   requestedAttract = mode >= 0 && mode <= 2 ? mode : 0;
   requestedConnections = connections & 7;
   return requestedAttract;
 }
 
 // Router Bridge endpoint: show the certificate identity and one-time PIN.
-void set_powerglove_pairing(int pairingId, int pairingPin) {
+void set_virtualglove_pairing(int pairingId, int pairingPin) {
   requestedPairingId = (uint32_t)pairingId & 0x0FFFFFFF;
   requestedPairingPin = pairingPin >= 0 && pairingPin <= 999999 ? pairingPin : 0;
   requestedStatus = PG_PAIRING;
 }
 
 // Router Bridge endpoint: select the active gesture-profile display.
-void set_powerglove_profile(int profile) {
+void set_virtualglove_profile(int profile) {
   requestedProfile = (profile >= 0 && profile <= 25) ? profile : 0;
 }
 
 // Report the identity compiled into the running microcontroller firmware.
-String get_powerglove_firmware() {
-  return String(POWERGLOVE_FIRMWARE_ID);
+String get_virtualglove_firmware() {
+  return String(VIRTUALGLOVE_FIRMWARE_ID);
 }
 
 // Keep the display alive while Router Bridge initialization waits for Linux.
@@ -423,15 +423,15 @@ void setup() {
     displayThreadId = k_thread_create(&displayThread, displayStack, 2048,
                                     displayTask, nullptr, nullptr, nullptr,
                                     5, 0, K_NO_WAIT);
-    k_thread_name_set(displayThreadId, "powerglove-matrix");
+    k_thread_name_set(displayThreadId, "virtualglove-matrix");
   }
 
   Bridge.begin();
-  Bridge.provide("set_powerglove_status", set_powerglove_status);
-  Bridge.provide("set_powerglove_profile", set_powerglove_profile);
-  Bridge.provide("set_powerglove_pairing", set_powerglove_pairing);
-  Bridge.provide("get_powerglove_firmware", get_powerglove_firmware);
-  Bridge.provide("set_powerglove_attract", set_powerglove_attract);
+  Bridge.provide("set_virtualglove_status", set_virtualglove_status);
+  Bridge.provide("set_virtualglove_profile", set_virtualglove_profile);
+  Bridge.provide("set_virtualglove_pairing", set_virtualglove_pairing);
+  Bridge.provide("get_virtualglove_firmware", get_virtualglove_firmware);
+  Bridge.provide("set_virtualglove_attract", set_virtualglove_attract);
 }
 
 // Refresh animations only when their frame or requested state changes.

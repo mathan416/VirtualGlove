@@ -35,19 +35,19 @@ import subprocess
 import sys
 
 source = sys.argv[1]
-destination = "/etc/powerglove/token"
+destination = "/etc/virtualglove/token"
 try:
     with open(source, encoding="utf-8") as token_file:
         token = token_file.readline().strip()
     assert 16 <= len(token) <= 256 and not any(character.isspace() for character in token)
-    os.makedirs("/etc/powerglove", exist_ok=True)
+    os.makedirs("/etc/virtualglove", exist_ok=True)
     temporary = destination + ".pairing-tmp"
     with open(temporary, "w", encoding="utf-8") as token_file:
         token_file.write(token + "\\n")
     os.chmod(temporary, 0o640)
     os.chown(temporary, 0, grp.getgrnam("input").gr_gid)
     os.replace(temporary, destination)
-    subprocess.check_call(["systemctl", "restart", "powerglove-receiver.service"])
+    subprocess.check_call(["systemctl", "restart", "virtualglove-receiver.service"])
 finally:
     try:
         os.unlink(source)
@@ -84,7 +84,7 @@ def main() -> int:
         )
         sftp = client.open_sftp()
         remote_token = posixpath.join(
-            sftp.normalize("."), ".powerglove-pairing-" + secrets.token_hex(16)
+            sftp.normalize("."), ".virtualglove-pairing-" + secrets.token_hex(16)
         )
         with sftp.file(remote_token, "wx") as token_file:
             token_file.write(str(request["token"]) + "\n")

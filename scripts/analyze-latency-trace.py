@@ -30,7 +30,7 @@ def summary(values):
 def analyze(controller, receiver, core):
     """Never infer network transit or combine percentiles from separate clocks."""
     for report, role in ((controller, 'controller'), (receiver, 'receiver')):
-        if report.get('format') != 'powerglove-diagnostic/1' or report.get('role') != role:
+        if report.get('format') != 'virtualglove-diagnostic/1' or report.get('role') != role:
             raise ValueError('Wrong diagnostic format or role')
     metrics = {key: [] for key in ('capture_timestamp_to_processing', 'capture_read_to_processing',
         'processing', 'tracking', 'gesture_and_calibration', 'encode_and_send',
@@ -95,7 +95,7 @@ def analyze(controller, receiver, core):
             continue
         consumed.add(key)
         interval('publication_record_to_first_core_consumption', event['published_ns'], event['consumed_ns'])
-    return dict(format='powerglove-latency-analysis/1', timings_ms={k: summary(v) for k,v in metrics.items()},
+    return dict(format='virtualglove-latency-analysis/1', timings_ms={k: summary(v) for k,v in metrics.items()},
         correlated_send_receive=len(sends.keys() & receives.keys()),
         sends_without_observed_receipt=len(sends.keys()-receives.keys()),
         publications_without_observed_consumption=len(publications.keys()-consumed),

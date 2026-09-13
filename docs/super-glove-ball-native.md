@@ -103,7 +103,7 @@ instead of retaining the last sample.
 
 ## Latest-sample interface
 
-The RetroPie receiver owns `/run/powerglove/native-state` and creates it read-only
+The RetroPie receiver owns `/run/virtualglove/native-state` and creates it read-only
 for consumers. Format version 1 is a fixed 64-byte little-endian record containing:
 
 - magic, format version, record size, and matching begin/end coherence guards;
@@ -142,8 +142,8 @@ a temporary directory, installs the core under its separate name, copies the
 upstream GPLv2 `COPYING` file beside it, and adds the native entry to the launch
 menu. It deliberately leaves that ROM's current FCEUmm selection unchanged.
 
-Set `POWERGLOVE_NATIVE_STATE` to use a test record at a different path. Set
-`POWERGLOVE_TRACE=1` when launching the custom core to log controller writes,
+Set `VIRTUALGLOVE_NATIVE_STATE` to use a test record at a different path. Set
+`VIRTUALGLOVE_TRACE=1` when launching the custom core to log controller writes,
 latch/counter transitions, returned stream bits, and each candidate output
 packet. Traces may contain gameplay timing but no camera imagery.
 

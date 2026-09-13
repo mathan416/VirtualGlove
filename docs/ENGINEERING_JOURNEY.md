@@ -50,8 +50,8 @@ directions and buttons through FCEUmm.
 
 This reliable fallback shaped the rest of the project. Recognition and game
 output were separated early: one global interpretation of the player's hand
-could feed Programs A–I and dedicated game profiles without recalibrating for
-every ROM. Three-dimensional hand geometry replaced weaker two-dimensional
+could feed Programs 1–14, Programs A–I, and dedicated game profiles without
+recalibrating for every ROM. Three-dimensional hand geometry replaced weaker two-dimensional
 finger tests, and concentrated bends were distinguished from ordinary hand
 motion.
 

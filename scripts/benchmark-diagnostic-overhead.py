@@ -51,7 +51,7 @@ def main():
                 trace.close()
             results['enabled' if enabled else 'disabled'] = summarize(values)
     with args.output.open('x') as stream:
-        json.dump(dict(format='powerglove-diagnostic-overhead/1', architecture=platform.machine(),
+        json.dump(dict(format='virtualglove-diagnostic-overhead/1', architecture=platform.machine(),
             python=platform.python_version(), microseconds=results,
             limitations=['One synthetic event per iteration; excludes native C++ trace and disk export.',
                 'Run on both devices, then repeat real workload with tracing off/on/off before attributing delays.']),

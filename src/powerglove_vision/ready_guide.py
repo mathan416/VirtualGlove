@@ -1,11 +1,19 @@
 # Project: VirtualGlove
+# File: src/powerglove_vision/ready_guide.py
+# Purpose: Evaluate the live safety and game-readiness gates used by the Ready guide.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added the optional, resumable Ready-to-Play guide gates.
+# Full history: docs/CHANGELOG.md and Git history.
 """Conservative live gates shared by ready-guide arming and tests."""
 from .players import READY_CHECKS, READY_COURSE
 from .gesture import SUPPORTED_PROFILES
 
 
 def game_gate(status, require_link=True):
+    """Return the first live game-readiness problem, or None when ready."""
     age = status.get('worker_status_age_seconds')
     if (type(age) not in (int, float) or not 0 <= age < 3
             or status.get('worker_running') is not True):
@@ -42,5 +50,6 @@ def game_gate(status, require_link=True):
 
 
 def essential_complete(player):
+    """Return whether one player's current Ready course checks are complete."""
     progress = player.get('ready_progress', {})
     return progress.get('course') == READY_COURSE and set(progress.get('completed', [])) == set(READY_CHECKS)

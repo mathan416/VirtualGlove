@@ -91,13 +91,13 @@ def apply(target, content):
     if target.is_symlink():
         raise ValueError('Refusing to replace a symlink: ' + str(target))
     target.parent.mkdir(parents=True, exist_ok=True)
-    backup = Path(tempfile.mkdtemp(prefix='powerglove-bsb-backup-', dir=str(target.parent)))
+    backup = Path(tempfile.mkdtemp(prefix='virtualglove-bsb-backup-', dir=str(target.parent)))
     if target.exists():
         shutil.copy2(target, backup / target.name)
         (backup / 'RESTORE.txt').write_text('Restore the saved .opt file to: ' + str(target) + '\n')
     else:
         (backup / 'RESTORE.txt').write_text('File did not exist. To undo this change, remove: ' + str(target) + '\n')
-    fd, name = tempfile.mkstemp(prefix='.powerglove-bsb-', dir=str(target.parent))
+    fd, name = tempfile.mkstemp(prefix='.virtualglove-bsb-', dir=str(target.parent))
     try:
         with os.fdopen(fd, 'w') as stream:
             stream.write(content)

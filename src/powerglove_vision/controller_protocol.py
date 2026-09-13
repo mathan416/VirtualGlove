@@ -16,9 +16,9 @@ import json
 import secrets
 import time
 
-PROTOCOL = "powerglove-vision/2"
+PROTOCOL = "virtualglove-vision/2"
 MAX_PACKET_BYTES = 4096
-DOMAIN = b"powerglove-controller-v2\0"
+DOMAIN = b"virtualglove-controller-v2\0"
 
 
 def _canonical(value):
@@ -107,7 +107,7 @@ class ReceiverSessions:
         raw = value["state"]
         if not isinstance(raw, dict) or "token" in raw or "protocol" in raw or "session" in raw:
             raise ValueError("invalid signed controller state")
-        state = decode_state(_canonical(dict(raw, protocol="powerglove-vision/1")))
+        state = decode_state(_canonical(dict(raw, protocol="virtualglove-vision/1")))
         sequence = state["sequence"]
         if current and sequence <= self.active[2]:
             return None, None

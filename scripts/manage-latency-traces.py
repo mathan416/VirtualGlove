@@ -44,8 +44,8 @@ folder = base/'data'/'latency-traces'/session
 folder.mkdir(mode=0o700, parents=True, exist_ok=False)
 override = folder/'trace-compose.yaml'
 override.write_text('services:\n  main:\n    environment:\n'
-    '      POWERGLOVE_DIAGNOSTIC_TRACE: /app/data/latency-traces/%s/controller\n'
-    '      POWERGLOVE_DIAGNOSTIC_SECONDS: "%d"\n' % (session, duration))
+    '      VIRTUALGLOVE_DIAGNOSTIC_TRACE: /app/data/latency-traces/%s/controller\n'
+    '      VIRTUALGLOVE_DIAGNOSTIC_SECONDS: "%d"\n' % (session, duration))
 command = ['docker','compose','--project-directory',str(base/'.cache'),
     '-f',str(base/'.cache/app-compose.yaml'),'-f',str(base/'.cache/app-compose-overrides.yaml'),
     '-f',str(override),'up','-d','--force-recreate','main']
@@ -55,7 +55,7 @@ subprocess.run(command, check=True, stdout=subprocess.DEVNULL,
 inspect = subprocess.check_output(['docker','inspect','virtualglove-main-1',
     '--format','{{json .Config.Env}}'], text=True)
 env = json.loads(inspect)
-expected = 'POWERGLOVE_DIAGNOSTIC_TRACE=/app/data/latency-traces/%s/controller' % session
+expected = 'VIRTUALGLOVE_DIAGNOSTIC_TRACE=/app/data/latency-traces/%s/controller' % session
 if expected not in env:
     raise SystemExit('Controller trace environment was not applied')
 rearmed = False
@@ -84,18 +84,18 @@ from pathlib import Path
 session, duration = sys.argv[1], int(sys.argv[2])
 if not re.fullmatch(r'[0-9a-f]{32}', session) or not 30 <= duration <= 600:
     raise SystemExit('invalid session or duration')
-folder = '/var/tmp/powerglove-latency/%s' % session
-drop = '/run/systemd/system/powerglove-receiver.service.d/latency-trace.conf'
+folder = '/var/tmp/virtualglove-latency/%s' % session
+drop = '/run/systemd/system/virtualglove-receiver.service.d/latency-trace.conf'
 subprocess.run(['sudo','-n','mkdir','-p',folder,drop.rsplit('/',1)[0]],check=True)
 subprocess.run(['sudo','-n','chmod','700',folder],check=True)
 content = ('[Service]\nKillSignal=SIGINT\n'
-    'Environment=POWERGLOVE_DIAGNOSTIC_TRACE=%s/receiver\n'
-    'Environment=POWERGLOVE_DIAGNOSTIC_SECONDS=%d\n' % (folder,duration))
+    'Environment=VIRTUALGLOVE_DIAGNOSTIC_TRACE=%s/receiver\n'
+    'Environment=VIRTUALGLOVE_DIAGNOSTIC_SECONDS=%d\n' % (folder,duration))
 subprocess.run(['sudo','-n','tee',drop],input=content,text=True,stdout=subprocess.DEVNULL,check=True)
 subprocess.run(['sudo','-n','systemctl','daemon-reload'],check=True)
-subprocess.run(['sudo','-n','systemctl','restart','powerglove-receiver.service'],check=True)
-shown = subprocess.check_output(['systemctl','show','powerglove-receiver.service','-p','Environment'],text=True)
-if 'POWERGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder not in shown:
+subprocess.run(['sudo','-n','systemctl','restart','virtualglove-receiver.service'],check=True)
+shown = subprocess.check_output(['systemctl','show','virtualglove-receiver.service','-p','Environment'],text=True)
+if 'VIRTUALGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder not in shown:
     raise SystemExit('Receiver trace environment was not applied')
 boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
 print(json.dumps({'boot_id_sha256':hashlib.sha256(boot.encode()).hexdigest(),
@@ -137,7 +137,7 @@ subprocess.run(['docker','compose','--project-directory',str(base/'.cache'),
 inspect = subprocess.check_output(['docker','inspect','virtualglove-main-1',
     '--format','{{json .Config.Env}}'],text=True)
 env = json.loads(inspect)
-expected = 'POWERGLOVE_DIAGNOSTIC_TRACE=/app/data/latency-traces/%s/controller' % session
+expected = 'VIRTUALGLOVE_DIAGNOSTIC_TRACE=/app/data/latency-traces/%s/controller' % session
 clean = expected not in env
 rearmed = False
 if was_enabled:
@@ -168,15 +168,15 @@ RETROPIE_STOP = r'''
 import base64, hashlib, json, subprocess, sys
 from pathlib import Path
 session = sys.argv[1]
-folder = Path('/var/tmp/powerglove-latency')/session
-drop = '/run/systemd/system/powerglove-receiver.service.d/latency-trace.conf'
+folder = Path('/var/tmp/virtualglove-latency')/session
+drop = '/run/systemd/system/virtualglove-receiver.service.d/latency-trace.conf'
 # Stop while the temporary SIGINT policy is still loaded so Python reaches its
 # normal cleanup path and closes the bounded trace before production returns.
-subprocess.run(['sudo','-n','systemctl','stop','powerglove-receiver.service'],check=True)
+subprocess.run(['sudo','-n','systemctl','stop','virtualglove-receiver.service'],check=True)
 subprocess.run(['sudo','-n','rm','-f',drop],check=True)
 subprocess.run(['sudo','-n','systemctl','daemon-reload'],check=True)
-subprocess.run(['sudo','-n','systemctl','start','powerglove-receiver.service'],check=True)
-shown = subprocess.check_output(['systemctl','show','powerglove-receiver.service','-p','Environment'],text=True)
+subprocess.run(['sudo','-n','systemctl','start','virtualglove-receiver.service'],check=True)
+shown = subprocess.check_output(['systemctl','show','virtualglove-receiver.service','-p','Environment'],text=True)
 files = {}
 listing = subprocess.check_output(['sudo','-n','find',str(folder),'-maxdepth','1','-type','f','-name','receiver.receiver.*.json','-print'],text=True)
 for name in listing.splitlines():
@@ -193,7 +193,7 @@ for name in listing.splitlines():
 boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
 print(json.dumps({'boot_id_sha256':hashlib.sha256(boot.encode()).hexdigest(),
     'trace_environment_removed':
-        ('POWERGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder) not in shown,
+        ('VIRTUALGLOVE_DIAGNOSTIC_TRACE=%s/receiver' % folder) not in shown,
     'files':files}))
 '''
 
@@ -254,7 +254,7 @@ def start(args):
         remote(controller_target, CONTROLLER_STOP, [session],
                controller_identity, controller_alias)
         raise
-    state = {'format':'powerglove-latency-trace-session/1','session':session,
+    state = {'format':'virtualglove-latency-trace-session/1','session':session,
              'started_unix':time.time(),'duration_seconds':args.duration,
              'controller':{'target':args.controller_ssh,'identity':str(args.controller_identity or ''),
                            'host_key_alias':args.controller_host_key_alias,**controller},
@@ -269,7 +269,7 @@ def start(args):
 def stop(args):
     """Restore production processes before collecting finalized trace files."""
     state=json.loads(args.state.read_text())
-    if state.get('format')!='powerglove-latency-trace-session/1' or not re.fullmatch(r'[0-9a-f]{32}',state.get('session','')):
+    if state.get('format')!='virtualglove-latency-trace-session/1' or not re.fullmatch(r'[0-9a-f]{32}',state.get('session','')):
         raise RuntimeError('Invalid trace-session state file')
     session=state['session']; results={}
     for role,script in (('controller',CONTROLLER_STOP),('retropie',RETROPIE_STOP)):
@@ -283,7 +283,7 @@ def stop(args):
             path=export/name;path.write_bytes(base64.b64decode(encoded,validate=True));os.chmod(path,0o600)
     same_boot=all(results[role]['boot_id_sha256']==state[role]['boot_id_sha256'] for role in results)
     restored=all(results[role]['trace_environment_removed'] for role in results)
-    report={'format':'powerglove-latency-trace-export/1','session':session,
+    report={'format':'virtualglove-latency-trace-export/1','session':session,
             'same_boot':same_boot,'production_environment_restored':restored,
             'files':sorted(path.name for path in export.iterdir()),
             'core_trace_required_for_core_consumption':True}

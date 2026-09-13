@@ -76,7 +76,7 @@ class NativeCoreTests(unittest.TestCase):
             "sample.buttons & (1 << 7)",
             "GESTURE_FINGER",
             "buffer[3] = static_cast<byte>(glove.distance)",
-            "POWERGLOVE_TRACE",
+            "VIRTUALGLOVE_TRACE",
             "PGV read bit=",
             "PGV config/write bit=",
             "packet boundary falling-strobe",
@@ -121,7 +121,7 @@ class NativeCoreTests(unittest.TestCase):
         self.assertIn('POWERGLOVE-VISION-NOTICES.md', installer)
         self.assertIn("GNU General Public License, version 2", notice)
         self.assertIn("not a compiled core", notice)
-        self.assertIn("1cdde475a3d0da13a51d975c1bcacaedb3b9e1324260a4575e655346fcaa692f", notice)
+        self.assertIn("1ed4eb4bc803a4d445b6e5a1c7b22ccb00cf8a18d465954730282212b8334c06", notice)
         self.assertIn("Martin Freij", notice)
         self.assertIn("leaves it", notice)
         self.assertIn("byte-for-byte unchanged", notice)

@@ -27,7 +27,7 @@ try:
     if sys.version_info < (3, 7) or sys.platform != "linux":
         raise ValueError("Run this installer on the target Linux device with Python 3.7 or newer")
     if a.check:
-        source = pathlib.Path("/opt/powerglove-src/scripts/setup-machine.py")
+        source = pathlib.Path("/opt/virtualglove-src/scripts/setup-machine.py")
         if not source.is_file():
             raise ValueError("VirtualGlove is not installed at its standard location")
         cmd = ["python3", str(source), "retropie", "--check"]
@@ -50,7 +50,7 @@ try:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", tag):
         raise ValueError("Use a published release tag, not a branch, URL, or path")
     base = "https://github.com/mathan416/VirtualGlove/releases/download/" + tag + "/"
-    with tempfile.TemporaryDirectory(prefix="powerglove-download-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="virtualglove-download-") as temporary:
         directory = pathlib.Path(temporary)
         download(base + "SHA256SUMS", directory / "SHA256SUMS")
         sums = {}

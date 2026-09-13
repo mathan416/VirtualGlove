@@ -36,6 +36,30 @@ import zipfile
 
 APP = Path("/home/arduino/ArduinoApps/virtualglove")
 LEGACY_APP = Path("/home/arduino/ArduinoApps/powerglove-vision")
+RETROPIE_LAUNCHER = Path("/etc/virtualglove/launcher.json")
+LEGACY_RETROPIE_LAUNCHER = Path("/etc/powerglove/launcher.json")
+LEGACY_RUNTIME_MEMBERS = {
+    "retropie/powerglove-receiver.service",
+    "retropie/powerglove-receiver.timer",
+    "retropie/powerglove-games.service",
+    "retropie/runcommand-onstart-powerglove.sh",
+    "retropie/runcommand-onend-powerglove.sh",
+    *{"retropie/bin/powerglove-" + name for name in (
+        "bsb-zap", "dot", "games", "pair", "profile", "receiver", "retropie-hook"
+    )},
+    *{"uno-q/powerglove-" + name for name in (
+        "early-start.service", "wifi-status.py", "wifi-status.service", "wifi-status.timer",
+        "system-shutdown.conf", "system-shutdown.path", "system-shutdown.service",
+        "camera-recovery.py", "camera-recovery.conf", "camera-recovery.path",
+        "camera-recovery.service",
+    )},
+}
+
+
+def retropie_launcher_exists(current=RETROPIE_LAUNCHER,
+                              legacy=LEGACY_RETROPIE_LAUNCHER):
+    """Recognize both current installs and upgradeable pre-0.4.1 launchers."""
+    return current.is_file() or legacy.is_file()
 
 
 def controller_addresses():
@@ -108,8 +132,10 @@ def unpack(archive, destination, machine, version):
                     or str(path) != item.filename.rstrip("/")
                     or (stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR))):
                 raise ValueError("Unsafe or duplicate package member: " + item.filename)
-            if set(path.parts[1:]) & {"data", ".cache", ".git", ".venv", "__pycache__"} or path.name == "cheatsheet.md" or any(part.startswith(".powerglove-install") for part in path.parts):
+            if set(path.parts[1:]) & {"data", ".cache", ".git", ".venv", "__pycache__"} or path.name == "cheatsheet.md" or any(part.startswith((".virtualglove-install", ".powerglove-install")) for part in path.parts):
                 raise ValueError("Package contains private or generated files")
+            if str(PurePosixPath(*path.parts[1:])) in LEGACY_RUNTIME_MEMBERS:
+                raise ValueError("Package contains a legacy PowerGlove runtime file: " + item.filename)
             total += item.file_size
             if total > 2 * 1024 ** 3:
                 raise ValueError("Package expands beyond 2 GiB")
@@ -134,20 +160,33 @@ def unpack(archive, destination, machine, version):
                       "firmware/matrix/manifest.json", "firmware/matrix/virtualglove-matrix.elf-zsk.bin",
                       "firmware/matrix/zephyr-arduino_uno_q_stm32u585xx.elf",
                       "firmware/matrix/flash_sketch.cfg", "scripts/uno-q-early-start.py",
-                      "uno-q/powerglove-early-start.service", "uno-q/powerglove-system-shutdown.path"]
+                      "uno-q/virtualglove-early-start.service",
+                      "uno-q/virtualglove-wifi-status.py", "uno-q/virtualglove-wifi-status.service",
+                      "uno-q/virtualglove-wifi-status.timer",
+                      "uno-q/virtualglove-system-shutdown.conf", "uno-q/virtualglove-system-shutdown.path",
+                      "uno-q/virtualglove-system-shutdown.service",
+                      "uno-q/virtualglove-camera-recovery.py", "uno-q/virtualglove-camera-recovery.conf",
+                      "uno-q/virtualglove-camera-recovery.path", "uno-q/virtualglove-camera-recovery.service"]
                      if machine == "uno-q" else [
-                         "retropie/powerglove-receiver.service",
+                         "retropie/virtualglove-receiver.service",
+                         "retropie/virtualglove-receiver.timer",
+                         "retropie/virtualglove-games.service",
                          "src/powerglove_vision/retropie_hook.py",
-                         "retropie/bin/powerglove-retropie-hook",
-                         "retropie/runcommand-onstart-powerglove.sh",
-                         "retropie/runcommand-onend-powerglove.sh",
+                         "retropie/bin/virtualglove-retropie-hook",
+                         "retropie/bin/virtualglove-receiver",
+                         "retropie/bin/virtualglove-games",
+                         "retropie/bin/virtualglove-pair",
+                         "retropie/bin/virtualglove-profile",
+                         "retropie/bin/virtualglove-bsb-zap",
+                         "retropie/runcommand-onstart-virtualglove.sh",
+                         "retropie/runcommand-onend-virtualglove.sh",
                          "scripts/install-nestopia-powerglove.sh",
                          "scripts/install-powerglove-dot.sh",
                          "scripts/configure-super-glove-ball-core.py",
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "native/powerglove-dot/powerglove_dot.cpp",
                          "src/powerglove_vision/dot_launcher.py",
-                         "retropie/bin/powerglove-dot",
+                         "retropie/bin/virtualglove-dot",
                      ])
         for relative in required:
             if "VirtualGlove/" + relative not in seen:
@@ -373,7 +412,7 @@ def stage_unoq(source, setup):
             if parent == APP.parent:
                 break
             os.chown(str(parent), user.pw_uid, user.pw_gid)
-    for name in (".powerglove-install.json", ".powerglove-install.lock"):
+    for name in (".virtualglove-install.json", ".virtualglove-install.lock"):
         os.chown(str(APP / name), user.pw_uid, user.pw_gid)
     setup.SOURCE = APP
     # Flash through factory OpenOCD. The release carries no compiler or sketch source.
@@ -419,7 +458,7 @@ def main(argv=None):
             setup = load_setup(source)
             if args.peer:
                 setup.valid_host(args.peer)
-            if args.machine == "retropie" and not Path("/etc/powerglove/launcher.json").exists() and not args.peer:
+            if args.machine == "retropie" and not retropie_launcher_exists() and not args.peer:
                 if not sys.stdin.isatty():
                     raise ValueError("First RetroPie installation requires --peer UNO-Q-NAME.local")
                 args.peer = setup.valid_host(input("UNO Q hostname or IP address: ").strip())
@@ -445,9 +484,9 @@ def main(argv=None):
             if args.machine == "uno-q":
                 print_controller_urls(active_hostname)
             else:
-                token = Path("/etc/powerglove/token")
+                token = Path("/etc/virtualglove/token")
                 if not token.is_file() or len(token.read_text().strip()) < 16:
-                    print("NEXT  Pair using sudo /opt/powerglove/bin/powerglove-pair.")
+                    print("NEXT  Pair using sudo /opt/virtualglove/bin/virtualglove-pair.")
                 print("NEXT  Confirm VirtualGlove is selected in RetroArch Port 1 and test gameplay.")
             return report.finish()
     except (OSError, ValueError, KeyError, argparse.ArgumentTypeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:

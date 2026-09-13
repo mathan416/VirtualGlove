@@ -273,7 +273,7 @@ For a stationary open-hand window, run from the development checkout:
 ```sh
 python3 scripts/measure-vision-status.py \
   --status-url http://UNO-Q-NAME.local:8088/status \
-  --phase neutral --seconds 30 --output /tmp/powerglove-neutral.json
+  --phase neutral --seconds 30 --output /tmp/virtualglove-neutral.json
 ```
 
 Repeat with `--phase movement` and a new output path while making deliberate
@@ -435,8 +435,8 @@ python3 scripts/benchmark-direction-response.py \
   --nestopia-core build/nestopia-powerglove/nestopia_powerglove_libretro.so \
   --super-glove-ball-rom "/path/to/Super Glove Ball (USA).nes" \
   --fceumm-core build/fceumm-benchmark/fceumm_libretro.so \
-  --scratch /tmp/powerglove-direction-benchmark \
-  --output /tmp/powerglove-direction-benchmark/result.json
+  --scratch /tmp/virtualglove-direction-benchmark \
+  --output /tmp/virtualglove-direction-benchmark/result.json
 ```
 
 On macOS, use the emitted `.dylib` paths instead of `.so`. Build products,
@@ -527,7 +527,7 @@ Run from the development checkout on the Mac:
 ```sh
 python3 scripts/run-native-latency-session.py \
   --status-url http://UNO-Q-NAME.local:8088/status \
-  --output-dir /tmp/powerglove-session-01 --protocol full \
+  --output-dir /tmp/virtualglove-session-01 --protocol full \
   --preflight /tmp/pgv-preflight-01/preflight.json
 ```
 
@@ -563,8 +563,8 @@ the signed transport or the 64-byte native-state ABI. Set these variables in the
 **environment of the processes being started**, not just a later SSH shell:
 
 ```sh
-POWERGLOVE_DIAGNOSTIC_TRACE=/tmp/pgv-session-01
-POWERGLOVE_DIAGNOSTIC_SECONDS=180
+VIRTUALGLOVE_DIAGNOSTIC_TRACE=/tmp/pgv-session-01
+VIRTUALGLOVE_DIAGNOSTIC_SECONDS=180
 ```
 
 On the Controller, the App Lab supervisor passes its environment to the worker.
@@ -618,7 +618,7 @@ remain outside their boundaries.
 Core consumption needs a **separate diagnostic build** in a fresh build directory:
 
 ```sh
-POWERGLOVE_BUILD_DIAGNOSTICS=1 \
+VIRTUALGLOVE_BUILD_DIAGNOSTICS=1 \
   scripts/build-nestopia-powerglove.sh build/nestopia-latency-01
 ```
 
@@ -626,9 +626,9 @@ Build on the target architecture; a Mac `.dylib` cannot run on RetroPie. The res
 is named `nestopia_powerglove_diagnostic_libretro`, distinct from the normal core.
 The production patch and its digest remain unchanged. Select the diagnostic
 binary only for the test launch, preserving all existing arguments and the
-`POWERGLOVE_NATIVE_STATE` path. Do not replace the installed normal core. Set
-`POWERGLOVE_CORE_DIAGNOSTIC_TRACE=/tmp/pgv-core-01.csv` and the same duration in
-RetroArch's launch environment. Leave the old verbose `POWERGLOVE_TRACE` unset.
+`VIRTUALGLOVE_NATIVE_STATE` path. Do not replace the installed normal core. Set
+`VIRTUALGLOVE_CORE_DIAGNOSTIC_TRACE=/tmp/pgv-core-01.csv` and the same duration in
+RetroArch's launch environment. Leave the old verbose `VIRTUALGLOVE_TRACE` unset.
 The diagnostic callback buffers at most 20,000 consumption records, with no
 logging or disk writes in the callback. **Exit the game normally** to export the
 CSV; it is not readable as complete evidence until unload. Saturation is reported

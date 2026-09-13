@@ -1,5 +1,12 @@
 # Project: VirtualGlove
+# File: src/powerglove_vision/connection_doctor_web.py
+# Purpose: Render the read-only connection diagnostics embedded in Setup.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added release documentation metadata.
+# Full history: docs/CHANGELOG.md and Git history.
 """Read-only connection guidance using existing Setup and runtime APIs."""
 
 DOCTOR_CONTENT = """<div id=connection-doctor class=connection-pairing role=region aria-labelledby=doctor-title>

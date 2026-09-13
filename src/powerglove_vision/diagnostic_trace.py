@@ -50,11 +50,11 @@ class DiagnosticTrace:
     @classmethod
     def from_environment(cls, role):
         """Opt in with a private output prefix; fail closed for diagnostics only."""
-        prefix = os.environ.get('POWERGLOVE_DIAGNOSTIC_TRACE')
+        prefix = os.environ.get('VIRTUALGLOVE_DIAGNOSTIC_TRACE')
         if not prefix:
             return None
         try:
-            seconds = float(os.environ.get('POWERGLOVE_DIAGNOSTIC_SECONDS', '180'))
+            seconds = float(os.environ.get('VIRTUALGLOVE_DIAGNOSTIC_SECONDS', '180'))
             # Camera recovery may construct the same role more than once inside
             # one long-lived process. A monotonic suffix keeps every bounded
             # trace distinct without overwriting or disabling the later trace.
@@ -99,7 +99,7 @@ class DiagnosticTrace:
         with self.lock:
             self.enabled = False
             events, self.events = self.events, []
-        report = dict(format='powerglove-diagnostic/1', role=self.role,
+        report = dict(format='virtualglove-diagnostic/1', role=self.role,
                       clock='local CLOCK_MONOTONIC; never subtract across hosts',
                       armed_ns=self.armed_ns, started_ns=self.started_ns,
                       ended_ns=time.monotonic_ns(),

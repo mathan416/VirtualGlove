@@ -7,6 +7,8 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-13
+
 ### Added
 
 - Added exact Program 1–10 filename aliases observed in the NES library for
@@ -58,6 +60,14 @@ authoritative record for line-level and file-level history.
 
 ### Changed
 
+- Renamed installed RetroPie and UNO Q services, executables, runtime paths,
+  configuration directories, bridge methods, protocol identifiers, and managed
+  installation metadata from `powerglove-*` to `virtualglove-*`. Upgrades move
+  pairing tokens, game registries, launcher settings, and camera enrollment
+  forward before retiring the old units and paths into rollback backups. Names
+  that specifically identify Mattel's Power Glove or the separate native
+  emulation cores remain unchanged.
+
 - Changed the fresh-install startup profile to **Gestures off**. Existing saved
   startup profiles remain unchanged during upgrades.
 
@@ -81,6 +91,30 @@ authoritative record for line-level and file-level history.
   or shrinking. Live hand size and jitter never make the box breathe. All existing
   numeric choices and player/calibration data remain unchanged, as do native
   Super Glove Ball X/Y calibration and reach.
+
+### Fixed
+
+- Made fresh installations emit only `virtualglove-*` service, executable,
+  runtime, and managed-metadata names. Coordinated upgrades migrate existing
+  pairing, launcher, game-registry, player, calibration, tuning, Academy, and
+  camera-enrollment data before retiring legacy paths into recovery backups.
+- Fixed RetroPie upgrades from pre-0.4.1 installations so the bootstrap
+  recognizes the existing legacy launcher before asking for a Controller
+  address. Package-source preflight now completes before the installer creates
+  or migrates VirtualGlove configuration, and existing cabinet hooks are
+  validated before that migration begins.
+- Stopped legacy systemd path and timer triggers before their services during
+  migration, preventing trigger warnings and overlapping old/new helpers.
+  Obsolete early-start trial units are retired with the other legacy helpers.
+- Refused UNO Q helper migration while a shutdown request is pending. This
+  prevents enabling the renamed `PathExists` watcher from halting the board
+  halfway through an update.
+- Changed engineering Wi-Fi deployment to include and checksum-verify the
+  compiled Matrix image, flash it before application restart, require a matched
+  firmware handshake, and use administrator access when retiring a root-owned
+  legacy application directory.
+- Strengthened release-package validation to require every renamed UNO Q and
+  RetroPie runtime file and reject legacy service, hook, or executable names.
 
 ## [0.4.0-rc.7] - 2026-09-11
 

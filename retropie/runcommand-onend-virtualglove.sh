@@ -1,7 +1,7 @@
 #!/bin/sh
 # Project: VirtualGlove
-# File: retropie/bin/powerglove-profile
-# Purpose: Launch the authenticated profile-control command with the installed Python source path.
+# File: retropie/runcommand-onend-virtualglove.sh
+# Purpose: Tell VirtualGlove that a RetroPie game ended without replacing existing cabinet hooks.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -10,5 +10,6 @@
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 # Full history: docs/CHANGELOG.md and Git history.
 
-export PYTHONPATH=/opt/powerglove-src/src
-exec /usr/bin/python3 -m powerglove_vision.profile_control "$@"
+# Call this from the cabinet's existing runcommand-onend.sh.
+/opt/virtualglove/bin/virtualglove-retropie-hook end
+exit 0

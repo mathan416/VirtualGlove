@@ -1,5 +1,12 @@
 # Project: VirtualGlove
+# File: tests/test_connection_doctor.py
+# Purpose: Verify Connection Doctor browser logic and safe diagnostic behavior.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-13 - Added Connection Doctor coverage.
+# Full history: docs/CHANGELOG.md and Git history.
 """Execute the Doctor's real JavaScript with isolated API/DOM fixtures in Node."""
 import json
 from pathlib import Path

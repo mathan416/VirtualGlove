@@ -1,5 +1,5 @@
 # Project: VirtualGlove
-# File: uno-q/powerglove-wifi-status.service
+# File: uno-q/virtualglove-wifi-status.service
 # Purpose: Sample host Wi-Fi carrier state with no privileged network operations.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
@@ -16,7 +16,7 @@ ConditionPathIsDirectory=/home/arduino/ArduinoApps/virtualglove/data
 Type=oneshot
 User=arduino
 Group=arduino
-ExecStart=/usr/bin/python3 /usr/local/libexec/powerglove-wifi-status
+ExecStart=/usr/bin/python3 /usr/local/libexec/virtualglove-wifi-status
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=read-only

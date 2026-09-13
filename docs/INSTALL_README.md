@@ -11,33 +11,42 @@ displays, T, L, or gesture recognition. The setting saves without a tracker rest
 
 For an existing installation, this update changes controller transport on both computers. Stop controller output, update both to matching software, then start and test input. Mixed old/new versions do not deliver input with the default settings. See [signed controller transport and upgrades](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades) for staged upgrades and rollback.
 
-## Try release candidate v0.4.0-rc.7
+## Try release candidate v0.4.1-rc.1
 
-Release candidate **v0.4.0-rc.7** is intended for users who want to try the new
-low-latency camera and native movement work before the final release. Close games
-and stop controller output, then run the matching command on each device. These
-explicit commands select the prerelease; the normal commands later in this guide
-continue to select the latest stable release.
+Release candidate **v0.4.1-rc.1** adds Programs 1–14 and their official game
+mappings, the Ready-to-Play guide, the live joystick dead-zone camera grid, and
+the complete `virtualglove-*` runtime-name migration. Close games and stop
+controller output, then run the matching command on each device. These explicit
+commands select the prerelease; the normal commands later in this guide continue
+to select the latest stable release.
 
 On the VirtualGlove Controller:
 
 ```sh
 cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.0-rc.7/install-uno-q.sh
-bash install-uno-q.sh --development v0.4.0-rc.7
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-uno-q.sh
+bash install-uno-q.sh --development v0.4.1-rc.1
 ```
 
 On RetroPie:
 
 ```sh
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.0-rc.7/install-retropie.sh && bash install-retropie.sh --development v0.4.0-rc.7
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.1/install-retropie.sh && bash install-retropie.sh --development v0.4.1-rc.1
 ```
 
-Verify both report `v0.4.0-rc.7`, then follow the pairing/first-game checks below.
+Verify both report `v0.4.1-rc.1`, then follow the pairing/first-game checks below.
 Existing hand settings and pairing files are preserved. The Controller installer
 also updates the matrix firmware. Review [coordinated transport upgrades and
 rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
 before replacing an older installation.
+
+An upgrade accepts either the current `/etc/virtualglove` settings or the
+pre-0.4.1 `/etc/powerglove` settings. It moves the existing pairing token, game
+registry, and Controller destination forward without asking for replacements,
+then retires old services and directories into `/var/backups/virtualglove` only
+after their replacements are ready. A fresh installation creates only
+`virtualglove-*` runtime names. Install both devices from the same candidate;
+the renamed protocol does not intentionally fall back to the retired runtime.
 
 ## 1. Prepare your devices
 
@@ -117,6 +126,12 @@ recognition defaults take effect. The installer never copies a maintainer's
 neutral-hand coordinates because those measurements depend on the player's
 camera, distance, and position.
 
+During an update, a pending Dashboard shutdown request stops setup before any
+renamed path watcher is enabled. Complete or clear that shutdown request, bring
+the Controller back online, and rerun the same installer. Legacy path and timer
+watchers are stopped before their services, so old and new helpers never process
+the same request concurrently.
+
 If the script reports a failure, stop and follow its message. If `curl` is missing,
 install it with `sudo apt-get install curl ca-certificates`, then retry. The
 installer checks compatibility before changing the application.
@@ -166,7 +181,10 @@ image is preferable because Buster no longer receives normal security support.
 
 For a new installation, the script asks for your Controller hostname or IP
 address. Enter the `.local` name printed by the Controller installer—normally
-`virtualglove.local`. There are no placeholders to replace in the command.
+`virtualglove.local`. There are no placeholders to replace in the command. An
+upgrade that finds either `/etc/virtualglove/launcher.json` or the pre-0.4.1
+`/etc/powerglove/launcher.json` preserves that destination and does not ask for
+it again.
 
 The script installs the receiver, controller mapping, game-launch integration,
 and automatic startup. Existing cabinet hooks and controller assignments remain.
@@ -208,8 +226,8 @@ one-time-code method after both installers finish.
 2. Continue to **Pair this Controller** in the same card, choose **One-time code (recommended)**, and select **Continue**. Use **Change** beside the saved console to edit its address before starting.
 3. In **Confirm your Controller**, compare the `ID` on the physical matrix with the beginning of the browser certificate's SHA-256 fingerprint. Expand **How to compare the certificate** for guidance. If they differ, stop pairing.
 4. If they match, check the confirmation box, enter the six-digit **Controller approval PIN** shown after `PN` on the matrix, and select **Continue**.
-5. On the RetroPie console shown in Setup, run `sudo /opt/powerglove/bin/powerglove-pair` and leave it running. Enter its 20-character code in **RetroPie one-time code**, then select **Pair with RetroPie** within five minutes. This single-use code is separate from the Controller approval PIN. If you have more than one RetroPie, confirm the terminal prompt belongs to the console named in Setup.
-6. Selecting **Pair with RetroPie** brings **Pairing in progress** into view while the request runs, followed by **Pairing complete** or an error with retry instructions. On success, the receiver was restarted and answered an authenticated controller handshake using the newly installed token; you can open Dashboard when ready. On RetroPie, `sudo systemctl status powerglove-receiver.service` should report active. Pairing does not arm controller output or prove that a game received input.
+5. On the RetroPie console shown in Setup, run `sudo /opt/virtualglove/bin/virtualglove-pair` and leave it running. Enter its 20-character code in **RetroPie one-time code**, then select **Pair with RetroPie** within five minutes. This single-use code is separate from the Controller approval PIN. If you have more than one RetroPie, confirm the terminal prompt belongs to the console named in Setup.
+6. Selecting **Pair with RetroPie** brings **Pairing in progress** into view while the request runs, followed by **Pairing complete** or an error with retry instructions. On success, the receiver was restarted and answered an authenticated controller handshake using the newly installed token; you can open Dashboard when ready. On RetroPie, `sudo systemctl status virtualglove-receiver.service` should report active. Pairing does not arm controller output or prove that a game received input.
 
 ### Optional: remove the browser privacy warning
 

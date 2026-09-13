@@ -263,7 +263,7 @@ class ProcessDirectV4L2Capture:
             target=_capture_worker,
             args=(str(path), int(buffers), self._pixels, self._state, self._lock,
                   self._stop, child, manual_exposure, manual_gain),
-            name="powerglove-camera-sidecar", daemon=True,
+            name="virtualglove-camera-sidecar", daemon=True,
         )
         self.metadata = dict(metadata or {})
         self.metadata.update({
@@ -363,7 +363,7 @@ class ProcessOpenCVCapture(ProcessDirectV4L2Capture):
             args=(device, backend, camera_format, width, height, requested_rate,
                   buffers, self._pixels, self._state, self._lock, self._stop,
                   child),
-            name="powerglove-opencv-camera-sidecar", daemon=True,
+            name="virtualglove-opencv-camera-sidecar", daemon=True,
         )
         self.metadata = dict(metadata or {})
         self.metadata.update({

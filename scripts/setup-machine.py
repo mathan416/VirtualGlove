@@ -41,6 +41,9 @@ SOURCE = Path(__file__).resolve().parents[1]
 UNOQ_APP = "/home/arduino/ArduinoApps/virtualglove"
 LEGACY_UNOQ_APP = "/home/arduino/ArduinoApps/powerglove-vision"
 BACKUPS = Path("/var/backups/virtualglove") / datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+LEGACY_RETROPIE_CONFIG = "/etc/powerglove"
+LEGACY_RETROPIE_SOURCE = "/opt/powerglove-src"
+LEGACY_RETROPIE_BIN = "/opt/powerglove"
 
 
 def installation_manifest():
@@ -81,9 +84,63 @@ def write_file(path, content, mode=0o644, preserve=False):
     os.replace(str(temporary), str(path))
 
 
+def migrate_directory(source, destination):
+    """Copy a legacy private directory without overwriting or merging conflicts."""
+    source, destination = Path(source), Path(destination)
+    if not source.exists():
+        return False
+    if source.is_symlink() or not source.is_dir() or destination.is_symlink():
+        raise ValueError("Refusing unsafe legacy directory migration: " + str(source))
+    if destination.exists():
+        source_files = {str(path.relative_to(source)): path for path in source.rglob("*") if path.is_file()}
+        destination_files = {str(path.relative_to(destination)): path for path in destination.rglob("*") if path.is_file()}
+        conflicts = [name for name in source_files if name in destination_files
+                     and source_files[name].read_bytes() != destination_files[name].read_bytes()]
+        if conflicts:
+            raise ValueError("Both legacy and VirtualGlove settings exist and differ: " + ", ".join(conflicts))
+        for name, path in source_files.items():
+            target = destination / name
+            if not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(str(path), str(target))
+    else:
+        shutil.copytree(str(source), str(destination), copy_function=shutil.copy2)
+    return True
+
+
+def migrate_file(source, destination):
+    """Copy one legacy private file without replacing different current data."""
+    source, destination = Path(source), Path(destination)
+    if not source.exists():
+        return False
+    if source.is_symlink() or not source.is_file() or destination.is_symlink():
+        raise ValueError("Refusing unsafe legacy file migration: " + str(source))
+    if destination.exists():
+        if not destination.is_file() or source.read_bytes() != destination.read_bytes():
+            raise ValueError("Both legacy and VirtualGlove settings exist and differ: " + str(destination))
+    else:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(source), str(destination))
+    return True
+
+
+def retire_path(path):
+    """Move a replaced legacy path into the timestamped rollback backup."""
+    path = Path(path)
+    if not path.exists() and not path.is_symlink():
+        return
+    target = BACKUPS / "retired" / str(path).lstrip("/")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() or target.is_symlink():
+        raise ValueError("Legacy backup target already exists: " + str(target))
+    shutil.move(str(path), str(target))
+
+
 def hook_content(text, action):
     """Add an early, failure-safe shell hook once; preserve all existing commands."""
-    executable = "/opt/powerglove-src/retropie/runcommand-on" + action + "-powerglove.sh"
+    legacy = "/opt/powerglove-src/retropie/runcommand-on" + action + "-powerglove.sh"
+    executable = "/opt/virtualglove-src/retropie/runcommand-on" + action + "-virtualglove.sh"
+    text = text.replace(legacy, executable)
     if any(executable in line and not line.lstrip().startswith("#") for line in text.splitlines()):
         return text
     if text.startswith("#!") and not re.match(r"^#!.*(?:/| )(?:ba|da)?sh(?:\s|$)", text.splitlines()[0]):
@@ -137,7 +194,14 @@ def install_retropie(peer):
     base = Path("/opt/retropie/configs/all")
     if not base.is_dir():
         raise ValueError("RetroPie configuration directory is missing")
-    # Preflight hook compatibility before installing packages or changing files.
+    # Detect an unusable package source before creating the renamed config tree
+    # or touching any other VirtualGlove-managed file.
+    check_retropie_package_sources()
+    old_units = [name for name in (
+        "powerglove-receiver.timer", "powerglove-receiver.service", "powerglove-games.service"
+    ) if (Path("/etc/systemd/system") / name).exists()]
+    # Preflight hook compatibility before migrating configuration, installing
+    # packages, or changing any VirtualGlove-managed file.
     hooks = []
     for action in ("start", "end"):
         path = base / ("runcommand-on" + action + ".sh")
@@ -145,20 +209,32 @@ def install_retropie(peer):
             raise ValueError("Refusing symlink: " + str(path))
         text = path.read_text() if path.exists() else ""
         hooks.append((path, hook_content(text, action)))
-    launcher = Path("/etc/powerglove/launcher.json")
+    migrated_config = migrate_directory(LEGACY_RETROPIE_CONFIG, "/etc/virtualglove")
+    launcher = Path("/etc/virtualglove/launcher.json")
+    if launcher.exists():
+        migrated = json.loads(launcher.read_text())
+        original = dict(migrated)
+        replacements = {
+            "registry": ("/etc/powerglove/games.json", "/etc/virtualglove/games.json"),
+            "token_file": ("/etc/powerglove/token", "/etc/virtualglove/token"),
+        }
+        for field, (legacy, current) in replacements.items():
+            if migrated.get(field) == legacy:
+                migrated[field] = current
+        if migrated != original:
+            write_file(launcher, json.dumps(migrated, indent=2) + "\n")
     if launcher.exists():
         current = json.loads(launcher.read_text())
         if peer and current.get("uno_q") != peer:
             print("ACTION  Existing launcher destination preserved; edit launcher.json if changing machines.")
     if not launcher.exists() and not peer:
         raise ValueError("First installation requires --peer YOUR-UNO-Q.local")
-    check_retropie_package_sources()
     run("apt-get", "update")
     run("apt-get", "install", "-y", "python3", "python3-evdev", "openssl", "avahi-daemon", "libnss-mdns")
     run("systemctl", "enable", "--now", "avahi-daemon")
     run("modprobe", "uinput")
-    write_file("/etc/modules-load.d/powerglove.conf", "uinput\n")
-    destination = Path("/opt/powerglove-src")
+    write_file("/etc/modules-load.d/virtualglove.conf", "uinput\n")
+    destination = Path("/opt/virtualglove-src")
     if SOURCE.resolve() != destination.resolve():
         names = [str(path.relative_to(SOURCE))
                  for directory in ("src", "retropie", "config", "scripts", "native", "licenses")
@@ -168,51 +244,155 @@ def install_retropie(peer):
                   if (SOURCE / name).is_file()]
         installation_manifest()["apply"](SOURCE, destination, BACKUPS / "application-payload", names)
     for source in (SOURCE / "retropie/bin").iterdir():
-        write_file(Path("/opt/powerglove/bin") / source.name, source.read_bytes(), 0o755)
+        write_file(Path("/opt/virtualglove/bin") / source.name, source.read_bytes(), 0o755)
     for action in ("start", "end"):
-        (destination / ("retropie/runcommand-on" + action + "-powerglove.sh")).chmod(0o755)
-    write_file("/etc/powerglove/games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
+        (destination / ("retropie/runcommand-on" + action + "-virtualglove.sh")).chmod(0o755)
+    write_file("/etc/virtualglove/games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
     config = json.loads((SOURCE / "config/launcher.example.json").read_text())
     config["uno_q"] = peer
     write_file(launcher, json.dumps(config, indent=2) + "\n", preserve=True)
     # Never truncate an existing token. Empty means pairing is still required.
-    token = Path("/etc/powerglove/token")
+    token = Path("/etc/virtualglove/token")
     write_file(token, b"", 0o640, preserve=True)
     token.chmod(0o640)
     os.chown(str(token), 0, grp.getgrnam("input").gr_gid)
-    for unit in ("powerglove-receiver.service", "powerglove-receiver.timer", "powerglove-games.service"):
+    for unit in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service"):
         write_file(Path("/etc/systemd/system") / unit, (SOURCE / "retropie" / unit).read_bytes())
     profile = "VirtualGlove.cfg"
     write_file(base / "retroarch/autoconfig" / profile, (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
     for path, content in hooks:
         write_file(path, content, 0o755)
         path.chmod(path.stat().st_mode | 0o111)
-    registry_directory = Path(json.loads(launcher.read_text()).get("registry", "/etc/powerglove/games.json")).resolve().parent
+    registry_directory = Path(json.loads(launcher.read_text()).get("registry", "/etc/virtualglove/games.json")).resolve().parent
     # systemd quoted strings preserve spaces and avoid percent specifier expansion.
     writable = str(registry_directory).replace("%", "%%").replace("\\", "\\\\").replace('"', '\\"')
-    write_file("/etc/systemd/system/powerglove-games.service.d/registry.conf",
+    write_file("/etc/systemd/system/virtualglove-games.service.d/registry.conf",
                '[Service]\nReadWritePaths=\nReadWritePaths="' + writable + '"\n')
+    old_timers = [name for name in old_units if name.endswith(".timer")]
+    old_services = [name for name in old_units if name.endswith(".service")]
+    if old_timers:
+        run("systemctl", "stop", *old_timers)
+    if old_services:
+        run("systemctl", "stop", *old_services)
+    if old_units:
+        run("systemctl", "disable", *old_units)
     run("systemctl", "daemon-reload")
-    run("systemctl", "enable", "--now", "powerglove-games.service")
-    run("systemctl", "restart", "powerglove-games.service")
-    run("systemctl", "disable", "powerglove-receiver.service")
+    run("systemctl", "enable", "--now", "virtualglove-games.service")
+    run("systemctl", "restart", "virtualglove-games.service")
+    run("systemctl", "disable", "virtualglove-receiver.service")
     if len(token.read_text().strip()) >= 16:
-        run("systemctl", "restart", "powerglove-receiver.service")
-    run("systemctl", "enable", "--now", "powerglove-receiver.timer")
+        run("systemctl", "restart", "virtualglove-receiver.service")
+    run("systemctl", "enable", "--now", "virtualglove-receiver.timer")
+    for path in (
+        "/etc/systemd/system/powerglove-receiver.timer",
+        "/etc/systemd/system/powerglove-receiver.service",
+        "/etc/systemd/system/powerglove-games.service",
+        "/etc/systemd/system/powerglove-games.service.d",
+        "/etc/modules-load.d/powerglove.conf",
+        "/opt/retropie/configs/all/retroarch/autoconfig/PowerGlove Vision.cfg",
+        LEGACY_RETROPIE_SOURCE, LEGACY_RETROPIE_BIN,
+    ):
+        retire_path(path)
+    if migrated_config:
+        retire_path(LEGACY_RETROPIE_CONFIG)
+    run("systemctl", "daemon-reload")
 
 
 def install_wifi_status():
     """Install the same unprivileged Wi-Fi sampler during setup and application updates."""
     if str(SOURCE) != UNOQ_APP:
         raise ValueError("Wi-Fi sampler requires the standard App Lab installation path")
-    write_file("/usr/local/libexec/powerglove-wifi-status",
-               (SOURCE / "uno-q/powerglove-wifi-status.py").read_bytes(), 0o755)
+    legacy_units = [name for name in (
+        "powerglove-wifi-status.timer", "powerglove-wifi-status.service"
+    ) if (Path("/etc/systemd/system") / name).exists()]
+    write_file("/usr/local/libexec/virtualglove-wifi-status",
+               (SOURCE / "uno-q/virtualglove-wifi-status.py").read_bytes(), 0o755)
     for suffix in ("service", "timer"):
-        name = "powerglove-wifi-status." + suffix
+        name = "virtualglove-wifi-status." + suffix
         write_file(Path("/etc/systemd/system") / name, (SOURCE / "uno-q" / name).read_bytes())
+    legacy_timers = [name for name in legacy_units if name.endswith(".timer")]
+    legacy_services = [name for name in legacy_units if name.endswith(".service")]
+    if legacy_timers:
+        run("systemctl", "stop", *legacy_timers)
+    if legacy_services:
+        run("systemctl", "stop", *legacy_services)
+    if legacy_units:
+        run("systemctl", "disable", *legacy_units)
     run("systemctl", "daemon-reload")
-    run("systemctl", "enable", "--now", "powerglove-wifi-status.timer")
-    run("systemctl", "start", "powerglove-wifi-status.service")
+    run("systemctl", "enable", "--now", "virtualglove-wifi-status.timer")
+    run("systemctl", "start", "virtualglove-wifi-status.service")
+    for path in (
+        "/etc/systemd/system/powerglove-wifi-status.timer",
+        "/etc/systemd/system/powerglove-wifi-status.service",
+        "/usr/local/libexec/powerglove-wifi-status",
+    ):
+        retire_path(path)
+    if legacy_units:
+        run("systemctl", "daemon-reload")
+
+
+def install_unoq_runtime_names():
+    """Install renamed UNO Q host helpers and retire their old service identities."""
+    app = SOURCE
+    if str(app) != UNOQ_APP:
+        raise ValueError("UNO Q setup currently requires App Lab path " + UNOQ_APP)
+    # A PathExists unit acts immediately when it is enabled. Refuse to migrate
+    # while an old shutdown request is pending, otherwise enabling the renamed
+    # watcher can halt the board halfway through setup.
+    if (app / "data/shutdown-request").exists():
+        raise ValueError(
+            "A pending shutdown request exists; remove it deliberately before "
+            "migrating UNO Q runtime names"
+        )
+    legacy_units = [name for name in (
+        "powerglove-system-shutdown.path", "powerglove-system-shutdown.service",
+        "powerglove-camera-recovery.path", "powerglove-camera-recovery.service",
+    ) if (Path("/etc/systemd/system") / name).exists()]
+    migrated_camera_config = migrate_file(
+        "/etc/powerglove-camera-recovery.json",
+        "/etc/virtualglove-camera-recovery.json",
+    )
+    for suffix, directory in (("path", "/etc/systemd/system"), ("service", "/etc/systemd/system"), ("conf", "/etc/tmpfiles.d")):
+        name = "virtualglove-system-shutdown." + suffix
+        write_file(Path(directory) / name, (app / "uno-q" / name).read_bytes())
+    for suffix, directory in (("path", "/etc/systemd/system"), ("service", "/etc/systemd/system"), ("conf", "/etc/tmpfiles.d")):
+        name = "virtualglove-camera-recovery." + suffix
+        write_file(Path(directory) / name, (app / "uno-q" / name).read_bytes())
+    write_file(
+        "/usr/local/libexec/virtualglove-camera-recovery",
+        (app / "uno-q/virtualglove-camera-recovery.py").read_bytes(),
+        0o755,
+    )
+    run("/usr/local/libexec/virtualglove-camera-recovery", "--configure-if-present")
+    legacy_paths = [name for name in legacy_units if name.endswith(".path")]
+    legacy_services = [name for name in legacy_units if name.endswith(".service")]
+    if legacy_paths:
+        run("systemctl", "stop", *legacy_paths)
+    if legacy_services:
+        run("systemctl", "stop", *legacy_services)
+    if legacy_units:
+        run("systemctl", "disable", *legacy_units)
+    run("systemctl", "daemon-reload")
+    run("systemd-tmpfiles", "--create", "/etc/tmpfiles.d/virtualglove-system-shutdown.conf")
+    run("systemd-tmpfiles", "--create", "/etc/tmpfiles.d/virtualglove-camera-recovery.conf")
+    run("systemctl", "enable", "--now", "virtualglove-system-shutdown.path")
+    run("systemctl", "enable", "--now", "virtualglove-camera-recovery.path")
+    for path in (
+        "/etc/systemd/system/powerglove-system-shutdown.path",
+        "/etc/systemd/system/powerglove-system-shutdown.service",
+        "/etc/tmpfiles.d/powerglove-system-shutdown.conf",
+        "/etc/systemd/system/powerglove-camera-recovery.path",
+        "/etc/systemd/system/powerglove-camera-recovery.service",
+        "/etc/tmpfiles.d/powerglove-camera-recovery.conf",
+        "/usr/local/libexec/powerglove-camera-recovery",
+    ):
+        retire_path(path)
+    if migrated_camera_config:
+        retire_path("/etc/powerglove-camera-recovery.json")
+    if legacy_units:
+        run("systemctl", "daemon-reload")
+    install_early_start()
+    install_wifi_status()
 
 
 def install_unoq(peer):
@@ -237,23 +417,7 @@ def install_unoq(peer):
     run("python3", str(app / "scripts/configure-uno-q-avahi.py"))
     run("systemctl", "enable", "--now", "avahi-daemon")
     run("systemctl", "restart", "avahi-daemon")
-    for suffix, directory in (("path", "/etc/systemd/system"), ("service", "/etc/systemd/system"), ("conf", "/etc/tmpfiles.d")):
-        name = "powerglove-system-shutdown." + suffix
-        write_file(Path(directory) / name, (app / "uno-q" / name).read_bytes())
-    for suffix, directory in (("path", "/etc/systemd/system"), ("service", "/etc/systemd/system"), ("conf", "/etc/tmpfiles.d")):
-        name = "powerglove-camera-recovery." + suffix
-        write_file(Path(directory) / name, (app / "uno-q" / name).read_bytes())
-    write_file(
-        "/usr/local/libexec/powerglove-camera-recovery",
-        (app / "uno-q" / "powerglove-camera-recovery.py").read_bytes(),
-        0o755,
-    )
-    run("/usr/local/libexec/powerglove-camera-recovery", "--configure-if-present")
-    run("systemctl", "daemon-reload")
-    run("systemd-tmpfiles", "--create", "/etc/tmpfiles.d/powerglove-system-shutdown.conf")
-    run("systemd-tmpfiles", "--create", "/etc/tmpfiles.d/powerglove-camera-recovery.conf")
-    run("systemctl", "enable", "--now", "powerglove-system-shutdown.path")
-    run("systemctl", "enable", "--now", "powerglove-camera-recovery.path")
+    install_unoq_runtime_names()
     # Use the same idempotent Compose transformation as Wi-Fi deployment.
     import runpy
     configure = runpy.run_path(str(app / "scripts/configure-uno-q-mdns.py"))["configure"]
@@ -283,8 +447,6 @@ def install_unoq(peer):
     # it explicitly or Compose resolves those mounts from filesystem root.
     run("env", "APP_HOME=" + str(app), "docker", "compose", "-f", compose,
         "up", "-d", "--force-recreate")
-    install_early_start()
-    install_wifi_status()
     if peer:
         print("Receiver setting is preserved; choose " + peer + " on the Connection page if needed.")
 
@@ -302,8 +464,8 @@ def install_early_start():
     """Install the guarded helper and enable it for subsequent boots without an SWD write now."""
     user = pwd.getpwnam("arduino")
     home = Path(user.pw_dir)
-    for source, relative in (("scripts/uno-q-early-start.py", ".local/lib/powerglove/uno-q-early-start.py"),
-                             ("uno-q/powerglove-early-start.service", ".config/systemd/user/powerglove-early-start.service")):
+    for source, relative in (("scripts/uno-q-early-start.py", ".local/lib/virtualglove/uno-q-early-start.py"),
+                             ("uno-q/virtualglove-early-start.service", ".config/systemd/user/virtualglove-early-start.service")):
         target = home / relative
         if any(parent.is_symlink() for parent in [target] + list(target.parents)):
             raise ValueError("Refusing symbolic helper path: " + str(target))
@@ -315,11 +477,23 @@ def install_early_start():
             os.chown(str(parent), user.pw_uid, user.pw_gid)
     run("loginctl", "enable-linger", "arduino")
     run("systemctl", "start", "user@%s.service" % user.pw_uid)
+    legacy_service = home / ".config/systemd/user/powerglove-early-start.service"
+    legacy_trial = home / ".config/systemd/user/powerglove-early-start-trial.service"
+    had_legacy_service = legacy_service.exists()
+    had_legacy_trial = legacy_trial.exists()
+    if legacy_service.exists():
+        run(*user_systemctl("disable", "--now", "powerglove-early-start.service"))
+    if legacy_trial.exists():
+        run(*user_systemctl("disable", "--now", "powerglove-early-start-trial.service"))
     run(*user_systemctl("daemon-reload"))
-    trial = home / ".config/systemd/user/powerglove-early-start-trial.service"
+    trial = home / ".config/systemd/user/virtualglove-early-start-trial.service"
     if trial.exists():
-        run(*user_systemctl("disable", "powerglove-early-start-trial.service"))
-    run(*user_systemctl("enable", "powerglove-early-start.service"))
+        run(*user_systemctl("disable", "virtualglove-early-start-trial.service"))
+    run(*user_systemctl("enable", "virtualglove-early-start.service"))
+    for path in (legacy_service, legacy_trial, home / ".local/lib/powerglove"):
+        retire_path(path)
+    if had_legacy_service or had_legacy_trial:
+        run(*user_systemctl("daemon-reload"))
     print("PASS  Early-start helper installed for the next boot; existing sketch animation preserved.")
 
 
@@ -343,8 +517,8 @@ def wait_unoq():
 
 def registered_roms():
     """Find registered NES games in standard RetroPie account ROM directories."""
-    config = json.loads(Path("/etc/powerglove/launcher.json").read_text())
-    registry = json.loads(Path(config.get("registry", "/etc/powerglove/games.json")).read_text())["games"]
+    config = json.loads(Path("/etc/virtualglove/launcher.json").read_text())
+    registry = json.loads(Path(config.get("registry", "/etc/virtualglove/games.json")).read_text())["games"]
     results = []
     for home in Path("/home").iterdir():
         directory = home / "RetroPie/roms/nes"
@@ -408,11 +582,11 @@ def configure_games(confirm):
         if user_name:
             account = pwd.getpwnam(user_name)
             port = Path(account.pw_dir) / "RetroPie/roms/ports/VirtualGlove Calibration Test.sh"
-            write_file(port, '#!/bin/sh\nexec /opt/powerglove/bin/powerglove-dot\n', 0o755)
+            write_file(port, '#!/bin/sh\nexec /opt/virtualglove/bin/virtualglove-dot\n', 0o755)
             os.chown(str(port), account.pw_uid, account.pw_gid)
             print("PASS  VirtualGlove Calibration Test is available in Ports.")
         else:
-            print("ACTION  Add /opt/powerglove/bin/powerglove-dot to the intended user's Ports menu.")
+            print("ACTION  Add /opt/virtualglove/bin/virtualglove-dot to the intended user's Ports menu.")
 
     zap = runpy.run_path(str(SOURCE / "scripts/configure-bsb-zap.py"))
     for rom, profile in roms:
@@ -492,25 +666,25 @@ def check_inventory(report, root):
 
 def check_retropie(report):
     """Inspect boot configuration, receiver prerequisites and launch integration."""
-    check_inventory(report, Path("/opt/powerglove-src"))
+    check_inventory(report, Path("/opt/virtualglove-src"))
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
     report.command("Avahi running", ["systemctl", "is-active", "--quiet", "avahi-daemon"])
     report.command("mDNS hostname dependency installed", ["dpkg", "--verify", "libnss-mdns"])
     report.check("uinput device exists", Path("/dev/uinput").exists())
     report.command("Receiver Python dependency", ["python3", "-c", "import evdev"])
-    report.command("Delayed boot timer enabled", ["systemctl", "is-enabled", "--quiet", "powerglove-receiver.timer"])
-    report.command("Delayed boot timer active", ["systemctl", "is-active", "--quiet", "powerglove-receiver.timer"])
-    token = Path("/etc/powerglove/token")
+    report.command("Delayed boot timer enabled", ["systemctl", "is-enabled", "--quiet", "virtualglove-receiver.timer"])
+    report.command("Delayed boot timer active", ["systemctl", "is-active", "--quiet", "virtualglove-receiver.timer"])
+    token = Path("/etc/virtualglove/token")
     paired = token.exists() and 16 <= len(token.read_text().strip()) <= 256
     report.check("Local pairing token configured (pair on the Connection page if missing)", paired, pending=True)
     if paired:
-        report.command("Receiver service running", ["systemctl", "is-active", "--quiet", "powerglove-receiver.service"])
-        report.command("Games service running", ["systemctl", "is-active", "--quiet", "powerglove-games.service"])
+        report.command("Receiver service running", ["systemctl", "is-active", "--quiet", "virtualglove-receiver.service"])
+        report.command("Games service running", ["systemctl", "is-active", "--quiet", "virtualglove-games.service"])
     for action in ("start", "end"):
         path = Path("/opt/retropie/configs/all/runcommand-on" + action + ".sh")
         text = path.read_text() if path.exists() else ""
-        report.check(action + " launch hook installed", "runcommand-on" + action + "-powerglove.sh" in text)
-    launcher = Path("/etc/powerglove/launcher.json")
+        report.check(action + " launch hook installed", "runcommand-on" + action + "-virtualglove.sh" in text)
+    launcher = Path("/etc/virtualglove/launcher.json")
     try:
         config = json.loads(launcher.read_text())
         socket.getaddrinfo(config["uno_q"], 55356)
@@ -560,11 +734,11 @@ def check_unoq(report):
     report.check("Container website uses the UNO Q hostname",
                  identity.is_file() and
                  identity.read_text().strip().lower() == socket.gethostname().split(".", 1)[0].lower())
-    report.command("Shutdown helper enabled", ["systemctl", "is-enabled", "--quiet", "powerglove-system-shutdown.path"])
-    report.command("Shutdown helper running", ["systemctl", "is-active", "--quiet", "powerglove-system-shutdown.path"])
+    report.command("Shutdown helper enabled", ["systemctl", "is-enabled", "--quiet", "virtualglove-system-shutdown.path"])
+    report.command("Shutdown helper running", ["systemctl", "is-active", "--quiet", "virtualglove-system-shutdown.path"])
     report.check("Shutdown readiness marker", (SOURCE / "data/.shutdown-enabled").exists())
-    report.command("Wi-Fi sampler enabled", ["systemctl", "is-enabled", "--quiet", "powerglove-wifi-status.timer"])
-    report.command("Wi-Fi sampler running", ["systemctl", "is-active", "--quiet", "powerglove-wifi-status.timer"])
+    report.command("Wi-Fi sampler enabled", ["systemctl", "is-enabled", "--quiet", "virtualglove-wifi-status.timer"])
+    report.command("Wi-Fi sampler running", ["systemctl", "is-active", "--quiet", "virtualglove-wifi-status.timer"])
     try:
         args = ["arduino-app-cli", "properties", "get", "default", "--format", "json"]
         if os.geteuid() == 0:
@@ -575,8 +749,8 @@ def check_unoq(report):
         report.check("VirtualGlove is the startup app", False)
 
     report.command("Arduino user starts at boot", ["test", "-f", "/var/lib/systemd/linger/arduino"])
-    report.command("Early-start helper enabled", user_systemctl("is-enabled", "--quiet", "powerglove-early-start.service"))
-    report.check("Early-start helper installed", Path("/home/arduino/.local/lib/powerglove/uno-q-early-start.py").is_file())
+    report.command("Early-start helper enabled", user_systemctl("is-enabled", "--quiet", "virtualglove-early-start.service"))
+    report.check("Early-start helper installed", Path("/home/arduino/.local/lib/virtualglove/uno-q-early-start.py").is_file())
     tls = SOURCE / "data/tls"
     authority = tls / "controller-ca-cert.pem"
     authority_key = tls / "controller-ca-key.pem"
@@ -628,9 +802,13 @@ def main():
     parser.add_argument("--peer", type=valid_host, help="Other machine hostname; required for a new RetroPie installation")
     parser.add_argument("--check", action="store_true", help="Read-only checks; install nothing")
     parser.add_argument("--wifi-status-only", action="store_true", help="Install/update only the UNO Q Wi-Fi status sampler")
+    parser.add_argument("--runtime-names-only", action="store_true",
+                        help="Migrate only UNO Q host helpers to virtualglove names")
     args = parser.parse_args()
-    if args.wifi_status_only and (args.machine != "uno-q" or args.check):
-        parser.error("--wifi-status-only requires uno-q without --check")
+    if (args.wifi_status_only or args.runtime_names_only) and (args.machine != "uno-q" or args.check):
+        parser.error("helper-only options require uno-q without --check")
+    if args.wifi_status_only and args.runtime_names_only:
+        parser.error("choose only one helper-only option")
     if sys.platform != "linux" or (not args.check and os.geteuid() != 0):
         parser.error("Run installation on the target Linux machine with sudo")
     try:
@@ -638,10 +816,14 @@ def main():
             install_wifi_status()
             print("Wi-Fi status sampler installed; backups: " + str(BACKUPS))
             return 0
+        if args.runtime_names_only:
+            install_unoq_runtime_names()
+            print("VirtualGlove host helpers installed; backups: " + str(BACKUPS))
+            return 0
         if not args.check:
             required = ("src/powerglove_vision/receiver.py", "config/games.json",
-                        "retropie/powerglove-receiver.timer") if args.machine == "retropie" else (
-                        "scripts/configure-uno-q-mdns.py", "uno-q/powerglove-system-shutdown.path")
+                        "retropie/virtualglove-receiver.timer") if args.machine == "retropie" else (
+                        "scripts/configure-uno-q-mdns.py", "uno-q/virtualglove-system-shutdown.path")
             for relative in required:
                 if not (SOURCE / relative).is_file():
                     raise ValueError("Incomplete project download: missing " + relative)

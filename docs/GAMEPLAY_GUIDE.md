@@ -673,7 +673,7 @@ one extra action.
 
 Choose the current profile on Dashboard; choose the saved startup profile on
 Setup. Automatic selection matches the complete ROM filename, including its
-extension but excluding its folder path, against `/etc/powerglove/games.json`
+extension but excluding its folder path, against `/etc/virtualglove/games.json`
 on RetroPie. Matching ignores letter case.
 
 The launch hook sends an authenticated profile request. The VirtualGlove Controller releases held

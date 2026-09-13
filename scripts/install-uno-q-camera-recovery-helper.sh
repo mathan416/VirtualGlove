@@ -16,10 +16,10 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly UNO_TARGET="${1:-${UNO_Q_SSH_TARGET:-arduino@arduiain.local}}"
 readonly REMOTE_APP_DIR="/home/arduino/ArduinoApps/virtualglove"
-readonly REMOTE_PATH_UNIT="/tmp/powerglove-camera-recovery.path"
-readonly REMOTE_SERVICE_UNIT="/tmp/powerglove-camera-recovery.service"
-readonly REMOTE_HELPER="/tmp/powerglove-camera-recovery"
-readonly REMOTE_TMPFILES_CONFIG="/tmp/powerglove-camera-recovery.conf"
+readonly REMOTE_PATH_UNIT="/tmp/virtualglove-camera-recovery.path"
+readonly REMOTE_SERVICE_UNIT="/tmp/virtualglove-camera-recovery.service"
+readonly REMOTE_HELPER="/tmp/virtualglove-camera-recovery"
+readonly REMOTE_TMPFILES_CONFIG="/tmp/virtualglove-camera-recovery.conf"
 SSH_OPTIONS=()
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -44,25 +44,25 @@ if [[ -n "${UNO_Q_SSH_IDENTITY:-}" ]]; then
   SSH_OPTIONS=(-i "${UNO_Q_SSH_IDENTITY}")
 fi
 
-scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/powerglove-camera-recovery.path" "${UNO_TARGET}:${REMOTE_PATH_UNIT}"
-scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/powerglove-camera-recovery.service" "${UNO_TARGET}:${REMOTE_SERVICE_UNIT}"
-scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/powerglove-camera-recovery.py" "${UNO_TARGET}:${REMOTE_HELPER}"
-scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/powerglove-camera-recovery.conf" "${UNO_TARGET}:${REMOTE_TMPFILES_CONFIG}"
+scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/virtualglove-camera-recovery.path" "${UNO_TARGET}:${REMOTE_PATH_UNIT}"
+scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/virtualglove-camera-recovery.service" "${UNO_TARGET}:${REMOTE_SERVICE_UNIT}"
+scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/virtualglove-camera-recovery.py" "${UNO_TARGET}:${REMOTE_HELPER}"
+scp "${SSH_OPTIONS[@]}" "${PROJECT_DIR}/uno-q/virtualglove-camera-recovery.conf" "${UNO_TARGET}:${REMOTE_TMPFILES_CONFIG}"
 
 ssh -t "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "sudo apt-get update && \
    sudo apt-get install -y uhubctl && \
-   sudo install -m 0644 '${REMOTE_PATH_UNIT}' /etc/systemd/system/powerglove-camera-recovery.path && \
-   sudo install -m 0644 '${REMOTE_SERVICE_UNIT}' /etc/systemd/system/powerglove-camera-recovery.service && \
-   sudo install -m 0755 '${REMOTE_HELPER}' /usr/local/libexec/powerglove-camera-recovery && \
-   sudo install -m 0644 '${REMOTE_TMPFILES_CONFIG}' /etc/tmpfiles.d/powerglove-camera-recovery.conf && \
-   sudo /usr/local/libexec/powerglove-camera-recovery --configure-if-present && \
+   sudo install -m 0644 '${REMOTE_PATH_UNIT}' /etc/systemd/system/virtualglove-camera-recovery.path && \
+   sudo install -m 0644 '${REMOTE_SERVICE_UNIT}' /etc/systemd/system/virtualglove-camera-recovery.service && \
+   sudo install -m 0755 '${REMOTE_HELPER}' /usr/local/libexec/virtualglove-camera-recovery && \
+   sudo install -m 0644 '${REMOTE_TMPFILES_CONFIG}' /etc/tmpfiles.d/virtualglove-camera-recovery.conf && \
+   sudo /usr/local/libexec/virtualglove-camera-recovery --configure-if-present && \
    sudo systemctl daemon-reload && \
-   sudo systemctl enable --now powerglove-camera-recovery.path && \
-   sudo systemd-tmpfiles --create /etc/tmpfiles.d/powerglove-camera-recovery.conf && \
+   sudo systemctl enable --now virtualglove-camera-recovery.path && \
+   sudo systemd-tmpfiles --create /etc/tmpfiles.d/virtualglove-camera-recovery.conf && \
    rm -f '${REMOTE_PATH_UNIT}' '${REMOTE_SERVICE_UNIT}' '${REMOTE_HELPER}' '${REMOTE_TMPFILES_CONFIG}' && \
    mkdir -p '${REMOTE_APP_DIR}/data' && touch '${REMOTE_APP_DIR}/data/.camera-recovery-enabled' && \
-   systemctl is-enabled powerglove-camera-recovery.path && \
-   systemctl is-active powerglove-camera-recovery.path"
+   systemctl is-enabled virtualglove-camera-recovery.path && \
+   systemctl is-active virtualglove-camera-recovery.path"
 
 echo "UNO Q camera-recovery helper installed."

@@ -226,7 +226,7 @@ def main():
     parser.add_argument("--acknowledge-exclusive-camera", action="store_true", required=True)
     args = parser.parse_args()
     report = {
-        "format": "powerglove-full-vision-exposure-soak/1",
+        "format": "virtualglove-full-vision-exposure-soak/1",
         "stores_images": False, "controller_output": False,
         "exposure": args.exposure, "gain": args.gain, "cycles": [],
     }

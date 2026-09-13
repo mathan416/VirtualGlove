@@ -24,7 +24,7 @@ from pathlib import Path
 MAGIC = b"PGV1"
 VERSION = 1
 RECORD_SIZE = 64
-DEFAULT_PATH = Path("/run/powerglove/native-state")
+DEFAULT_PATH = Path("/run/virtualglove/native-state")
 _RECORD = struct.Struct("<4sHHIIQhhhh7B21xI")
 
 FLAG_DETECTED = 1 << 0
