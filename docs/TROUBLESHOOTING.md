@@ -194,7 +194,7 @@ edges. Historical bounded-curve replay is an engineering tool, not a Dashboard
 setting. If the Robo-Glove still jumps after
 the hand leaves and re-enters the picture, confirm that the Controller and
 RetroPie are on the same current release before changing reach or smoothing.
-Version 0.4.1 retains the guard for one contradictory or unusually distant non-forward
+Version 0.4.2 retains the guard for one contradictory or unusually distant non-forward
 reacquisition for one fresh result while allowing strongly aligned forward
 movement immediately.
 
