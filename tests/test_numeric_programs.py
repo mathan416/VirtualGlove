@@ -13,7 +13,9 @@
 import math
 import unittest
 
-from powerglove_vision.gesture import GestureEngine, SUPPORTED_PROFILES, rapid_fire_defaults
+from powerglove_vision.gesture import (
+    GestureConfig, GestureEngine, SUPPORTED_PROFILES, rapid_fire_defaults,
+)
 from tests.test_gesture import calibrated_engine, hand
 
 
@@ -41,8 +43,11 @@ class NumericProgramTests(unittest.TestCase):
         self.assertEqual(rapid_fire_defaults("off"), (False, False))
 
     def test_program_1_turns_opposite_and_respects_rapid_override(self):
-        engine = GestureEngine("program_1", calibration=calibrated_engine().calibration,
-                               rapid_a=False, rapid_b=False)
+        engine = GestureEngine(
+            "program_1", GestureConfig(joystick_deadzone=.28),
+            calibration=calibrated_engine().calibration,
+            rapid_a=False, rapid_b=False,
+        )
         engine.update(hand(.10, palm_x=.8))
         state = engine.update(hand(.20, middle_curl=.8, ring_curl=.8, pinky_curl=.8))
         self.assertTrue(state.dpad["left"])

@@ -35,9 +35,7 @@ import urllib.request
 import zipfile
 
 APP = Path("/home/arduino/ArduinoApps/virtualglove")
-LEGACY_APP = Path("/home/arduino/ArduinoApps/powerglove-vision")
 RETROPIE_LAUNCHER = Path("/etc/virtualglove/launcher.json")
-LEGACY_RETROPIE_LAUNCHER = Path("/etc/powerglove/launcher.json")
 LEGACY_RUNTIME_MEMBERS = {
     "retropie/powerglove-receiver.service",
     "retropie/powerglove-receiver.timer",
@@ -56,10 +54,9 @@ LEGACY_RUNTIME_MEMBERS = {
 }
 
 
-def retropie_launcher_exists(current=RETROPIE_LAUNCHER,
-                              legacy=LEGACY_RETROPIE_LAUNCHER):
-    """Recognize both current installs and upgradeable pre-0.4.1 launchers."""
-    return current.is_file() or legacy.is_file()
+def retropie_launcher_exists(current=RETROPIE_LAUNCHER):
+    """Recognize an existing supported VirtualGlove installation."""
+    return current.is_file()
 
 
 def controller_addresses():
@@ -132,7 +129,7 @@ def unpack(archive, destination, machine, version):
                     or str(path) != item.filename.rstrip("/")
                     or (stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR))):
                 raise ValueError("Unsafe or duplicate package member: " + item.filename)
-            if set(path.parts[1:]) & {"data", ".cache", ".git", ".venv", "__pycache__"} or path.name == "cheatsheet.md" or any(part.startswith((".virtualglove-install", ".powerglove-install")) for part in path.parts):
+            if set(path.parts[1:]) & {"data", ".cache", ".git", ".venv", "__pycache__"} or path.name == "cheatsheet.md" or any(part.startswith(".virtualglove-install") for part in path.parts):
                 raise ValueError("Package contains private or generated files")
             if str(PurePosixPath(*path.parts[1:])) in LEGACY_RUNTIME_MEMBERS:
                 raise ValueError("Package contains a legacy PowerGlove runtime file: " + item.filename)
@@ -336,15 +333,14 @@ def preflight(machine):
         versions = re.findall(r"(?:CLI version|daemon version:)\s+([0-9.]+)", result, re.IGNORECASE)
         if versions != ["0.13.0", "0.13.0"]:
             raise ValueError("This release is validated with App Lab CLI 0.13.0; consult its compatibility guide")
-        if any((directory / "data/shutdown-request").exists()
-               for directory in (APP, LEGACY_APP)):
+        if (APP / "data/shutdown-request").exists():
             raise ValueError("Pending shutdown request; resolve it before installation")
         try:
             with urllib.request.urlopen("http://127.0.0.1:8088/status", timeout=3) as response:
                 status = json.load(response)
         except OSError:
             status = None
-        if (APP.exists() or LEGACY_APP.exists()) and status is None:
+        if APP.exists() and status is None:
             if not confirm("Cannot determine application activity. Continue with an app restart?"):
                 raise ValueError("No changes made; could not confirm safe restart")
         elif status and (status.get("controller_enabled") or status.get("practice_mode") or
@@ -365,7 +361,7 @@ def preflight(machine):
 def stage_unoq(source, setup):
     """Back up managed app files and update them without touching data or local documents."""
     user = pwd.getpwnam("arduino")
-    for directory in (APP, LEGACY_APP, APP.parent):
+    for directory in (APP, APP.parent):
         if directory.is_symlink():
             raise ValueError("Refusing symbolic application directory")
     files = [path for path in source.rglob("*") if path.is_file()]
@@ -373,31 +369,16 @@ def stage_unoq(source, setup):
         target = APP / path.relative_to(source)
         if any(parent.is_symlink() for parent in [target] + list(target.parents)):
             raise ValueError("Refusing symbolic installation path: " + str(target))
-    legacy = LEGACY_APP if LEGACY_APP.is_dir() and LEGACY_APP != APP else None
-    cache = (APP if APP.is_dir() else legacy or APP) / ".cache/sketch"
+    cache = APP / ".cache/sketch"
     if cache.is_dir() and not (setup.BACKUPS / "previous-sketch-cache").exists():
         shutil.copytree(str(cache), str(setup.BACKUPS / "previous-sketch-cache"), symlinks=True)
-    # Stop any installed app before staging. Clean installs use only the
-    # virtualglove directory, so App Lab never generates a retired project.
-    for installed in (APP, legacy):
-        if installed is None:
-            continue
-        compose = installed / ".cache/app-compose.yaml"
-        if compose.exists():
-            setup.run("runuser", "-u", "arduino", "--", "arduino-app-cli",
-                      "app", "stop", installed)
-            projects = ("virtualglove", "powerglove-vision") if installed == legacy else ("virtualglove",)
-            for project in projects:
-                setup.run("env", "APP_HOME=" + str(installed), "docker", "compose",
-                          "-p", project, "-f", compose, "down", "--remove-orphans")
+    compose = APP / ".cache/app-compose.yaml"
+    if compose.exists():
+        setup.run("runuser", "-u", "arduino", "--", "arduino-app-cli",
+                  "app", "stop", APP)
+        setup.run("env", "APP_HOME=" + str(APP), "docker", "compose",
+                  "-p", "virtualglove", "-f", compose, "down", "--remove-orphans")
     APP.mkdir(parents=True, exist_ok=True)
-    # Preserve private settings during the one-time directory migration without
-    # ever launching the retired application again.
-    if legacy is not None and not (APP / "data").exists() and (legacy / "data").is_dir():
-        legacy_data = legacy / "data"
-        if any(path.is_symlink() for path in [legacy_data] + list(legacy_data.rglob("*"))):
-            raise ValueError("Refusing symbolic legacy application data")
-        shutil.copytree(str(legacy_data), str(APP / "data"))
     setup.installation_manifest()["apply"](source, APP, setup.BACKUPS / "application-payload")
     sketch_directory = APP / "sketch"
     if sketch_directory.is_dir():
@@ -421,19 +402,6 @@ def stage_unoq(source, setup):
     setup.run("runuser", "-u", "arduino", "--", "arduino-app-cli", "app", "start", APP)
 
 
-def retire_legacy_unoq_app(setup):
-    """Move a successfully migrated legacy app into the recoverable installer backup."""
-    if not LEGACY_APP.exists() or LEGACY_APP == APP:
-        return
-    if LEGACY_APP.is_symlink() or not LEGACY_APP.is_dir():
-        raise ValueError("Refusing unexpected legacy application path")
-    destination = setup.BACKUPS / "retired-controller-application"
-    if destination.exists():
-        raise ValueError("Legacy application recovery backup already exists")
-    shutil.move(str(LEGACY_APP), str(destination))
-    print("PASS  Previous Controller application migrated to VirtualGlove")
-
-
 def main(argv=None):
     """Install validated release files, complete host setup, then report next steps."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -447,8 +415,7 @@ def main(argv=None):
     try:
         if args.machine != "uno-q" and args.hostname is not None:
             raise ValueError("--hostname applies only to the VirtualGlove Controller installer")
-        existing_install = ((APP.exists() or LEGACY_APP.exists())
-                            if args.machine == "uno-q" else False)
+        existing_install = APP.exists() if args.machine == "uno-q" else False
         selected_hostname = (select_controller_hostname(args.hostname, existing_install)
                              if args.machine == "uno-q" else None)
         preflight(args.machine)
@@ -475,7 +442,6 @@ def main(argv=None):
                 stage_unoq(source, setup)
                 setup.install_unoq(args.peer)
                 setup.wait_unoq()
-                retire_legacy_unoq_app(setup)
             else:
                 setup.install_retropie(args.peer)
                 setup.configure_games(confirm)

@@ -72,7 +72,7 @@ fi
 readonly DEPLOY_BACKUPS_KEEP
 readonly UNO_HOST="${UNO_TARGET#*@}"
 readonly REMOTE_COMPOSE="${REMOTE_APP_DIR}/.cache/app-compose.yaml"
-readonly REMOTE_ARCHIVE="/tmp/virtualglove-deploy.tar"
+readonly REMOTE_ARCHIVE="/tmp/virtualglove-deploy.tar.gz"
 readonly LOCAL_ARCHIVE="$(mktemp)"
 readonly LOCAL_METADATA_DIR="$(mktemp -d)"
 SSH_OPTIONS=(
@@ -113,14 +113,10 @@ readonly UNO_CONNECTION UNO_HEALTH_HOST UNO_HEALTH_AUTHORITY
 echo "Uploading VirtualGlove over Wi-Fi..."
 python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" \
   --include-engineering --precompiled-matrix
-COPYFILE_DISABLE=1 tar -C "${LOCAL_METADATA_DIR}" -cf "${LOCAL_ARCHIVE}" .
+COPYFILE_DISABLE=1 tar -C "${LOCAL_METADATA_DIR}" -czf "${LOCAL_ARCHIVE}" .
 scp "${SSH_OPTIONS[@]}" "${LOCAL_ARCHIVE}" "${UNO_TARGET}:${REMOTE_ARCHIVE}"
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "set -eu; legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test ! -d '${REMOTE_APP_DIR}/data' && test -d \"\$legacy/data\"; then mkdir -p '${REMOTE_APP_DIR}'; cp -a \"\$legacy/data\" '${REMOTE_APP_DIR}/data'; fi; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
-
-echo "Removing legacy Controller containers..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test -f \"\$legacy/.cache/app-compose.yaml\"; then APP_HOME=\"\$legacy\" docker compose -p virtualglove -f \"\$legacy/.cache/app-compose.yaml\" down --remove-orphans; APP_HOME=\"\$legacy\" docker compose -p powerglove-vision -f \"\$legacy/.cache/app-compose.yaml\" down --remove-orphans; fi"
+  "set -eu; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xzf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
 
 echo "Preparing the VirtualGlove App Lab runtime..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -201,16 +197,19 @@ if [[ "${GAMEPLAY_MARKDOWN}" != *"Take VirtualGlove off-script"* ]]; then
 fi
 GAMEPLAY_HTML="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
   "http://${UNO_HEALTH_AUTHORITY}:8088/help/gameplay")"
-PROGRAMS_HTML="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/help/programs")"
 for EXPECTED_IMAGE in v2/v-sign.png v2/thumbs-up.png v2/curl-index.png v2/wrist-roll-left.png v2/push-toward-camera.png v2/pixel-pal-ready.png actions/finger-curl.png actions/close-all-fingers.png actions/wrist-roll.png; do
   if [[ "${GAMEPLAY_HTML}" != *"/help-assets/gestures/${EXPECTED_IMAGE}"* ]]; then
     echo "error: gameplay Help is missing ${EXPECTED_IMAGE}" >&2
     exit 1
   fi
 done
-if [[ "${GAMEPLAY_HTML}" != *"<img loading=lazy"* || "${PROGRAMS_HTML}" != *"<img loading=lazy"* ]]; then
+if [[ "${GAMEPLAY_HTML}" != *"<img loading=lazy"* ]]; then
   echo "error: Help table illustrations were not rendered" >&2
+  exit 1
+fi
+if curl --location --max-redirs 0 --fail --silent --show-error --max-time 5 \
+    "http://${UNO_HEALTH_AUTHORITY}:8088/help/programs" >/dev/null 2>&1; then
+  echo "error: retired Help alias /help/programs is still available" >&2
   exit 1
 fi
 curl --insecure --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
@@ -243,15 +242,6 @@ for EXPECTED_CONTAINER in virtualglove-main-1 virtualglove-profile-relay-1 virtu
     exit 1
   fi
 done
-if [[ "${CONTAINERS}" == *"powerglove-vision-"* ]]; then
-  echo "error: a legacy powerglove-vision container is still running" >&2
-  exit 1
-fi
-
-# Retire the old directory only after the new app and every health check pass.
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "legacy='/home/arduino/ArduinoApps/powerglove-vision'; if test -d \"\$legacy\"; then destination=\"/var/backups/virtualglove/retired-controller-application-\$(date +%Y%m%d-%H%M%S)-\$\$\"; sudo mkdir -p /var/backups/virtualglove; sudo mv \"\$legacy\" \"\$destination\"; echo 'Previous Controller application migrated to VirtualGlove'; fi"
-
 echo "Deployment complete."
 echo "  Play:   http://${UNO_HOST}:8088/play"
 echo "  Learn:  http://${UNO_HOST}:8088/learn"

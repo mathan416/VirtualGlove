@@ -66,7 +66,7 @@ async def capture():
                     return await request.fulfill(json=dict(sequence=sequence, vision_state='active', practice_mode=True,
                         worker_running=True, camera_available=True, detected=False, calibrated=True,
                         active_profile='super_glove_ball', configured_profile='super_glove_ball', profile_source='Dashboard',
-                        native_xy_mode='latest', native_xy_source='mediapipe',
+                        native_xy_source='mediapipe',
                         connection_configured=True, controller_enabled=False, version='0.4.0', build=identity,
                         camera_fps=30.0, camera_fps_requested='auto',
                         capture_backend='opencv', capture_backend_requested='opencv',

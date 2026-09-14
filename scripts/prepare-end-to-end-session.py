@@ -36,7 +36,7 @@ STATUS_FIELDS = (
     "camera_driver_timestamp", "tracker_backend", "tracker_backend_label",
     "tracker_graph", "inference_threads", "tracking_confidence", "tracking_roi_scale",
     "inference_hz",
-    "native_xy_source", "native_xy_mode", "controller_enabled",
+    "native_xy_source", "controller_enabled",
     "reach", "app_started_at",
 )
 
@@ -118,7 +118,7 @@ if role == "controller":
                "camera_height", "camera_fps", "camera_buffers", "recognizer_backend",
                "tracker_graph", "inference_threads", "tracking_confidence",
                "tracking_roi_scale",
-               "native_xy_mode")
+               )
     result["device_settings"] = {key: source.get(key) for key in allowed if key in source}
 else:
     core = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")
@@ -234,8 +234,6 @@ def evaluate(status: dict, controller: dict, retropie: dict, source: dict,
     graph = status.get("tracker_graph") or settings.get("tracker_graph", "full")
     add("MediaPipe Hands is selected", backend == "legacy")
     add("complete MediaPipe graph is selected", graph == "full")
-    native_xy_mode = status.get("native_xy_mode") or settings.get("native_xy_mode")
-    add("Latest Coordinate is selected", native_xy_mode == "latest")
     width = status.get("camera_width") or settings.get("camera_width", 640)
     height = status.get("camera_height") or settings.get("camera_height", 480)
     camera_format = status.get("camera_format") or settings.get("camera_format", "MJPG")

@@ -119,7 +119,7 @@ class ReachSession:
             # The persisted stop may still be crossing the supervisor boundary.
             self.check(session, dict(status, controller_enabled=False))
             if (not status.get('controller_enabled') and status.get('practice_mode')
-                    and status.get('vision_state') == 'active' and not status.get('motion_tracking')):
+                    and status.get('vision_state') == 'active'):
                 return
             self.sleep(.1)
         raise ValueError('Camera practice did not become ready; check Dashboard.')
@@ -157,7 +157,7 @@ class ReachSession:
             self.renew(session)
             status = self.get()
             self.check(session, status)
-            if not status.get('practice_mode') or status.get('motion_tracking'):
+            if not status.get('practice_mode'):
                 raise ValueError('Practice was interrupted; retry this pose.')
             identity = (status.get('timestamp'), status.get('capture_sequence'))
             if None not in identity and identity not in seen:

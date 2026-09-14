@@ -97,22 +97,12 @@ def rapid_fire_defaults(profile: str) -> tuple[bool, bool]:
 @dataclass(frozen=True)
 class GestureConfig:
     """Hold movement, curl, roll, depth, pulse, and tracking-loss thresholds."""
-    # Full-frame width and height of the centered joystick region. ``None`` keeps old
-    # profile files working by migrating their movement activation value.
-    joystick_deadzone: float | None = None
-    move_on: float = 0.28
-    move_off: float = 0.14
-    # Retained so older profile files remain loadable; native X/Y now use the
-    # calibrated center and camera boundaries instead of hand-width gain.
-    coordinate_gain: float = 0.35
+    # Full-frame width and height of the centered joystick region.
+    joystick_deadzone: float = 0.60
     coordinate_edge_margin: float = 0.08
     coordinate_smoothing_min: float = 0.70
     coordinate_smoothing_max: float = 1.00
     coordinate_motion_boost: float = 4.00
-    # Legacy experiment fields remain accepted so existing configuration files
-    # load cleanly. The bounded native speed curve does not extrapolate them.
-    motion_coordinate_boost: float | None = None
-    motion_coordinate_max: float | None = None
     # Native X/Y speed curve. Calibration noise is converted back to camera
     # units and multiplied by this value; the fixed floor covers legacy
     # calibrations that did not retain a useful jitter measurement.
@@ -159,7 +149,6 @@ class GestureConfig:
             value = self.thresholds[channel]
             return value["on"], value["off"]
         prefix = ("thumb" if channel == "thumb" else
-                  "move" if channel in ("left", "right", "up", "down") else
                   "roll" if channel.startswith("roll_") else
                   "push" if channel in ("push", "pull") else "curl")
         return getattr(self, prefix + "_on"), getattr(self, prefix + "_off")
@@ -169,8 +158,8 @@ class GestureConfig:
         return self.pair(finger)[0 if closed else 1] if finger in self.thresholds else default
 
     def chosen_joystick_deadzone(self) -> float:
-        """Return the scalar centre-box size, including legacy profile fallback."""
-        return self.move_on if self.joystick_deadzone is None else self.joystick_deadzone
+        """Return the configured scalar centre-box size."""
+        return self.joystick_deadzone
 
     def effective_joystick_deadzone(self, calibration: Calibration) -> float:
         """Return the frame fraction after the calibrated hand-size safety floor."""

@@ -30,28 +30,6 @@ from .gesture import SUPPORTED_PROFILES
 PRACTICE_LEASE_SECONDS = 6.0
 
 
-PAGE = b"""<!doctype html>
-<html><head><meta name=viewport content='width=device-width,initial-scale=1'>
-<title>VirtualGlove</title>
-<style>body{font:16px system-ui;background:#10131a;color:#eef;margin:24px auto;padding:0 18px;max-width:1000px}
-img{width:100%;background:#000;border-radius:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
-.card{background:#1b2130;padding:13px;border-radius:9px}.label{color:#9ca9c7;font-size:12px;text-transform:uppercase}.value{font-size:19px;margin-top:3px}
-button{font-size:18px;padding:12px 20px;border:0;border-radius:8px;background:#287cff;color:white}</style></head>
-<body><h1>VirtualGlove</h1><div class=grid>
-<div class=card><div class=label>Game</div><div class=value id=game>Waiting...</div></div>
-<div class=card><div class=label>Gesture profile</div><div class=value id=profile>Waiting...</div></div>
-<div class=card><div class=label>Hand tracking</div><div class=value id=tracking>Waiting...</div></div>
-<div class=card><div class=label>Selected by</div><div class=value id=source>Waiting...</div></div>
-</div><img src=/stream><p><button onclick="fetch('/calibrate',{method:'POST'})">Center hand</button></p>
-<script>
-const names={bad_street_brawler:'Bad Street Brawler',super_glove_ball:'Super Glove Ball',off:'Off'};
-function profileName(p){if(names[p])return names[p];if(p&&p.startsWith('program_'))return 'Program '+p.slice(-1).toUpperCase();return p||'Off'}
-setInterval(async()=>{try{const s=await(await fetch('/status')).json();
-game.textContent=s.game||'No game';profile.textContent=profileName(s.active_profile);
-tracking.textContent=s.calibrating?'Centering - hold still':(s.detected?'Ready and tracking':'Show your hand');
-source.textContent=s.profile_source||'Startup';}catch(e){}},250)</script></body></html>"""
-
-
 class SharedDebugState:
     """Share the latest frame, diagnostics, and one-shot operator requests across threads."""
     def __init__(self) -> None:
@@ -251,8 +229,6 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            elif self.path == "/":
-                self.send_response(200); self.send_header("Content-Type", "text/html"); self.end_headers(); self.wfile.write(PAGE)
             elif self.path.split("?", 1)[0] == "/status":
                 query = self.path.split("?", 1)[1] if "?" in self.path else ""
                 if "statistics=1" in query.split("&"):

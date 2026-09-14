@@ -172,7 +172,6 @@ class ControlStateTests(unittest.TestCase):
             "glove_color": "none", "camera": "auto", "camera_fps": "auto",
             "camera_backend": "opencv", "camera_exposure": "auto",
             "camera_buffers": 2, "tracking_confidence": 0.45,
-            "directional_search": False,
         }))
         self.state = ControlState(self.path)
 
@@ -189,6 +188,7 @@ class ControlStateTests(unittest.TestCase):
         fresh = loader()
         self.assertEqual(fresh["receiver"], "")
         self.assertEqual(fresh["profile"], "off")
+        self.state = ControlState(self.path)
         self.assertFalse(self.state.public_config()["connection_configured"])
         self.assertFalse(self.state.public_config()["paired"])
         with self.assertRaisesRegex(ValueError, "Connection"):
@@ -380,24 +380,65 @@ class ControlStateTests(unittest.TestCase):
         self.state.save_config(original)
         self.assertEqual(self.state.public_config()['matrix_attract'],'dim')
 
-    def test_legacy_directional_search_is_not_public_or_editable(self):
+    def test_retired_directional_search_setting_is_absent(self):
         self.assertNotIn("directional_search", self.state.public_config())
-        servers, state = start_control_server(self.path, "127.0.0.1", 0, 0)
-        try:
-            port = servers.servers[0].server_address[1]
-            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
-            connection.request(
-                "POST", "/api/directional-search", json.dumps({"enabled": False}),
-                {"Content-Type": "application/json",
-                 "X-VirtualGlove-Action": "directional-search"},
-            )
-            response = connection.getresponse()
-            response.read()
-            self.assertEqual(response.status, 404)
-            connection.close()
-            self.assertFalse(state.load_config()["directional_search"])
-        finally:
-            servers.shutdown()
+        self.assertNotIn("directional_search", self.state.load_config())
+
+    def test_status_uses_cached_config_without_camera_enumeration(self):
+        self.state.update_worker({"active_profile": "program_1"})
+        with mock.patch.object(self.state, "public_config",
+                               side_effect=AssertionError("slow config path")), \
+                mock.patch("powerglove_vision.control_server.camera_device_identity") as identity, \
+                mock.patch("powerglove_vision.control_server.camera_device_options") as options:
+            for _ in range(100):
+                status = self.state.snapshot()
+                self.assertEqual(status["configured_profile"], "bad_street_brawler")
+                self.assertTrue(status["connection_configured"])
+        identity.assert_not_called()
+        options.assert_not_called()
+
+    def test_cached_config_returns_defensive_copies(self):
+        first = self.state.load_config()
+        first["receiver"] = "changed.invalid"
+        self.assertEqual(
+            self.state.load_config()["receiver"], "retropieconsole.local"
+        )
+
+    def test_camera_inventory_cache_expires_and_config_save_invalidates_it(self):
+        identity = {"key": "camera:auto", "label": "Automatic"}
+        options = [{"value": "auto", "label": "Automatic"}]
+        with mock.patch(
+            "powerglove_vision.control_server.camera_device_identity",
+            return_value=identity,
+        ) as identify, mock.patch(
+            "powerglove_vision.control_server.camera_device_options",
+            return_value=options,
+        ) as enumerate_cameras, mock.patch(
+            "powerglove_vision.control_server.time.monotonic",
+            side_effect=[10.0, 12.0, 16.0, 17.0, 17.1],
+        ):
+            self.state.public_config()
+            self.state.public_config()
+            self.state.public_config()
+            self.state.save_config(self.state.load_config())
+            self.state.public_config()
+        self.assertEqual(identify.call_count, 3)
+        self.assertEqual(enumerate_cameras.call_count, 3)
+
+    def test_wifi_status_cache_expires_and_returns_defensive_copies(self):
+        report = {"state": "connected", "ssid": "Cabinet"}
+        with mock.patch(
+            "powerglove_vision.wifi_status.read_wifi_status",
+            return_value=report,
+        ) as read_status, mock.patch(
+            "powerglove_vision.control_server.time.monotonic",
+            side_effect=[10.0, 10.5, 11.1],
+        ):
+            first = self.state._cached_wifi_status()
+            first["state"] = "changed"
+            self.assertEqual(self.state._cached_wifi_status()["state"], "connected")
+            self.assertEqual(self.state._cached_wifi_status()["state"], "connected")
+        self.assertEqual(read_status.call_count, 2)
 
     def test_dashboard_uses_latest_native_xy_without_a_mode_control(self):
         self.assertNotIn(b"id=native-xy-mode", DASHBOARD)
@@ -566,7 +607,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertLess(overview, architecture)
         self.assertLess(architecture, configuration)
         self.assertLess(configuration, input_audit)
-        self.assertIsNotNone(help_document_page("field-guide"))
+        self.assertIsNone(help_document_page("field-guide"))
 
     def test_cabinet_reference_uses_request_address_and_public_config(self):
         body, title = cabinet_reference_content("10.0.2.105:8088", self.state.public_config())
@@ -605,10 +646,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"<summary>Reveal Pixel Pal's answer</summary>", page)
         self.assertIn(b"Pixel Pal&#x27;s answer: 28 six-digit hands.", page)
 
-        programs = help_document_page("programs")
-        self.assertIsNotNone(programs)
-        assert programs is not None
-        self.assertIn(b"Pixel Pal&#x27;s answer: 28 six-digit hands.", programs)
+        self.assertIsNone(help_document_page("programs"))
 
     def test_extra_digit_answer_is_collapsed_and_omitted_from_contents(self):
         rendered, headings = render_markdown(

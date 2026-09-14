@@ -182,6 +182,13 @@ game-specific instructions if a profile default changes later.
 
 ## How rapid fire behaves
 
+**Original-hardware source note:** Mattel's *Power Glove Instructions*, page 14,
+states, “Rapid Fire for both A and B turns on automatically when you turn on the
+glove.” The same page immediately warns that not every glove program has rapid
+fire and directs players to the individual program descriptions. VirtualGlove
+therefore does not reproduce that blanket power-on state: it uses the documented
+behavior of the active profile instead.
+
 Rapid A/B defaults come from the individual program descriptions rather than the
 manual's general power-on behavior. Program 7 defaults to Rapid A; Program B
 defaults to Rapid A for its pulsed flap; Program H defaults to both; and Bad
@@ -189,11 +196,23 @@ Street Brawler defaults to Rapid B for its pulsed thumb action. Every other
 profile starts with A and B held. Documented compound, pulsed-direction, and
 turbo actions keep their own timing independently of these switches.
 
+In VirtualGlove, **Rapid A** and **Rapid B** mean only that the corresponding NES
+button repeats while its gesture remains active. A profile's fast turns, pulsed
+steering, turbo movement, simultaneous-button combinations, and other compound
+actions are part of that profile and do not change when these two switches are
+changed.
+
 Program 12 therefore holds A for as long as the thumb stays curled, allowing
 variable-height jumps in Super Mario Bros. If Rapid A is explicitly enabled on
 Dashboard, it repeats 250 ms A holds separated by a short rapid-fire gap. A
 registered game's settings travel in its signed launch request, and Dashboard's
 **Rapid fire** status shows the values actually applied to the running game.
+
+**After an upgrade:** explicit Rapid A/B choices already saved for a game remain
+in force and override the corrected profile defaults. On Dashboard, choose
+**Use profile defaults** if you want that game to follow the source-accurate
+defaults again. This removes only its Rapid A/B override; it does not change the
+game's profile or any player settings.
 
 | Game | Program | Automatic exception | Why it matters while playing |
 | --- | --- | --- | --- |
@@ -1097,9 +1116,8 @@ During restore, choose whether to keep the complete saved sensitivity, including
 the defaults used when the backup was made, or just personal adjustments. Reuse
 calibration only with the same camera and playing position; otherwise set a fresh
 centre. Backups do not include credentials or Academy progress. New exports use
-the `virtualglove-hand-setup` format at version 4. Legacy version-2 and
-version-3 backups remain importable; version 2 migrates its largest directional
-activation value into the center box. Older version-1 sensitivity-only files are rejected.
+the `virtualglove-hand-setup` format at version 4. Older backup formats are
+rejected without changing the selected player.
 
 Choose each player in turn and select **Back up hand setup** to download a
 separate file named for that player, such as

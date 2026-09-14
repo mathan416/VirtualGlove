@@ -131,7 +131,6 @@ REQUIRED_FILES = {
     "VirtualGlove/docs/images/web/gestures/actions/menu-guard.png",
     "VirtualGlove/docs/images/gestures/actions/close-all-fingers.png",
     "VirtualGlove/docs/images/web/gestures/actions/close-all-fingers.png",
-    "VirtualGlove/src/powerglove_vision/web_features.py",
     "VirtualGlove/src/powerglove_vision/setup_web.py",
     "VirtualGlove/src/powerglove_vision/wifi_status.py",
     "VirtualGlove/uno-q/virtualglove-wifi-status.py",

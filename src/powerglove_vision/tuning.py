@@ -28,9 +28,7 @@ from .players import PlayerSettings, calibration_value
 from .gesture import load_calibration, save_calibration, GestureConfig, MENU_FINGERS, MENU_GUARD_FINGERS, finger_pose_feedback
 from .model import Calibration
 
-DIRECTION_CHANNELS = ("left", "right", "up", "down")
 CHANNELS = ("thumb", "index", "middle", "ring", "pinky", "roll_left", "roll_right", "push", "pull")
-LEGACY_CHANNELS = DIRECTION_CHANNELS + CHANNELS
 REACH_DIRECTIONS = ("left", "right", "up", "down")
 FINGERS = ("thumb", "index", "middle", "ring", "pinky")
 GESTURES = {key: {key: True} for key in CHANNELS}
@@ -84,24 +82,6 @@ def validate_overrides(values: dict) -> dict:
         if not 0 <= pair["off"] < pair["on"] <= maximum:
             raise ValueError("Release must be below activation; values must be between zero and " + str(maximum))
     return copy.deepcopy(values)
-
-
-def validate_legacy_overrides(values: dict) -> dict:
-    """Accept old directional pairs only while migrating stores and backups."""
-    if not isinstance(values, dict) or set(values) - set(LEGACY_CHANNELS):
-        raise ValueError("Unknown gesture threshold.")
-    active, directions = {}, {}
-    for key, value in values.items():
-        (directions if key in DIRECTION_CHANNELS else active)[key] = value
-    clean = validate_overrides(active)
-    for channel, pair in directions.items():
-        if (not isinstance(pair, dict) or set(pair) != {"on", "off"}
-                or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v)
-                       for v in pair.values())
-                or not 0 <= pair["off"] < pair["on"] <= 4.0):
-            raise ValueError("Legacy direction thresholds are invalid.")
-        clean[channel] = copy.deepcopy(pair)
-    return clean
 
 
 def measurements(observation, calibration):
@@ -189,8 +169,7 @@ class TuningManager:
     def __init__(self, path, clock=time.monotonic):
         self.path, self.clock = Path(path), clock
         self.lock = threading.RLock()
-        self.players = PlayerSettings(self.path, validate_overrides, CHANNELS,
-                                      validate_legacy_overrides, LEGACY_CHANNELS)
+        self.players = PlayerSettings(self.path, validate_overrides, CHANNELS)
         if not self.players.error and not self.players.active["needs_center"] and self.players.active["calibration"] is None:
             reference = load_calibration(self.path.with_name("calibration.json"))
             if reference is not None:
@@ -274,7 +253,7 @@ class TuningManager:
                 config_path = Path(__file__).resolve().parents[2] / "config/profiles.json"
                 import json
                 configured = json.loads(config_path.read_text()) if config_path.exists() else {}
-                base = GestureConfig(**configured.get("recognition", configured.get("program_defaults", {})))
+                base = GestureConfig(**configured.get("recognition", {}))
                 effective = replace(base, thresholds=copy.deepcopy(self.saved),
                                     joystick_deadzone=self.players.active["joystick_deadzone"])
                 backup.update(calibration=copy.deepcopy(reference),

@@ -59,11 +59,6 @@ HELP_GUIDES = (
     {'slug': 'changelog', 'title': 'Changelog', 'file': 'CHANGELOG.md', 'description': 'User-visible additions, fixes, security changes, and documentation updates.', 'group': 'Technical documentation'},
 )
 GUIDES_BY_SLUG = {str(guide["slug"]): guide for guide in HELP_GUIDES}
-LEGACY_SLUGS = {
-    "field-guide": "installation",
-    "programs": "gameplay",
-    "motion-smoothing": "engineering-journey",
-}
 SLUG_BY_FILE = {
     str(guide["file"]): str(guide["slug"])
     for guide in HELP_GUIDES
@@ -106,7 +101,7 @@ _TABLE_DIVIDER = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$"
 
 def guide_for_slug(slug: str) -> dict[str, Any] | None:
     """Return the fixed public guide definition for a URL slug."""
-    return GUIDES_BY_SLUG.get(LEGACY_SLUGS.get(slug, slug))
+    return GUIDES_BY_SLUG.get(slug)
 
 
 def guide_markdown(slug: str) -> bytes | None:
@@ -122,7 +117,7 @@ def guide_markdown(slug: str) -> bytes | None:
 
 def guide_pdf(slug: str) -> tuple[bytes, str] | None:
     """Read one allowlisted public PDF without exposing cabinet-specific files."""
-    filename = HELP_PDFS.get(LEGACY_SLUGS.get(slug, slug))
+    filename = HELP_PDFS.get(slug)
     if filename is None:
         return None
     try:

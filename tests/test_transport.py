@@ -22,7 +22,7 @@ from unittest.mock import Mock, patch
 from powerglove_vision.model import ControllerState
 from powerglove_vision.controller_protocol import decode_message, encode_message
 from powerglove_vision.transport import (
-    DISCOVERY_ADDRESS, UdpSender, decode_state, encode_state,
+    DISCOVERY_ADDRESS, UdpSender, validate_state,
 )
 
 
@@ -42,20 +42,20 @@ class TransportTests(unittest.TestCase):
         socket_factory.return_value.sendto.assert_not_called()
         self.assertIn("Connection", sender.last_error)
 
-    def test_round_trip(self):
+    def test_signed_state_validation(self):
         state = ControllerState.released(7, 1.5, "bad_street_brawler", True)
         state.buttons.update({"closed_hand": True, "index_point": True})
-        decoded = decode_state(encode_state(state, "secret", "session-one"))
+        decoded = validate_state(state.to_transport_dict())
         self.assertEqual(decoded["sequence"], 7)
-        self.assertEqual(decoded["token"], "secret")
-        self.assertEqual(decoded["protocol"], "virtualglove-vision/1")
-        self.assertEqual(decoded["session"], "session-one")
         self.assertTrue(decoded["buttons"]["closed_hand"])
         self.assertTrue(decoded["buttons"]["index_point"])
 
-    def test_wrong_protocol_rejected(self):
+    def test_transport_envelope_fields_are_rejected(self):
         with self.assertRaises(ValueError):
-            decode_state(b'{"protocol":"other"}')
+            validate_state(dict(
+                ControllerState.released(1, 1.0, "off").to_transport_dict(),
+                protocol="virtualglove-vision/1",
+            ))
 
     @patch("powerglove_vision.transport.socket.socket")
     def test_temporary_name_failure_does_not_stop_sender(self, socket_factory):

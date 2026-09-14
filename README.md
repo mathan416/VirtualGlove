@@ -154,6 +154,12 @@ Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission entries
 retain Mattel's documented off instructions. Programs 13 and 14 also support
 deliberate physical-controller and gestures-off play.
 
+Dashboard Rapid A/B switches control button repetition only; profile-owned fast
+turns, pulsed movement, turbo movement, and compound actions retain their own
+timing. Saved per-game overrides survive upgrades. Choose **Use profile
+defaults** while that game is running to remove its overrides and adopt the
+corrected defaults.
+
 The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
 numeric Program gesture, compound action, release rule, indexed game, exception,
 objective, and practice challenge. The

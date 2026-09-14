@@ -30,8 +30,8 @@ compose_spec.loader.exec_module(compose_config)
 
 
 class SetupTests(unittest.TestCase):
-    def test_compose_project_name_replaces_legacy_name_idempotently(self):
-        legacy = "name: powerglove-vision\nservices:\n  main:\n    image: example\n"
+    def test_compose_project_name_is_current_and_idempotent(self):
+        legacy = "name: another-project\nservices:\n  main:\n    image: example\n"
         expected = "name: virtualglove\nservices:\n  main:\n    image: example\n"
         self.assertEqual(compose_config.configure_project_name(legacy), expected)
         self.assertEqual(compose_config.configure_project_name(expected), expected)
@@ -57,8 +57,8 @@ class SetupTests(unittest.TestCase):
             "https://legacy.raspbian.org/raspbian")
         self.assertEqual(setup.retired_buster_sources([("repaired", repaired)]), [])
 
-    def test_retropie_source_preflight_fails_before_migration_or_writes(self):
-        """An obsolete package source must leave legacy configuration untouched."""
+    def test_retropie_source_preflight_fails_before_writes(self):
+        """An obsolete package source must leave current configuration untouched."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
 
@@ -74,15 +74,13 @@ class SetupTests(unittest.TestCase):
                         setup, "check_retropie_package_sources",
                         side_effect=ValueError("obsolete package source"),
                     ), \
-                    patch.object(setup, "migrate_directory") as migrate, \
                     patch.object(setup, "write_file") as write:
                 with self.assertRaisesRegex(ValueError, "obsolete package source"):
                     setup.install_retropie("virtualglove.local")
-            migrate.assert_not_called()
             write.assert_not_called()
 
-    def test_retropie_hook_preflight_fails_before_configuration_migration(self):
-        """An incompatible cabinet hook must not start the legacy migration."""
+    def test_retropie_hook_preflight_fails_before_configuration_writes(self):
+        """An incompatible cabinet hook must not change current configuration."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
 
@@ -98,11 +96,9 @@ class SetupTests(unittest.TestCase):
                 "#!/usr/bin/python3\nprint('custom cabinet hook')\n"
             )
             with patch.object(setup, "Path", side_effect=mapped), \
-                    patch.object(setup, "check_retropie_package_sources"), \
-                    patch.object(setup, "migrate_directory") as migrate:
+                    patch.object(setup, "check_retropie_package_sources"):
                 with self.assertRaisesRegex(ValueError, "not a supported shell script"):
                     setup.install_retropie("virtualglove.local")
-            migrate.assert_not_called()
 
     def test_unoq_startup_requires_matching_matrix_firmware(self):
         import io
@@ -143,24 +139,6 @@ class SetupTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     setup.write_file(link, "bad")
 
-    def test_private_legacy_settings_migrate_without_overwrite(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory).resolve()
-            legacy = root / "legacy"
-            current = root / "current"
-            legacy.mkdir()
-            (legacy / "token").write_text("paired-secret")
-            self.assertTrue(setup.migrate_directory(legacy, current))
-            self.assertEqual((current / "token").read_text(), "paired-secret")
-            (current / "token").write_text("different")
-            with self.assertRaisesRegex(ValueError, "differ"):
-                setup.migrate_directory(legacy, current)
-            legacy_file = root / "powerglove-camera.json"
-            current_file = root / "virtualglove-camera.json"
-            legacy_file.write_text('{"camera":"kept"}')
-            self.assertTrue(setup.migrate_file(legacy_file, current_file))
-            self.assertEqual(current_file.read_text(), '{"camera":"kept"}')
-
     def test_runtime_name_migration_refuses_pending_shutdown_request(self):
         with tempfile.TemporaryDirectory() as directory:
             app = Path(directory)
@@ -178,7 +156,7 @@ class SetupTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "pending shutdown request"):
                     setup.install_unoq_runtime_names()
 
-    def test_runtime_name_migration_stops_triggers_before_legacy_services(self):
+    def test_runtime_name_install_writes_only_current_services(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             app = root / "app"
@@ -200,15 +178,6 @@ class SetupTests(unittest.TestCase):
                     return root / str(path).lstrip("/")
                 return path
 
-            unit_root = mapped("/etc/systemd/system")
-            unit_root.mkdir(parents=True)
-            for name in (
-                "powerglove-system-shutdown.path",
-                "powerglove-system-shutdown.service",
-                "powerglove-camera-recovery.path",
-                "powerglove-camera-recovery.service",
-            ):
-                (unit_root / name).write_text(name)
             with patch.object(setup, "SOURCE", AppPath()), \
                     patch.object(setup, "Path", side_effect=mapped), \
                     patch.object(setup, "BACKUPS", root / "backups"), \
@@ -217,33 +186,16 @@ class SetupTests(unittest.TestCase):
                     patch.object(setup, "install_wifi_status"):
                 setup.install_unoq_runtime_names()
             calls = [item.args for item in command.call_args_list]
-            stop_paths = (
-                "systemctl", "stop",
-                "powerglove-system-shutdown.path",
-                "powerglove-camera-recovery.path",
-            )
-            stop_services = (
-                "systemctl", "stop",
-                "powerglove-system-shutdown.service",
-                "powerglove-camera-recovery.service",
-            )
-            disable = (
-                "systemctl", "disable",
-                "powerglove-system-shutdown.path",
-                "powerglove-system-shutdown.service",
-                "powerglove-camera-recovery.path",
-                "powerglove-camera-recovery.service",
-            )
-            self.assertLess(calls.index(stop_paths), calls.index(stop_services))
-            self.assertLess(calls.index(stop_services), calls.index(disable))
+            self.assertFalse(any("powerglove-" in str(part)
+                                 for call in calls for part in call))
+            self.assertTrue((mapped("/etc/systemd/system") /
+                             "virtualglove-system-shutdown.service").is_file())
 
-    def test_early_start_retires_legacy_trial_unit(self):
+    def test_early_start_installs_current_unit(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             home = root / "home"
-            trial = home / ".config/systemd/user/powerglove-early-start-trial.service"
-            trial.parent.mkdir(parents=True)
-            trial.write_text("legacy trial")
+            (home / ".config/systemd/user").mkdir(parents=True)
             account = SimpleNamespace(
                 pw_uid=os.getuid(), pw_gid=os.getgid(), pw_dir=str(home)
             )
@@ -252,15 +204,12 @@ class SetupTests(unittest.TestCase):
                     patch.object(setup, "run") as command, \
                     patch.object(setup.os, "chown"):
                 setup.install_early_start()
-                expected_disable = tuple(setup.user_systemctl(
-                    "disable", "--now", "powerglove-early-start-trial.service"
+                expected_enable = tuple(setup.user_systemctl(
+                    "enable", "virtualglove-early-start.service"
                 ))
-            self.assertFalse(trial.exists())
-            retired = list((root / "backups/retired").rglob(
-                "powerglove-early-start-trial.service"
-            ))
-            self.assertEqual(len(retired), 1)
-            command.assert_any_call(*expected_disable)
+            self.assertTrue((home / ".config/systemd/user" /
+                             "virtualglove-early-start.service").is_file())
+            command.assert_any_call(*expected_enable)
 
     def test_retropie_install_twice_preserves_existing_configuration(self):
         with tempfile.TemporaryDirectory() as directory:

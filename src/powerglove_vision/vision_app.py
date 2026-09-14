@@ -133,15 +133,15 @@ def _shutdown_on_signal(_signum: int, _frame: object) -> None:
     raise KeyboardInterrupt
 
 
-def _load_config(profile: str, path: Path | None) -> GestureConfig:
-    """Load shared recognition thresholds while accepting legacy profile files."""
+def _load_config(path: Path | None) -> GestureConfig:
+    """Load the current shared recognition thresholds."""
     if path is None:
         candidate = Path(__file__).resolve().parents[2] / "config" / "profiles.json"
         path = candidate if candidate.exists() else None
     if path is None:
         return GestureConfig()
     data = json.loads(path.read_text())
-    return GestureConfig(**data.get("recognition", data.get(profile, data.get("program_defaults", {}))))
+    return GestureConfig(**data.get("recognition", {}))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -215,18 +215,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--tracker-graph", choices=("full", "lean-image"), default="full",
         help="MediaPipe graph output set; lean-image is an output-paused experiment",
     )
-    # Retain the former command-line spelling for compatibility. Direction-aware
-    # search is now the standard MediaPipe behavior, including when this option
-    # is absent.
-    parser.add_argument(
-        "--directional-search", action="store_true", default=True,
-        help=argparse.SUPPRESS,
-    )
     parser.add_argument(
         "--preview-fps", type=float, default=5.0,
         help="maximum diagnostic camera-preview rate",
     )
-    parser.add_argument("--motion-tracking", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--glove-color", choices=("none", "white", "black"), default="none")
     parser.add_argument("--no-mirror", action="store_true")
     parser.add_argument("--config", type=Path)
@@ -703,7 +695,7 @@ def _prepare_vision(args):
             tracking_roi_scale=args.tracking_roi_scale,
             backend=args.tracker_backend,
             graph_mode=args.tracker_graph,
-            directional_search=args.directional_search,
+            directional_search=True,
             tracking_evidence=getattr(args, "tracking_evidence", False),
         )
         log_startup_stage("preparation total", preparation_started)
@@ -920,7 +912,9 @@ def _base_status(
 ) -> dict:
     """Build a neutral dashboard state for idle, starting, and error modes."""
     vision_profile = _effective_profile(profile, practice_mode)
-    status = ControllerState.released(0, time.monotonic(), vision_profile or "off").to_dict()
+    status = ControllerState.released(
+        0, time.monotonic(), vision_profile or "off"
+    ).to_status_dict()
     status.update({
         "calibrating": False,
         "game": game,
@@ -995,7 +989,6 @@ def main() -> int:
     detailed_status = {}
     detailed_status_at = 0.0
     last_detail_signature = None
-    last_motion_mode = None
     server = start_debug_server(shared, args.web_host, args.web_port)
     capture = tracker = engine = cv2 = None
     vision_job = _background_call(_preload_vision_libraries)
@@ -1273,7 +1266,7 @@ def main() -> int:
                 continue
 
             if engine is None:
-                engine_base_config = _load_config(vision_profile, args.config)
+                engine_base_config = _load_config(args.config)
                 engine = GestureEngine(
                     vision_profile, shared.tuning.configuration(engine_base_config),
                     calibration=retained_calibration,
@@ -1354,17 +1347,6 @@ def main() -> int:
                 engine, practice_mode, tuning_active, needs_center, current_emulator
             )
             result = tracker.process(frame, captured_frame.captured_at)
-            motion_mode = getattr(result, "motion_only", False)
-            if motion_mode != last_motion_mode:
-                performance = RollingPerformance()
-                performance_snapshot = {}
-                performance_snapshot_at = 0.0
-                inference_interval_ms = None
-                last_controller_signature = None
-                detailed_status = {}
-                detailed_status_at = 0.0
-                last_detail_signature = None
-                last_motion_mode = motion_mode
             tracking_finished_ns = time.monotonic_ns() if trace and trace.enabled else None
             if startup_timer is not None:
                 log_startup_stage("first inference", inference_started)
@@ -1401,15 +1383,11 @@ def main() -> int:
                     end_ns=int(inference_finished * 1e9),
                     sent=receiver_available, detected=state.detected, calibrated=state.calibrated,
                     native_xy_source=native_source,
-                    native_xy_mode="latest",
                     **_native_trace_fields(engine, result, native_xy_active),
-                    motion=result.motion_trace if motion_mode else None,
                     filtered_xy=[engine._filtered_palm_x, engine._filtered_palm_y] if state.detected else None,
                     smoothing={"minimum": engine.config.coordinate_smoothing_min,
                                "maximum": engine.config.coordinate_smoothing_max,
                                "motion_boost": engine.config.coordinate_motion_boost,
-                               "experimental_motion_boost": engine.config.motion_coordinate_boost,
-                               "experimental_motion_max": engine.config.motion_coordinate_max,
                                "native_curve": "bounded_speed",
                                "noise_multiplier": engine.config.motion_noise_multiplier,
                                "noise_floor": engine.config.motion_noise_floor,
@@ -1515,7 +1493,7 @@ def main() -> int:
                     else MatrixStatus.READY
                 )
             )
-            status = state.to_dict()
+            status = state.to_status_dict()
             if not (statistics_requested or practice_mode or tuning_active):
                 for optional in ("axes", "dpad", "buttons", "fingers", "events"):
                     status.pop(optional, None)
@@ -1538,7 +1516,6 @@ def main() -> int:
             status["tracking_confidence"] = tracker.tracking_confidence
             status["detection_confidence"] = tracker.detection_confidence
             status["tracking_roi_scale"] = tracker.tracking_roi_scale
-            status["directional_search"] = tracker.directional_search
             status["tracking_evidence"] = tracker.tracking_evidence
             status["tracker_graph"] = tracker.graph_mode
             status["palm_anchor"] = PALM_ANCHOR
@@ -1613,12 +1590,7 @@ def main() -> int:
             status["vision_state"] = "active"
             if statistics_requested or practice_mode or tuning_active:
                 status.update(detailed_status)
-            status["motion_tracking"] = False
             status["native_xy_source"] = native_source
-            status["native_xy_mode"] = "latest"
-            if motion_mode:
-                status.update(result.diagnostics)
-                status["processing_timing_scope"] = "motion loop; recognition_inference_ms is separate"
             # Publish control feedback every inference; encode previews asynchronously.
             status_publisher.submit(status)
             if startup_timer is not None:

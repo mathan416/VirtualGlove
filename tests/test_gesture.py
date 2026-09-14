@@ -37,7 +37,12 @@ def hand(t: float, **changes) -> HandObservation:
 
 
 def calibrated_engine(profile="bad_street_brawler") -> GestureEngine:
-    engine = GestureEngine(profile, GestureConfig(loss_release_ms=100), calibration_frames=3)
+    # Most mapping tests use a compact box so their sample coordinates exercise
+    # direction changes. Fresh installations still use the 60% default.
+    engine = GestureEngine(
+        profile, GestureConfig(loss_release_ms=100, joystick_deadzone=.28),
+        calibration_frames=3,
+    )
     for t in (0.00, 0.03, 0.06):
         engine.update(hand(t))
     assert engine.calibrated
@@ -232,7 +237,10 @@ class GestureTests(unittest.TestCase):
         self.assertTrue(engine.update(hand(.1, palm_x=.7)).dpad["right"])
 
     def test_calibrated_hand_size_but_not_noise_sets_minimum_center_box(self):
-        engine = GestureEngine("program_h", calibration_frames=5)
+        engine = GestureEngine(
+            "program_h", GestureConfig(joystick_deadzone=.10),
+            calibration_frames=5,
+        )
         for t, x in enumerate((.47, .53, .48, .52, .50)):
             engine.update(hand(t / 30, palm_x=x))
         self.assertGreater(engine.calibration.noise_x, .1)

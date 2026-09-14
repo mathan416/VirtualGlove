@@ -26,7 +26,6 @@ COURSE = 1
 LESSONS = 16
 MAX_PLAYERS = 12
 DEFAULT_JOYSTICK_DEADZONE = 0.60
-DIRECTION_CHANNELS = ("left", "right", "up", "down")
 
 
 def joystick_deadzone(value):
@@ -35,20 +34,6 @@ def joystick_deadzone(value):
             or not math.isfinite(value) or not 0.10 <= value <= 1.0):
         raise ValueError("Choose a joystick dead zone between 0.10 and 1.00.")
     return float(value)
-
-
-def migrated_deadzone(thresholds):
-    """Derive a safe scalar from old per-direction activation pairs."""
-    values = [thresholds[name]["on"] for name in DIRECTION_CHANNELS if name in thresholds]
-    if not values:
-        return DEFAULT_JOYSTICK_DEADZONE
-    return min(1.0, max(0.10, max(values)))
-
-
-def without_directions(thresholds):
-    """Discard obsolete positional activation/release threshold pairs."""
-    return {key: copy.deepcopy(value) for key, value in thresholds.items()
-            if key not in DIRECTION_CHANNELS}
 
 
 def calibration_value(data):
@@ -132,14 +117,10 @@ def blank_progress():
 
 class PlayerSettings:
     """Keep imported data narrow and commit memory only after the disk write."""
-    def __init__(self, path, validate, channels, legacy_validate=None, legacy_channels=None):
+    def __init__(self, path, validate, channels):
         self.path, self.validate = path, validate
         self.channels = set(channels)
-        self.legacy_validate = legacy_validate or validate
-        self.legacy_channels = set(legacy_channels or channels)
         self.error = None
-        self.legacy_backup = None
-        self.legacy_backup_version = 1
         self.data = {"version": 6, "active": "default", "generation": 0,
                      "calibration_restore": None,
                      "players": {"default": {"name": "Player 1", "thresholds": {},
@@ -152,51 +133,20 @@ class PlayerSettings:
                 saved = json.loads(path.read_text())
                 if not isinstance(saved, dict):
                     raise ValueError("Invalid player settings object")
-                if saved.get("version") == 1:
-                    legacy = self.legacy_validate(saved["thresholds"])
-                    self.data["players"]["default"]["joystick_deadzone"] = migrated_deadzone(legacy)
-                    self.data["players"]["default"]["thresholds"] = self.validate(without_directions(legacy))
-                    self.legacy_backup = json.dumps(saved, indent=2) + "\n"
-                else:
-                    self.data = self.validate_store(saved)
-                    if saved.get("version") in (2, 3, 4, 5):
-                        self.legacy_backup = json.dumps(saved, indent=2) + "\n"
-                        self.legacy_backup_version = saved["version"]
-        except (OSError, ValueError, KeyError, TypeError):
-            self.error = "Saved player settings could not be loaded. Restore a hand-settings backup to recover; the original file has not been changed."
+                self.data = self.validate_store(saved)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            if isinstance(exc, ValueError) and str(exc) == "Unsupported player settings":
+                self.error = ("Unsupported player settings version. Upgrade from "
+                              "VirtualGlove 0.4.1 or restore a current hand-setup "
+                              "backup; the original file has not been changed.")
+            else:
+                self.error = ("Saved player settings could not be loaded. Restore a "
+                              "hand-settings backup to recover; the original file "
+                              "has not been changed.")
 
     def validate_store(self, data):
         """Validate persisted records before exposing them to the app."""
         data = copy.deepcopy(data)
-        if isinstance(data, dict) and data.get("version") == 2 and "calibration_restore" not in data:
-            data["version"] = 3
-            data["calibration_restore"] = None
-        if isinstance(data, dict) and data.get("version") == 3:
-            data["version"] = 4
-            if not isinstance(data.get("players"), dict):
-                raise ValueError("Invalid players")
-            for item in data["players"].values():
-                if not isinstance(item, dict):
-                    raise ValueError("Invalid player record")
-                item["calibration"] = None
-        if isinstance(data, dict) and data.get("version") == 4:
-            if not isinstance(data.get("players"), dict):
-                raise ValueError("Invalid players")
-            for item in data["players"].values():
-                if not isinstance(item, dict) or "thresholds" not in item:
-                    raise ValueError("Invalid player record")
-                legacy = self.legacy_validate(item["thresholds"])
-                item["joystick_deadzone"] = migrated_deadzone(legacy)
-                item["thresholds"] = without_directions(legacy)
-            data["version"] = 5
-        if isinstance(data, dict) and data.get("version") == 5:
-            if not isinstance(data.get("players"), dict):
-                raise ValueError("Invalid players")
-            for item in data["players"].values():
-                if not isinstance(item, dict) or "ready_progress" in item:
-                    raise ValueError("Invalid version-5 player record")
-                item["ready_progress"] = blank_ready_progress()
-            data["version"] = 6
         if not isinstance(data, dict) or set(data) != {"version", "active", "generation", "players", "calibration_restore"} or type(data["version"]) is not int or data["version"] != 6:
             raise ValueError("Unsupported player settings")
         players = data["players"]
@@ -234,13 +184,8 @@ class PlayerSettings:
         if self.error and not recover:
             raise ValueError(self.error)
         clean = self.validate_store(data)
-        if self.legacy_backup is not None:
-            backup = self.path.with_name("gesture-tuning-v%d-backup.json" % self.legacy_backup_version)
-            if not backup.exists():
-                atomic_write(backup, self.legacy_backup)
         atomic_write(self.path, json.dumps(clean, ensure_ascii=True, indent=2) + "\n")
         self.data, self.error = clean, None
-        self.legacy_backup = None
 
     def snapshot(self):
         """Return names and progress without thresholds or device credentials."""
@@ -354,24 +299,18 @@ class PlayerSettings:
                 raise ValueError("Choose a VirtualGlove hand-setup backup.")
             backup_format = backup.get("format")
             backup_version = backup.get("version")
-            complete = (
-                (backup_format == "virtualglove-hand-setup" and backup_version == 4)
-                or (backup_format == "powerglove-hand-setup" and backup_version in (2, 3))
-            )
+            complete = backup_format == "virtualglove-hand-setup" and backup_version == 4
             required = {"format", "version", "name", "thresholds", "calibration"}
-            if backup.get("version") in (3, 4):
-                required.add("joystick_deadzone")
+            required.add("joystick_deadzone")
             optional = {"effective_thresholds", "source"}
             if not complete or not required <= set(backup) or set(backup) - required - optional:
-                raise ValueError("Choose a VirtualGlove hand-setup backup, or a legacy version-2/version-3 backup. Version-1 and device/pairing files are not supported.")
+                raise ValueError("Choose a current VirtualGlove hand-setup backup. Older PowerGlove formats are unsupported and were not changed.")
             name = player_name(backup["name"])
             reference = calibration_value(backup["calibration"]) if backup["calibration"] is not None else None
             effective = backup.get("effective_thresholds")
             if effective is not None:
-                validator = self.legacy_validate if backup["version"] == 2 else self.validate
-                effective = validator(effective)
-                expected = self.legacy_channels if backup["version"] == 2 else self.channels
-                if set(effective) != expected:
+                effective = self.validate(effective)
+                if set(effective) != self.channels:
                     raise ValueError("Effective thresholds must include every hand channel.")
             source = backup.get("source")
             if source is not None:
@@ -384,12 +323,10 @@ class PlayerSettings:
             reuse = request.get("reuse_calibration", False)
             if type(reuse) is not bool or (reuse and reference is None):
                 raise ValueError("This backup has no usable calibration to reuse.")
-            validator = self.legacy_validate if backup["version"] == 2 else self.validate
-            overrides = validator(backup["thresholds"])
+            overrides = self.validate(backup["thresholds"])
             selected = effective if use_effective else overrides
-            item["thresholds"] = self.validate(without_directions(selected))
-            item["joystick_deadzone"] = (migrated_deadzone(selected) if backup["version"] == 2
-                                         else joystick_deadzone(backup["joystick_deadzone"]))
+            item["thresholds"] = self.validate(selected)
+            item["joystick_deadzone"] = joystick_deadzone(backup["joystick_deadzone"])
             item["name"] = name
             item["calibration"] = reference
             item["needs_center"] = True

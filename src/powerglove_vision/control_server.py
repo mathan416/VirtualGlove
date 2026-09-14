@@ -37,7 +37,7 @@
 
 from __future__ import annotations
 
-import html
+import copy
 import json
 import hashlib
 import math
@@ -57,11 +57,11 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .game_registry import registry_request, validate_document, MAX_REQUEST
-from .play_game import PLAY_CONTENT, PLAY_SCRIPT, PLAY_STYLE
+from .play_game import PLAY_CONTENT, PLAY_SCRIPT
 from .setup_web import SETUP_CONTENT, SETUP_SCRIPT
 from .games_web import GAMES_CONTENT, GAMES_SCRIPT
 from .statistics_web import STATISTICS_CONTENT, STATISTICS_SCRIPT
-from .web_common import _page, _profile_options, PROFILE_LABELS, VISION_STARTUP_SCRIPT
+from .web_common import _page, _profile_options, VISION_STARTUP_SCRIPT
 from .gesture import SUPPORTED_PROFILES
 from .dashboard_web import DASHBOARD
 from .academy_web import LEARN
@@ -263,6 +263,11 @@ class ControlState:
             "candidate_remaining": 0, "candidate_progress": 0.0,
         }
         self._restore_interrupted_camera_profile()
+        self._config = json.loads(self.config_path.read_text())
+        self._camera_inventory = None
+        self._camera_inventory_at = 0.0
+        self._wifi_status = None
+        self._wifi_status_at = 0.0
 
     def request_statistics(self, seconds: float = 1.0) -> None:
         """Lease detailed worker telemetry while a visible Dashboard requests it."""
@@ -483,13 +488,60 @@ class ControlState:
         timer.start()
 
     def load_config(self) -> dict[str, Any]:
-        """Load the complete private device configuration from disk."""
-        return json.loads(self.config_path.read_text())
+        """Return an independent copy of the cached private device configuration."""
+        with self.config_lock:
+            return copy.deepcopy(self._config)
+
+    def _store_config(self, config: dict[str, Any], *, restart: bool) -> None:
+        """Atomically persist and publish one validated configuration document."""
+        from .game_registry import atomic_write
+        with self.config_lock:
+            atomic_write(self.config_path, json.dumps(config, indent=2) + "\n")
+            self._config = copy.deepcopy(config)
+            self._camera_inventory = None
+            self._camera_inventory_at = 0.0
+            if restart:
+                with self.lock:
+                    self.worker_status = {}
+                    self.revision += 1
+
+    def _camera_details(self, selection: str) -> tuple[dict[str, Any] | None, list[dict[str, str]]]:
+        """Refresh physical camera inventory only for configuration consumers."""
+        with self.config_lock:
+            now = time.monotonic()
+            if (self._camera_inventory is None
+                    or now - self._camera_inventory_at >= 5.0):
+                self._camera_inventory = {
+                    "selection": selection,
+                    "identity": camera_device_identity(selection),
+                    "options": camera_device_options(),
+                }
+                self._camera_inventory_at = now
+            elif self._camera_inventory["selection"] != selection:
+                self._camera_inventory = {
+                    "selection": selection,
+                    "identity": camera_device_identity(selection),
+                    "options": self._camera_inventory["options"],
+                }
+            return (copy.deepcopy(self._camera_inventory["identity"]),
+                    copy.deepcopy(self._camera_inventory["options"]))
+
+    def _cached_wifi_status(self) -> dict[str, Any]:
+        """Read the independently updated host report at most once per second."""
+        from .wifi_status import read_wifi_status
+        with self.config_lock:
+            now = time.monotonic()
+            if self._wifi_status is None or now - self._wifi_status_at >= 1.0:
+                self._wifi_status = read_wifi_status()
+                self._wifi_status_at = now
+            return copy.deepcopy(self._wifi_status)
 
     def public_config(self) -> dict[str, Any]:
         """Return browser-safe settings with all secrets removed."""
         config = self.load_config()
-        identity = camera_device_identity(str(config.get("camera", "auto")))
+        identity, camera_options = self._camera_details(
+            str(config.get("camera", "auto"))
+        )
         camera_profiles = config.get("camera_profiles", {})
         saved_camera_profile = (
             camera_profiles.get(identity["key"])
@@ -501,7 +553,7 @@ class ControlState:
             "profile": config.get("profile", "off"),
             "glove_color": config.get("glove_color", "none"),
             "camera": str(config.get("camera", "auto")),
-            "camera_options": camera_device_options(),
+            "camera_options": camera_options,
             "camera_fps": _camera_fps(config.get("camera_fps", "auto")),
             "camera_buffers": _camera_buffers(config.get("camera_buffers", 1)),
             "camera_backend": _choice(
@@ -560,23 +612,15 @@ class ControlState:
 
     def _write_camera_profile_fields(self, fields: dict[str, Any]) -> None:
         """Apply temporary fields and restart vision without touching player data."""
-        from .game_registry import atomic_write
         with self.config_lock:
             current = self.load_config()
             current.update(fields)
-            atomic_write(self.config_path, json.dumps(current, indent=2) + "\n")
-            with self.lock:
-                self.worker_status = {}
-                self.revision += 1
+            self._store_config(current, restart=True)
 
     def _restore_camera_profile_config(self, original: dict[str, Any]) -> None:
         """Restore the exact pre-test document after blocking concurrent saves."""
-        from .game_registry import atomic_write
         with self.config_lock:
-            atomic_write(self.config_path, json.dumps(original, indent=2) + "\n")
-            with self.lock:
-                self.worker_status = {}
-                self.revision += 1
+            self._store_config(original, restart=True)
 
     def begin_camera_profile(self) -> dict[str, Any]:
         """Start one guarded, reversible comparison for the attached camera."""
@@ -666,10 +710,6 @@ class ControlState:
                     "candidate_progress": 0.0,
                 })
         return self.camera_profile_snapshot()
-
-    def cancel_camera_profile(self) -> dict[str, Any]:
-        """Retain the original API name as a compatibility alias."""
-        return self.stop_camera_profile()
 
     def _candidate_ready(self, lane: dict[str, Any]) -> bool:
         """Confirm the requested lane started, including a measurable safe fallback."""
@@ -848,10 +888,7 @@ class ControlState:
                 **{field: settings[field] for field in CAMERA_PROFILE_FIELDS},
             }
             current["camera_profiles"] = profiles
-            from .game_registry import atomic_write
-            atomic_write(self.config_path, json.dumps(current, indent=2) + "\n")
-            with self.lock:
-                self.revision += 1
+            self._store_config(current, restart=True)
         return self.public_config()
 
     def save_attract(self, incoming):
@@ -864,13 +901,12 @@ class ControlState:
         with self.lock:
             if self._camera_profile.get("active"):
                 raise ValueError("Wait for the camera test to finish before saving settings.")
-        from .game_registry import atomic_write
         mode = incoming.get("mode")
         if mode not in ("on", "dim", "off"):
             raise ValueError("Choose On, Dim, or Off for attract mode.")
         current = self.load_config()
         current["matrix_attract"] = mode
-        atomic_write(self.config_path, json.dumps(current, indent=2) + "\n")
+        self._store_config(current, restart=False)
         return {"mode": mode}
 
     def save_config(self, incoming: dict[str, Any]) -> dict[str, Any]:
@@ -948,12 +984,9 @@ class ControlState:
             "matrix_attract": current.get("matrix_attract", "on"),
         })
         saved.pop("kiyo_hdr_off", None)
-        from .game_registry import atomic_write
-        atomic_write(self.config_path, json.dumps(saved, indent=2) + "\n")
+        self._store_config(saved, restart=True)
         if not receiver or incoming.get("rotate_token"):
             self.set_controller_enabled(False)
-        with self.lock:
-            self.revision += 1
         return self.public_config()
 
     def snapshot(self) -> dict[str, Any]:
@@ -979,12 +1012,12 @@ class ControlState:
                     "state": "unavailable" if not self.firmware_identity else
                         "matched" if self.firmware_identity == self.build_identity.get("firmware_expected") else "different"},
             })
-        config = self.public_config()
-        from .wifi_status import read_wifi_status
-        status["wifi_status"] = read_wifi_status()
-        status["connection_configured"] = config["connection_configured"]
-        status.setdefault("configured_profile", config["profile"])
-        status.setdefault("native_xy_mode", "latest")
+        config = self.load_config()
+        status["wifi_status"] = self._cached_wifi_status()
+        status["connection_configured"] = bool(
+            str(config.get("receiver", "")).strip() and config.get("token")
+        )
+        status.setdefault("configured_profile", config.get("profile", "off"))
         return status
 
     def connection_status(self):
@@ -992,7 +1025,7 @@ class ControlState:
         if self.connection_probe is not None:
             return self.connection_probe(self.load_config(), refresh=True)
         from .wifi_status import read_wifi_status, read_network_status
-        return {"app": True, "console_configured": bool(self.public_config().get("receiver")),
+        return {"app": True, "console_configured": bool(self.load_config().get("receiver")),
                 "console_service": None, "console_authenticated": None,
                 "wifi": read_wifi_status(), "networking": read_network_status(), "checked_seconds_ago": None}
 
@@ -1345,7 +1378,7 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                         action = incoming.get("action")
                         if action == "begin":
                             result = state.begin_camera_profile()
-                        elif action in ("stop", "cancel"):
+                        elif action == "stop":
                             result = state.stop_camera_profile()
                         elif action == "apply":
                             result = state.apply_camera_profile()

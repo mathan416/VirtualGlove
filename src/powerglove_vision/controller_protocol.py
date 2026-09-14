@@ -82,7 +82,7 @@ class ReceiverSessions:
 
     def receive(self, payload, peer):
         """Return (accepted state, handshake reply), with at most one populated."""
-        from .transport import decode_state
+        from .transport import validate_state
         value = decode_message(payload, self.token)
         now = self.clock()
         self.pending = {key:item for key,item in self.pending.items() if item[1] > now}
@@ -105,9 +105,7 @@ class ReceiverSessions:
         if not current and self.pending.get(key, (None,))[0] != challenge:
             return None, None
         raw = value["state"]
-        if not isinstance(raw, dict) or "token" in raw or "protocol" in raw or "session" in raw:
-            raise ValueError("invalid signed controller state")
-        state = decode_state(_canonical(dict(raw, protocol="virtualglove-vision/1")))
+        state = validate_state(raw)
         sequence = state["sequence"]
         if current and sequence <= self.active[2]:
             return None, None

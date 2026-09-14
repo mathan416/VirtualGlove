@@ -55,19 +55,15 @@ class ManifestTests(unittest.TestCase):
         self.apply()
         self.assertEqual(before,(self.root/self.module['MANIFEST']).stat().st_mtime_ns)
 
-    def test_legacy_manifest_is_migrated_and_renamed_files_are_pruned(self):
-        self.put('uno-q/powerglove-helper.service','old');self.apply()
-        (self.root/self.module['MANIFEST']).rename(self.root/self.module['LEGACY_MANIFEST'])
-        (self.root/self.module['LOCK']).rename(self.root/self.module['LEGACY_LOCK'])
-        (self.source/'uno-q/powerglove-helper.service').unlink()
+    def test_pre_041_manifest_is_not_consumed_as_supported_state(self):
+        old = self.root / '.powerglove-install.json'
+        old.write_text('{"format":1,"root":"unsupported","files":{}}')
         self.put('uno-q/virtualglove-helper.service','new')
-        result=self.apply()
-        self.assertEqual(result['removed'],['uno-q/powerglove-helper.service'])
-        self.assertFalse((self.root/'uno-q/powerglove-helper.service').exists())
+        self.assertIn('No installation manifest', self.module['check'](self.root)[0])
+        self.apply()
         self.assertEqual((self.root/'uno-q/virtualglove-helper.service').read_text(),'new')
         self.assertTrue((self.root/self.module['MANIFEST']).is_file())
-        self.assertFalse((self.root/self.module['LEGACY_MANIFEST']).exists())
-        self.assertFalse((self.root/self.module['LEGACY_LOCK']).exists())
+        self.assertTrue(old.is_file())
 
     def test_modified_and_mode_changed_files_stay_owned_but_are_never_pruned(self):
         for name in ('src/old.py','src/current.py','src/mode.py'):self.put(name,'original')

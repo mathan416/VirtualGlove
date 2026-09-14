@@ -15,7 +15,5 @@
   "tracking_confidence": 0.35,
   "detection_confidence": 0.45,
   "tracking_roi_scale": 2.25,
-  "directional_search": false,
-  "native_xy_mode": "latest",
   "matrix_attract": "on"
 }

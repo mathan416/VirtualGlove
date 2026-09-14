@@ -427,6 +427,11 @@ Ice Hockey, Double Dribble, and Racket Attack. See the
 [full gesture cards and official index](GAMEPLAY_GUIDE.md#program-cards-1-14)
 before playing a compound-action Program.
 
+Rapid A/B changes only button repetition. Profile-owned pulsed movement, fast
+turns, turbo movement, and compound actions keep their documented timing. Saved
+per-game overrides survive an upgrade; use **Use profile defaults** on Dashboard
+to remove them and follow the corrected defaults.
+
 ### Start with these reusable profiles
 
 | Program | Useful for | Controls |
@@ -653,9 +658,9 @@ player or after moving the camera or changing playing position. Controller outpu
 
 Portable backups now use VirtualGlove version 4. New exports include the center-box size,
 personal and complete gesture sensitivity, software identity, and the player's saved calibration. Restore
-separately confirms complete sensitivity and calibration reuse. Legacy version-2
-and version-3 files remain supported; version-1 exports are rejected. Internal player stores
-migrate to version 5 with a private recovery backup.
+separately confirms complete sensitivity and calibration reuse. Version 4 is the
+only supported portable backup format. Current version-6 player stores are
+preserved across upgrades from VirtualGlove 0.4.1 and later.
 
 Off attract mode shows four faint pixels: app, console service, authenticated
 console, and independent Wi-Fi link. Setup distinguishes disconnected Wi-Fi from

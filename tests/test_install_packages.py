@@ -35,19 +35,14 @@ spec.loader.exec_module(installer)
 
 
 class PackageContentTests(unittest.TestCase):
-    def test_retropie_upgrade_recognizes_current_and_legacy_launchers(self):
+    def test_retropie_upgrade_recognizes_current_launcher_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             current = root / "etc/virtualglove/launcher.json"
-            legacy = root / "etc/powerglove/launcher.json"
-            self.assertFalse(installer.retropie_launcher_exists(current, legacy))
-            legacy.parent.mkdir(parents=True)
-            legacy.write_text('{"uno_q":"existing.local"}')
-            self.assertTrue(installer.retropie_launcher_exists(current, legacy))
-            legacy.unlink()
+            self.assertFalse(installer.retropie_launcher_exists(current))
             current.parent.mkdir(parents=True)
             current.write_text('{"uno_q":"existing.local"}')
-            self.assertTrue(installer.retropie_launcher_exists(current, legacy))
+            self.assertTrue(installer.retropie_launcher_exists(current))
 
     def test_controller_hostname_validation(self):
         for value, expected in (("VirtualGlove", "virtualglove"),
@@ -178,6 +173,12 @@ class PackageContentTests(unittest.TestCase):
         self.assertIn('hashlib.sha256(archive.read_bytes()).hexdigest()', builder)
         self.assertIn('mv "${OUTPUT_SHA_TMP}" "${OUTPUT_SHA}"', builder)
 
+    def test_development_deploy_uses_a_compressed_archive(self):
+        deploy = (ROOT / 'scripts/deploy-uno-q-wifi.sh').read_text()
+        self.assertIn('virtualglove-deploy.tar.gz', deploy)
+        self.assertIn('-czf "${LOCAL_ARCHIVE}"', deploy)
+        self.assertIn('-xzf \'${REMOTE_ARCHIVE}\'', deploy)
+
     def test_local_matrix_exports_rejected_but_guide_images_allowed(self):
         spec = importlib.util.spec_from_file_location(
             'package_verifier', ROOT / 'scripts/verify-app-lab-package.py')
@@ -290,10 +291,8 @@ class ArchiveTests(unittest.TestCase):
             module = installer.load_setup(source)
             module.BACKUPS = root / 'backups'
             app = root / 'home/ArduinoApps/virtualglove'
-            legacy = root / 'home/ArduinoApps/powerglove-vision'
             account = SimpleNamespace(pw_uid=os.getuid(), pw_gid=os.getgid())
             with patch.object(installer, 'APP', app), \
-                 patch.object(installer, 'LEGACY_APP', legacy), \
                  patch.object(installer.pwd, 'getpwnam', return_value=account), \
                  patch.object(installer.os, 'chown'), patch.object(module, 'run'):
                 installer.stage_unoq(source, module)
@@ -333,11 +332,10 @@ class ArchiveTests(unittest.TestCase):
             source.mkdir()
             (source / 'app.yaml').write_text('new application')
             app = root / 'home/ArduinoApps/virtualglove'
-            legacy = root / 'home/ArduinoApps/powerglove-vision'
             setup = installer.load_setup(ROOT)
             setup.BACKUPS = root / 'backups'
             account = SimpleNamespace(pw_uid=os.getuid(), pw_gid=os.getgid())
-            with patch.object(installer, 'APP', app), patch.object(installer, 'LEGACY_APP', legacy), patch.object(installer.pwd, 'getpwnam', return_value=account), \
+            with patch.object(installer, 'APP', app), patch.object(installer.pwd, 'getpwnam', return_value=account), \
                  patch.object(installer.os, 'chown'), patch.object(setup, 'run') as command:
                 installer.stage_unoq(source, setup)
                 self.assertEqual((app / 'app.yaml').read_text(), 'new application')
@@ -373,47 +371,6 @@ class ArchiveTests(unittest.TestCase):
                                      for call in calls for part in call))
                 self.assertTrue(list((root / 'backups').rglob('app.yaml')))
 
-    def test_legacy_unoq_app_migrates_private_data_without_starting_old_project(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory).resolve()
-            source = root / 'source'
-            source.mkdir()
-            (source / 'app.yaml').write_text('VirtualGlove')
-            app = root / 'home/ArduinoApps/virtualglove'
-            legacy = root / 'home/ArduinoApps/powerglove-vision'
-            (legacy / 'data').mkdir(parents=True)
-            (legacy / 'data/device.json').write_text('private-controller-state')
-            (legacy / '.cache').mkdir()
-            (legacy / '.cache/app-compose.yaml').write_text('services: {}\n')
-            setup = installer.load_setup(ROOT)
-            setup.BACKUPS = root / 'backups'
-            account = SimpleNamespace(pw_uid=os.getuid(), pw_gid=os.getgid())
-            with patch.object(installer, 'APP', app), \
-                    patch.object(installer, 'LEGACY_APP', legacy), \
-                    patch.object(installer.pwd, 'getpwnam', return_value=account), \
-                    patch.object(installer.os, 'chown'), \
-                    patch.object(setup, 'run') as command:
-                installer.stage_unoq(source, setup)
-                self.assertEqual((app / 'data/device.json').read_text(),
-                                 'private-controller-state')
-                installer.retire_legacy_unoq_app(setup)
-            calls = [item.args for item in command.call_args_list]
-            self.assertIn(('runuser', '-u', 'arduino', '--', 'arduino-app-cli',
-                           'app', 'stop', legacy), calls)
-            for project in ('virtualglove', 'powerglove-vision'):
-                self.assertIn((
-                    'env', 'APP_HOME=' + str(legacy), 'docker', 'compose', '-p',
-                    project, '-f', legacy / '.cache/app-compose.yaml',
-                    'down', '--remove-orphans'), calls)
-            self.assertNotIn(('runuser', '-u', 'arduino', '--', 'arduino-app-cli',
-                              'app', 'start', legacy), calls)
-            self.assertIn(('runuser', '-u', 'arduino', '--', 'arduino-app-cli',
-                           'app', 'start', app), calls)
-            self.assertFalse(legacy.exists())
-            self.assertEqual(
-                (setup.BACKUPS / 'retired-controller-application/data/device.json').read_text(),
-                'private-controller-state')
-
     def test_unmanaged_old_sketch_files_are_not_silently_deleted(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -427,7 +384,6 @@ class ArchiveTests(unittest.TestCase):
             setup.BACKUPS = root / 'backups'
             account = SimpleNamespace(pw_uid=os.getuid(), pw_gid=os.getgid())
             with patch.object(installer, 'APP', app), \
-                    patch.object(installer, 'LEGACY_APP', root / 'legacy'), \
                     patch.object(installer.pwd, 'getpwnam', return_value=account), \
                     patch.object(installer.os, 'chown'), patch.object(setup, 'run'):
                 with self.assertRaisesRegex(ValueError, 'Unmanaged files remain'):

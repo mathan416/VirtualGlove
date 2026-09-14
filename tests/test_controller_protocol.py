@@ -35,8 +35,7 @@ def hello(session, request='b'*32):
 
 
 def state_packet(session, challenge, sequence=1, **fields):
-    state = ControllerState.released(sequence,1,'super_glove_ball',True).to_dict()
-    state.pop('protocol')
+    state = ControllerState.released(sequence,1,'super_glove_ball',True).to_transport_dict()
     state.update(fields)
     return encode_message('state',TOKEN,session=session,challenge=challenge,state=state)
 
@@ -130,20 +129,23 @@ class SignedControllerTests(unittest.TestCase):
         sender.send(ControllerState.released(1,1,'off'))
         self.assertEqual(pump()['sequence'],1)
 
-    def test_legacy_is_explicit_and_latches_closed_after_signed_input(self):
-        for allow in (False,True):
-            sessions=ReceiverSessions(TOKEN);session='a'*32
-            challenge=handshake(sessions,session)
-            legacy=json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,session='legacy',sequence=1)).encode()
-            newer=json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,session='legacy',sequence=2)).encode()
-            sock,device,native=Mock(),Mock(),Mock()
-            sock.recvfrom.side_effect=[(legacy,PEER),(state_packet(session,challenge),PEER),(newer,PEER),KeyboardInterrupt()]
-            sock.recvmsg.side_effect=lambda size,space:(lambda pair:(pair[0],[],0,pair[1]))(sock.recvfrom(size))
-            args=['receiver','--token',TOKEN]+(['--allow-legacy-controller'] if allow else [])
-            with patch.object(receiver,'ReceiverSessions',return_value=sessions), patch.object(receiver.socket,'socket',return_value=sock), patch.object(receiver,'UInputDevice',return_value=device), patch.object(receiver,'NativeStateWriter',return_value=native), patch('sys.argv',args):
-                self.assertEqual(receiver.main(),0)
-            self.assertEqual(device.write_state.call_count,2 if allow else 1)
-            self.assertEqual(native.write.call_count,device.write_state.call_count)
+    def test_unsigned_v1_packets_are_rejected_and_flag_is_removed(self):
+        legacy=json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,
+                               session='legacy',sequence=1)).encode()
+        sock,native=Mock(),Mock()
+        sock.recvfrom.side_effect=[(legacy,PEER),KeyboardInterrupt()]
+        sock.recvmsg.side_effect=lambda size,space:(lambda pair:(pair[0],[],0,pair[1]))(sock.recvfrom(size))
+        device_factory=Mock()
+        with patch.object(receiver.socket,'socket',return_value=sock), \
+                patch.object(receiver,'UInputDevice',device_factory), \
+                patch.object(receiver,'NativeStateWriter',return_value=native), \
+                patch('sys.argv',['receiver','--token',TOKEN]):
+            self.assertEqual(receiver.main(),0)
+        device_factory.assert_not_called()
+        with self.assertRaises(SystemExit):
+            receiver.build_parser().parse_args([
+                '--token', TOKEN, '--allow-legacy-controller'
+            ])
 
     def test_handshakes_do_not_extend_the_release_deadline(self):
         now=[0.];sessions=ReceiverSessions(TOKEN,clock=lambda:now[0]);session='a'*32
@@ -165,22 +167,24 @@ class SignedControllerTests(unittest.TestCase):
 
     def test_native_profile_is_published_before_virtual_gamepad(self):
         events = []
-        state = dict(protocol='virtualglove-vision/1', token=TOKEN, session='legacy',
-                     sequence=1, profile='super_glove_ball')
+        sessions = ReceiverSessions(TOKEN)
+        session = 'a' * 32
+        challenge = handshake(sessions, session)
+        packet = state_packet(session, challenge)
         sock, device, native = Mock(), Mock(), Mock()
         sock.recvfrom.side_effect = [
-            (json.dumps(state).encode(), PEER), KeyboardInterrupt(),
+            (packet, PEER), KeyboardInterrupt(),
         ]
         sock.recvmsg.side_effect = lambda size, space: (
             lambda pair: (pair[0], [], 0, pair[1])
         )(sock.recvfrom(size))
         native.write.side_effect = lambda _state: events.append('native')
         device.write_state.side_effect = lambda _state: events.append('gamepad')
-        with patch.object(receiver.socket, 'socket', return_value=sock), \
+        with patch.object(receiver, 'ReceiverSessions', return_value=sessions), \
+                patch.object(receiver.socket, 'socket', return_value=sock), \
                 patch.object(receiver, 'UInputDevice', return_value=device), \
                 patch.object(receiver, 'NativeStateWriter', return_value=native), \
-                patch('sys.argv', ['receiver', '--token', TOKEN,
-                                   '--allow-legacy-controller']):
+                patch('sys.argv', ['receiver', '--token', TOKEN]):
             self.assertEqual(receiver.main(), 0)
         self.assertEqual(events, ['native', 'gamepad'])
 

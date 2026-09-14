@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import argparse
-import hmac
 import socket
 import sys
 import time
@@ -26,7 +25,7 @@ from pathlib import Path
 
 from .diagnostic_trace import DiagnosticTrace, session_key
 from .native_state import DEFAULT_PATH as DEFAULT_NATIVE_STATE_PATH, NativeStateWriter
-from .transport import MAX_PACKET_BYTES, decode_state
+from .transport import MAX_PACKET_BYTES
 from .controller_protocol import ReceiverSessions
 
 
@@ -115,8 +114,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--native-state", type=Path, default=DEFAULT_NATIVE_STATE_PATH,
                         help="latest validated sample for the custom Nestopia core")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--allow-legacy-controller", action="store_true",
-                        help="temporary v1 upgrade compatibility; disabled after the first v2 input")
     return parser
 
 
@@ -150,10 +147,7 @@ def main() -> int:
     last_valid_at = None
     released = True
     last_sequence = -1
-    last_session: str | None = None
-    retired_sessions = set()
     sessions = ReceiverSessions(token)
-    signed_seen = False
     trace = DiagnosticTrace.from_environment("receiver")
     try:
         while True:
@@ -176,38 +170,18 @@ def main() -> int:
                 received_ns = time.monotonic_ns() if trace and trace.enabled else 0
                 try:
                     state, reply = sessions.receive(payload, _peer)
-                    if reply is not None:
-                        try:
-                            if reply_info:
-                                sock.sendmsg([reply], reply_info, 0, _peer)
-                            else:
-                                sock.sendto(reply, _peer)
-                        except OSError:
-                            pass
-                    if state is None:
-                        continue
-                    signed_seen = True
                 except (ValueError, UnicodeError, RecursionError):
-                    if not args.allow_legacy_controller or signed_seen:
-                        continue
+                    continue
+                if reply is not None:
                     try:
-                        state = decode_state(payload)
-                    except (ValueError, UnicodeError, RecursionError):
-                        continue
-                    supplied_token = state.get("token")
-                    if not isinstance(supplied_token, str) or not hmac.compare_digest(supplied_token, token):
-                        continue
-                    session = state.get("session")
-                    if not isinstance(session, str) or session in retired_sessions:
-                        continue
-                    if session != last_session:
-                        if len(retired_sessions) >= 128:
-                            continue
-                        if last_session is not None:
-                            retired_sessions.add(last_session)
-                        last_session, last_sequence = session, -1
-                    if state["sequence"] <= last_sequence:
-                        continue
+                        if reply_info:
+                            sock.sendmsg([reply], reply_info, 0, _peer)
+                        else:
+                            sock.sendto(reply, _peer)
+                    except OSError:
+                        pass
+                if state is None:
+                    continue
                 validated_ns = time.monotonic_ns() if received_ns else 0
                 sequence = state["sequence"]
                 last_sequence = sequence
@@ -229,7 +203,7 @@ def main() -> int:
                 last_valid_at = time.monotonic()
                 if received_ns:
                     completed_ns = time.monotonic_ns()
-                    identity = sessions.active[0][0] if signed_seen else last_session
+                    identity = sessions.active[0][0]
                     trace.record(dict(event="receive", session=session_key(identity),
                         sequence=sequence, received_ns=received_ns, validated_ns=validated_ns,
                         publication_start_ns=publication_started_ns, end_ns=completed_ns,
