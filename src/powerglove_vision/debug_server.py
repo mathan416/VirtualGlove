@@ -69,6 +69,10 @@ class SharedDebugState:
         self.practice_active = False
         self.practice_request: bool | None = None
         self.statistics_until = 0.0
+        self.regression = None
+        self.regression_request: str | None = None
+        self.rapid_fire_request: tuple[str, str, bool | None, bool | None] | None = None
+        self.rapid_fire_update = {"state": "idle", "message": ""}
 
     def request_statistics(self, seconds: float = 1.0) -> None:
         """Keep detailed worker telemetry active only for a watching browser."""
@@ -155,6 +159,41 @@ class SharedDebugState:
             self.profile_request = None
             return requested
 
+    def request_regression(self, action: str) -> None:
+        """Queue a bounded recording transition for the vision loop."""
+        with self.lock:
+            self.regression_request = action
+
+    def take_regression_request(self) -> str | None:
+        """Consume the newest recording transition."""
+        with self.lock:
+            action = self.regression_request
+            self.regression_request = None
+            return action
+
+    def request_rapid_fire(
+        self, request_id: str, game: str, rapid_a: bool | None, rapid_b: bool | None
+    ) -> None:
+        """Queue a session-bound rapid-fire change from the local Dashboard."""
+        with self.lock:
+            self.rapid_fire_request = (request_id, game, rapid_a, rapid_b)
+            self.rapid_fire_update = {
+                "request_id": request_id, "state": "pending", "message": "Applying now…"
+            }
+
+    def take_rapid_fire_request(self):
+        with self.lock:
+            request = self.rapid_fire_request
+            self.rapid_fire_request = None
+            return request
+
+    def finish_rapid_fire(self, request_id: str, error: str = "") -> None:
+        with self.lock:
+            self.rapid_fire_update = {
+                "request_id": request_id, "state": "error" if error else "applied",
+                "message": error or "Applied to the running game.",
+            }
+
     def _refresh_practice_locked(self, now: float) -> None:
         """Expire abandoned browser leases and queue only real mode changes."""
         self.practice_sessions = {
@@ -234,11 +273,30 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                     status = dict(shared.status)
                     status["preview_clients"] = shared.stream_clients
                     status["_game_controller_event"] = shared.game_controller_event
+                    status["rapid_fire_update"] = dict(shared.rapid_fire_update)
                 if shared.tuning is not None:
                     status["tuning"] = shared.tuning.snapshot()
                     status["player"] = shared.tuning.player_snapshot()
+                if shared.regression is not None:
+                    status["gesture_recording"] = shared.regression.snapshot()
                 body = json.dumps(status, indent=2).encode()
                 self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
+            elif self.path == "/regression-recording" and shared.regression is not None:
+                try:
+                    body = shared.regression.document()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Disposition", 'attachment; filename="virtualglove-gesture-regression.json"')
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                except ValueError as exc:
+                    body = json.dumps({"error": str(exc)}).encode()
+                    self.send_response(409)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
             elif self.path == "/stream":
                 shared.stream_opened()
                 try:
@@ -316,6 +374,57 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                         raise ValueError("choose a supported gesture profile")
                     shared.request_profile(profile)
                     response = json.dumps({"active_profile": profile or "off"}).encode()
+                    self.send_response(202)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+                except (ValueError, json.JSONDecodeError) as exc:
+                    response = json.dumps({"error": str(exc)}).encode()
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+            elif self.path == "/regression" and shared.regression is not None:
+                try:
+                    length = min(int(self.headers.get("Content-Length", "0")), 1024)
+                    body = json.loads(self.rfile.read(length) or b"{}")
+                    action = body.get("action")
+                    if action not in ("begin", "stop", "discard"):
+                        raise ValueError("Unknown gesture recording action.")
+                    shared.request_regression(action)
+                    response = json.dumps({"accepted": True, "action": action}).encode()
+                    self.send_response(202)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+                except (ValueError, json.JSONDecodeError) as exc:
+                    response = json.dumps({"error": str(exc)}).encode()
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+            elif self.path == "/rapid-fire":
+                try:
+                    length = min(int(self.headers.get("Content-Length", "0")), 1024)
+                    body = json.loads(self.rfile.read(length) or b"{}")
+                    request_id = body.get("request_id")
+                    game = body.get("game")
+                    rapid_a, rapid_b = body.get("rapid_a"), body.get("rapid_b")
+                    if (not isinstance(request_id, str) or not 8 <= len(request_id) <= 64
+                            or not all(c.isalnum() or c in "-_" for c in request_id)):
+                        raise ValueError("request_id must be an opaque browser identifier.")
+                    if not isinstance(game, str) or not game or len(game) > 512:
+                        raise ValueError("A current registered game is required.")
+                    if rapid_a is not None and type(rapid_a) is not bool:
+                        raise ValueError("rapid_a must be Boolean or null.")
+                    if rapid_b is not None and type(rapid_b) is not bool:
+                        raise ValueError("rapid_b must be Boolean or null.")
+                    shared.request_rapid_fire(request_id, game, rapid_a, rapid_b)
+                    response = json.dumps({"accepted": True}).encode()
                     self.send_response(202)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(response)))

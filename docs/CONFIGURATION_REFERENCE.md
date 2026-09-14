@@ -932,7 +932,40 @@ valid `profile` plus optional Boolean `rapid_a` and `rapid_b` switches. Unknown
 fields and non-Boolean switch values invalidate the registry.
 The launch hook carries these switches in every authenticated game-session
 renewal. Read-only `/status` reports the applied values as
-`rapid_fire.a` and `rapid_fire.b`; neither value changes player data.
+`rapid_fire.a` and `rapid_fire.b`, their profile defaults, and whether each
+value was overridden; none of these values changes player data. Dashboard can
+edit Rapid A and Rapid B for the currently running registered game. It uses the
+same revision-checked registry service and preserves every other mapping. After
+the save is verified, the Controller applies the switches to the running game
+without restarting it. This temporary live override is bound to that exact
+authenticated game session; it cannot spill into another game and is discarded
+on exit, session expiry, or a new launch. The saved registry values remain the
+source for future launches.
+
+### Gesture regression recordings
+
+Dashboard can record up to 60 seconds or 900 inference frames for a selected,
+calibrated recognition profile. Recording runs a fresh shadow recognizer beside
+normal operation: it neither resets the live gesture engine nor pauses or sends
+additional controller input. The download uses
+`virtualglove-gesture-regression` version 1 and contains only normalized,
+derived hand observations, the effective recognition configuration and neutral
+calibration numbers, relative frame timing, and expected controller results.
+It contains no camera frames, player or game names, network addresses, pairing
+material, or ROM data. Nothing is written to the Controller filesystem; the
+single in-memory recording is replaced, discarded, or lost when the worker
+restarts.
+
+Replay a downloaded test from the source tree:
+
+```sh
+PYTHONPATH=src python scripts/replay-gesture-recording.py RECORDING.json
+```
+
+Exit status 0 means every recorded controller result still matches. Exit status
+1 reports recognition differences and the first changed frame; 2 means the file
+is invalid or unsupported. `--json` emits a bounded machine-readable report for
+automated tests.
 
 | Included game | Profile |
 | --- | --- |
@@ -2034,6 +2067,7 @@ they may still perform their normal work.
 | `scripts/record-vision-benchmark.py` | Optional camera, output, size, and frame-rate flags | Records a fixed 30-second, local-only cue sequence for near/far recognition, X/Y travel, jitter, depth, and recovery comparisons. It is never run by installation or used for training. |
 | `scripts/guided-vision-benchmark.py` | Optional camera, output, bind address, port, size, frame rate, protocol, reader, buffer count, manual exposure, and manual gain | Serves a temporary live-preview page for user-paced, per-step recording, including a focused fast-sweep protocol. Each selected step has a two-second countdown; pauses are not recorded. Production-matched Direct V4L2 capture retries brief invalid frames, records the applied capture settings, restores camera automation, and releases the camera on completion. Output stays local and is not training data. |
 | `scripts/benchmark-vision-replay.py` | Local clip, required JSON output, optional Tasks model path, and research lane parameters | Replays the same full frames through MediaPipe Hands at 1, 2, 3, or 4 threads and through optional Tasks Video, at 640×480 and full-field 512×384, with preview closed and open. Reports p50/p95 inference, continuity, cue recognition, neutral false activations, coordinate jitter, preview cost, tracking paths, and cue-labelled losses. Three threads is retained only as a reproducible scheduling comparison; the Controller setting remains four. The research-only directional recovery parameter compares immediate reset with at most one carried search frame; its default is zero. |
+| `scripts/replay-gesture-recording.py` | Dashboard gesture-regression JSON; optional `--json` | Replays normalized derived observations through the captured profile, calibration, recognition settings, and rapid-fire switches. Returns success only when every gameplay-visible result matches the saved baseline; it never opens a camera or sends controller input. |
 | `scripts/benchmark-post-inference.py` | Optional `--iterations` (default 100000), `--slow-publisher-ms` (default 5), and `--output` | Runs camera-free established-session signed UDP and Dashboard-housekeeping lanes in off/on/off order. Reports p50/p95/p99/max send, housekeeping, and full-iteration times; a slow newest-only status consumer proves Dashboard backpressure cannot queue controller input. |
 | `scripts/benchmark-native-motion-curve.py` | Version-2 vision replay JSON, optional lane index, and required new output path | Compares the former overshooting experiment, capped error curve, actual bounded speed curve, and unsmoothed coordinates. Sweeps 27 bounded candidates and reports jitter, lag, medium response, fast pickup, reversals, overshoot, continuity, and available source age without controlling a game. |
 | `scripts/benchmark-camera-pipeline.py` | Required `--camera DEVICE` and `--worker-stopped`; optional `--source-root PATH`, `--seconds 5..600`, `--buffers 1 2`, `--capture-isolation thread process`, `--inference-threads 1..4`, `--aggregate-only`, `--skip-replay`, `--tracking-evidence`, and `--output PATH` | Linux-only, output-paused capture/recognition diagnostic. Requires exclusive camera ownership and can compare selected V4L2 buffer counts, the current capture thread, or a benchmark-only latest-frame capture process. Aggregate mode reports driver dequeue age, decode, recognition pickup, graph, post-graph, Linux task scheduling, sequence cadence, skips, stalls, and compact correlated tail events without retaining frames. Detector context separates the frame before detection, camera age entering it, detector cost, skipped frames, and recovered coordinate age. Lightweight tracking evidence attributes palm and landmark paths. Three-thread inference and process-isolated capture remain research comparisons; neither changes the production setting. It does not change camera controls or player settings. |

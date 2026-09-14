@@ -31,6 +31,15 @@ class SetupStatusHarnessTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, (result.stdout + result.stderr).decode())
 
     @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
+    def test_dashboard_rapid_fire_and_recording_controls(self):
+        result = subprocess.run(
+            [shutil.which("node"), str(Path(__file__).with_name(
+                "dashboard_rapid_recording_harness.cjs"))],
+            input=DASHBOARD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(result.returncode, 0, (result.stdout + result.stderr).decode())
+
+    @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
     def test_controller_output_states(self):
         """Distinguish armed idle, practice, delivery, and real failure."""
         harness = Path(__file__).with_name("setup_status_harness.mjs")

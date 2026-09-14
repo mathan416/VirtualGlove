@@ -57,6 +57,7 @@ from pathlib import Path
 from .tuning import TuningManager
 from .camera import CameraUnavailableError, camera_candidates
 from .debug_server import SharedDebugState, start_debug_server
+from .gesture_replay import GestureRegressionRecorder
 from .gesture import (GestureConfig, GestureEngine, joystick_deadzone_bounds,
                       load_calibration, rapid_fire_defaults, save_calibration)
 from .matrix import MatrixStatus, UnoQMatrix
@@ -947,6 +948,10 @@ def _base_status(
     status["rapid_fire"] = {
         "a": default_a if rapid_a is None else rapid_a,
         "b": default_b if rapid_b is None else rapid_b,
+        "default_a": default_a,
+        "default_b": default_b,
+        "override_a": rapid_a,
+        "override_b": rapid_b,
     }
     return status
 
@@ -982,6 +987,7 @@ def main() -> int:
     args.tracking_evidence = trace is not None
     profile_server = ProfileCommandServer(args.profile_listen, args.profile_port, token)
     shared = SharedDebugState()
+    shared.regression = GestureRegressionRecorder()
     shared.tuning = TuningManager(calibration_path.with_name("gesture-tuning.json"))
     preview_encoder = LatestPreviewEncoder(shared.update_frame)
     status_publisher = LatestStatusPublisher(shared.update_status)
@@ -1012,6 +1018,9 @@ def main() -> int:
     launch_guard_until = 0.0
     active_game_lease = ActiveGameLease()
     last_launch_session = None
+    regression_begin_pending = False
+    live_rapid_session = None
+    live_rapid_values = (None, None)
 
     matrix.set_profile(current_profile)
     matrix.set_status(
@@ -1023,15 +1032,31 @@ def main() -> int:
 
     try:
         while True:
+            regression_action = shared.take_regression_request()
+            if regression_action == "begin":
+                regression_begin_pending = True
+            if regression_action in ("stop", "discard"):
+                regression_begin_pending = False
+                try:
+                    (shared.regression.stop() if regression_action == "stop"
+                     else shared.regression.discard())
+                except ValueError as exc:
+                    shared.regression.fail(str(exc))
             old_vision_profile = _effective_profile(current_profile, practice_mode)
             old_rapid_fire = (current_rapid_a, current_rapid_b)
             request, lease_expired = _consume_game_lease(
                 profile_server.take(), active_game_lease, time.monotonic()
             )
+            if live_rapid_session != active_game_lease.session_id:
+                live_rapid_session = None
+                live_rapid_values = (None, None)
             # Give the authenticated game lifecycle command priority without
             # consuming a simultaneous Dashboard request; it remains queued
             # for the following loop iteration.
             dashboard_request = None if request is not None or lease_expired else shared.take_profile_request()
+            if dashboard_request is not None:
+                live_rapid_session = None
+                live_rapid_values = (None, None)
             requested_profile = None if lease_expired else request.profile if request is not None else (
                 dashboard_request[0] if dashboard_request is not None else current_profile
             )
@@ -1043,6 +1068,8 @@ def main() -> int:
                 request, dashboard_request, lease_expired,
                 (current_rapid_a, current_rapid_b),
             )
+            if live_rapid_session is not None:
+                requested_rapid_a, requested_rapid_b = live_rapid_values
             profile_requested = request is not None or dashboard_request is not None or lease_expired
             practice_request = shared.take_practice_request()
             if request is not None and request.session_id and request.profile is not None:
@@ -1057,6 +1084,8 @@ def main() -> int:
                 shared.game_controller_transition(last_launch_session, False)
             transition_requested = profile_requested or practice_request is not None
             if transition_requested:
+                if shared.regression.snapshot()["phase"] == "recording":
+                    shared.regression.stop()
                 last_controller_signature = None
                 if controller_enabled and engine is not None:
                     sender.send(ControllerState.released(
@@ -1127,6 +1156,34 @@ def main() -> int:
                 elif engine is not None:
                     matrix.set_status(MatrixStatus.READY)
 
+            take_rapid_request = getattr(shared, "take_rapid_fire_request", None)
+            rapid_request = take_rapid_request() if callable(take_rapid_request) else None
+            if isinstance(rapid_request, tuple) and len(rapid_request) == 4:
+                rapid_request_id, expected_game, rapid_a, rapid_b = rapid_request
+                lease_game = Path(active_game_lease.rom).name
+                if (active_game_lease.session_id is None
+                        or lease_game.casefold() != Path(expected_game).name.casefold()):
+                    shared.finish_rapid_fire(
+                        rapid_request_id,
+                        "The registered game changed before the setting could be applied."
+                    )
+                elif current_profile == "program_14" or practice_mode or shared.tuning.active():
+                    shared.finish_rapid_fire(
+                        rapid_request_id,
+                        "Program 14 has no gesture rapid fire."
+                        if current_profile == "program_14"
+                        else "Finish Academy, camera tests, or gesture tuning before applying."
+                    )
+                else:
+                    live_rapid_session = active_game_lease.session_id
+                    live_rapid_values = (rapid_a, rapid_b)
+                    current_rapid_a, current_rapid_b = live_rapid_values
+                    if engine is not None:
+                        default_a, default_b = rapid_fire_defaults(engine.profile)
+                        engine.rapid_a = default_a if rapid_a is None else rapid_a
+                        engine.rapid_b = default_b if rapid_b is None else rapid_b
+                    shared.finish_rapid_fire(rapid_request_id)
+
             try:
                 restored_calibration = shared.tuning.apply_calibration_restore()
                 if restored_calibration is not None:
@@ -1159,6 +1216,8 @@ def main() -> int:
                     current_game = "Manual selection"
 
             if shared.take_calibration_request() and engine is not None:
+                if shared.regression.snapshot()["phase"] == "recording":
+                    shared.regression.stop()
                 shared.tuning.begin_center()
                 engine.begin_calibration()
                 last_controller_signature = None
@@ -1182,6 +1241,11 @@ def main() -> int:
                     vision_operation = None
 
             if vision_profile is None:
+                if regression_begin_pending:
+                    shared.regression.fail(
+                        "Select an active gesture profile before recording."
+                    )
+                    regression_begin_pending = False
                 # Do not wait for an in-flight camera open/read/close to apply off.
                 if capture is not None and vision_job is None:
                     vision_job = _background_call(_close_vision, capture, tracker)
@@ -1238,6 +1302,17 @@ def main() -> int:
                     rapid_a=None if practice_mode else current_rapid_a,
                     rapid_b=None if practice_mode else current_rapid_b,
                 )
+            if regression_begin_pending:
+                if practice_mode or shared.tuning.active():
+                    shared.regression.fail(
+                        "Finish Academy, camera tests, or gesture tuning before recording."
+                    )
+                else:
+                    try:
+                        shared.regression.begin(engine)
+                    except ValueError as exc:
+                        shared.regression.fail(str(exc))
+                regression_begin_pending = False
             captured_frame = capture.latest_after(last_capture_sequence)
             if captured_frame is None:
                 time.sleep(0.001)
@@ -1329,6 +1404,7 @@ def main() -> int:
             state, native_source = _update_controller_state(
                 engine, result, native_xy_active
             )
+            shared.regression.record(result.observation)
             if engine.calibrated and engine.calibration is not retained_calibration:
                 retained_calibration = engine.calibration
                 try:
@@ -1536,7 +1612,12 @@ def main() -> int:
             status["profile_source"] = profile_source
             status["emulator"] = current_emulator
             status["input_mode"] = _input_mode(current_profile, current_emulator)
-            status["rapid_fire"] = {"a": engine.rapid_a, "b": engine.rapid_b}
+            default_a, default_b = rapid_fire_defaults(current_profile or "off")
+            status["rapid_fire"] = {
+                "a": engine.rapid_a, "b": engine.rapid_b,
+                "default_a": default_a, "default_b": default_b,
+                "override_a": current_rapid_a, "override_b": current_rapid_b,
+            }
             program_feedback = engine.program_feedback(state)
             if program_feedback:
                 status["program_feedback"] = program_feedback

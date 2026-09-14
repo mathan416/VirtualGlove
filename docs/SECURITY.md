@@ -226,12 +226,28 @@ in memory, previews expire with the owning session, and camera images are not sa
 Tuning suppresses controller delivery even if a game launches or another Dashboard
 requests input. Saved settings are validated and atomically replaced.
 
+Dashboard rapid-fire changes are written through that revision-checked Games
+service before being forwarded to the local worker. A live A/B override is
+accepted only when the named game still matches an active authenticated launch
+lease. It is bound to that opaque session and cleared on game exit, lease expiry,
+manual profile selection, or the next launch; it never changes the authenticated
+profile, destination, or pairing material.
+
 The optional Advanced diagnostic is the only Academy path that records video.
 It is explicitly started and user-paced, remains on the VirtualGlove Controller, and is deleted
 immediately after aggregate analysis or cancellation. An abandoned AVI expires
 after 30 minutes. Its downloadable JSON contains aggregate continuity, latency,
 confidence, lighting, and recognized-state names only: no frames, landmarks,
 tokens, addresses, or saved personal thresholds.
+
+Dashboard's gesture regression recorder is separate and never records video or
+raw landmarks. It holds one bounded test in worker memory and downloads only
+normalized derived hand measurements, relative timing, effective recognition
+settings, neutral calibration numbers, and expected controller states. The
+format excludes player and game names, ROM data, network addresses, and pairing
+material. Recording does not change live controller delivery. Start, stop, and
+discard use the same-origin browser-action safeguard; the download is available
+only after a non-empty recording is stopped.
 
 ### Documentation screenshots
 

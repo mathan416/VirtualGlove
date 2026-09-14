@@ -199,7 +199,7 @@ turning setup into an engineering exercise.
 
 | Page | Purpose |
 | --- | --- |
-| Dashboard · `/dashboard` | See the camera, selected game profile, tracking state, and generated controls. |
+| Dashboard · `/dashboard` | See live controls, set per-game A/B rapid fire, and capture repeatable recognition tests. |
 | Play · `/play` | Challenge Pixel Pal to Rock Paper Scissors. |
 | Glove Academy · `/learn` | Learn gestures, set movement reach, and personalize recognition safely. |
 | Setup · `/setup` | Manage players, camera choices, console pairing, games, backups, and display preferences. |

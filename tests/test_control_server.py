@@ -1172,6 +1172,21 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(shared.take_profile_request(), (None, "Dashboard", "Manual selection"))
         self.assertIsNone(shared.take_profile_request())
 
+    def test_worker_rapid_fire_request_is_correlated_and_consumed_once(self):
+        shared = SharedDebugState()
+        shared.request_rapid_fire("rapid-test", "Example.nes", False, True)
+        self.assertEqual(
+            shared.take_rapid_fire_request(),
+            ("rapid-test", "Example.nes", False, True),
+        )
+        self.assertIsNone(shared.take_rapid_fire_request())
+        self.assertEqual(shared.rapid_fire_update["state"], "pending")
+        shared.finish_rapid_fire("rapid-test")
+        self.assertEqual(shared.rapid_fire_update, {
+            "request_id": "rapid-test", "state": "applied",
+            "message": "Applied to the running game.",
+        })
+
     def test_gestures_off_reports_healthy_camera_idle_state(self):
         status = _base_status(None, "Manual selection", "dashboard", True)
         status["vision_state"] = "idle"
@@ -1185,19 +1200,28 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(status["vision_profile"], "off")
         self.assertFalse(status["camera_available"])
         self.assertEqual(status["receiver_error"], "Gestures are paused")
-        self.assertEqual(status["rapid_fire"], {"a": False, "b": False})
+        self.assertEqual(status["rapid_fire"], {
+            "a": False, "b": False, "default_a": False, "default_b": False,
+            "override_a": False, "override_b": False,
+        })
         overridden = _base_status(
             "program_14", "Anticipation", "RetroPie launch hook", True,
             rapid_a=True, rapid_b=True,
         )
-        self.assertEqual(overridden["rapid_fire"], {"a": False, "b": False})
+        self.assertEqual(overridden["rapid_fire"], {
+            "a": False, "b": False, "default_a": False, "default_b": False,
+            "override_a": False, "override_b": False,
+        })
 
     def test_status_reports_applied_rapid_fire_overrides_during_startup(self):
         status = _base_status(
             "program_1", "Blaster Master", "RetroPie launch hook", True,
             rapid_a=False, rapid_b=True,
         )
-        self.assertEqual(status["rapid_fire"], {"a": False, "b": True})
+        self.assertEqual(status["rapid_fire"], {
+            "a": False, "b": True, "default_a": True, "default_b": True,
+            "override_a": False, "override_b": True,
+        })
 
     def test_pairing_credentials_are_rejected_over_plain_http(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
