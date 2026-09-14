@@ -942,6 +942,14 @@ authenticated game session; it cannot spill into another game and is discarded
 on exit, session expiry, or a new launch. The saved registry values remain the
 source for future launches.
 
+Profile defaults follow only rapid or pulsed actions explicitly identified in
+the individual Mattel program descriptions. Program 7 defaults to Rapid A;
+Program B defaults to Rapid A; Program H defaults to Rapid A and B; and Bad
+Street Brawler defaults to Rapid B. All other profiles default both switches
+off. Documented compound and pulsed-direction actions remain independent of
+these A/B switches. Program 14, Gestures off, and native Super Glove Ball do not
+offer Dashboard rapid-fire controls.
+
 | Included game | Profile |
 | --- | --- |
 | Bad Street Brawler | `bad_street_brawler` |
@@ -968,7 +976,7 @@ The numeric portion of the shipped registry is:
 | `program_9` | Rad Racer | No rapid fire by profile default |
 | `program_10` | R.C. Pro-Am | None |
 | `program_11` | No indexed title; sustained fast-turn alternative | None |
-| `program_12` | Super Mario Bros. | None |
+| `program_12` | Super Mario Bros. | Held A by default; if `rapid_a=true`, repeat 250 ms A holds separated by the standard short rapid-fire gap |
 | `program_13` | No indexed title; gesture A/B with physical-controller movement | None |
 | `program_14` | Anticipation; temporary manual menu/password entry | Output is neutral; camera is stopped |
 

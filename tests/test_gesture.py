@@ -400,8 +400,50 @@ class GestureTests(unittest.TestCase):
         self.assertFalse(state.dpad["right"])
 
     def test_program_b_pulses_joust_flap(self):
-        state = calibrated_engine("program_b").update(hand(0.15, index_curl=0.9))
+        engine = calibrated_engine("program_b")
+        state = engine.update(hand(0.15, palm_x=0.8, index_curl=0.9))
         self.assertTrue(state.buttons["a"])
+        self.assertTrue(state.dpad["right"])
+        paused = engine.update(hand(0.22, palm_x=0.8, index_curl=0.9))
+        self.assertFalse(paused.buttons["a"])
+        self.assertFalse(paused.dpad["right"])
+
+        held = GestureEngine(
+            "program_b", calibration=engine.calibration, rapid_a=False
+        ).update(hand(0.22, index_curl=0.9))
+        self.assertTrue(held.buttons["a"])
+
+    def test_program_h_uses_documented_thumb_a_and_index_b_pulses(self):
+        engine = calibrated_engine("program_h")
+        thumb = engine.update(hand(0.15, thumb_curl=0.9))
+        self.assertTrue(thumb.buttons["a"])
+        self.assertFalse(thumb.buttons["b"])
+        index = engine.update(hand(0.15, index_curl=0.9))
+        self.assertFalse(index.buttons["a"])
+        self.assertTrue(index.buttons["b"])
+        paused = engine.update(hand(0.22, thumb_curl=0.9, index_curl=0.9))
+        self.assertFalse(paused.buttons["a"] or paused.buttons["b"])
+
+        held = GestureEngine(
+            "program_h", calibration=engine.calibration,
+            rapid_a=False, rapid_b=False,
+        ).update(hand(0.22, thumb_curl=0.9, index_curl=0.9))
+        self.assertTrue(held.buttons["a"] and held.buttons["b"])
+
+    def test_brawler_only_pulses_the_documented_thumb_b_action(self):
+        engine = calibrated_engine("bad_street_brawler")
+        thumb_on = engine.update(hand(0.15, thumb_curl=0.9))
+        thumb_gap = engine.update(hand(0.22, thumb_curl=0.9))
+        self.assertTrue(thumb_on.buttons["b"])
+        self.assertFalse(thumb_gap.buttons["b"])
+
+        grab = engine.update(hand(0.22, middle_curl=0.9))
+        self.assertTrue(grab.buttons["a"] and grab.buttons["b"])
+
+        held_thumb = GestureEngine(
+            "bad_street_brawler", calibration=engine.calibration, rapid_b=False
+        ).update(hand(0.22, thumb_curl=0.9))
+        self.assertTrue(held_thumb.buttons["b"])
 
     def test_program_i_maps_driving_controls_to_the_nes_pad(self):
         engine = calibrated_engine("program_i")

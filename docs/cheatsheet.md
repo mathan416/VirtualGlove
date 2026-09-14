@@ -419,10 +419,11 @@ wrist, depth, or other finger states.
 | 13 | Mixed physical control | Thumb A and index B; camera D-pad stays neutral for the merged physical controller. |
 | 14 | Anticipation; manual menus/passwords | Camera and all VirtualGlove output off; game session and physical controller remain active. |
 
-Programs 1–8 and 10–13 pulse A/B by default. Programs 9 and 14 report rapid A/B
-off. Automatic game exceptions are:
-Blaster Master and Alpha Mission disable rapid A; Ice Hockey disables rapid B;
-Double Dribble and Racket Attack disable both. See the
+Rapid fire defaults on only where an individual program description explicitly
+calls for a rapid or pulsed button: Program 7 A, Program B A, Program H A/B, and
+Bad Street Brawler B. Every other profile defaults both switches off. The
+registry retains Mattel's explicit off entries for Blaster Master, Alpha Mission,
+Ice Hockey, Double Dribble, and Racket Attack. See the
 [full gesture cards and official index](GAMEPLAY_GUIDE.md#program-cards-1-14)
 before playing a compound-action Program.
 
@@ -432,7 +433,7 @@ before playing a compound-action Program.
 | --- | --- | --- |
 | A | Pinball and games with two independent actions | Index curl sends A; thumb curl sends Up; wrist roll sends B. Pulling back toggles combined flippers. Ordinary hand movement does not control the D-pad. |
 | D | A reversed-direction challenge | Hand movement sends the opposite direction. Thumb curl sends A; index curl sends B. |
-| H | General NES and Famicom experiments | Hand movement controls the D-pad. Index curl pulses A; thumb curl pulses B. Avoid this profile when a game needs a continuously held action button. |
+| H | General NES and Famicom experiments | Hand movement controls the D-pad. Thumb curl pulses A; index curl pulses B. Avoid this profile when a game needs a continuously held action button. |
 
 ### Registered Power Glove games
 

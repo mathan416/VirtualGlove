@@ -13,6 +13,19 @@ authoritative record for line-level and file-level history.
   the existing authenticated, revision-checked RetroPie registry and hot-swap
   during the running authenticated game session. The live override is bound to
   that session and disappears when the game exits or a new session starts.
+
+### Changed
+
+- Rapid A/B now defaults on only where an individual Mattel program description
+  explicitly identifies a rapid or pulsed button action: Program 7 A, Program B
+  A, Program H A/B, and Bad Street Brawler B. Every other profile defaults off;
+  documented compound, directional-pulse, and turbo actions remain independent.
+- Program H now follows the documented finger order: thumb produces pulsed A
+  and index produces pulsed B. Program B also pulses its documented horizontal
+  movement as well as its flap action.
+- Program 12 now holds A for the full thumb curl by default so Super Mario Bros.
+  jump height remains controllable. If Rapid A is explicitly enabled, it repeats
+  250 ms A holds separated by the standard short rapid-fire gap.
 ## [0.4.1] - 2026-09-13
 
 ### Added

@@ -22,8 +22,23 @@ class NumericProgramTests(unittest.TestCase):
         self.assertTrue(all(f"program_{number}" in SUPPORTED_PROFILES
                             for number in range(1, 15)))
         for number in range(1, 15):
-            expected = (False, False) if number in {9, 14} else (True, True)
+            expected = (True, False) if number == 7 else (False, False)
             self.assertEqual(rapid_fire_defaults(f"program_{number}"), expected)
+
+    def test_only_explicitly_documented_profiles_enable_rapid_fire(self):
+        enabled = {
+            "program_7": (True, False),
+            "program_b": (True, False),
+            "program_h": (True, True),
+            "bad_street_brawler": (False, True),
+        }
+        for profile in SUPPORTED_PROFILES:
+            with self.subTest(profile=profile):
+                self.assertEqual(
+                    rapid_fire_defaults(profile),
+                    enabled.get(profile, (False, False)),
+                )
+        self.assertEqual(rapid_fire_defaults("off"), (False, False))
 
     def test_program_1_turns_opposite_and_respects_rapid_override(self):
         engine = GestureEngine("program_1", calibration=calibrated_engine().calibration,
@@ -156,6 +171,29 @@ class NumericProgramTests(unittest.TestCase):
         slowed = engine.update(hand(.30, **pose))
         self.assertTrue(slowed.dpad["right"])
         self.assertFalse(slowed.buttons["b"])
+
+    def test_program_12_holds_a_by_default_and_repeats_long_rapid_pulses(self):
+        held = GestureEngine(
+            "program_12", calibration=calibrated_engine().calibration,
+        )
+        self.assertTrue(held.update(hand(.10, thumb_curl=.8)).buttons["a"])
+        self.assertTrue(held.update(hand(.50, thumb_curl=.8)).buttons["a"])
+        self.assertFalse(held.update(hand(.60)).buttons["a"])
+
+        rapid = GestureEngine(
+            "program_12", calibration=calibrated_engine().calibration,
+            rapid_a=True,
+        )
+        self.assertTrue(rapid.update(hand(.10, thumb_curl=.8)).buttons["a"])
+        self.assertTrue(rapid.update(hand(.34, thumb_curl=.8)).buttons["a"])
+        self.assertFalse(rapid.update(hand(.36, thumb_curl=.8)).buttons["a"])
+        self.assertTrue(rapid.update(hand(.43, thumb_curl=.8)).buttons["a"])
+        self.assertFalse(rapid.update(hand(.70, thumb_curl=.8)).buttons["a"])
+        self.assertFalse(rapid.update(hand(.71)).buttons["a"])
+        self.assertTrue(rapid.update(hand(.72, thumb_curl=.8)).buttons["a"])
+
+        self.assertFalse(rapid.update(hand(.90, detected=False)).buttons["a"])
+        self.assertTrue(rapid.update(hand(1.0, thumb_curl=.8)).buttons["a"])
 
     def test_program_13_has_buttons_only_and_14_is_neutral(self):
         thirteen = GestureEngine("program_13", calibration=calibrated_engine().calibration,

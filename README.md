@@ -147,11 +147,12 @@ gestures send to the console.
 | Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
 | Super Glove Ball with `lr-nestopia-powerglove` | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. |
 
-Programs 1–8 and 10–13 normally pulse their mapped A/B actions. Programs 9 and
-14 report rapid fire off. The registered
-Blaster Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission
-entries apply Mattel's documented exceptions automatically. Programs 13 and 14
-also support deliberate physical-controller and gestures-off play.
+Rapid A/B defaults on only where an individual program description explicitly
+identifies a pulsed button: Program 7 A, Program B A, Program H A/B, and Bad
+Street Brawler B. Every other profile defaults off. The registered Blaster
+Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission entries
+retain Mattel's documented off instructions. Programs 13 and 14 also support
+deliberate physical-controller and gestures-off play.
 
 The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
 numeric Program gesture, compound action, release rule, indexed game, exception,

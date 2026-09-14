@@ -1219,7 +1219,7 @@ class ControlStateTests(unittest.TestCase):
             rapid_a=False, rapid_b=True,
         )
         self.assertEqual(status["rapid_fire"], {
-            "a": False, "b": True, "default_a": True, "default_b": True,
+            "a": False, "b": True, "default_a": False, "default_b": False,
             "override_a": False, "override_b": True,
         })
 
