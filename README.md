@@ -147,11 +147,18 @@ gestures send to the console.
 | Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
 | Super Glove Ball with `lr-nestopia-powerglove` | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. |
 
-Programs 1–8 and 10–13 normally pulse their mapped A/B actions. Programs 9 and
-14 report rapid fire off. The registered
-Blaster Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission
-entries apply Mattel's documented exceptions automatically. Programs 13 and 14
-also support deliberate physical-controller and gestures-off play.
+Rapid A/B defaults on only where an individual program description explicitly
+identifies a pulsed button: Program 7 A, Program B A, Program H A/B, and Bad
+Street Brawler B. Every other profile defaults off. The registered Blaster
+Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission entries
+retain Mattel's documented off instructions. Programs 13 and 14 also support
+deliberate physical-controller and gestures-off play.
+
+Dashboard Rapid A/B switches control button repetition only; profile-owned fast
+turns, pulsed movement, turbo movement, and compound actions retain their own
+timing. Saved per-game overrides survive upgrades. Choose **Use profile
+defaults** while that game is running to remove its overrides and adopt the
+corrected defaults.
 
 The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
 numeric Program gesture, compound action, release rule, indexed game, exception,
@@ -199,7 +206,7 @@ turning setup into an engineering exercise.
 
 | Page | Purpose |
 | --- | --- |
-| Dashboard · `/dashboard` | See the camera, selected game profile, tracking state, and generated controls. |
+| Dashboard · `/dashboard` | See live controls and set per-game A/B rapid fire. |
 | Play · `/play` | Challenge Pixel Pal to Rock Paper Scissors. |
 | Glove Academy · `/learn` | Learn gestures, set movement reach, and personalize recognition safely. |
 | Setup · `/setup` | Manage players, camera choices, console pairing, games, backups, and display preferences. |

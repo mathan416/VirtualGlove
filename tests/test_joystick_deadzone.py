@@ -35,7 +35,7 @@ class JoystickTests(unittest.TestCase):
         for key in before:
             if key != 'joystick_deadzone':
                 self.assertEqual(before[key], after[key])
-        self.assertEqual(old.pair('left'), (.28, .14))
+        self.assertEqual(old.chosen_joystick_deadzone(), .60)
         self.assertEqual(self.manager.configuration(GestureConfig()).chosen_joystick_deadzone(), .5)
         self.assertEqual(TuningManager(self.path).player_snapshot()['joystick'], state['joystick'])
         self.assertEqual(self.command('export')['backup']['joystick_deadzone'], .5)

@@ -1,8 +1,8 @@
 VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
-Updated: September 13, 2026 (America/Toronto)
+Updated: September 14, 2026 (America/Toronto)
 Source: /Users/mathan/Developer/PowerGlove
-Snapshot: dev, version 0.4.1, including Programs 1-14, official game mappings,
+Snapshot: dev, 0.4.2 development, including Programs 1-14, official game mappings,
 Ready to Play, the joystick dead-zone camera grid, and the complete
 virtualglove runtime-name migration. Git history is the exact record of commits
 and prior maps.
@@ -449,7 +449,6 @@ COMPLETE SOURCE INVENTORY
 |       |-- versioning.py
 |       |-- vision_app.py
 |       |-- web_common.py
-|       |-- web_features.py
 |       `-- wifi_status.py
 |-- tests
 |   |-- academy_controls_harness.mjs

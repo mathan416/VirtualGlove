@@ -24,9 +24,6 @@ import tempfile
 MANIFEST = '.virtualglove-install.json'
 JOURNAL = '.virtualglove-install-pending.json'
 LOCK = '.virtualglove-install.lock'
-LEGACY_MANIFEST = '.powerglove-install.json'
-LEGACY_JOURNAL = '.powerglove-install-pending.json'
-LEGACY_LOCK = '.powerglove-install.lock'
 PRIVATE = {'data', '.cache', '.git', '.venv', '__pycache__'}
 PRESERVED = {'docs/cheatsheet.md'}
 REPLACED = {'config/profiles.json'}
@@ -37,7 +34,7 @@ def relative(name):
     path = PurePosixPath(name)
     if (not name or path.is_absolute() or str(path) != name or '..' in path.parts
             or '\\' in name or set(path.parts) & PRIVATE or name in PRESERVED
-            or any(part.startswith(('.virtualglove-install', '.powerglove-install')) for part in path.parts)):
+            or any(part.startswith('.virtualglove-install') for part in path.parts)):
         raise ValueError('Unsafe managed path: ' + name)
     return name
 
@@ -87,9 +84,7 @@ def atomic(path, data, mode=0o644):
 
 def read_manifest(root):
     """Read a strict root-bound inventory; never treat invalid data as a fresh install."""
-    current = safe(root / MANIFEST)
-    legacy = safe(root / LEGACY_MANIFEST)
-    path = current if current.exists() else legacy
+    path = safe(root / MANIFEST)
     if not path.exists(): return {'format': 1, 'root': str(root), 'files': {}}
     value = json.loads(path.read_text())
     if (not isinstance(value, dict) or value.get('format') != 1 or value.get('root') != str(root)
@@ -110,10 +105,10 @@ def check(root):
     """Report missing, modified, and interrupted installations without writing anything."""
     root = Path(root).absolute()
     result = []
-    if not safe(root / MANIFEST).exists() and not safe(root / LEGACY_MANIFEST).exists():
+    if not safe(root / MANIFEST).exists():
         result.append('No installation manifest; next update establishes a baseline')
-    if safe(root / JOURNAL).exists() or safe(root / LEGACY_JOURNAL).exists():
-        result.append('Interrupted update: run the matching installed installation-manifest.py ROOT --recover')
+    if safe(root / JOURNAL).exists():
+        result.append('Interrupted update: run installation-manifest.py ROOT --recover')
     for name, record in read_manifest(root)['files'].items():
         path = root / name
         if not path.exists(): result.append('Missing: ' + name)
@@ -125,9 +120,7 @@ def check(root):
 def locked(root):
     """Serialize payload mutations without following a substituted lock symlink."""
     root.mkdir(parents=True, exist_ok=True)
-    legacy_lock = root / LEGACY_LOCK
-    paths = ([legacy_lock] if legacy_lock.exists() or (root / LEGACY_MANIFEST).exists()
-             or (root / LEGACY_JOURNAL).exists() else []) + [root / LOCK]
+    paths = [root / LOCK]
     for path in paths:
         safe(path)
     fds = []
@@ -152,7 +145,7 @@ def rollback(root):
     backup = Path(state['backup'])
     entries = state['entries']
     for name, existed in entries.items():
-        if name not in (MANIFEST, LEGACY_MANIFEST, LEGACY_LOCK) and not (name in PRESERVED and existed is False):
+        if name != MANIFEST and not (name in PRESERVED and existed is False):
             relative(name)
         safe(root / name)
         if type(existed) is not bool: raise ValueError('Invalid recovery entry')
@@ -177,8 +170,6 @@ def apply(source, root, backup, names=None):
     with locked(root):
         if safe(root / JOURNAL).exists():
             raise ValueError('Interrupted update; recover before retrying: ' + str(root / JOURNAL))
-        if safe(root / LEGACY_JOURNAL).exists():
-            raise ValueError('Interrupted legacy update; recover it with the previously installed updater first: ' + str(root / LEGACY_JOURNAL))
         previous = read_manifest(root)
         if names is None:
             names = []
@@ -231,8 +222,6 @@ def apply(source, root, backup, names=None):
         backup.chmod(0o700)
         entries = {}
         control_files = [MANIFEST]
-        if (root / LEGACY_MANIFEST).exists(): control_files.append(LEGACY_MANIFEST)
-        if (root / LEGACY_LOCK).exists(): control_files.append(LEGACY_LOCK)
         for name in writes + deletes + control_files:
             target = safe(root / name)
             entries[name] = target.exists()
@@ -254,8 +243,6 @@ def apply(source, root, backup, names=None):
                     raise ValueError('Release changed during installation: ' + name)
             for name in deletes: safe(root / name).unlink()
             atomic(root / MANIFEST, data)
-            for legacy in (LEGACY_MANIFEST, LEGACY_LOCK):
-                if (root / legacy).exists(): safe(root / legacy).unlink()
             (root / JOURNAL).unlink()
         except BaseException:
             rollback(root)

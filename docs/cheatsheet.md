@@ -419,12 +419,18 @@ wrist, depth, or other finger states.
 | 13 | Mixed physical control | Thumb A and index B; camera D-pad stays neutral for the merged physical controller. |
 | 14 | Anticipation; manual menus/passwords | Camera and all VirtualGlove output off; game session and physical controller remain active. |
 
-Programs 1–8 and 10–13 pulse A/B by default. Programs 9 and 14 report rapid A/B
-off. Automatic game exceptions are:
-Blaster Master and Alpha Mission disable rapid A; Ice Hockey disables rapid B;
-Double Dribble and Racket Attack disable both. See the
+Rapid fire defaults on only where an individual program description explicitly
+calls for a rapid or pulsed button: Program 7 A, Program B A, Program H A/B, and
+Bad Street Brawler B. Every other profile defaults both switches off. The
+registry retains Mattel's explicit off entries for Blaster Master, Alpha Mission,
+Ice Hockey, Double Dribble, and Racket Attack. See the
 [full gesture cards and official index](GAMEPLAY_GUIDE.md#program-cards-1-14)
 before playing a compound-action Program.
+
+Rapid A/B changes only button repetition. Profile-owned pulsed movement, fast
+turns, turbo movement, and compound actions keep their documented timing. Saved
+per-game overrides survive an upgrade; use **Use profile defaults** on Dashboard
+to remove them and follow the corrected defaults.
 
 ### Start with these reusable profiles
 
@@ -432,7 +438,7 @@ before playing a compound-action Program.
 | --- | --- | --- |
 | A | Pinball and games with two independent actions | Index curl sends A; thumb curl sends Up; wrist roll sends B. Pulling back toggles combined flippers. Ordinary hand movement does not control the D-pad. |
 | D | A reversed-direction challenge | Hand movement sends the opposite direction. Thumb curl sends A; index curl sends B. |
-| H | General NES and Famicom experiments | Hand movement controls the D-pad. Index curl pulses A; thumb curl pulses B. Avoid this profile when a game needs a continuously held action button. |
+| H | General NES and Famicom experiments | Hand movement controls the D-pad. Thumb curl pulses A; index curl pulses B. Avoid this profile when a game needs a continuously held action button. |
 
 ### Registered Power Glove games
 
@@ -652,9 +658,9 @@ player or after moving the camera or changing playing position. Controller outpu
 
 Portable backups now use VirtualGlove version 4. New exports include the center-box size,
 personal and complete gesture sensitivity, software identity, and the player's saved calibration. Restore
-separately confirms complete sensitivity and calibration reuse. Legacy version-2
-and version-3 files remain supported; version-1 exports are rejected. Internal player stores
-migrate to version 5 with a private recovery backup.
+separately confirms complete sensitivity and calibration reuse. Version 4 is the
+only supported portable backup format. Current version-6 player stores are
+preserved across upgrades from VirtualGlove 0.4.1 and later.
 
 Off attract mode shows four faint pixels: app, console service, authenticated
 console, and independent Wi-Fi link. Setup distinguishes disconnected Wi-Fi from

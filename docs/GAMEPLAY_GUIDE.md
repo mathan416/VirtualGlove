@@ -148,52 +148,79 @@ pause in all controller delivery while you reposition, use **Stop controller**.
 ## Quick selector - Programs 1–14
 
 These profiles reproduce the built-in Power Glove programs with camera gestures
-and ordinary NES controller output. Programs 1–8 and 10–13 pulse A and B by
-default. Program 9 uses held controls without rapid fire. Program 14 stops camera tracking and sends no VirtualGlove
-input so a conventional controller can be used without ending the authenticated
-game session.
+and ordinary NES controller output. Rapid fire defaults on only where an
+individual program description explicitly identifies a rapid or pulsed action.
+Among Programs 1–14, that means Program 7 starts with Rapid A on; the remaining
+numbered programs start with held A/B controls. Program 14 stops camera tracking
+and sends no VirtualGlove input so a conventional controller can be used without
+ending the authenticated game session.
 
 | Program | See it | Core controls | Games in Mattel's index |
 | --- | --- | --- | --- |
-| 1 | <img src="images/matrix/programs/1.png" alt="1 matrix display illustration" width="104"> | Hand position is the D-pad; thumb is rapid A; index is rapid B; curling the last three fingers performs one bounded turn-and-B action. | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link |
+| 1 | <img src="images/matrix/programs/1.png" alt="1 matrix display illustration" width="104"> | Hand position is the D-pad; thumb is A; index is B; curling the last three fingers performs one bounded turn-and-B action. | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link |
 | 2 | <img src="images/matrix/programs/2.png" alt="2 matrix display illustration" width="104"> | Program 1 movement and buttons, plus live **Centered** / **Return to centre** feedback in place of the physical glove's beeper. | Centering-practice alternative; no indexed title |
-| 3 | <img src="images/matrix/programs/3.png" alt="3 matrix display illustration" width="104"> | Push / pull sends Up / Down; side movement sends Left / Right; thumb / index sends rapid A / B. | Ice Hockey; Top Gun. Gauntlet may also use this as an alternative top-view layout, although the index assigns it to Program 1. |
-| 4 | <img src="images/matrix/programs/4.png" alt="4 matrix display illustration" width="104"> | Open or close all four fingers for Up / Down; index-versus-last-three poses steer the treads; thumb sends rapid A; wrist poses send held B or Up plus Left / Right. | Iron Tank |
-| 5 | <img src="images/matrix/programs/5.png" alt="5 matrix display illustration" width="104"> | Push / pull and bank / side movement fly the craft; thumb / index sends rapid A / B. | Alpha Mission; Life Force; Xevious; 1943 |
+| 3 | <img src="images/matrix/programs/3.png" alt="3 matrix display illustration" width="104"> | Push / pull sends Up / Down; side movement sends Left / Right; thumb / index sends A / B. | Ice Hockey; Top Gun. Gauntlet may also use this as an alternative top-view layout, although the index assigns it to Program 1. |
+| 4 | <img src="images/matrix/programs/4.png" alt="4 matrix display illustration" width="104"> | Open or close all four fingers for Up / Down; index-versus-last-three poses steer the treads; thumb sends A; wrist poses send held B or Up plus Left / Right. | Iron Tank |
+| 5 | <img src="images/matrix/programs/5.png" alt="5 matrix display illustration" width="104"> | Push / pull and bank / side movement fly the craft; thumb / index sends A / B. | Alpha Mission; Life Force; Xevious; 1943 |
 | 6 | <img src="images/matrix/programs/6.png" alt="6 matrix display illustration" width="104"> | Position and depth move; index sends A; thumb sends B; last three sends A+B; forward fist holds Up; clockwise twist turns rapidly twice. | Double Dragon |
 | 7 | <img src="images/matrix/programs/7.png" alt="7 matrix display illustration" width="104"> | Open-hand movement dodges and ducks; forward fists punch high or low; clockwise wrist blocks; pull-back fist sends Select; thumb sends rapid A. | Mike Tyson's Punch-Out!! |
 | 8 | <img src="images/matrix/programs/8.png" alt="8 matrix display illustration" width="104"> | Position and depth select bases or fielding direction; thumb, index, counter-clockwise wrist, and pull-back produce the documented offense / defense A and B actions. | Baseball; Bases Loaded; R.B.I. Baseball |
 | 9 | <img src="images/matrix/programs/9.png" alt="9 matrix display illustration" width="104"> | Make a fist to ready the profile. Wrist rotation steers; forward fist is turbo; raising the hand sends Down; lowering sends B; fist sends A. No rapid fire. | Rad Racer |
-| 10 | <img src="images/matrix/programs/10.png" alt="10 matrix display illustration" width="104"> | Index / last-three curls steer Left / Right; thumb sends rapid A; B is held automatically until the hand is lowered. | R.C. Pro-Am |
+| 10 | <img src="images/matrix/programs/10.png" alt="10 matrix display illustration" width="104"> | Index / last-three curls steer Left / Right; thumb sends A; B is held automatically until the hand is lowered. | R.C. Pro-Am |
 | 11 | <img src="images/matrix/programs/11.png" alt="11 matrix display illustration" width="104"> | Program 1 controls, but the last-three-finger pose turns rapidly in both directions while firing B. | Fast-turn alternative; no indexed title |
-| 12 | <img src="images/matrix/programs/12.png" alt="12 matrix display illustration" width="104"> | Position moves Mario; thumb / index sends rapid A / B; middle curl adds B for fast travel; last-three curl slows horizontal travel. | Super Mario Bros. |
-| 13 | <img src="images/matrix/programs/13.png" alt="13 matrix display illustration" width="104"> | Thumb / index sends rapid A / B. Camera D-pad output is neutral, leaving movement and menus to a conventional controller. | No indexed title |
+| 12 | <img src="images/matrix/programs/12.png" alt="12 matrix display illustration" width="104"> | Position moves Mario; thumb holds A for controllable jumps; index sends B; middle curl adds B for fast travel; last-three curl slows horizontal travel. | Super Mario Bros. |
+| 13 | <img src="images/matrix/programs/13.png" alt="13 matrix display illustration" width="104"> | Thumb / index sends A / B. Camera D-pad output is neutral, leaving movement and menus to a conventional controller. | No indexed title |
 | 14 | <img src="images/matrix/programs/14.png" alt="14 matrix display illustration" width="104"> | VirtualGlove camera and output are paused while the selected profile and game session remain visible. | Anticipation; temporary manual menu or password entry |
 
 The shipped exact-filename registry supplies `.nes`, `.zip`, and `.7z` entries.
-It also applies Mattel's rapid-fire exceptions: rapid A is off for Alpha Mission
-and Blaster Master; rapid B is off for Ice Hockey; both are off for Double
-Dribble and Racket Attack.
+It retains Mattel's explicit rapid-fire-off entries for Alpha Mission, Blaster
+Master, Ice Hockey, Double Dribble, and Racket Attack. These entries are now
+redundant with the source-accurate profile defaults, but preserve the official
+game-specific instructions if a profile default changes later.
 
 <!-- PAGEBREAK -->
 
 ## How rapid fire behaves
 
-Programs 1–8 and 10–13 use the original rapid-fire style for A and B: keep the
-assigned finger pose held and VirtualGlove pulses that button. Program 9 holds
-its controls normally and never pulses them. Program 14 has no VirtualGlove
-button output, so both rapid-fire indicators remain off. A registered game's exception is
-part of its signed launch request, so the Dashboard's **Rapid fire** status is
-the value actually applied for that game rather than a guess based on its
-Program number.
+**Original-hardware source note:** Mattel's *Power Glove Instructions*, page 14,
+states, “Rapid Fire for both A and B turns on automatically when you turn on the
+glove.” The same page immediately warns that not every glove program has rapid
+fire and directs players to the individual program descriptions. VirtualGlove
+therefore does not reproduce that blanket power-on state: it uses the documented
+behavior of the active profile instead.
+
+Rapid A/B defaults come from the individual program descriptions rather than the
+manual's general power-on behavior. Program 7 defaults to Rapid A; Program B
+defaults to Rapid A for its pulsed flap; Program H defaults to both; and Bad
+Street Brawler defaults to Rapid B for its pulsed thumb action. Every other
+profile starts with A and B held. Documented compound, pulsed-direction, and
+turbo actions keep their own timing independently of these switches.
+
+In VirtualGlove, **Rapid A** and **Rapid B** mean only that the corresponding NES
+button repeats while its gesture remains active. A profile's fast turns, pulsed
+steering, turbo movement, simultaneous-button combinations, and other compound
+actions are part of that profile and do not change when these two switches are
+changed.
+
+Program 12 therefore holds A for as long as the thumb stays curled, allowing
+variable-height jumps in Super Mario Bros. If Rapid A is explicitly enabled on
+Dashboard, it repeats 250 ms A holds separated by a short rapid-fire gap. A
+registered game's settings travel in its signed launch request, and Dashboard's
+**Rapid fire** status shows the values actually applied to the running game.
+
+**After an upgrade:** explicit Rapid A/B choices already saved for a game remain
+in force and override the corrected profile defaults. On Dashboard, choose
+**Use profile defaults** if you want that game to follow the source-accurate
+defaults again. This removes only its Rapid A/B override; it does not change the
+game's profile or any player settings.
 
 | Game | Program | Automatic exception | Why it matters while playing |
 | --- | --- | --- | --- |
 | Blaster Master | 1 | Rapid A off | A can be held continuously while thumb curl remains active. |
 | Double Dribble | 1 | Rapid A and B off | Both finger buttons behave as held controls. |
 | Racket Attack | 1 | Rapid A and B off | Both finger buttons behave as held controls. |
-| Ice Hockey | 3 | Rapid B off | Index curl holds B while thumb curl retains rapid A. |
-| Alpha Mission | 5 | Rapid A off | Thumb curl holds A while index curl retains rapid B. |
+| Ice Hockey | 3 | Rapid B off | Retains Mattel's explicit held-B instruction. |
+| Alpha Mission | 5 | Rapid A off | Retains Mattel's explicit held-A instruction. |
 
 Start, Select, Menu Guard, calibration, tracking-loss release, and the saved
 joystick dead zone remain shared across every camera-active numeric Program.
@@ -229,8 +256,8 @@ combination.
 
 **Play smart:** The turn-and-B combination lasts about 0.18 seconds and triggers
 once per fresh last-three-finger pose. Release those fingers before trying it
-again. Registered games may disable rapid A or B when Mattel specified held
-buttons instead. The complete official Program 1 game list is in the numbered
+again. A and B are held by default; a registered game can still opt into rapid
+behavior from Dashboard. The complete official Program 1 game list is in the numbered
 [Quick selector](#quick-selector-programs-1-14).
 
 **First round:**
@@ -409,13 +436,15 @@ a controlled round in Mike Tyson's Punch-Out!!.
 | Do this | See it | Controller result |
 | --- | --- | --- |
 | With four fingers open, move left/right or lower the hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move an open hand left, right, or down" width="96"> | Dodge Left/Right or duck Down |
-| With four fingers open, curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb while the fingers stay open" width="72"> | A |
+| With four fingers open, curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb while the fingers stay open" width="72"> | Rapid A |
 | Make a fist, push, and hold it right of center | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove closing every finger into a fist" width="60"> <img src="images/gestures/v2/push-closed-fist-right.png" alt="Push a closed fist on the right side of center" width="60"> | A punch; raising it above center adds Up for a high punch |
 | Make a fist, push, and hold it left of center | <img src="images/gestures/v2/push-closed-fist-left.png" alt="Push a closed fist on the left side of center" width="88"> | B punch; raising it above center adds Up for a high punch |
 | Roll wrist right | <img src="images/gestures/v2/wrist-roll-right.png" alt="Roll the wrist right" width="72"> | Down block |
 | Make a fist and pull back | <img src="images/gestures/v2/pull-closed-fist.png" alt="Pull a closed fist away from the camera" width="88"> | One Select pulse for the star-punch action |
 
-**Play smart:** Program 7 is assigned to **Mike Tyson's Punch-Out!!**. Keep the
+**Play smart:** Program 7 is assigned to **Mike Tyson's Punch-Out!!** and is the
+only numbered Program whose individual description explicitly calls for a
+rapid button default. Keep the
 fist clearly left or right of center so the intended punch is unambiguous. The
 pull-back Select is edge-triggered: return from the pull before requesting
 another star punch.
@@ -563,18 +592,21 @@ running and jumping, and deliberately switch between fast and slow travel.
 | Do this | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand around its center" width="96"> | Ordinary D-pad |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | A |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Hold A for as long as the thumb remains curled |
 | Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | B |
 | Curl the middle finger without curling all three last fingers | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling the middle finger" width="72"> | B for fast travel |
 | Curl middle, ring, and pinky together while moving sideways | <img src="images/gestures/actions/close-all-fingers.png" alt="Six-digit glove curling the last three fingers while moving" width="72"> | Pulses only the active horizontal direction for slower travel; vertical movement is unchanged |
 
-**Play smart:** Program 12 is assigned to **Super Mario Bros.** Use middle curl
+**Play smart:** Program 12 is assigned to **Super Mario Bros.** Rapid A is off
+by default, so jump height follows how long the thumb remains curled. If you
+manually enable Rapid A, a held thumb repeats 250 ms A presses separated by a
+short gap. Use middle curl
 for fast travel and the last-three pose only while you want slower horizontal
 movement. Release the last-three pose to return immediately to ordinary travel.
 
 **First round:**
 
-1. Walk in both directions and try thumb A and index B separately.
+1. Walk in both directions, vary the length of the thumb curl to compare jump heights, and try index B separately.
 2. Curl the middle finger while moving to practise fast travel.
 3. Use the last-three pose during a safe horizontal stretch, then reopen to restore full movement.
 
@@ -666,7 +698,7 @@ open Bad Street Brawler first.
 | Program | See it | Best fit | Main controls |
 | --- | --- | --- | --- |
 | **A** | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | Pinball | Two finger flippers, wrist tilt, combined-flipper mode |
-| **B** | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> | Joust | Steer by position; curl a finger to flap |
+| **B** | <img src="images/matrix/programs/B.png" alt="B matrix display illustration" width="104"> | Joust | Pulsed steering by position; curl a finger for a pulsed flap |
 | **C** | <img src="images/matrix/programs/C.png" alt="C matrix display illustration" width="104"> | Gyruss | Rotate by wrist angle; fire and bomb gestures |
 | **D** | <img src="images/matrix/programs/D.png" alt="D matrix display illustration" width="104"> | Challenge mode | Reversed directions with thumb/index buttons |
 | **E** | <img src="images/matrix/programs/E.png" alt="E matrix display illustration" width="104"> | Defender II | Ship movement, fire, smart bomb, evasive movement |
@@ -703,7 +735,7 @@ finger actions.
 
 | Gesture | See it | Controller result |
 | --- | --- | --- |
-| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Steer left or right |
+| Move the hand left or right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Pulsed steering left or right |
 | Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | B button; see the [Joust play card](GAMEPLAY_GUIDE.md#joust) for its in-game use |
 | Curl the index or middle finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Pulsed flap input |
 
@@ -793,8 +825,8 @@ Use this profile for Gun Smoke and shooters with movement plus directional fire.
 | Gesture | See it | Controller result |
 | --- | --- | --- |
 | Move the whole hand | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="96"> | Conventional directions |
-| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Pulsed B |
-| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Pulsed A |
+| Curl the thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | Pulsed A |
+| Curl the index finger | <img src="images/gestures/v2/curl-index.png" alt="Curl the index finger" width="72"> | Pulsed B |
 | Return the hand to center | <img src="images/gestures/actions/whole-hand-movement.png" alt="Return the whole hand to center" width="96"> | Release directional input |
 
 Use this profile for learning the system or giving an unmapped game a sensible
@@ -911,7 +943,7 @@ their eggs before they hatch, and stay clear of the lava.
 
 | Do this | See it | Result |
 | --- | --- | --- |
-| Move hand left / right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Steer left / right |
+| Move hand left / right | <img src="images/gestures/actions/horizontal-movement.png" alt="Move the whole hand left or right" width="96"> | Pulsed steering left / right |
 | Curl index or middle finger | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger" width="72"> | Pulsed A: steady flap |
 | Curl thumb | <img src="images/gestures/v2/curl-thumb.png" alt="Curl the thumb" width="72"> | B: faster flap |
 | Hold thumbs-up | <img src="images/gestures/v2/thumbs-up.png" alt="Hold a thumbs-up" width="72"> | Select game mode |
@@ -1084,9 +1116,8 @@ During restore, choose whether to keep the complete saved sensitivity, including
 the defaults used when the backup was made, or just personal adjustments. Reuse
 calibration only with the same camera and playing position; otherwise set a fresh
 centre. Backups do not include credentials or Academy progress. New exports use
-the `virtualglove-hand-setup` format at version 4. Legacy version-2 and
-version-3 backups remain importable; version 2 migrates its largest directional
-activation value into the center box. Older version-1 sensitivity-only files are rejected.
+the `virtualglove-hand-setup` format at version 4. Older backup formats are
+rejected without changing the selected player.
 
 Choose each player in turn and select **Back up hand setup** to download a
 separate file named for that player, such as
@@ -1218,7 +1249,7 @@ camera-and-output-off choice rather than a general gesture mapping.
 | **13 - Finger buttons** | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling the index finger for a gesture action button" width="104"> | Games where you want gesture A/B while keeping movement and menus on the physical Player 1 controller | Thumb and index curls provide A and B. Camera movement sends no D-pad, so the merged physical controller remains in charge of direction. |
 | **A - Pinball** | <img src="images/gestures/actions/wrist-roll.png" alt="Rotate the wrist for the pinball tilt action" width="176"> | Pinball and games driven by two independent actions | Index curl is A, thumb curl is Up, wrist tilt is B, and pulling back toggles combined flippers. Ordinary directional movement is disabled. |
 | **D - Mirror world** | <img src="images/gestures/actions/whole-hand-movement.png" alt="Move the whole hand in four directions" width="176"> | A game you already know well, a party challenge, or an inverted-direction accessibility experiment | Every direction is reversed. Thumb and index provide A and B. Expect your muscle memory to complain loudly. |
-| **H - General play** | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger for a general-purpose action button" width="176"> | Two-button platform, maze, puzzle, and action games | Hand movement supplies the D-pad. Index and thumb pulse A and B, so games that require a long held button may be a poor fit. |
+| **H - General play** | <img src="images/gestures/actions/finger-curl.png" alt="Six-digit glove curling a finger for a general-purpose action button" width="176"> | Two-button platform, maze, puzzle, and action games | Hand movement supplies the D-pad. Thumb pulses A and index pulses B, so games that require a long held button may be a poor fit. |
 
 Try Program H for general play, Program 2 when neutral-position feedback would
 help, or Program 13 when you want the physical controller to handle movement.

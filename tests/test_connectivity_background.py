@@ -19,7 +19,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock,patch
 from powerglove_vision.resolver import BackgroundAddress
-from powerglove_vision.transport import UdpSender,decode_state
+from powerglove_vision.transport import UdpSender
 from powerglove_vision.controller_protocol import decode_message
 from powerglove_vision.model import ControllerState
 from powerglove_vision.wifi_status import (

@@ -226,6 +226,13 @@ in memory, previews expire with the owning session, and camera images are not sa
 Tuning suppresses controller delivery even if a game launches or another Dashboard
 requests input. Saved settings are validated and atomically replaced.
 
+Dashboard rapid-fire changes are written through that revision-checked Games
+service before being forwarded to the local worker. A live A/B override is
+accepted only when the named game still matches an active authenticated launch
+lease. It is bound to that opaque session and cleared on game exit, lease expiry,
+manual profile selection, or the next launch; it never changes the authenticated
+profile, destination, or pairing material.
+
 The optional Advanced diagnostic is the only Academy path that records video.
 It is explicitly started and user-paced, remains on the VirtualGlove Controller, and is deleted
 immediately after aggregate analysis or cancellation. An abandoned AVI expires
@@ -239,18 +246,19 @@ Documentation screenshots use isolated sample data and an omitted-camera placeho
 If capturing a live page instead, blur the complete camera image before capture. Keep
 controls legible, but never publish unblurred camera frames or screenshots that
 contain passwords, private tokens, or pairing codes. The reference images show
-the interface; they are not saved gesture recordings.
+the interface; they are documentation examples only.
 
 ### Personal hand setup and tuning data
 
 Optional hand setup measures all five fingers; gesture tuning measures selected
 components. Both use three short sets of numerical samples in memory. The
-version-5 `data/gesture-tuning.json` file stores player names, one joystick center-box
+version-6 `data/gesture-tuning.json` file stores player names, one joystick center-box
 size, gesture activation/release pairs shared across game profiles for each player, Academy progress, and a
 required-center flag and separate saved calibration, plus a bounded pending reference during a calibration
-restore. Internal versions 1–4 migrate with private backups. Portable hand-setup
-exports use the `virtualglove-hand-setup` format at version 4. Legacy
-`powerglove-hand-setup` versions 2 and 3 remain importable, while version 1 is rejected.
+restore. VirtualGlove 0.4.1 is the oldest supported in-place upgrade and already
+uses this store format. Portable hand-setup exports use the
+`virtualglove-hand-setup` format at version 4; older formats are rejected without
+changing their source or the active player.
 Exports contain a name, center-box size, personal and complete gesture threshold
 pairs, software identity, and a neutral reference. They exclude
 camera images, landmarks, Wi-Fi credentials, pairing tokens, and lesson progress.
@@ -308,4 +316,6 @@ health checks, and host-link sampling. In particular, handshake or rejected
 traffic cannot extend the receiver's 250-millisecond valid-state deadline, and
 background status checks do not run in the camera inference path.
 
-The receiver rejects version 1 by default. `--allow-legacy-controller` is an explicit temporary upgrade option with weaker protections: old packets contain the secret, and receiver restarts lose their legacy replay history. The option stops accepting legacy input once signed input arrives but reopens after a process restart; remove it after migration. Update both computers together and consider re-pairing if the previous token was exposed. The new sender never silently downgrades.
+The receiver accepts signed protocol version 2 only. Unsigned and malformed
+packets are rejected before native-state or virtual-gamepad publication. Update
+both computers together; the sender never downgrades.

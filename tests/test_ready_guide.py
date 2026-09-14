@@ -35,7 +35,7 @@ class ReadyPlayersTests(unittest.TestCase):
         p = self.manager.player_snapshot()
         return self.manager.player_command(dict(action=action, player=p['active'], generation=p['generation'], **values))
 
-    def test_version_five_migration_is_lossless_and_backed_up_on_first_write(self):
+    def test_version_five_store_is_rejected_without_mutation(self):
         original = copy.deepcopy(self.manager.players.data)
         original['version'] = 5
         item = original['players']['default']; item.pop('ready_progress')
@@ -43,14 +43,15 @@ class ReadyPlayersTests(unittest.TestCase):
                     calibration={'version':2,'neutral':dict(palm_x=.5,palm_y=.5,palm_scale=.2,roll=0,noise_x=.01,noise_y=.02,reach_left=0,reach_right=0,reach_up=0,reach_down=0)})
         self.path.write_text(json.dumps(original))
         self.manager = TuningManager(self.path)
-        self.assertIsNone(self.manager.players.error)
+        self.assertIn('Unsupported player settings version',
+                      self.manager.players.error)
         self.assertEqual(json.loads(self.path.read_text()), original)
-        self.command('ready_progress', progress={'course':1,'completed':['neutral'],'completed_at':None})
-        saved = json.loads(self.path.read_text()); saved['version']=5
-        ready = saved['players']['default'].pop('ready_progress')
-        self.assertEqual(ready['completed'], ['neutral'])
-        self.assertEqual(saved, original)
-        self.assertEqual(json.loads(self.path.with_name('gesture-tuning-v5-backup.json').read_text()), original)
+        with self.assertRaisesRegex(ValueError, 'Unsupported player settings version'):
+            self.command('ready_progress', progress={
+                'course': 1, 'completed': ['neutral'], 'completed_at': None,
+            })
+        self.assertEqual(json.loads(self.path.read_text()), original)
+        self.assertFalse(self.path.with_name('gesture-tuning-v5-backup.json').exists())
 
     def test_optional_independent_resumable_and_academy_isolation(self):
         first = self.manager.player_snapshot()['active']

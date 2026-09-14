@@ -21,7 +21,6 @@ TOOLKIT_CATEGORIES = {
         "scripts/benchmark-diagnostic-overhead.py",
         "scripts/benchmark-direction-response.py",
         "scripts/benchmark-frame-preprocessing.py",
-        "scripts/benchmark-motion-correction.py",
         "scripts/benchmark-native-motion-curve.py",
         "scripts/benchmark-palm-anchors.py",
         "scripts/benchmark-post-inference.py",

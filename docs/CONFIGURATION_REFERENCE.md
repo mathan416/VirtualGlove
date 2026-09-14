@@ -376,16 +376,9 @@ of wrist and four knuckles so existing centers and reach spans remain valid.
 MediaPipe still supplies fingers, depth, roll, and gestures; FCEUmm directions
 and every game mapping are unchanged.
 Worker status reports `native_xy_source` as `mediapipe` while the native path is
-active or `inactive` otherwise. It reports `native_xy_mode` as `latest` for
-compatibility with existing diagnostics.
-
-The former optical-flow prototype remains in `src/powerglove_vision/motion.py`
-for historical comparison but is not connected to the live supervisor. Older
-`motion_tracking` and `native_xy_mode` configuration values are ignored. The
-hidden `--motion-tracking` command-line spelling remains
-accepted only so older launch scripts do not fail; it does not enable optical
-flow. Historical flow diagnostics and trace readers remain useful for analyzing
-already-recorded experiments.
+active or `inactive` otherwise. The abandoned optical-flow implementation and
+its unused compatibility settings have been removed; Git history retains the
+experiment. Supported native replay and latency tools remain available.
 
 When MediaPipe misses the hand briefly, the engine holds the last native X/Y for
 up to `native_xy_loss_hold_ms` (180 ms by default) to bridge roughly one extra
@@ -703,11 +696,8 @@ is the gate applied when the palm detector must find or reacquire a hand. These
 are tested engineering defaults rather than ordinary player controls.
 Direction-aware fast-sweep search is always active in the production MediaPipe
 path. It applies the measured gentle next-frame search translation without
-changing reach, gestures, mappings, or Latest-coordinate output. The former
-`directional_search` device-file value is accepted but ignored so existing
-installations require no migration.
-Latest coordinate is the only live native X/Y behavior. Older
-`native_xy_mode` values are accepted in existing files but ignored.
+changing reach, gestures, mappings, or Latest-coordinate output. It has no
+device-file switch. Latest coordinate is the only live native X/Y behavior.
 
 Setup's **Find the best camera settings** wizard temporarily compares the
 current configuration with capability-supported combinations. Its crash-safe
@@ -932,7 +922,42 @@ valid `profile` plus optional Boolean `rapid_a` and `rapid_b` switches. Unknown
 fields and non-Boolean switch values invalidate the registry.
 The launch hook carries these switches in every authenticated game-session
 renewal. Read-only `/status` reports the applied values as
-`rapid_fire.a` and `rapid_fire.b`; neither value changes player data.
+`rapid_fire.a` and `rapid_fire.b`, their profile defaults, and whether each
+value was overridden; none of these values changes player data. Dashboard can
+edit Rapid A and Rapid B for the currently running registered game. It uses the
+same revision-checked registry service and preserves every other mapping. After
+the save is verified, the Controller applies the switches to the running game
+without restarting it. This temporary live override is bound to that exact
+authenticated game session; it cannot spill into another game and is discarded
+on exit, session expiry, or a new launch. The saved registry values remain the
+source for future launches.
+
+Profile defaults follow only rapid or pulsed actions explicitly identified in
+the individual Mattel program descriptions. Program 7 defaults to Rapid A;
+Program B defaults to Rapid A; Program H defaults to Rapid A and B; and Bad
+Street Brawler defaults to Rapid B. All other profiles default both switches
+off. Documented compound and pulsed-direction actions remain independent of
+these A/B switches. Program 14, Gestures off, and native Super Glove Ball do not
+offer Dashboard rapid-fire controls.
+
+Mattel's *Power Glove Instructions*, page 14, documents a separate hardware
+power-on rule: both rapid-fire switches initially turn on. That page also says
+not every program has rapid fire and points to the individual descriptions.
+VirtualGlove intentionally follows the active profile's documented button
+behavior instead of emulating the blanket hardware power-on state.
+
+Here, `rapid_a` and `rapid_b` control only repetition of the corresponding NES
+button while its gesture remains active. They do not modify profile-owned fast
+turns, pulsed steering, turbo movement, simultaneous-button combinations, or
+other compound actions.
+
+<!-- PAGEBREAK -->
+
+Upgrades preserve structured registry entries, including explicit `rapid_a` and
+`rapid_b` values. A preserved value continues to override the corrected profile
+default. **Use profile defaults** on Dashboard converts that game back to its
+string profile entry, removing only the two rapid-fire overrides while retaining
+the profile and all player configuration.
 
 | Included game | Profile |
 | --- | --- |
@@ -960,7 +985,7 @@ The numeric portion of the shipped registry is:
 | `program_9` | Rad Racer | No rapid fire by profile default |
 | `program_10` | R.C. Pro-Am | None |
 | `program_11` | No indexed title; sustained fast-turn alternative | None |
-| `program_12` | Super Mario Bros. | None |
+| `program_12` | Super Mario Bros. | Held A by default; if `rapid_a=true`, repeat 250 ms A holds separated by the standard short rapid-fire gap |
 | `program_13` | No indexed title; gesture A/B with physical-controller movement | None |
 | `program_14` | Anticipation; temporary manual menu/password entry | Output is neutral; camera is stopped |
 
@@ -1067,8 +1092,8 @@ repeated filenames. Keep a clearly named copy for every player you want to recov
 ### Backup contents and restore choices
 
 **Back up hand setup** downloads `<player>-virtualglove-hand-setup.json` with format
-`virtualglove-hand-setup` and version `4`. Legacy `powerglove-hand-setup`
-versions 2 and 3 remain importable. Fields are `name`, personal `thresholds`,
+`virtualglove-hand-setup` and version `4`. Older PowerGlove backup formats are
+rejected without changing the selected player. Fields are `name`, personal `thresholds`,
 `joystick_deadzone`, `calibration`, `effective_thresholds`, and `source` (`version`, `commit`). Empty
 personal thresholds mean no personal overrides. Effective thresholds contain
 all nine gesture activation/release pairs, including the supplied defaults in use.
@@ -1089,14 +1114,9 @@ to restore personal adjustments with the installed defaults. Independently,
 check **My camera position and playing position match this backup** to reuse
 calibration. Otherwise set a fresh center. Controls stay paused until Start.
 
-Version 4 is the current portable backup format. Legacy version-3 files remain
-importable with their saved single center-box size. Existing version-2 files are
-also supported: the largest of their four directional activation values becomes
-the single center-box size and their obsolete directional release values are
-discarded. Version-2 files without `effective_thresholds` or `source` still
-restore their personal adjustments and calibration. Version-1
-`powerglove-hand-settings` exports are rejected without changing anything.
-Cancel closes the review without changes.
+Version 4 is the only supported portable backup format. Older formats are
+rejected with an unsupported-version message and their source file is never
+changed. Cancel closes the review without changes.
 
 ![Review before restoring a complete hand setup](images/hand-setup-restore.png)
 
@@ -1178,17 +1198,9 @@ Hand setup learns open and curled thresholds for all five fingers. Individual tu
 Only the active player’s adjusted components override all game profiles. Untuned components retain
 the shared supplied values. Personal adjustments are saved atomically in
 `data/gesture-tuning.json` and survive application restarts and normal updates.
-Normal personalization saves no images or recordings. Existing version-1 files
-migrate as described above; this legacy example remains readable:
-
-```json
-{
-  "version": 1,
-  "thresholds": {
-    "index": {"on": 0.6, "off": 0.4}
-  }
-}
-```
+Normal personalization saves no images or recordings. Stored player files must
+use the current version-6 format shipped by VirtualGlove 0.4.1; older files are
+reported as unsupported and are not overwritten.
 
 Each pair must contain finite numbers with `0 <= off < on`. Finger and pull
 activation cannot exceed `1`; wrist rotation cannot exceed `2`; push
@@ -1221,7 +1233,6 @@ useful for understanding the defaults; personal tuning is managed through Glove 
 | Field | What it measures | Effect of lowering the value |
 | --- | --- | --- |
 | `joystick_deadzone` | Chosen width and height of the saved-center region as a fraction of the full camera frame (0.10–1.00); effective size is at least 1.5 calibrated hands | Positional directions begin closer to the saved center unless the hand-size floor applies |
-| `move_on` / `move_off` | Legacy configuration compatibility fields | Imported only when `joystick_deadzone` is absent; `move_on` supplies the box size and `move_off` is ignored |
 | `coordinate_edge_margin` | Camera margin excluded from native X/Y travel | Native travel reaches its edge closer to the camera boundary |
 | `coordinate_smoothing_min` | Minimum weight assigned to the newest native coordinate | Small native movements respond more immediately but may show more jitter |
 | `coordinate_smoothing_max` | Maximum newest-coordinate weight during deliberate travel | Large native movements catch up less quickly |
@@ -1322,11 +1333,9 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behavior and actual game input. Profile changes also establish a fresh controller session.
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
-For a staged upgrade only, the new receiver has `--allow-legacy-controller`. An administrator can temporarily add it to the receiver invocation while the older Controller is being replaced. It is off by default, still exposes the shared token in legacy traffic, and closes for the rest of that receiver process after the first valid version-2 state. Remove the flag after upgrading; a receiver restart would otherwise reopen legacy admission. This compatibility mode does not provide version-2 replay protection. Re-pair after migration if a token may have been observed in old traffic: signing cannot revoke a previously exposed key.
-
 Existing pairing credentials and native emulator files need no format migration.
-For 0.4.1, update both machines together because the runtime and Matrix bridge
-identifiers move to their `virtualglove-*` names. The Controller package carries
+VirtualGlove 0.4.1 is the oldest supported in-place upgrade. Update both machines
+together. The Controller package carries
 and flashes the matching checksum-verified Matrix firmware; do not skip that
 installer stage or mix it with an older Controller/receiver build. Native
 emulator cores do not require a rebuild solely for this migration.
@@ -1804,7 +1813,6 @@ history.
 | `--port NUMBER` | `55355` | UDP port for controller packets; must match VirtualGlove Controller settings. |
 | `--token VALUE` | None | Supplies the shared token directly. Use only as an advanced alternative; the value can appear in process arguments. |
 | `--token-file PATH` | None | Reads the shared token from a protected file. Supply exactly one of this flag and `--token`. The token must contain at least 16 characters. |
-| `--allow-legacy-controller` | Off | Temporary version-1 receiver compatibility during a staged upgrade; closes after the first signed state until process restart. Remove after upgrading. |
 | `--timeout-ms NUMBER` | `250` | Socket receive timeout in milliseconds; a timeout releases held controls. Use a positive value. |
 | `--native-state PATH` | `/run/virtualglove/native-state` | Versioned latest-sample record for the VirtualGlove Nestopia native core. Failure to create it does not disable FCEUmm/uinput. |
 | `--dry-run` | Off | Prints received controls instead of creating a virtual input device. |
@@ -2043,7 +2051,6 @@ they may still perform their normal work.
 | `scripts/benchmark-tasks-live-stream.py` | Camera or clip input, Tasks model, delegate choice, and required new output path | Isolated MediaPipe Tasks live-stream CPU/GPU probe with one result in flight and newest-sequence accounting. GPU support and performance must be demonstrated on the target; this is not a production mode. |
 | `scripts/analyze-motion-trace.py` | Required trace path; optional `--output NEW-PATH` | Reads one finite controller motion trace and reports recognition source age, selected-versus-filtered error, movement-class settling, fallback reasons, and tracking losses. Without `--output`, JSON is printed; an existing output file is never overwritten. |
 | `scripts/compare-motion-matrix.py` | Required directory and `--output NEW-PATH` | Compares `min*-boost*.trace.json` files using the shared analyzer. Use only for windows with the same movement sequence and camera conditions; the output file must not already exist. |
-| `scripts/benchmark-motion-correction.py` | Required `--before PATH` and `--output NEW-PATH`; optional `--after PATH` | Synthetic before/after benchmark for the motion-correction implementation. It uses generated frames and simulated recognition delay, never a camera or game, and cannot establish physical latency. |
 | `scripts/analyze-motion-samples.py` | Required `--samples-dir PATH` and `--output NEW-PATH` | Summarizes saved aggregate status samples and models ideal native-coordinate steps through the actual smoothing engine. It does not replay input or measure physical latency; the output file must not already exist. |
 | `scripts/calibrate-reach.py` | One required step: `begin`, `center`, `left`, `right`, `up`, `down`, `apply`, or `cancel` | Internal operator helper for the guided comfortable-reach procedure. Run one step at a time inside the Controller container as described above; it pauses output and preserves a private backup. |
 | `scripts/measure-dot-input.py` | Optional `--state PATH`, `--seconds NUMBER`, and `--interval NUMBER`; required `--output NEW-PATH` | Reads the cabinet's native-state record without changing it and reports dot validity, loss/recovery, distinct publications, and coordinate range. Defaults are the installed state path, 30 seconds, and 60 polls per second. |
@@ -2913,10 +2920,8 @@ overshoot. This curve is no longer selectable; the live path uses Latest
 coordinate with the same validation, edge clamp, calibration, reach mapping,
 gestures, and safety.
 
-Older configurations containing `motion_coordinate_boost` or
-`motion_coordinate_max` remain loadable. They are retained for historical
-comparison, but a maximum above `1.00` no longer extrapolates native output.
-Use `benchmark-vision-replay.py` followed by
+The abandoned extrapolation configuration fields are no longer accepted or
+reported. Use `benchmark-vision-replay.py` followed by
 `benchmark-native-motion-curve.py` to compare the old deployed experiment, its
 safely capped form, the bounded speed curve, and unsmoothed latest coordinates.
 See the [Engineering Journey](ENGINEERING_JOURNEY.md).

@@ -124,11 +124,9 @@ recognition defaults take effect. The installer never copies a maintainer's
 neutral-hand coordinates because those measurements depend on the player's
 camera, distance, and position.
 
-During an update, a pending Dashboard shutdown request stops setup before any
-renamed path watcher is enabled. Complete or clear that shutdown request, bring
-the Controller back online, and rerun the same installer. Legacy path and timer
-watchers are stopped before their services, so old and new helpers never process
-the same request concurrently.
+During an update, a pending Dashboard shutdown request stops setup before host
+helpers are installed. Complete or clear that shutdown request, bring the
+Controller back online, and rerun the same installer.
 
 If the script reports a failure, stop and follow its message. If `curl` is missing,
 install it with `sudo apt-get install curl ca-certificates`, then retry. The
@@ -344,12 +342,20 @@ assuming every numeric profile uses ordinary hand-position movement:
 | 13 | VirtualGlove supplies A/B while the merged physical Player 1 controller supplies movement. |
 | 14 | Camera and VirtualGlove output intentionally stay off; use the physical Player 1 controller. |
 
-Programs 1–8 and 10–13 normally pulse A and B. Programs 9 and 14 report rapid
-fire off. Registered exceptions are
-applied automatically for Blaster Master, Double Dribble, Racket Attack, Ice
-Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
+Rapid A/B defaults on only for explicitly documented pulsed buttons: Program 7
+A, Program B A, Program H A/B, and Bad Street Brawler B. Every other profile
+defaults off. The registry retains Mattel's explicit off entries for Blaster
+Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
 official game index](GAMEPLAY_GUIDE.md#quick-selector-programs-1-14) when confirming a
 compound action.
+
+An update preserves any Rapid A/B choices already saved for a registered game.
+Those choices continue to override its profile defaults. To adopt the corrected
+defaults for that game, launch it and choose **Use profile defaults** on
+Dashboard. Rapid A/B controls button repetition only; profile-owned fast turns,
+pulsed movement, turbo movement, and compound actions do not change.
+
+<!-- PAGEBREAK -->
 
 **Checkpoint:** A gesture changes the intended control in the running game.
 Seeing the device name or a running service alone is not an end-to-end test.
@@ -515,9 +521,9 @@ Add and manage players in **Setup → Players**. Choose the active player on Das
 sensitivity persist across restarts and normal upgrades. Selecting a player immediately loads their sensitivity, progress, and saved center. Use **Center hand** for a new player or after moving the camera or changing playing position. Restoring a hand-setup backup requires centering unless you explicitly
 reuse its calibration with the same camera and playing positions. Backups include
 name, center-box size, personal and effective gesture sensitivity, source software
-identity, and calibration. New exports use VirtualGlove backup version 4;
-legacy version-2 and version-3 backups remain importable, and version-1
-sensitivity-only files are rejected. The web footer reports
+identity, and calibration. VirtualGlove backup version 4 is the only supported
+portable format; older formats are rejected without changing the active player.
+The web footer reports
 exact software and running firmware identities; older firmware may report unavailable.
 
 Choose each player in turn and select **Back up hand setup** to download a

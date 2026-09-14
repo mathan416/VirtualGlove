@@ -81,34 +81,28 @@ PROGRAM_PROFILES = NUMBER_PROGRAM_PROFILES + LETTER_PROGRAM_PROFILES
 GAME_PROFILES = ("bad_street_brawler", "super_glove_ball")
 SUPPORTED_PROFILES = PROGRAM_PROFILES + GAME_PROFILES
 RECOGNITION_PROFILES = SUPPORTED_PROFILES + ("practice",)
+PROGRAM_12_JUMP_SECONDS = 0.25
 
 
 def rapid_fire_defaults(profile: str) -> tuple[bool, bool]:
-    """Return the original built-in program's default A/B pulse switches."""
-    if profile in NUMBER_PROGRAM_PROFILES and profile not in {"program_9", "program_14"}:
-        return True, True
-    return False, False
+    """Return A/B pulse defaults explicitly documented for this profile."""
+    return {
+        "program_7": (True, False),
+        "program_b": (True, False),
+        "program_h": (True, True),
+        "bad_street_brawler": (False, True),
+    }.get(profile, (False, False))
 
 
 @dataclass(frozen=True)
 class GestureConfig:
     """Hold movement, curl, roll, depth, pulse, and tracking-loss thresholds."""
-    # Full-frame width and height of the centered joystick region. ``None`` keeps old
-    # profile files working by migrating their movement activation value.
-    joystick_deadzone: float | None = None
-    move_on: float = 0.28
-    move_off: float = 0.14
-    # Retained so older profile files remain loadable; native X/Y now use the
-    # calibrated center and camera boundaries instead of hand-width gain.
-    coordinate_gain: float = 0.35
+    # Full-frame width and height of the centered joystick region.
+    joystick_deadzone: float = 0.60
     coordinate_edge_margin: float = 0.08
     coordinate_smoothing_min: float = 0.70
     coordinate_smoothing_max: float = 1.00
     coordinate_motion_boost: float = 4.00
-    # Legacy experiment fields remain accepted so existing configuration files
-    # load cleanly. The bounded native speed curve does not extrapolate them.
-    motion_coordinate_boost: float | None = None
-    motion_coordinate_max: float | None = None
     # Native X/Y speed curve. Calibration noise is converted back to camera
     # units and multiplied by this value; the fixed floor covers legacy
     # calibrations that did not retain a useful jitter measurement.
@@ -155,7 +149,6 @@ class GestureConfig:
             value = self.thresholds[channel]
             return value["on"], value["off"]
         prefix = ("thumb" if channel == "thumb" else
-                  "move" if channel in ("left", "right", "up", "down") else
                   "roll" if channel.startswith("roll_") else
                   "push" if channel in ("push", "pull") else "curl")
         return getattr(self, prefix + "_on"), getattr(self, prefix + "_off")
@@ -165,8 +158,8 @@ class GestureConfig:
         return self.pair(finger)[0 if closed else 1] if finger in self.thresholds else default
 
     def chosen_joystick_deadzone(self) -> float:
-        """Return the scalar centre-box size, including legacy profile fallback."""
-        return self.move_on if self.joystick_deadzone is None else self.joystick_deadzone
+        """Return the configured scalar centre-box size."""
+        return self.joystick_deadzone
 
     def effective_joystick_deadzone(self, calibration: Calibration) -> float:
         """Return the frame fraction after the calibrated hand-size safety floor."""
@@ -417,6 +410,7 @@ class GestureEngine:
         # hold, then a sustained non-V release before allowing another pulse.
         self._start_gesture = HeldGesture(hold_seconds=0.50, release_seconds=0.30)
         self._select_gesture = HeldGesture()
+        self._program_12_rapid_started_at: float | None = None
         self._menu_guard_active = False
         self._vulcan_candidate_at: float | None = None
         self._vulcan_release_at: float | None = None
@@ -464,6 +458,7 @@ class GestureEngine:
         self._program_pose_was_active = False
         self._program_action_until = 0.0
         self._zap_until = 0.0
+        self._program_12_rapid_started_at = None
         self._menu_guard_active = False
         self._vulcan_candidate_at = None
         self._vulcan_release_at = None
@@ -1029,6 +1024,7 @@ class GestureEngine:
             self._pull_was_active = False
             self._start_gesture.update(False, observation.timestamp)
             self._select_gesture.update(False, observation.timestamp)
+            self._program_12_rapid_started_at = None
             self._menu_guard_active = False
             self._filtered_palm_x = None
             self._filtered_palm_y = None
@@ -1171,9 +1167,12 @@ class GestureEngine:
             and all(self._switches[name].active for name in ("middle", "ring", "pinky"))
         )
         if self.profile == "bad_street_brawler":
+            brawler_a = middle or roll_left or roll_right
             buttons = {
-                "a": (middle or roll_left or roll_right) and not menu_pose,
-                "b": (middle or (thumb and pulse_on)) and not menu_pose,
+                "a": brawler_a and (pulse_on or not self.rapid_a) and not menu_pose,
+                # Only the documented thumb-B action is pulsed by default. The
+                # middle-finger A+B grab remains held independently.
+                "b": (middle or (thumb and (pulse_on or not self.rapid_b))) and not menu_pose,
                 "start": start,
                 "select": select,
                 "glove_zap": pushing,
@@ -1396,7 +1395,19 @@ class GestureEngine:
                 dpad["right"] = not dpad["left"]
                 b = True
         elif profile == "program_12":
-            a, b = thumb, index or (middle and not last_three)
+            if menu_pose or not thumb:
+                self._program_12_rapid_started_at = None
+                a = False
+            elif self.rapid_a:
+                if self._program_12_rapid_started_at is None:
+                    self._program_12_rapid_started_at = observation.timestamp
+                short_gap = 1.0 / (self.config.pulse_hz * 2.0)
+                elapsed = observation.timestamp - self._program_12_rapid_started_at
+                a = elapsed % (PROGRAM_12_JUMP_SECONDS + short_gap) < PROGRAM_12_JUMP_SECONDS
+            else:
+                self._program_12_rapid_started_at = None
+                a = True
+            b = index or (middle and not last_three)
             if last_three:
                 slow_on = int(observation.timestamp * self.config.pulse_hz) % 2 == 0
                 dpad["left"] = raw_dpad["left"] and slow_on
@@ -1421,7 +1432,9 @@ class GestureEngine:
         elif profile == "program_b":
             # Joust: lateral steering and pulsed finger flap.
             dpad["up"] = dpad["down"] = False
-            a = (index or middle) and pulse_on
+            dpad["left"] = dpad["left"] and pulse_on
+            dpad["right"] = dpad["right"] and pulse_on
+            a = index or middle
             b = thumb
         elif profile == "program_c":
             # Gyruss: wrist rotation, straight index fires, pull back bombs.
@@ -1461,8 +1474,8 @@ class GestureEngine:
             b = pushing
         elif profile == "program_h":
             # General play/training: conventional motion and pulsed buttons.
-            a = index and pulse_on
-            b = thumb and pulse_on
+            a = thumb
+            b = index
         elif profile == "program_i":
             # Knight Rider/driving: wrist steering, finger throttle, hand brake.
             dpad = {name: False for name in dpad}
@@ -1474,8 +1487,9 @@ class GestureEngine:
             a = turbo
             b = thumb
 
-        if profile in NUMBER_PROGRAM_PROFILES:
-            a = a and (pulse_on or not self.rapid_a)
+        if profile in PROGRAM_PROFILES:
+            if profile != "program_12":
+                a = a and (pulse_on or not self.rapid_a)
             b = b and (pulse_on or not self.rapid_b)
         if menu_pose:
             a = b = False

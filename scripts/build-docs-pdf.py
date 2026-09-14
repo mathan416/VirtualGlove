@@ -27,7 +27,10 @@
 from __future__ import annotations
 
 import html
+import io
+import math
 import re
+from functools import lru_cache
 from datetime import date
 from pathlib import Path
 
@@ -36,7 +39,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.lib.utils import ImageReader
+from PIL import Image as PillowImage
 from reportlab.platypus import (
     Image,
     KeepTogether,
@@ -120,12 +123,32 @@ def paragraph(text: str, style: ParagraphStyle) -> Paragraph:
     return Paragraph(inline(text), style)
 
 
+PDF_IMAGE_DPI = 180
+
+
+@lru_cache(maxsize=256)
+def _pdf_image(path: str, pixel_width: int, pixel_height: int) -> bytes:
+    """Return a print-sized copy without changing the maintained source artwork."""
+    with PillowImage.open(path) as source:
+        source.load()
+        if source.width > pixel_width or source.height > pixel_height:
+            source.thumbnail((pixel_width, pixel_height), PillowImage.Resampling.LANCZOS)
+        buffer = io.BytesIO()
+        source.save(buffer, "PNG", optimize=True)
+        return buffer.getvalue()
+
+
 def image_flowable(path: Path, max_width: float, max_height: float) -> Image:
-    """Load and proportionally scale an image within the requested bounds."""
-    reader = ImageReader(str(path))
-    width, height = reader.getSize()
+    """Load and proportionally scale a print-sized copy within requested bounds."""
+    with PillowImage.open(path) as source:
+        width, height = source.size
     scale = min(max_width / width, max_height / height)
-    image = Image(str(path), width=width * scale, height=height * scale)
+    rendered_width, rendered_height = width * scale, height * scale
+    target_width = max(1, math.ceil(rendered_width / 72 * PDF_IMAGE_DPI))
+    target_height = max(1, math.ceil(rendered_height / 72 * PDF_IMAGE_DPI))
+    buffer = io.BytesIO(_pdf_image(str(path), target_width, target_height))
+    image = Image(buffer, width=rendered_width, height=rendered_height)
+    image._virtualglove_buffer = buffer
     image.hAlign = "CENTER"
     return image
 

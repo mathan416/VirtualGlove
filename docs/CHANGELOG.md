@@ -7,6 +7,55 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+### Added
+
+- Added per-game **Rapid A** and **Rapid B** controls to Dashboard. Changes use
+  the existing authenticated, revision-checked RetroPie registry and hot-swap
+  during the running authenticated game session. The live override is bound to
+  that session and disappears when the game exits or a new session starts.
+
+### Changed
+
+- Cached validated device settings in the Controller supervisor and made every
+  save publish atomically through one path. Ordinary Dashboard status polling no
+  longer rereads the settings file or enumerates cameras; camera inventory is
+  refreshed briefly for Setup and Wi-Fi reports use a short cache.
+- Compressed development deployment archives before transfer. Documentation PDF
+  builds now downsample embedded copies to print resolution while leaving all
+  source artwork, including Pixel Pal's intentional extra digits, unchanged.
+- VirtualGlove 0.4.1 is now the oldest supported in-place upgrade. Current
+  player data, calibration, tuning, registries, pairing, and device settings are
+  preserved; older player stores and portable backup formats fail explicitly
+  without overwriting their source.
+- Rapid A/B now defaults on only where an individual Mattel program description
+  explicitly identifies a rapid or pulsed button action: Program 7 A, Program B
+  A, Program H A/B, and Bad Street Brawler B. Every other profile defaults off;
+  documented compound, directional-pulse, and turbo actions remain independent.
+- Program H now follows the documented finger order: thumb produces pulsed A
+  and index produces pulsed B. Program B also pulses its documented horizontal
+  movement as well as its flap action.
+- Program 12 now holds A for the full thumb curl by default so Super Mario Bros.
+  jump height remains controllable. If Rapid A is explicitly enabled, it repeats
+  250 ms A holds separated by the standard short rapid-fire gap.
+- Clarified the distinction between the original glove's page-14 power-on state
+  and VirtualGlove's source-accurate profile defaults. Documented that Rapid A/B
+  changes only button repetition, while profile-owned fast turns, pulsed
+  movement, turbo movement, and compound actions keep their own timing. Added
+  upgrade guidance for preserved per-game overrides and **Use profile defaults**.
+
+### Removed
+
+- Removed the abandoned optical-flow implementation and comparison benchmark,
+  unused motion compatibility branches and settings, the ignored directional
+  search device switch, an unused web re-export, duplicate worker homepage,
+  obsolete camera action aliases, and other unreachable helpers.
+- Removed unsigned controller protocol version 1 and its temporary receiver
+  flag. Signed `virtualglove-vision/2` messages are the only accepted controller
+  transport, and public status is now separate from wire serialization.
+- Removed pre-0.4.1 PowerGlove application, service, Compose, manifest,
+  configuration, and player-backup migrations. Active native Power Glove
+  emulation names and the `powerglove_vision` Python package remain unchanged.
+
 ## [0.4.1] - 2026-09-13
 
 ### Added

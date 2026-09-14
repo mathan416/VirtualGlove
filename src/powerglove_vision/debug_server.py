@@ -30,28 +30,6 @@ from .gesture import SUPPORTED_PROFILES
 PRACTICE_LEASE_SECONDS = 6.0
 
 
-PAGE = b"""<!doctype html>
-<html><head><meta name=viewport content='width=device-width,initial-scale=1'>
-<title>VirtualGlove</title>
-<style>body{font:16px system-ui;background:#10131a;color:#eef;margin:24px auto;padding:0 18px;max-width:1000px}
-img{width:100%;background:#000;border-radius:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
-.card{background:#1b2130;padding:13px;border-radius:9px}.label{color:#9ca9c7;font-size:12px;text-transform:uppercase}.value{font-size:19px;margin-top:3px}
-button{font-size:18px;padding:12px 20px;border:0;border-radius:8px;background:#287cff;color:white}</style></head>
-<body><h1>VirtualGlove</h1><div class=grid>
-<div class=card><div class=label>Game</div><div class=value id=game>Waiting...</div></div>
-<div class=card><div class=label>Gesture profile</div><div class=value id=profile>Waiting...</div></div>
-<div class=card><div class=label>Hand tracking</div><div class=value id=tracking>Waiting...</div></div>
-<div class=card><div class=label>Selected by</div><div class=value id=source>Waiting...</div></div>
-</div><img src=/stream><p><button onclick="fetch('/calibrate',{method:'POST'})">Center hand</button></p>
-<script>
-const names={bad_street_brawler:'Bad Street Brawler',super_glove_ball:'Super Glove Ball',off:'Off'};
-function profileName(p){if(names[p])return names[p];if(p&&p.startsWith('program_'))return 'Program '+p.slice(-1).toUpperCase();return p||'Off'}
-setInterval(async()=>{try{const s=await(await fetch('/status')).json();
-game.textContent=s.game||'No game';profile.textContent=profileName(s.active_profile);
-tracking.textContent=s.calibrating?'Centering - hold still':(s.detected?'Ready and tracking':'Show your hand');
-source.textContent=s.profile_source||'Startup';}catch(e){}},250)</script></body></html>"""
-
-
 class SharedDebugState:
     """Share the latest frame, diagnostics, and one-shot operator requests across threads."""
     def __init__(self) -> None:
@@ -69,6 +47,8 @@ class SharedDebugState:
         self.practice_active = False
         self.practice_request: bool | None = None
         self.statistics_until = 0.0
+        self.rapid_fire_request: tuple[str, str, bool | None, bool | None] | None = None
+        self.rapid_fire_update = {"state": "idle", "message": ""}
 
     def request_statistics(self, seconds: float = 1.0) -> None:
         """Keep detailed worker telemetry active only for a watching browser."""
@@ -155,6 +135,31 @@ class SharedDebugState:
             self.profile_request = None
             return requested
 
+    def request_rapid_fire(
+        self, request_id: str, game: str, rapid_a: bool | None, rapid_b: bool | None
+    ) -> None:
+        """Queue a session-bound rapid-fire change from the local Dashboard."""
+        with self.lock:
+            self.rapid_fire_request = (request_id, game, rapid_a, rapid_b)
+            self.rapid_fire_update = {
+                "request_id": request_id, "state": "pending", "message": "Applying now…"
+            }
+
+    def take_rapid_fire_request(self):
+        """Consume and clear the newest session-bound rapid-fire request."""
+        with self.lock:
+            request = self.rapid_fire_request
+            self.rapid_fire_request = None
+            return request
+
+    def finish_rapid_fire(self, request_id: str, error: str = "") -> None:
+        """Publish the final applied or rejected state for one live update."""
+        with self.lock:
+            self.rapid_fire_update = {
+                "request_id": request_id, "state": "error" if error else "applied",
+                "message": error or "Applied to the running game.",
+            }
+
     def _refresh_practice_locked(self, now: float) -> None:
         """Expire abandoned browser leases and queue only real mode changes."""
         self.practice_sessions = {
@@ -224,8 +229,6 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            elif self.path == "/":
-                self.send_response(200); self.send_header("Content-Type", "text/html"); self.end_headers(); self.wfile.write(PAGE)
             elif self.path.split("?", 1)[0] == "/status":
                 query = self.path.split("?", 1)[1] if "?" in self.path else ""
                 if "statistics=1" in query.split("&"):
@@ -234,6 +237,7 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                     status = dict(shared.status)
                     status["preview_clients"] = shared.stream_clients
                     status["_game_controller_event"] = shared.game_controller_event
+                    status["rapid_fire_update"] = dict(shared.rapid_fire_update)
                 if shared.tuning is not None:
                     status["tuning"] = shared.tuning.snapshot()
                     status["player"] = shared.tuning.player_snapshot()
@@ -316,6 +320,36 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                         raise ValueError("choose a supported gesture profile")
                     shared.request_profile(profile)
                     response = json.dumps({"active_profile": profile or "off"}).encode()
+                    self.send_response(202)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+                except (ValueError, json.JSONDecodeError) as exc:
+                    response = json.dumps({"error": str(exc)}).encode()
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(response)))
+                    self.end_headers()
+                    self.wfile.write(response)
+            elif self.path == "/rapid-fire":
+                try:
+                    length = min(int(self.headers.get("Content-Length", "0")), 1024)
+                    body = json.loads(self.rfile.read(length) or b"{}")
+                    request_id = body.get("request_id")
+                    game = body.get("game")
+                    rapid_a, rapid_b = body.get("rapid_a"), body.get("rapid_b")
+                    if (not isinstance(request_id, str) or not 8 <= len(request_id) <= 64
+                            or not all(c.isalnum() or c in "-_" for c in request_id)):
+                        raise ValueError("request_id must be an opaque browser identifier.")
+                    if not isinstance(game, str) or not game or len(game) > 512:
+                        raise ValueError("A current registered game is required.")
+                    if rapid_a is not None and type(rapid_a) is not bool:
+                        raise ValueError("rapid_a must be Boolean or null.")
+                    if rapid_b is not None and type(rapid_b) is not bool:
+                        raise ValueError("rapid_b must be Boolean or null.")
+                    shared.request_rapid_fire(request_id, game, rapid_a, rapid_b)
+                    response = json.dumps({"accepted": True}).encode()
                     self.send_response(202)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(response)))

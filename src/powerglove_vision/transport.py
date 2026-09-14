@@ -20,7 +20,6 @@
 
 from __future__ import annotations
 
-import json
 import socket
 import time
 import uuid
@@ -37,34 +36,18 @@ DISCOVERY_AFTER_SECONDS = 3.0
 DISCOVERY_INTERVAL_SECONDS = 2.0
 
 
-def encode_state(
-    state: ControllerState, token: str | None = None, session: str | None = None
-) -> bytes:
-    """Encode legacy v1 fixtures/tools; live UdpSender always uses signed v2."""
-    data = state.to_dict(token)
-    if session:
-        data["session"] = session
-    payload = json.dumps(data, separators=(",", ":"), sort_keys=True).encode()
-    if len(payload) > MAX_PACKET_BYTES:
-        raise ValueError("controller packet is unexpectedly large")
-    return payload
-
-
-def decode_state(payload: bytes) -> dict:
-    """Parse and validate one size-bounded controller protocol packet."""
-    if len(payload) > MAX_PACKET_BYTES:
-        raise ValueError("controller packet exceeds size limit")
-    data = json.loads(payload.decode("utf-8"))
-    if not isinstance(data, dict) or data.get("protocol") != "virtualglove-vision/1":
-        raise ValueError("unsupported controller protocol")
+def validate_state(data: dict) -> dict:
+    """Validate one controller state carried inside an authenticated v2 message."""
+    if not isinstance(data, dict):
+        raise ValueError("invalid controller state")
+    if set(data) - {
+        "sequence", "timestamp", "profile", "detected", "confidence",
+        "calibrated", "axes", "dpad", "buttons", "fingers", "events",
+    }:
+        raise ValueError("invalid controller state fields")
     sequence = data.get("sequence")
     if type(sequence) is not int or not 0 <= sequence <= 2_147_483_647:
         raise ValueError("invalid controller sequence")
-    for name in ("session", "token"):
-        value = data.get(name)
-        if value is not None and (not isinstance(value, str) or not value.isascii()
-                                  or not 1 <= len(value) <= (128 if name == "session" else 256)):
-            raise ValueError("invalid controller " + name)
     for name, keys, maximum in (
         ("axes", {"x", "y", "z", "roll"}, 32767),
         ("dpad", {"up", "down", "left", "right"}, None),
@@ -93,6 +76,13 @@ def decode_state(payload: bytes) -> dict:
     for name in ("detected", "calibrated"):
         if name in data and type(data[name]) is not bool:
             raise ValueError("invalid controller " + name)
+    profile = data.get("profile")
+    if profile is not None and (not isinstance(profile, str) or not 1 <= len(profile) <= 64):
+        raise ValueError("invalid controller profile")
+    events = data.get("events", [])
+    if (not isinstance(events, list) or len(events) > 32
+            or any(not isinstance(value, str) or len(value) > 64 for value in events)):
+        raise ValueError("invalid controller events")
     return data
 
 

@@ -259,7 +259,7 @@ def main() -> int:
         # The worker keeps its lightweight control plane alive while gestures
         # are paused and owns lazy camera/model activation for active profiles.
         while True:
-            settings = load_device_config()
+            settings = control.load_config()
             matrix.set_profile(str(settings.get("profile", "off")))
             matrix.set_status(MatrixStatus.LOADING)
             revision = control.revision

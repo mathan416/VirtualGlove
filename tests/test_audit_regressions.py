@@ -22,9 +22,10 @@ from types import SimpleNamespace
 from concurrent.futures import Future
 from unittest.mock import Mock, patch
 from powerglove_vision import receiver, vision_app
-from powerglove_vision.transport import decode_state
+from powerglove_vision.transport import validate_state
+from powerglove_vision.controller_protocol import ReceiverSessions, decode_message, encode_message
 from powerglove_vision.gesture import GestureEngine, HeldGesture, GestureConfig
-from powerglove_vision.model import Calibration, HandObservation
+from powerglove_vision.model import Calibration, ControllerState, HandObservation
 from powerglove_vision.matrix import UnoQMatrix, MatrixStatus
 from powerglove_vision.tuning import TuningManager
 
@@ -34,8 +35,9 @@ TOKEN = '0123456789abcdef'
 
 
 def packet(**extra):
-    return json.dumps(dict(protocol='virtualglove-vision/1', token=TOKEN,
-                           sequence=1, session='test', **extra)).encode()
+    value = ControllerState.released(1, 1, 'off', True).to_transport_dict()
+    value.update(extra)
+    return value
 
 
 class AuditRegressionTests(unittest.TestCase):
@@ -49,26 +51,37 @@ class AuditRegressionTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_malformed_packets_are_rejected_before_device_access(self):
-        invalid = [b'[]', b'null', b'"text"', packet(axes=[]), packet(buttons={'a':1}),
+        invalid = [[], None, "text", packet(axes=[]), packet(buttons={'a':1}),
                    packet(axes={'x':32768}), packet(fingers={'index':4}),
                    packet(confidence=float('nan'))]
-        base = json.loads(packet())
+        base = packet()
         for key, value in [('sequence',True), ('sequence',-1), ('sequence','1'),
-                           ('session','\u2603'), ('token',{}), ('sequence',2**40)]:
-            invalid.append(json.dumps(dict(base, **{key:value})).encode())
+                           ('protocol','virtualglove-vision/1'), ('token',{}),
+                           ('sequence',2**40)]:
+            invalid.append(dict(base, **{key:value}))
         for value in invalid:
             with self.subTest(payload=value), self.assertRaises(ValueError):
-                decode_state(value)
-        self.assertEqual(decode_state(packet(buttons={'a':True}))['buttons'], {'a':True})
+                validate_state(value)
+        self.assertEqual(validate_state(packet(buttons={'a':True}))['buttons'], {'a':True})
 
     def test_rejected_traffic_does_not_postpone_release(self):
         now = [0.]
         sock = Mock()
-        packets = iter([packet(buttons={'a':True})] + [b'[]', b'{}', packet()]*5)
+        sessions = ReceiverSessions(TOKEN, clock=lambda: now[0])
+        session, peer = 'a' * 32, ('test', 1)
+        _, reply = sessions.receive(
+            encode_message('hello', TOKEN, session=session, request='b' * 32), peer
+        )
+        challenge = decode_message(reply, TOKEN)['challenge']
+        valid = encode_message(
+            'state', TOKEN, session=session, challenge=challenge,
+            state=packet(buttons={'a': True}),
+        )
+        packets = iter([valid] + [b'[]', b'{}', b'unsigned']*5)
         def receive(_):
             now[0] += .1
             try:
-                return next(packets), ('test',1)
+                return next(packets), peer
             except StopIteration:
                 raise KeyboardInterrupt
         sock.recvfrom.side_effect = receive
@@ -76,10 +89,11 @@ class AuditRegressionTests(unittest.TestCase):
         device = Mock()
         release_times = []
         device.release.side_effect = lambda: release_times.append(now[0])
-        with patch.object(receiver.socket,'socket',return_value=sock), \
+        with patch.object(receiver,'ReceiverSessions',return_value=sessions), \
+             patch.object(receiver.socket,'socket',return_value=sock), \
              patch.object(receiver.time,'monotonic',side_effect=lambda:now[0]), \
              patch.object(receiver,'UInputDevice',return_value=device), \
-             patch.object(sys,'argv',['receiver','--token',TOKEN,'--allow-legacy-controller']):
+             patch.object(sys,'argv',['receiver','--token',TOKEN]):
             receiver.main()
         self.assertEqual(device.write_state.call_count,1)
         self.assertLessEqual(release_times[0], .4)
@@ -118,7 +132,9 @@ class AuditRegressionTests(unittest.TestCase):
 
     def test_ring_actions_and_guard_use_release_cutoffs(self):
         for profile in ('program_e','program_g'):
-            engine=GestureEngine(profile,calibration=CAL)
+            engine=GestureEngine(
+                profile, GestureConfig(joystick_deadzone=.28), calibration=CAL
+            )
             for t,c in [(1,.8),(1.18,.4)]:
                 state=engine.update(HandObservation(t,True,1,.8,.5,.2,
                     thumb_curl=.8 if profile == 'program_g' else 0,ring_curl=c))

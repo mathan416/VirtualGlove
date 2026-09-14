@@ -25,6 +25,8 @@ from powerglove_vision import receiver, vision_app
 from powerglove_vision.control_server import ControlState, start_control_server
 from powerglove_vision.game_registry import atomic_write
 from powerglove_vision.profile_control import ProfileCommandServer, PROTOCOL, sign_message
+from powerglove_vision.controller_protocol import ReceiverSessions, decode_message, encode_message
+from powerglove_vision.model import ControllerState
 
 ROOT = Path(__file__).resolve().parents[1]
 TOKEN = 'private-test-token'
@@ -160,19 +162,30 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_socket_timeout_releases_native_state_before_cleanup(self):
         sock, device, native = Mock(), Mock(), Mock()
-        packet = json.dumps(dict(protocol='virtualglove-vision/1',token=TOKEN,sequence=7,session='test')).encode()
+        sessions = ReceiverSessions(TOKEN)
+        session, peer = 'a' * 32, ('test', 1)
+        _, reply = sessions.receive(
+            encode_message('hello', TOKEN, session=session, request='b' * 32), peer
+        )
+        challenge = decode_message(reply, TOKEN)['challenge']
+        packet = encode_message(
+            'state', TOKEN, session=session, challenge=challenge,
+            state=ControllerState.released(
+                7, 1, 'super_glove_ball', True
+            ).to_transport_dict(),
+        )
         def after_timeout(_size):
             native.release.assert_called_once_with(8)
             raise KeyboardInterrupt
         calls = [0]
         def receive(size):
             calls[0] += 1
-            if calls[0] == 1:return packet, ('test',1)
+            if calls[0] == 1:return packet, peer
             if calls[0] == 2:raise socket.timeout()
             return after_timeout(size)
         sock.recvfrom.side_effect = receive
         sock.recvmsg.side_effect = lambda size, space: (lambda pair: (pair[0], [], 0, pair[1]))(sock.recvfrom(size))
-        with patch.object(receiver.socket,'socket',return_value=sock), patch.object(receiver,'UInputDevice',return_value=device), patch.object(receiver,'NativeStateWriter',return_value=native), patch('sys.argv',['receiver','--token',TOKEN,'--allow-legacy-controller']):
+        with patch.object(receiver,'ReceiverSessions',return_value=sessions), patch.object(receiver.socket,'socket',return_value=sock), patch.object(receiver,'UInputDevice',return_value=device), patch.object(receiver,'NativeStateWriter',return_value=native), patch('sys.argv',['receiver','--token',TOKEN]):
             self.assertEqual(receiver.main(),0)
 
     def test_profile_listener_survives_nested_json(self):

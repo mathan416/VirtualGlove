@@ -120,7 +120,7 @@ def run_lane(iterations: int, statistics: bool, slow_publish_ms: float) -> dict:
             virtual_now = index / 60.0
             signature = (state.detected, state.calibrated, False)
             if cadence.due(virtual_now, signature):
-                status = state.to_dict()
+                status = state.to_status_dict()
                 status["send_ms"] = round(send_ms, 3)
                 if statistics:
                     status["performance"] = performance.snapshot()

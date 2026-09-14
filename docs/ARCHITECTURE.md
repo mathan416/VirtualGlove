@@ -166,7 +166,7 @@ The Dashboard retains the normal hand skeleton and landmark annotation. Each
 fresh, geometry-valid palm observation is clamped to player reach and passed
 directly through **Latest coordinate** during continuous tracking. The live path
 does not queue, predict, extrapolate, or filter inside the emulator core. The
-former optical-flow experiment remains in `motion.py` as inactive research code
+former optical-flow experiment is retained only in Git history
 and the former bounded speed curve remains in historical test tooling; neither
 is routed by the supervisor nor exposed as a live configuration.
 
@@ -400,7 +400,7 @@ validate range and scope, not recorded pose quality. Live testing is still neede
 
 The candidate is temporary until the same recognition path observes two complete
 activation/release cycles and three neutral seconds. Only then can the wizard
-atomically merge selected pairs into the active player’s version-5 record. Positional
+atomically merge selected pairs into the active player’s version-6 record. Positional
 movement is not a gesture-tuning channel: one per-player center-box scalar drives a
 stateless 3×3 classification, and calibration jitter may enlarge its effective size.
 Raw gesture controls remain
@@ -530,15 +530,15 @@ emulator consumption. See [Setup status](CONFIGURATION_REFERENCE.md#independent-
 Player operations pass through the bounded same-origin `/api/players` endpoint
 into the worker. Its tuning lock owns one atomic player/settings/progress file.
 Generations reject stale writes. Each player retains a saved calibration;
-selection automatically applies the selected player’s saved center through the durable restore path, with output paused; players without a saved center require centering. Version-3
+selection automatically applies the selected player’s saved center through the durable restore path, with output paused; players without a saved center require centering. Version-4
 portable backups include the center-box size, personal and effective gesture sensitivity,
 source software identity, name, and the player's neutral reference. They exclude credentials and
-Academy progress. Version-1 portable backups are rejected; version-2 files remain
-supported through directional-threshold migration. A version-5 player store journals confirmed calibration
+Academy progress. Older portable formats are rejected without mutation. A
+version-6 player store journals confirmed calibration
 reuse; the worker writes `calibration.json` before clearing the pending reference
 and centering gate. Output remains paused until Start controller. The journal
-resumes after crashes; internal version-1/2/3/4 stores migrate with recovery backups
-and unchanged progress. Progress writes occur on lesson transitions, not frames.
+resumes after crashes. Older internal stores are reported as unsupported and are
+not overwritten. Progress writes occur on lesson transitions, not frames.
 
 Hostname resolution for controller sends runs in one background thread with a
 single cached address. No controller states are retained by that thread. Missing
@@ -565,7 +565,7 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | Private Unix sockets | App resolver to host Avahi | Local hostname resolution |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
 
-The LAN remains a trust boundary. Controller version 2 uses its own domain-separated HMAC-SHA256 and receiver-issued challenges. It does not encrypt input. Legacy version-1 input is disabled by default and never emitted by the new sender. Do not describe all links as equivalent secure channels. Pairing and registry exchange have their
+The LAN remains a trust boundary. Controller version 2 uses its own domain-separated HMAC-SHA256 and receiver-issued challenges. It does not encrypt input. Version 1 is neither accepted nor emitted. Do not describe all links as equivalent secure channels. Pairing and registry exchange have their
 own protections; browser mutations use the existing request-header and Origin
 checks. See the [Security policy](SECURITY.md) for the full trust model.
 
@@ -648,7 +648,7 @@ it does not claim every path has been independently security-audited.
 | Supervisor, worker launch, matrix ownership | `python/main.py` |
 | Camera lifecycle and frame-to-send loop | `src/powerglove_vision/vision_app.py`, `realtime.py` |
 | Capture selection, Kiyo controls, and landmark measurements | `src/powerglove_vision/camera.py`, `kiyo_camera.py`, `tracker.py` |
-| Current native X/Y and archived movement experiments | `src/powerglove_vision/motion.py`, `realtime.py` |
+| Current native X/Y implementation and diagnostics | `gesture.py`, `realtime.py` |
 | Observation/state data objects | `src/powerglove_vision/model.py` |
 | Calibration, thresholds, held gestures, mappings | `src/powerglove_vision/gesture.py` |
 | Recording, suggestions, previews, persistence | `src/powerglove_vision/tuning.py` |
@@ -721,6 +721,8 @@ The nonblocking sender emits a signed hello with random session and request iden
 
 At most eight pending handshakes are retained, for three seconds each. No input state is retained while negotiating. Hellos repeat every 250 milliseconds before the first challenge, then once per second to recover a receiver restart. The sender reads at most eight replies per update without blocking and sends only that update's state. Periodic handshake traffic does not reset the receiver's input-release deadline. Both native-state publication and uinput remain behind the same accepted-state check; the core and recognition paths are unchanged.
 
-Dashboard and Academy now import their maintained pages from separate modules. Games and personalization have their own modules, and `web_features.py` preserves the existing import surface without obsolete UI definitions. The extracted Dashboard, Academy, Play, and Setup pages are byte-for-byte identical to the previous output.
+Dashboard, Academy, Games, personalization, Play, and Setup each import their
+maintained page from the owning module. The unused compatibility re-export and
+duplicate worker homepage have been removed.
 
 For a guided symptom check, see [Troubleshooting by symptom](TROUBLESHOOTING.md).

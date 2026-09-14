@@ -85,9 +85,6 @@ class TrackingResult:
     diagnostics: dict = field(default_factory=dict)
     palm_points: list = field(default_factory=list)
     palm_anchors: dict = field(default_factory=dict)
-    motion_only: bool = False
-    gesture_observation: HandObservation | None = None
-    motion_trace: dict = field(default_factory=dict)
     preview_overlay: dict = field(default_factory=dict)
 
 

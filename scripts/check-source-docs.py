@@ -55,9 +55,10 @@ def tracked_source_files() -> list[Path]:
             continue
         path = Path(name)
         if (
-            path.suffix in SOURCE_SUFFIXES
-            or name in COMMENTED_CONFIGS
-            or name.startswith("retropie/bin/")
+            (ROOT / path).is_file()
+            and (path.suffix in SOURCE_SUFFIXES
+                 or name in COMMENTED_CONFIGS
+                 or name.startswith("retropie/bin/"))
         ):
             files.append(path)
     return sorted(files)

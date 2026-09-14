@@ -33,17 +33,8 @@ low palm texture may still fail the optical-flow checks. The revised code is
 installed with experimental mode **off**; the original MediaPipe path remains
 active pending another operator-cued hand test.
 
-Reproduce with the original `motion.py` saved outside the checkout, using an
-environment containing the vision dependencies:
-
-```sh
-PYTHONPATH=src python3 scripts/benchmark-motion-correction.py \
-  --before /tmp/original-motion.py --output /tmp/correction-comparison.json
-```
-
-Run while normal camera processing is idle. The script never changes controller
-settings itself. The original UNO report is retained locally in
-`/tmp/uno-dot-baseline-x8heur1f/correction-benchmark-uno.json`.
+The rejected implementation and its comparison benchmark were removed in the
+0.4.2 cleanup. Git history remains the archival source for that experiment.
 
 The **VirtualGlove Controller (Arduino UNO Q)** performs the camera,
 recognition, and send stages measured in this record.

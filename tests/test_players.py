@@ -24,15 +24,16 @@ class PlayerTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "gesture-tuning.json"
-        self.path.write_text(json.dumps({"version": 1, "thresholds": {"index": {"on": .6, "off": .4}}}))
+        self.manager = TuningManager(self.path)
+        self.manager.players.save_thresholds({"index": {"on": .6, "off": .4}})
         self.manager = TuningManager(self.path)
 
     def command(self, action, **extra):
         state = self.manager.player_snapshot()
         return self.manager.player_command(dict(action=action, player=state["active"], generation=state["generation"], **extra))
 
-    def test_legacy_settings_migrate_only_after_a_successful_write(self):
-        self.assertEqual(json.loads(self.path.read_text())["version"], 1)
+    def test_current_settings_survive_a_successful_write(self):
+        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
         self.assertEqual(self.manager.saved["index"]["on"], .6)
         self.command("rename", name="Alex")
         restored = TuningManager(self.path)
@@ -40,15 +41,16 @@ class PlayerTests(unittest.TestCase):
         self.assertEqual(restored.saved, self.manager.saved)
         self.assertEqual(json.loads(self.path.read_text())["version"], 6)
 
-    def test_version_two_player_data_migrates_with_progress_and_backup(self):
+    def test_version_two_player_data_is_rejected_without_mutation(self):
         saved={'version':2,'active':'default','generation':4,'players':{'default':{
             'name':'Iain','thresholds':{},'progress':{'course':1,'completed':[0,1],'lesson':2},'needs_center':False}}}
         self.path.write_text(json.dumps(saved))
         self.manager=TuningManager(self.path)
-        self.command('rename',name='Iain B')
-        self.assertEqual(self.manager.player_snapshot()['progress']['completed'],[0,1])
-        self.assertEqual(json.loads(self.path.with_name('gesture-tuning-v2-backup.json').read_text()),saved)
-        self.assertEqual(json.loads(self.path.read_text())['version'],6)
+        self.assertIn('Unsupported player settings version',
+                      self.manager.player_snapshot()['error'])
+        with self.assertRaises(ValueError):
+            self.command('rename',name='Iain B')
+        self.assertEqual(json.loads(self.path.read_text()), saved)
 
     def test_players_isolate_tuning_and_progress(self):
         self.command("progress", progress={"course":1,"completed":[0,1],"lesson":2})
@@ -117,19 +119,21 @@ class PlayerTests(unittest.TestCase):
     def test_version_one_portable_backups_are_rejected_without_mutation(self):
         old={'format':'powerglove-hand-settings','version':1,'name':'Old','thresholds':{'index':{'on':.8,'off':.4}}}
         before=self.path.read_bytes()
-        with self.assertRaisesRegex(ValueError,'Version-1'):
+        with self.assertRaisesRegex(ValueError,'Older PowerGlove formats'):
             self.command('restore',backup=old)
         self.assertEqual(self.path.read_bytes(),before)
 
-    def test_original_version_two_backups_remain_supported(self):
+    def test_original_version_two_backups_are_rejected(self):
         backup=self.command('export')['backup']
         backup['format']='powerglove-hand-setup'
         backup['version']=2
         del backup['joystick_deadzone'];del backup['effective_thresholds'];del backup['source']
-        self.command('restore',backup=backup)
-        self.assertTrue(self.manager.needs_center())
+        before = self.path.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'Older PowerGlove formats'):
+            self.command('restore',backup=backup)
+        self.assertEqual(self.path.read_bytes(), before)
 
-    def test_version_four_store_migrates_largest_activation_and_discards_releases(self):
+    def test_version_four_store_is_rejected_without_mutation(self):
         saved={'version':4,'active':'default','generation':1,'calibration_restore':None,
                'players':{'default':{'name':'Iain','thresholds':{
                    'left':{'on':.31,'off':.12},'right':{'on':.47,'off':.15},
@@ -139,15 +143,11 @@ class PlayerTests(unittest.TestCase):
                    'needs_center':False,'calibration':None}}}
         self.path.write_text(json.dumps(saved))
         manager=TuningManager(self.path)
-        self.assertEqual(manager.players.active['joystick_deadzone'],.47)
-        self.assertEqual(manager.saved,{'index':{'on':.6,'off':.3}})
-        state=manager.player_snapshot()
-        manager.player_command({'action':'rename','player':state['active'],
-                                'generation':state['generation'],'name':'Iain B'})
-        self.assertEqual(json.loads(self.path.read_text())['version'],6)
-        self.assertEqual(json.loads(self.path.with_name('gesture-tuning-v4-backup.json').read_text()),saved)
+        self.assertIn('Unsupported player settings version',
+                      manager.player_snapshot()['error'])
+        self.assertEqual(json.loads(self.path.read_text()), saved)
 
-    def test_version_two_backup_migrates_largest_activation(self):
+    def test_version_two_backup_with_directions_is_rejected(self):
         backup=self.command('export')['backup']
         backup['format']='powerglove-hand-setup'
         backup['version']=2
@@ -155,9 +155,10 @@ class PlayerTests(unittest.TestCase):
         backup['thresholds'].update({
             'left':{'on':.34,'off':.1},'right':{'on':.52,'off':.2},
             'up':{'on':.41,'off':.2},'down':{'on':.38,'off':.1}})
-        self.command('restore',backup=backup)
-        self.assertEqual(self.manager.players.active['joystick_deadzone'],.52)
-        self.assertNotIn('left',self.manager.saved)
+        before = self.path.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'Older PowerGlove formats'):
+            self.command('restore',backup=backup)
+        self.assertEqual(self.path.read_bytes(), before)
 
     def test_player_selection_automatically_restores_its_isolated_center(self):
         from powerglove_vision.model import Calibration
