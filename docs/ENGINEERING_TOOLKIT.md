@@ -141,19 +141,6 @@ python scripts/benchmark-vision-replay.py \
   clip.avi --quick --output replay.json
 ```
 
-Replay a privacy-preserving gesture regression downloaded from Dashboard:
-
-```sh
-PYTHONPATH=src python scripts/replay-gesture-recording.py \
-  virtualglove-gesture-regression.json
-```
-
-This re-runs the recorded normalized hand measurements through the captured
-profile, calibration, settings, and rapid-fire switches. A pass means the
-gameplay-visible controls match the saved baseline; a failure identifies the
-first changed frame. Unlike a camera clip, this format contains no images,
-player or game names, connection data, or pairing material.
-
 Recorded clips and generated reports remain local unless the operator moves or
 uploads them. Review them for faces, rooms, hostnames, or other private material
 before sharing.

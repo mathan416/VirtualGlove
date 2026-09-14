@@ -1309,20 +1309,6 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                 _send(self, 200, json.dumps(state.public_config()).encode(), "application/json")
             elif path == "/api/camera-profile":
                 _send(self, 200, json.dumps(state.camera_profile_snapshot()).encode(), "application/json")
-            elif path == "/api/gesture-recording":
-                try:
-                    with urllib.request.urlopen(
-                        WORKER_URL + "/regression-recording", timeout=2
-                    ) as response:
-                        body = response.read(2 * 1024 * 1024 + 1)
-                    if len(body) > 2 * 1024 * 1024:
-                        raise ValueError("Gesture recording is too large.")
-                    _send(self, 200, body, "application/json", {
-                        "Content-Disposition": 'attachment; filename="virtualglove-gesture-regression.json"'
-                    })
-                except urllib.error.HTTPError as exc:
-                    error = json.loads(exc.read()).get("error", "Recording is not ready.")
-                    raise ValueError(error) from None
             elif path == "/controller-ca.cer":
                 if not isinstance(self.connection, ssl.SSLSocket):
                     _send(self, 426, b"Open secure Setup before downloading the trust certificate.\n",
@@ -1414,23 +1400,6 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                         WORKER_URL + "/profile",
                         method="POST",
                         data=json.dumps({"profile": profile}).encode(),
-                        headers={"Content-Type": "application/json"},
-                    )
-                    with urllib.request.urlopen(request, timeout=1) as response:
-                        result = response.read()
-                    _send(self, 202, result, "application/json")
-                elif path == "/api/gesture-recording":
-                    if self.headers.get("X-VirtualGlove-Action") != "gesture-recording":
-                        raise ForbiddenActionError(
-                            "Gesture recording request is missing its browser-action safeguard."
-                        )
-                    incoming = self.json_body(require_json=True)
-                    action = incoming.get("action")
-                    if action not in ("begin", "stop", "discard"):
-                        raise ValueError("Unknown gesture recording action.")
-                    request = urllib.request.Request(
-                        WORKER_URL + "/regression", method="POST",
-                        data=json.dumps({"action": action}).encode(),
                         headers={"Content-Type": "application/json"},
                     )
                     with urllib.request.urlopen(request, timeout=1) as response:

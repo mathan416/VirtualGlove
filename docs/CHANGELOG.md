@@ -13,12 +13,6 @@ authoritative record for line-level and file-level history.
   the existing authenticated, revision-checked RetroPie registry and hot-swap
   during the running authenticated game session. The live override is bound to
   that session and disappears when the game exits or a new session starts.
-- Added a bounded, in-memory gesture regression recorder to Dashboard and a
-  deterministic replay command. Recordings contain derived hand measurements,
-  effective recognition settings, calibration numbers, and expected controller
-  results—not camera images, player or game names, connection data, or pairing
-  material.
-
 ## [0.4.1] - 2026-09-13
 
 ### Added

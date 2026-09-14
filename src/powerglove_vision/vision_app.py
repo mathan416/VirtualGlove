@@ -57,7 +57,6 @@ from pathlib import Path
 from .tuning import TuningManager
 from .camera import CameraUnavailableError, camera_candidates
 from .debug_server import SharedDebugState, start_debug_server
-from .gesture_replay import GestureRegressionRecorder
 from .gesture import (GestureConfig, GestureEngine, joystick_deadzone_bounds,
                       load_calibration, rapid_fire_defaults, save_calibration)
 from .matrix import MatrixStatus, UnoQMatrix
@@ -987,7 +986,6 @@ def main() -> int:
     args.tracking_evidence = trace is not None
     profile_server = ProfileCommandServer(args.profile_listen, args.profile_port, token)
     shared = SharedDebugState()
-    shared.regression = GestureRegressionRecorder()
     shared.tuning = TuningManager(calibration_path.with_name("gesture-tuning.json"))
     preview_encoder = LatestPreviewEncoder(shared.update_frame)
     status_publisher = LatestStatusPublisher(shared.update_status)
@@ -1018,7 +1016,6 @@ def main() -> int:
     launch_guard_until = 0.0
     active_game_lease = ActiveGameLease()
     last_launch_session = None
-    regression_begin_pending = False
     live_rapid_session = None
     live_rapid_values = (None, None)
 
@@ -1032,16 +1029,6 @@ def main() -> int:
 
     try:
         while True:
-            regression_action = shared.take_regression_request()
-            if regression_action == "begin":
-                regression_begin_pending = True
-            if regression_action in ("stop", "discard"):
-                regression_begin_pending = False
-                try:
-                    (shared.regression.stop() if regression_action == "stop"
-                     else shared.regression.discard())
-                except ValueError as exc:
-                    shared.regression.fail(str(exc))
             old_vision_profile = _effective_profile(current_profile, practice_mode)
             old_rapid_fire = (current_rapid_a, current_rapid_b)
             request, lease_expired = _consume_game_lease(
@@ -1084,8 +1071,6 @@ def main() -> int:
                 shared.game_controller_transition(last_launch_session, False)
             transition_requested = profile_requested or practice_request is not None
             if transition_requested:
-                if shared.regression.snapshot()["phase"] == "recording":
-                    shared.regression.stop()
                 last_controller_signature = None
                 if controller_enabled and engine is not None:
                     sender.send(ControllerState.released(
@@ -1216,8 +1201,6 @@ def main() -> int:
                     current_game = "Manual selection"
 
             if shared.take_calibration_request() and engine is not None:
-                if shared.regression.snapshot()["phase"] == "recording":
-                    shared.regression.stop()
                 shared.tuning.begin_center()
                 engine.begin_calibration()
                 last_controller_signature = None
@@ -1241,11 +1224,6 @@ def main() -> int:
                     vision_operation = None
 
             if vision_profile is None:
-                if regression_begin_pending:
-                    shared.regression.fail(
-                        "Select an active gesture profile before recording."
-                    )
-                    regression_begin_pending = False
                 # Do not wait for an in-flight camera open/read/close to apply off.
                 if capture is not None and vision_job is None:
                     vision_job = _background_call(_close_vision, capture, tracker)
@@ -1302,17 +1280,6 @@ def main() -> int:
                     rapid_a=None if practice_mode else current_rapid_a,
                     rapid_b=None if practice_mode else current_rapid_b,
                 )
-            if regression_begin_pending:
-                if practice_mode or shared.tuning.active():
-                    shared.regression.fail(
-                        "Finish Academy, camera tests, or gesture tuning before recording."
-                    )
-                else:
-                    try:
-                        shared.regression.begin(engine)
-                    except ValueError as exc:
-                        shared.regression.fail(str(exc))
-                regression_begin_pending = False
             captured_frame = capture.latest_after(last_capture_sequence)
             if captured_frame is None:
                 time.sleep(0.001)
@@ -1404,7 +1371,6 @@ def main() -> int:
             state, native_source = _update_controller_state(
                 engine, result, native_xy_active
             )
-            shared.regression.record(result.observation)
             if engine.calibrated and engine.calibration is not retained_calibration:
                 retained_calibration = engine.calibration
                 try:

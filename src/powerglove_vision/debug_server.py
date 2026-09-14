@@ -69,8 +69,6 @@ class SharedDebugState:
         self.practice_active = False
         self.practice_request: bool | None = None
         self.statistics_until = 0.0
-        self.regression = None
-        self.regression_request: str | None = None
         self.rapid_fire_request: tuple[str, str, bool | None, bool | None] | None = None
         self.rapid_fire_update = {"state": "idle", "message": ""}
 
@@ -159,18 +157,6 @@ class SharedDebugState:
             self.profile_request = None
             return requested
 
-    def request_regression(self, action: str) -> None:
-        """Queue a bounded recording transition for the vision loop."""
-        with self.lock:
-            self.regression_request = action
-
-    def take_regression_request(self) -> str | None:
-        """Consume the newest recording transition."""
-        with self.lock:
-            action = self.regression_request
-            self.regression_request = None
-            return action
-
     def request_rapid_fire(
         self, request_id: str, game: str, rapid_a: bool | None, rapid_b: bool | None
     ) -> None:
@@ -182,12 +168,14 @@ class SharedDebugState:
             }
 
     def take_rapid_fire_request(self):
+        """Consume and clear the newest session-bound rapid-fire request."""
         with self.lock:
             request = self.rapid_fire_request
             self.rapid_fire_request = None
             return request
 
     def finish_rapid_fire(self, request_id: str, error: str = "") -> None:
+        """Publish the final applied or rejected state for one live update."""
         with self.lock:
             self.rapid_fire_update = {
                 "request_id": request_id, "state": "error" if error else "applied",
@@ -277,26 +265,8 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                 if shared.tuning is not None:
                     status["tuning"] = shared.tuning.snapshot()
                     status["player"] = shared.tuning.player_snapshot()
-                if shared.regression is not None:
-                    status["gesture_recording"] = shared.regression.snapshot()
                 body = json.dumps(status, indent=2).encode()
                 self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
-            elif self.path == "/regression-recording" and shared.regression is not None:
-                try:
-                    body = shared.regression.document()
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Disposition", 'attachment; filename="virtualglove-gesture-regression.json"')
-                    self.send_header("Content-Length", str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
-                except ValueError as exc:
-                    body = json.dumps({"error": str(exc)}).encode()
-                    self.send_response(409)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
             elif self.path == "/stream":
                 shared.stream_opened()
                 try:
@@ -374,27 +344,6 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                         raise ValueError("choose a supported gesture profile")
                     shared.request_profile(profile)
                     response = json.dumps({"active_profile": profile or "off"}).encode()
-                    self.send_response(202)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(response)))
-                    self.end_headers()
-                    self.wfile.write(response)
-                except (ValueError, json.JSONDecodeError) as exc:
-                    response = json.dumps({"error": str(exc)}).encode()
-                    self.send_response(400)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", str(len(response)))
-                    self.end_headers()
-                    self.wfile.write(response)
-            elif self.path == "/regression" and shared.regression is not None:
-                try:
-                    length = min(int(self.headers.get("Content-Length", "0")), 1024)
-                    body = json.loads(self.rfile.read(length) or b"{}")
-                    action = body.get("action")
-                    if action not in ("begin", "stop", "discard"):
-                        raise ValueError("Unknown gesture recording action.")
-                    shared.request_regression(action)
-                    response = json.dumps({"accepted": True, "action": action}).encode()
                     self.send_response(202)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(response)))

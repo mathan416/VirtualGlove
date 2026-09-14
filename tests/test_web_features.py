@@ -51,7 +51,6 @@ class WebFeatureTests(unittest.TestCase):
                 remote.assert_not_called()
 
         with patch('powerglove_vision.control_server.urllib.request.urlopen') as worker:
-            self.assertEqual(self.post('/api/gesture-recording', {'action':'begin'})[0], 403)
             self.assertEqual(self.post('/api/rapid-fire', {
                 'request_id':'rapid-test', 'game':'Example.nes',
                 'rapid_a':True, 'rapid_b':False,
@@ -86,7 +85,7 @@ class WebFeatureTests(unittest.TestCase):
         self.assertIn(b'th:nth-child(2)', LEARN)
         self.assertLess(LEARN.index(b'id=learn-camera'),LEARN.index(b'<section class=card id=tune-panel'))
         self.assertIn(b'id=rapid-fire-card', DASHBOARD)
-        self.assertIn(b'id=gesture-recorder-card', DASHBOARD)
         self.assertIn(b'Changes apply during play', DASHBOARD)
         self.assertIn(b'/api/rapid-fire', DASHBOARD)
-        self.assertIn(b'Camera images, player names', DASHBOARD)
+        self.assertNotIn(b'gesture-recorder-card', DASHBOARD)
+        self.assertNotIn(b'/api/gesture-recording', DASHBOARD)

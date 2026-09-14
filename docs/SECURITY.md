@@ -240,22 +240,13 @@ after 30 minutes. Its downloadable JSON contains aggregate continuity, latency,
 confidence, lighting, and recognized-state names only: no frames, landmarks,
 tokens, addresses, or saved personal thresholds.
 
-Dashboard's gesture regression recorder is separate and never records video or
-raw landmarks. It holds one bounded test in worker memory and downloads only
-normalized derived hand measurements, relative timing, effective recognition
-settings, neutral calibration numbers, and expected controller states. The
-format excludes player and game names, ROM data, network addresses, and pairing
-material. Recording does not change live controller delivery. Start, stop, and
-discard use the same-origin browser-action safeguard; the download is available
-only after a non-empty recording is stopped.
-
 ### Documentation screenshots
 
 Documentation screenshots use isolated sample data and an omitted-camera placeholder.
 If capturing a live page instead, blur the complete camera image before capture. Keep
 controls legible, but never publish unblurred camera frames or screenshots that
 contain passwords, private tokens, or pairing codes. The reference images show
-the interface; they are not saved gesture recordings.
+the interface; they are documentation examples only.
 
 ### Personal hand setup and tuning data
 
