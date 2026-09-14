@@ -11,30 +11,28 @@ displays, T, L, or gesture recognition. The setting saves without a tracker rest
 
 For an existing installation, this update changes controller transport on both computers. Stop controller output, update both to matching software, then start and test input. Mixed old/new versions do not deliver input with the default settings. See [signed controller transport and upgrades](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades) for staged upgrades and rollback.
 
-## Try release candidate v0.4.1-rc.2
+## Install stable release v0.4.1
 
-Release candidate **v0.4.1-rc.2** adds Programs 1–14 and their official game
+Stable release **v0.4.1** adds Programs 1–14 and their official game
 mappings, the Ready-to-Play guide, the live joystick dead-zone camera grid, and
 the complete `virtualglove-*` runtime-name migration. Close games and stop
-controller output, then run the matching command on each device. These explicit
-commands select the prerelease; the normal commands later in this guide continue
-to select the latest stable release.
+controller output, then run the matching command on each device.
 
 On the VirtualGlove Controller:
 
 ```sh
 cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-uno-q.sh
-bash install-uno-q.sh --development v0.4.1-rc.2
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1/install-uno-q.sh
+bash install-uno-q.sh --version v0.4.1
 ```
 
 On RetroPie:
 
 ```sh
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1-rc.2/install-retropie.sh && bash install-retropie.sh --development v0.4.1-rc.2
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.1/install-retropie.sh && bash install-retropie.sh --version v0.4.1
 ```
 
-Verify both report `v0.4.1-rc.2`, then follow the pairing/first-game checks below.
+Verify both report `v0.4.1`, then follow the pairing/first-game checks below.
 Existing hand settings and pairing files are preserved. The Controller installer
 also updates the matrix firmware. Review [coordinated transport upgrades and
 rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
