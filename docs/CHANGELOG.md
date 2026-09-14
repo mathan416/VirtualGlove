@@ -7,6 +7,14 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-14
+
+### Changed
+
+- Promoted the validated 0.4.2 release candidate to stable. Updated release
+  labels, install commands, project status, built-in Help, and generated PDF
+  editions to identify `v0.4.2` consistently.
+
 ## [0.4.2-rc.2] - 2026-09-14
 
 ### Changed

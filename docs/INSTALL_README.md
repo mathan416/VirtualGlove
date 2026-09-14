@@ -11,9 +11,9 @@ displays, T, L, or gesture recognition. The setting saves without a tracker rest
 
 For an existing installation, this update changes controller transport on both computers. Stop controller output, update both to matching software, then start and test input. Mixed old/new versions do not deliver input with the default settings. See [signed controller transport and upgrades](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades) for staged upgrades and rollback.
 
-## Install release candidate v0.4.2-rc.2
+## Install stable release v0.4.2
 
-Release candidate **v0.4.2-rc.2** retains Programs 1–14, the Ready-to-Play
+Stable release **v0.4.2** retains Programs 1–14, the Ready-to-Play
 guide, and the live joystick dead-zone camera grid. It adds source-accurate
 rapid-fire defaults and live Dashboard overrides, removes retired protocol and
 pre-0.4.1 compatibility paths, avoids repeated configuration and camera scans
@@ -25,17 +25,17 @@ On the VirtualGlove Controller:
 
 ```sh
 cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2-rc.2/install-uno-q.sh
-bash install-uno-q.sh --version v0.4.2-rc.2
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-uno-q.sh
+bash install-uno-q.sh --version v0.4.2
 ```
 
 On RetroPie:
 
 ```sh
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2-rc.2/install-retropie.sh && bash install-retropie.sh --version v0.4.2-rc.2
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-retropie.sh && bash install-retropie.sh --version v0.4.2
 ```
 
-Verify both report `v0.4.2-rc.2`, then follow the pairing/first-game checks below.
+Verify both report `v0.4.2`, then follow the pairing/first-game checks below.
 Existing hand settings and pairing files are preserved. The Controller installer
 also updates the matrix firmware. Review [coordinated transport upgrades and
 rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
@@ -46,7 +46,7 @@ preserves current `/etc/virtualglove` pairing, game-registry, and Controller
 settings, but no longer imports pre-0.4.1 `/etc/powerglove` installations.
 Unsupported older data is left untouched for manual recovery. A fresh
 installation creates only `virtualglove-*` runtime names. Install both devices
-from the same candidate; signed protocol version 2 does not fall back to the
+from the same release; signed protocol version 2 does not fall back to the
 retired unsigned transport.
 
 ## 1. Prepare your devices

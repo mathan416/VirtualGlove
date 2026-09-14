@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Updated: September 14, 2026 (America/Toronto)
 Source: /Users/mathan/Developer/PowerGlove
-Snapshot: dev, 0.4.2 release-candidate development, including Programs 1-14, official game mappings,
+Snapshot: dev, 0.4.2 stable release, including Programs 1-14, official game mappings,
 Ready to Play, the joystick dead-zone camera grid, and the complete
 virtualglove runtime-name migration. Git history is the exact record of commits
 and prior maps.
@@ -90,7 +90,7 @@ legacy-file rejection, service trigger ordering, pending shutdown protection,
 and verified Matrix firmware. The user also confirmed the 0.4.2 development
 build, renamed services, Matrix firmware, and Player 1 merged-controller path on
 the physical UNO Q and RetroPie. This does not replace a clean-device release
-candidate installation or physical latency tests.
+installation or physical latency tests.
 Before publishing, run the source/documentation audits, syntax checks, and the
 relevant tests listed in docs/CONTRIBUTING.md. Do not publish private runtime
 state, tokens, passwords, active pairing codes, or raw camera recordings.
