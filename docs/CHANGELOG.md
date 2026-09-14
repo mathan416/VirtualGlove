@@ -7,6 +7,17 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+## [0.4.2-rc.2] - 2026-09-14
+
+### Changed
+
+- Corrected every release-facing guide, install command, project-status note,
+  review snapshot, and generated PDF to identify the 0.4.2 candidate. References
+  to 0.4.1 remain only where they describe the latest stable release, historical
+  changes, or the oldest supported in-place upgrade.
+
+## [0.4.2-rc.1] - 2026-09-14
+
 ### Added
 
 - Added per-game **Rapid A** and **Rapid B** controls to Dashboard. Changes use

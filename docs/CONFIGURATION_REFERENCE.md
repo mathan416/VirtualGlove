@@ -688,7 +688,7 @@ A typical device configuration file contains the following fields:
 `camera_fps` is `auto`, `30`, or `60`; Automatic prefers 30 and then accepts a
 usable driver rate. `camera_buffers` is `1` or `2`; invalid values are rejected
 instead of silently changing the capture policy. Production `inference_threads`
-accepts 1, 2, or 4. The 0.4.1
+accepts 1, 2, or 4. The 0.4.2
 baseline retains four threads, `tracking_confidence` 0.35,
 `detection_confidence` 0.45, and `tracking_roi_scale` 2.25. Tracking confidence
 decides whether the previous landmark region remains usable; detection confidence
@@ -1199,7 +1199,8 @@ Only the active player’s adjusted components override all game profiles. Untun
 the shared supplied values. Personal adjustments are saved atomically in
 `data/gesture-tuning.json` and survive application restarts and normal updates.
 Normal personalization saves no images or recordings. Stored player files must
-use the current version-6 format shipped by VirtualGlove 0.4.1; older files are
+use the version-6 format introduced with VirtualGlove 0.4.1 and retained by
+0.4.2; older files are
 reported as unsupported and are not overwritten.
 
 Each pair must contain finite numbers with `0 <= off < on`. Finger and pull
@@ -1574,10 +1575,10 @@ Wi-Fi deployment script preserves the VirtualGlove Controller `data/` directory.
 installation ZIP never contains your token or private model cache; it includes the unmodified public model.
 
 After an update, confirm that the active files under `/etc/virtualglove/` still
-contain your local hostnames and ROM names. The 0.4.1 installer migrates a
-pre-0.4.1 `/etc/powerglove` directory only when it can do so without conflicting
-with different current settings. Updating repository templates by themselves
-does not migrate active configuration.
+contain your local hostnames and ROM names. VirtualGlove 0.4.2 preserves those
+current settings but does not import a pre-0.4.1 `/etc/powerglove` directory.
+Unsupported older data remains untouched for manual recovery. Updating
+repository templates by themselves does not migrate active configuration.
 
 ## Troubleshooting by symptom
 

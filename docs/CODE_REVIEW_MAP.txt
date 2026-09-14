@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Updated: September 14, 2026 (America/Toronto)
 Source: /Users/mathan/Developer/PowerGlove
-Snapshot: dev, 0.4.2 development, including Programs 1-14, official game mappings,
+Snapshot: dev, 0.4.2 release-candidate development, including Programs 1-14, official game mappings,
 Ready to Play, the joystick dead-zone camera grid, and the complete
 virtualglove runtime-name migration. Git history is the exact record of commits
 and prior maps.
@@ -70,7 +70,7 @@ DOCUMENTATION AND DELIVERY
 --------------------------
 Help renders maintained Markdown through help_content.py. Overlapping Markdown
 has been consolidated into 20 owning documents, and all 20 matching PDF editions
-were regenerated for 0.4.1 on September 13, 2026.
+were regenerated for 0.4.2 on September 14, 2026.
 Keep intentional extra-finger artwork and its published count synchronized.
 Community guides cover building the hardware, native emulation, and symptom-led
 troubleshooting. Documentation screenshots use simulated, non-secret fixtures;
@@ -81,13 +81,13 @@ The cabinet-specific quick reference and this review map are not public payloads
 
 VALIDATION
 ----------
-Latest clean Python 3.12 checks: 774 tests passed with one expected
+Latest clean release checks: 765 tests passed with one expected
 Linux-specific skip. Browser-harness coverage includes pairing, Academy,
 Ready to Play, Connection Doctor, joystick camera leases and grid geometry,
 camera rate, and optional statistics behavior. Installer coverage includes
-fresh installs, repeat installs, pre-0.4.1 migration, manifest rollback,
+fresh installs, supported 0.4.1 updates, manifest rollback,
 legacy-file rejection, service trigger ordering, pending shutdown protection,
-and verified Matrix firmware. The user also confirmed the 0.4.1 development
+and verified Matrix firmware. The user also confirmed the 0.4.2 development
 build, renamed services, Matrix firmware, and Player 1 merged-controller path on
 the physical UNO Q and RetroPie. This does not replace a clean-device release
 candidate installation or physical latency tests.
@@ -97,7 +97,7 @@ state, tokens, passwords, active pairing codes, or raw camera recordings.
 
 COMPLETE SOURCE INVENTORY
 -------------------------
-463 Git-visible files currently present, including the regenerated 0.4.1 PDFs.
+498 Git-visible files currently present, including the regenerated 0.4.2 PDFs.
 .
 |-- .gitattributes
 |-- .github
