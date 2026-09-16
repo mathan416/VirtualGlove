@@ -32,9 +32,10 @@ target (`rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, or
 `x86_64`) and verified against their recorded ELF identity. The available
 Raspberry Pi 3 running Recalbox's `rpizero2` image has passed Super Mario Bros.,
 native Super Glove Ball, physical-joypad coexistence, and reboot-persistence
-checks. Builds for the other target images remain subject to their own
-load and hardware validation. An unpackaged or unvalidated target safely keeps
-using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
+checks. Recalbox 10.1 binaries and corresponding source archives are packaged
+for all seven targets; targets other than the tested `rpizero2` image remain
+subject to their own load and hardware validation. An unpackaged target or
+version safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
 its keys conflicts with a RetroArch command, leaving the physical controller and
 game usable, and selects a separate Windows Nestopia core only for Super Glove Ball.
 

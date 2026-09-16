@@ -155,13 +155,14 @@ replacing stock Nestopia. The optional second installer argument selects only
 the named Super Glove Ball ROM; the companion configuration script can switch
 that ROM back to FCEUmm at any time.
 
-Recalbox likewise requires a target build, but its official 10.1 image reports
-the tested Raspberry Pi 3 installation as target `rpizero2`. Run
-`scripts/build-recalbox-nestopia-powerglove.sh /path/to/recalbox rpizero2`, copy
-the resulting library to the console, and pass it plus the exact ROM to
-`scripts/install-recalbox-nestopia-powerglove.sh`. The installer load-checks the
-32-bit ARM library on Recalbox, keeps it in the persistent share, and exposes it
-through a reversible runtime core overlay. A temporary system list adds the
+Recalbox likewise requires an exact target build. Recalbox 10.1 packages include
+separate cores and complete source archives for `rpizero2`, `rpi3`, `rpi4_64`,
+`rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`; the official image on the tested
+Raspberry Pi 3 reports `rpizero2`. Maintainers can reproduce one target with
+`scripts/build-recalbox-nestopia-powerglove.sh /path/to/recalbox TARGET`.
+The installer verifies the packaged checksum, exact target/version, ELF identity,
+libretro API, and core name on Recalbox before keeping it in the persistent share
+and exposing it through a reversible runtime core overlay. A temporary system list adds the
 separate core to Recalbox's NES choices; the ROM-specific `.recalbox.conf`
 selects it without changing stock Nestopia or any other game. Normal startup
 finds exact Super Glove Ball filenames in the installed game registry and

@@ -117,24 +117,27 @@ these targets merely because two machines use the same broad CPU family.
 | --- | --- | --- | --- |
 | `rpizero2` | Raspberry Pi Zero 2 and compatible image variants | 32-bit ARM | Included and load-tested |
 | `rpi3` | Raspberry Pi 3 family | 32-bit ARM | Included; load-tested on Pi 3, exact `rpi3` image pending |
-| `rpi4_64` | Raspberry Pi 4/400 and CM4 | ARM64 | Validation pending |
-| `rpi5_64` | Raspberry Pi 5 | ARM64 | Validation pending |
-| `rg353x` | Anbernic RG353 family | ARM64 | Validation pending |
-| `odroidgo2` | ODROID Go Advance/Super | ARM64 | Validation pending |
-| `x86_64` | PCs and Steam Deck | x86-64 | Validation pending |
+| `rpi4_64` | Raspberry Pi 4/400 and CM4 | ARM64 | Included and manifest-verified; hardware validation pending |
+| `rpi5_64` | Raspberry Pi 5 | ARM64 | Included and manifest-verified; hardware validation pending |
+| `rg353x` | Anbernic RG353 family | ARM64 | Included and manifest-verified; hardware validation pending |
+| `odroidgo2` | ODROID Go Advance/Super | ARM64 | Included and manifest-verified; hardware validation pending |
+| `x86_64` | PCs and Steam Deck | x86-64 | Included and manifest-verified; hardware validation pending |
 
 The package manifest records the Recalbox target and version together with the
 ELF class and machine identity. The installer requires all four to agree with
 the local machine before it will expose the native core. This permits a release
 to carry multiple Recalbox versions for the same hardware target safely.
 
-The release package includes independently built Recalbox 10.1 `rpizero2` and
-`rpi3` ARM32 cores. Both load and report `Nestopia PowerGlove` on the available
-Raspberry Pi 3 running the `rpizero2` image; validation on an image that reports
-`rpi3` remains outstanding. Normal Recalbox installation verifies size,
-SHA-256, exact target/version and ARM ELF identity, libretro API, and core name
-before exposing a core through the reversible runtime overlay. Machines without
-a packaged target/version core still install normally and use FCEUmm.
+The release package includes independently built Recalbox 10.1 cores and
+complete corresponding source archives for all seven targets. The `rpizero2`
+and `rpi3` ARM32 cores both load and report `Nestopia PowerGlove` on the
+available Raspberry Pi 3 running the `rpizero2` image; validation on an image
+that reports `rpi3` remains outstanding. The five additional cores have passed
+manifest, checksum, and ELF-identity validation but have not been claimed as
+hardware-tested. Normal Recalbox installation verifies size, SHA-256, exact
+target/version and ELF identity, libretro API, and core name before exposing a
+core through the reversible runtime overlay. Machines without a packaged
+target/version core still install normally and use FCEUmm.
 
 Maintainers can reproduce a target build with the matching official Recalbox
 source checkout on a Linux Docker host:

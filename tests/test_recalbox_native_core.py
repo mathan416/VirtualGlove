@@ -155,27 +155,25 @@ class RecalboxNativeCoreTests(unittest.TestCase):
                        "rg353x", "odroidgo2", "x86_64"):
             self.assertIn("- " + target, workflow)
 
-    def test_packaged_rpizero2_core_matches_manifest_and_arm_elf(self):
+    def test_all_recalbox_10_1_targets_match_manifest_and_elf(self):
         manifest = ROOT / "native/recalbox/manifest.json"
-        core = ROOT / "native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so"
-        entry = VERIFY["verify"](manifest, core, "rpizero2", "10.1")
-        self.assertEqual(entry["recalbox_version"], "10.1")
-        self.assertEqual((entry["elf_class"], entry["elf_machine"]), (32, "arm"))
-        self.assertEqual(entry["size"], core.stat().st_size)
-
-    def test_packaged_rpi3_core_matches_manifest_and_arm_elf(self):
-        manifest = ROOT / "native/recalbox/manifest.json"
-        core = ROOT / "native/recalbox/rpi3/10.1/nestopia_powerglove_libretro.so"
-        entry = VERIFY["verify"](manifest, core, "rpi3", "10.1")
-        self.assertEqual(entry["recalbox_version"], "10.1")
-        self.assertEqual((entry["elf_class"], entry["elf_machine"]), (32, "arm"))
-        self.assertEqual(entry["size"], core.stat().st_size)
-
-    def test_manifest_rejects_unpackaged_architecture(self):
-        with self.assertRaisesRegex(ValueError, "No packaged native core"):
-            VERIFY["verify"](ROOT / "native/recalbox/manifest.json",
-                             ROOT / "native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so",
-                             "x86_64", "10.1")
+        expected = {
+            "rpizero2": (32, "arm"),
+            "rpi3": (32, "arm"),
+            "rpi4_64": (64, "aarch64"),
+            "rpi5_64": (64, "aarch64"),
+            "rg353x": (64, "aarch64"),
+            "odroidgo2": (64, "aarch64"),
+            "x86_64": (64, "x86_64"),
+        }
+        for target, elf in expected.items():
+            with self.subTest(target=target):
+                core = (ROOT / "native/recalbox" / target / "10.1" /
+                        "nestopia_powerglove_libretro.so")
+                entry = VERIFY["verify"](manifest, core, target, "10.1")
+                self.assertEqual(entry["recalbox_version"], "10.1")
+                self.assertEqual((entry["elf_class"], entry["elf_machine"]), elf)
+                self.assertEqual(entry["size"], core.stat().st_size)
 
     def test_manifest_rejects_unpackaged_version(self):
         with self.assertRaisesRegex(ValueError, "No packaged native core"):

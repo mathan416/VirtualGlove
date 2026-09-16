@@ -2860,7 +2860,10 @@ on the existing cabinet. On the available Raspberry Pi 3 running Recalbox
 10.1's `rpizero2` target, registered Super Mario Bros., native Super Glove Ball,
 simultaneous physical-joypad use, and reboot persistence have passed. Exact-image
 Recalbox targets other than `rpizero2`, Batocera hardware, and LaunchBox native
-gameplay remain explicit v0.5.0 acceptance items. Run read-only checks on both
+gameplay remain explicit v0.5.0 acceptance items. Recalbox 10.1 packages do
+include manifest-verified binaries and complete source archives for all seven
+supported targets; packaging does not substitute for those hardware checks.
+Run read-only checks on both
 devices after installation; no automated check proves that a hand gesture
 controls a game correctly.
 

@@ -66,10 +66,12 @@ authoritative record for line-level and file-level history.
 - Added a manually dispatched seven-job build workflow so all Recalbox targets
   can be compiled in parallel from an exact release tag. It retains
   target-specific review artifacts and never publishes or deploys them.
-- Packaged independently built Recalbox 10.1 `rpizero2` and `rpi3` ARM32 native
-  cores with target, version, architecture, size, and SHA-256 metadata. Both
-  load on the available Raspberry Pi 3; exact `rpi3` image validation remains
-  outstanding. Recalbox verifies a packaged binary and its `Nestopia
+- Packaged independently built Recalbox 10.1 native cores and complete source
+  archives for all seven supported targets, with target, version, architecture,
+  size, and SHA-256 metadata. The `rpizero2` and `rpi3` cores load on the
+  available Raspberry Pi 3; exact-image hardware validation remains outstanding
+  for `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`.
+  Recalbox verifies a packaged binary and its `Nestopia
   PowerGlove` libretro identity before exposing it through the reversible
   overlay. Unpackaged target/version pairs retain FCEUmm.
 
