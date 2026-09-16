@@ -1,7 +1,7 @@
 # VirtualGlove architecture
 
 A camera-to-controller system for the **VirtualGlove Controller (Arduino
-UNO Q)** and RetroPie.
+UNO Q)** and supported RetroArch consoles.
 
 This guide describes the current implementation reviewed on September 10, 2026.
 It is a map of production responsibilities, data flows, interfaces, and failure
@@ -14,7 +14,7 @@ maintenance remains in the complete Git checkout.
 ## Read this first
 
 VirtualGlove observes a hand on the VirtualGlove Controller, turns its measurements into
-controller states, and sends those states to a virtual gamepad on RetroPie.
+controller states, and sends those states to a virtual input device on the console.
 The browser configures and explains that process; it is not required in the
 per-frame gameplay path. The VirtualGlove Controller microcontroller drives the status matrix;
 Linux performs hand tracking and gesture recognition.
@@ -40,7 +40,7 @@ camera, receiver, or game is working.
 
 ## System boundaries
 
-![System boundaries: camera to UNO Linux to RetroPie; separate browser, microcontroller, and game-launch paths](images/architecture/system.png)
+![System boundaries: camera to UNO Linux to a supported console; separate browser, microcontroller, and game-launch paths](images/architecture/system.png)
 
 | Boundary | Responsibilities | Does not own |
 | --- | --- | --- |
@@ -48,6 +48,9 @@ camera, receiver, or game is working.
 | VirtualGlove Controller Linux application | Web server, vision-worker supervision, camera tracking, calibration, thresholds, profile mapping, network sender | RetroArch button consumption |
 | VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
 | RetroPie services | Receive controller packets, expose a virtual gamepad, signal game launches, serve paired game-registry edits | Camera processing |
+| Recalbox integration | Run from `/recalbox/share`, observe RetroArch without patching the read-only OS, and merge gesture keys beside the physical Player 1 joypad | Recalbox system-image files |
+| Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and merge gesture keys beside the physical Player 1 joypad | Batocera system-image files |
+| LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and inject Player 1 keys from the signed-in Windows session beside the physical XInput joypad | LaunchBox database files and global joypad configuration |
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
 App Lab starts `python/main.py` in the main application container. This
@@ -139,10 +142,10 @@ newest controller state before it performs handshake maintenance.
 
 | Activity | Normal cadence | Failure or recovery boundary | Gameplay effect and representative load |
 | --- | --- | --- | --- |
-| Controller state, Controller to RetroPie UDP 55355 | Every fresh inference result, normally 15-30 Hz | RetroPie neutralizes gamepad and native state after 250 ms without a valid packet | Time-critical path. A representative signed state is about 610 bytes, or about 18 KiB/s at 30 Hz. The timeout adds no normal-play delay. |
+| Controller state, Controller to console UDP 55355 | Every fresh inference result, normally 15-30 Hz | The console neutralizes gamepad/keyboard and native state after 250 ms without a valid packet | Time-critical path. A representative signed state is about 610 bytes, or about 18 KiB/s at 30 Hz. The timeout adds no normal-play delay. |
 | Signed controller handshake, UDP 55355 | Every 250 ms until challenged; every 1 second after establishment | Three seconds without an authenticated reply starts paired-console discovery; discovery repeats every 2 seconds until a valid challenge arrives | Runs after the current state when established. A representative signed hello is about 212 bytes; no controller state is broadcast or replayed. |
-| Registered-game profile renewal, RetroPie to Controller UDP 55356 | Every 2 seconds while RetroArch and the session marker remain active | Each renewal carries a 6-second lease. A request may try up to three 0.4-second acknowledgement waits, outside game launch. If the saved destination fails, a signed discovery request finds and briefly caches the paired Controller's current address. | Keeps the correct ROM/core mapping active and lets the Controller recover after a restart or DHCP change. A representative renewal is about 365 bytes every 2 seconds. |
-| Setup console check, Controller to RetroPie TCP 55358 | Visible Setup polls every 5 seconds; the Controller starts at most one real probe every 10 seconds | A result becomes stale after 30 seconds; destination or key changes invalidate it immediately | Status only. It does not confirm that an emulator consumed input and does not run in the inference path. |
+| Registered-game profile renewal, console to Controller UDP 55356 | Every 2 seconds while RetroArch and the platform's session ownership remain active | Each renewal carries a 6-second lease. A request may try up to three 0.4-second acknowledgement waits, outside game launch. If the saved destination fails, a signed discovery request finds and briefly caches the paired Controller's current address. | Keeps the correct ROM/core mapping active and lets the Controller recover after a restart or DHCP change. A representative renewal is about 365 bytes every 2 seconds. |
+| Setup console check, Controller to console TCP 55358 | Visible Setup polls every 5 seconds; the Controller starts at most one real probe every 10 seconds | A result becomes stale after 30 seconds; destination or key changes invalidate it immediately | Status only. It does not confirm that an emulator consumed input and does not run in the inference path. |
 | Physical-link sampler, Controller host | Every 5 seconds | Its small record expires after 15 seconds | Supplies Wi-Fi/Ethernet status and safe directed-broadcast addresses. It does not scan networks, send controller data, or affect inference. |
 
 These defaults make normal traffic small: controller states account for almost
@@ -424,8 +427,8 @@ that use that finger; it does not change the button assignments in a game profil
 | `data/calibration.json` | VirtualGlove Controller, private persistent | Neutral palm position, apparent scale, wrist angle, and positional jitter for the installed camera and player |
 | `data/device.json` | VirtualGlove Controller, private persistent settings | Destination, selected settings, pairing-related configuration |
 | Tuning samples, preview, leases | Worker memory only | Temporary measurement and ownership state |
-| `config/games.json` | Shipped default registry | Exact ROM-name mappings copied to the RetroPie installation |
-| RetroPie registry and launcher settings | RetroPie, persistent | Active game-to-profile mappings and UNO destination |
+| `config/games.json` | Shipped default registry | Exact ROM-name mappings copied to the selected console installation |
+| Console registry and launcher settings | Console, persistent | Active game-to-profile mappings and Controller destination |
 | `data/models/hand_landmarker.task` | VirtualGlove Controller, verified cache | Reusable pretrained hand-landmark model |
 
 Neutral calibration is distinct from hand setup. It accepts 24 detected hand
@@ -438,27 +441,29 @@ updates preserve `data/` rather than replacing it with example configuration.
 The portable release baseline is `config/profiles.json`; raw neutral coordinates
 are deliberately machine- and player-local.
 
-![Profile-selection flow from RetroPie launch hook through the UNO relay and worker](images/architecture/profile.png)
+![Profile-selection flow from the console game session through the Controller relay and worker](images/architecture/profile.png)
 
-At game launch, the RetroPie hook looks up the exact ROM basename. For a registered
-game it records a user-owned session marker, starts a detached monitor, and waits for
-RetroArch to exist before sending input context. The monitor sends a signed profile
-renewal every two seconds to UNO UDP 55356 while both RetroArch and the marker remain
-active. It inspects the running RetroArch command line and includes the recognized
-libretro core in each renewal rather than trusting only the runcommand argument. Each
+At game launch, the platform integration looks up the exact ROM basename. On
+RetroPie this uses runcommand hooks and a user-owned session marker; Recalbox
+uses a bounded RetroArch monitor, Batocera uses game lifecycle events, and
+LaunchBox uses its RetroArch wrapper. For a registered game, the integration
+sends a signed profile renewal every two seconds to Controller UDP 55356 while
+the platform-specific game lease remains valid. It derives the active core from
+the platform's authoritative launch or process context and includes it in each
+renewal. Each
 renewal carries a bounded six-second lease. The app-owned relay forwards
 the bytes to the worker; the worker authenticates them and treats repeated renewals
 as lease refreshes rather than profile transitions. The acknowledgement travels back
 through the relay. The relay has no shared token and cannot declare a profile applied.
 
-If RetroPie's saved Controller address is stale or cannot be resolved, the profile
+If the console's saved Controller address is stale or cannot be resolved, the profile
 sender broadcasts a signed, ROM-free discovery request to the physical IPv4 LANs.
-The Controller returns a signed, request-matched discovery acknowledgement. RetroPie
+The Controller returns a signed, request-matched discovery acknowledgement. The console
 then sends the actual profile renewal by unicast and caches that authenticated address
 for 30 seconds. The cache is bounded and process-local; it neither changes
 `launcher.json` nor replaces pairing. A wrong key, malformed reply, or unrelated
 Controller cannot claim the session. This is the reverse-direction counterpart to
-the Controller's authenticated discovery of RetroPie on UDP 55355.
+the Controller's authenticated discovery of its paired console on UDP 55355.
 
 The first live renewal changes profile once and starts a one-second initialization
 guard. A VirtualGlove Controller application restart can therefore rediscover an already-running
@@ -487,7 +492,7 @@ the next launch; it does not rewrite the running game's mapping immediately.
 ### Optional native Super Glove Ball path
 
 The supported FCEUmm path consumes the same virtual gamepad as every other game.
-For native Super Glove Ball input, the authenticated RetroPie receiver also publishes a
+For native Super Glove Ball input, the authenticated console receiver also publishes a
 versioned, fixed-size latest-sample record in `/run/virtualglove/native-state`.
 The separately built `lr-nestopia-powerglove` core maps that file read-only,
 copies at most one coherent current sample per emulated frame, and adds no queue
@@ -505,10 +510,16 @@ five-finger closed-hand and index-point decisions explicitly so the core does
 not reconstruct compound poses from partial finger data. All confirmed Super
 Glove Ball actions are mapped. The raw roll byte and unobserved button codes
 remain neutral because the exact ROM has shown no separate action for them;
-guessing values could create unintended input. Stock Nestopia remains untouched; the custom core
-is enabled only through a Super Glove Ball per-ROM emulator choice after it is
-built locally from pinned GPLv2 source and verified on the cabinet. The ordinary
-release carries the patch and build recipe, not a compiled core. See the
+guessing values could create unintended input. Stock Nestopia remains untouched.
+RetroPie registers the custom core in its normal secondary-core directory.
+Batocera keeps the target-built core in persistent `/userdata`, then uses two
+reversible overlay mounts to expose only the separately named core and matching
+info record through Batocera's read-only core paths. The core forces its own
+Player 1 to the native Power Glove peripheral; other cores and other Nestopia
+games retain their normal devices. It is enabled only through a Super Glove Ball
+per-ROM emulator choice after it is built with the exact target toolchain and
+load-checked on the console. The ordinary source release carries the patch and
+reproducible build/install tools, not a cross-architecture compiled core. See the
 [native compatibility record](super-glove-ball-native.md).
 
 The optional project-owned `lr-powerglove-dot` core reads the same guarded
@@ -557,11 +568,11 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | HTTP 8088 | Browser to VirtualGlove Controller | Pages, live status/video, ordinary settings and commands |
 | HTTPS 8443 | Browser to VirtualGlove Controller | Secure Setup and pairing workflow |
 | HTTP 8089, loopback | Supervisor/web proxy to worker | Internal status, frame and control requests |
-| UDP 55355 | VirtualGlove Controller to RetroPie | Signed controller states, session, challenge, and sequence; handshake replies return to the sender socket |
-| UDP 55356 | RetroPie to UNO relay to worker | Signed profile requests and acknowledgements |
-| `/run/virtualglove/native-state` | Authenticated RetroPie receiver to native cores | Read-only, guarded latest sample for Super Glove Ball or the calibration display |
+| UDP 55355 | VirtualGlove Controller to console | Signed controller states, session, challenge, and sequence; handshake replies return to the sender socket |
+| UDP 55356 | Console to Controller relay to worker | Signed profile requests and acknowledgements |
+| Native-state record | Authenticated console receiver to native cores | `/run/virtualglove/native-state` on Linux or a per-user mapped file on LaunchBox; guarded latest sample for Super Glove Ball |
 | TCP 55357 | Pairing participants | Temporary one-time-code pairing service |
-| TCP 55358 | VirtualGlove Controller to RetroPie | Paired game-registry service |
+| TCP 55358 | VirtualGlove Controller to console | Paired game-registry service |
 | Private Unix sockets | App resolver to host Avahi | Local hostname resolution |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
 
@@ -596,11 +607,14 @@ network addresses.
 
 ![Separate Linux application and microcontroller firmware deployment paths](images/architecture/deployment.png)
 
-The versioned `install-uno-q.sh` and `install-retropie.sh` entry points download
-matching packages and call the shared host installer. The UNO route uses App
+The versioned `install-uno-q.sh`, `install-retropie.sh`,
+`install-recalbox.sh`, and `install-batocera.sh` entry points download matching
+packages and call the shared host installer. LaunchBox uses its extracted
+per-user PowerShell installer. The UNO route uses App
 Lab CLI to build/upload the sketch and start the app; it installs both startup
-and fixed-purpose shutdown/camera-recovery helpers. The RetroPie route installs the receiver and launch
-integration, then checks emulator and registered-game configuration.
+and fixed-purpose shutdown/camera-recovery helpers. Each console route installs
+its receiver and platform-specific game-session integration in the platform's
+supported persistent location, then checks emulator and registered-game configuration.
 
 There are two deployable parts. Python, website, documentation, assets, and
 service support run on Linux. The **Arduino sketch** is the microcontroller source

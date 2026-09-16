@@ -124,5 +124,5 @@ class RegistryTests(unittest.TestCase):
 
     def test_offline_client_preserves_actionable_error(self):
         with patch('powerglove_vision.game_registry.urllib.request.OpenerDirector.open', side_effect=OSError):
-            with self.assertRaisesRegex(ValueError, 'update RetroPie setup'):
+            with self.assertRaisesRegex(ValueError, 'update its VirtualGlove setup'):
                 registry_request({'receiver':'127.0.0.1', 'token':self.token}, 'read')

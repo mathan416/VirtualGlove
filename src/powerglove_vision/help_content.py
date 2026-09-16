@@ -222,6 +222,12 @@ def cabinet_reference_content(host_header: str, config: dict[str, Any]) -> tuple
     """Build a non-secret cabinet reference from the request address and public settings."""
     board = request_browser_address(host_header)
     receiver = str(config.get("receiver", "")) or "Not configured"
+    platform = {
+        "retropie": "RetroPie",
+        "recalbox": "Recalbox",
+        "batocera": "Batocera",
+        "launchbox": "LaunchBox (Windows)",
+    }.get(str(config.get("platform", "")), "Not selected")
     port = str(config.get("port", 55355))
     profile = str(config.get("profile", "off"))
     profile_names = {
@@ -258,7 +264,8 @@ def cabinet_reference_content(host_header: str, config: dict[str, Any]) -> tuple
     )
     settings_rows = "".join(
         (
-            row("RetroPie console", receiver),
+            row("Console platform", platform),
+            row("Game console", receiver),
             row("Controller port", port),
             row("Startup profile", profile_name),
             row("Tracking aid", tracking_aid),

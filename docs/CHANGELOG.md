@@ -7,6 +7,99 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+### Added
+
+- Added LaunchBox support for 64-bit Windows through RetroArch. A per-user
+  wrapper exact-matches registered NES ROMs, keeps authenticated game leases
+  alive for the launched process, uses FCEUmm for standard profiles, and selects
+  a separately named Nestopia PowerGlove DLL only for Super Glove Ball.
+- Added dependency-free Windows keyboard injection that merges VirtualGlove's
+  Player 1 controls beside the existing physical XInput joypad. LaunchBox uses
+  one-time-code pairing only and runs input in the signed-in desktop session.
+  Synthetic keys are restricted to foreground `retroarch.exe` and release on
+  focus loss so gestures cannot type into another application.
+- Added an isolated Windows portability patch, PE32+ AMD64 verifier, MinGW64
+  build script, and manually dispatched Windows build workflow. Release package
+  creation refuses an incomplete LaunchBox package without its reviewed DLL.
+
+- Setup now requires an explicit RetroPie, Recalbox, Batocera, or LaunchBox platform before
+  the console address can be saved and pairing can begin. The pairing wizard
+  shows only that platform's one-time-code command and supplies the normal SSH
+  username for it.
+- Pairing requests bind the saved platform and address to the Controller's
+  physical approval window. Both one-time-code and SSH pairing detect the
+  remote platform before changing its token, preventing an accidental install
+  through instructions meant for a different console family.
+- Recalbox now selects the verified Nestopia (VirtualGlove) core automatically
+  for exact Super Glove Ball ROM filenames in the installed game registry. An
+  existing per-ROM core selection is always preserved.
+- Began VirtualGlove 0.5.0 console portability with first-class Recalbox 10.x
+  and Batocera 38+ installation targets. Recalbox uses its persistent share and
+  supported boot hook; Batocera uses its supported user-service and
+  `gameStart`/`gameStop` script interfaces.
+- Added a dependency-free Linux `uinput` keyboard publisher so VirtualGlove
+  gestures can feed RetroArch Player 1 while the player's physical joypad
+  remains assigned to that same port. The existing RetroPie gamepad publisher
+  remains the default and unchanged.
+- Added a hook-free RetroArch game monitor for Recalbox, plus authenticated
+  SSH pairing paths that recognize RetroPie, Recalbox, and Batocera persistent
+  token and service locations.
+- Added native Super Glove Ball support for Batocera. A reproducible builder uses
+  Batocera's exact target sysroot and compiler; the target installer load-checks
+  the core before atomic placement. Reversible overlay mounts expose the
+  separately named core through Batocera's read-only core paths while leaving
+  stock Nestopia and FCEUmm untouched, and exact per-ROM configuration provides
+  a one-command native/FCEUmm choice.
+- Added the corresponding isolated Recalbox native-core path for `rpizero2`,
+  `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`. It uses
+  each target's own Recalbox Buildroot recipe, verifies the exact Recalbox
+  version and resulting ELF architecture on the target, exposes the core
+  through reversible runtime mounts, and adds only `nestopia_powerglove` to a
+  temporary NES system list. An exact ROM sidecar selects the core for Super
+  Glove Ball while stock Nestopia, FCEUmm, ROMs, saves, and other per-game
+  settings remain unchanged.
+- Added a reproducible Recalbox build-matrix command and a versioned native-core
+  manifest. ARM32, ARM64, and x86-64 artifacts are isolated by target and exact
+  Recalbox release so an installer cannot apply a compatible-looking binary to
+  the wrong system.
+- Added a manually dispatched seven-job build workflow so all Recalbox targets
+  can be compiled in parallel from an exact release tag. It retains
+  target-specific review artifacts and never publishes or deploys them.
+- Packaged independently built Recalbox 10.1 `rpizero2` and `rpi3` ARM32 native
+  cores with target, version, architecture, size, and SHA-256 metadata. Both
+  load on the available Raspberry Pi 3; exact `rpi3` image validation remains
+  outstanding. Recalbox verifies a packaged binary and its `Nestopia
+  PowerGlove` libretro identity before exposing it through the reversible
+  overlay. Unpackaged target/version pairs retain FCEUmm.
+
+### Changed
+
+- Wi-Fi deployment no longer opens an invisible remote sudo prompt. It deploys
+  and verifies the Controller application, runs privileged host maintenance only
+  when non-interactive sudo is already authorized, and otherwise prints the
+  exact commands for the user to run directly on the UNO Q.
+- Updated the README and every maintained installation-facing guide for the
+  v0.5.0 platform model. Added dedicated Recalbox, Batocera, and LaunchBox
+  setup sections; documented exact install, pairing, persistence, verification,
+  update, Player 1 coexistence, native-core fallback, and acceptance boundaries;
+  and replaced RetroPie-only language where the behavior is shared.
+- Extended release-package generation and validation with separate Recalbox
+  and Batocera installers. Console updates preserve tokens, game registries,
+  custom startup scripts, RetroArch settings outside the eight managed Player
+  1 keyboard bindings, ROMs, saves, and physical-controller configuration.
+- Required executable metadata on every packaged Batocera runtime entry point.
+  Recalbox entry points are invoked explicitly through `sh` because its
+  persistent exFAT share intentionally mounts files without execute bits.
+- Made the isolated Nestopia core select its native Power Glove peripheral
+  internally. This keeps Batocera startup independent of frontend timing or
+  inherited service environment while changing no other emulator core.
+
+### Fixed
+
+- The shared Controller Dashboard now replaces an unavailable camera stream
+  with clear USB-camera guidance instead of repeatedly retrying a broken image,
+  consistently for RetroPie, Recalbox, Batocera, and LaunchBox consoles.
+
 ## [0.4.2] - 2026-09-14
 
 ### Changed

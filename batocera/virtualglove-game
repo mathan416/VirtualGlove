@@ -1,0 +1,31 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: batocera/virtualglove-game
+# Purpose: Relay Batocera gameStart/gameStop events to VirtualGlove.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+APP=/userdata/system/virtualglove
+export PYTHONPATH="$APP/src"
+SETTINGS="$APP/data/launcher.json"
+SESSION="$APP/run/active-game.json"
+
+case "${1:-}" in
+    gameStart)
+        emulator="${3:-}"
+        if [ "$emulator" = libretro ]; then
+            case "${4:-}" in
+                nestopia_powerglove) emulator="lr-nestopia-powerglove" ;;
+                *) emulator="lr-${4:-}" ;;
+            esac
+        fi
+        exec /usr/bin/python3 -m powerglove_vision.retropie_hook start \
+            "${2:-}" "$emulator" "${5:-}" "" \
+            --settings "$SETTINGS" --session-file "$SESSION"
+        ;;
+    gameStop)
+        exec /usr/bin/python3 -m powerglove_vision.retropie_hook end \
+            --settings "$SETTINGS" --session-file "$SESSION"
+        ;;
+esac

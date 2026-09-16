@@ -82,6 +82,7 @@ from .help_content import (
     help_index_content, guide_markdown, guide_pdf,
 )
 from .pairing import (
+    CONSOLE_PLATFORMS,
     PAIRING_PORT,
     certificate_fingerprint,
     certificate_identity,
@@ -295,10 +296,17 @@ class ControlState:
         return (ssl.PEM_cert_to_DER_cert(self._controller_authority_pem),
                 certificate_fingerprint(self._controller_authority_pem))
 
-    def begin_pairing(self, host: str, method: str) -> dict[str, Any]:
+    def begin_pairing(self, host: str, method: str, platform: str) -> dict[str, Any]:
         """Create a short-lived physical authorization PIN for one host and pairing method."""
-        if not host or len(host) > 253 or any(character.isspace() for character in host):
-            raise ValueError("enter a valid RetroPie hostname or IP address")
+        config = self.load_config()
+        if method == "ssh" and platform == "launchbox":
+            raise ValueError("LaunchBox pairing uses the one-time-code method")
+        if (platform not in CONSOLE_PLATFORMS
+                or platform != str(config.get("platform", ""))):
+            raise ValueError("save the console platform before pairing")
+        if (not host or len(host) > 253 or any(character.isspace() for character in host)
+                or host != str(config.get("receiver", "")).strip()):
+            raise ValueError("pairing requires the saved console hostname or IP address")
         if method not in {"ssh", "code"}:
             raise ValueError("choose a supported pairing method")
         now = time.monotonic()
@@ -307,12 +315,13 @@ class ControlState:
                 raise ValueError("pairing is temporarily locked; wait for the current window to expire")
             if self._pairing_session and now < self._pairing_session["expires"]:
                 session = self._pairing_session
-                if session["host"] != host or session["method"] != method:
+                if (session["host"] != host or session["method"] != method
+                        or session["platform"] != platform):
                     raise ValueError("another pairing window is already active")
             else:
                 pin = f"{secrets.randbelow(1_000_000):06d}"
                 session = {
-                    "host": host, "method": method, "pin": pin,
+                    "host": host, "method": method, "platform": platform, "pin": pin,
                     "expires": now + 120, "attempts": 0,
                 }
                 self._pairing_session = session
@@ -328,7 +337,7 @@ class ControlState:
             raise ValueError("the UNO Q matrix is unavailable; physical pairing confirmation is required")
         return {"certificate_id": self._pairing_identity, "expires_in": max(0, round(session["expires"] - now))}
 
-    def authorize_pairing(self, host: str, method: str, pin: str) -> None:
+    def authorize_pairing(self, host: str, method: str, platform: str, pin: str) -> None:
         """Consume a matching one-time physical PIN or reject the pairing attempt."""
         now = time.monotonic()
         with self.lock:
@@ -336,7 +345,8 @@ class ControlState:
             if session is None or now >= session["expires"]:
                 self._pairing_session = None
                 raise ValueError("pairing window expired; prepare pairing again")
-            if session["host"] != host or session["method"] != method:
+            if (session["host"] != host or session["method"] != method
+                    or session["platform"] != platform):
                 raise ValueError("pairing request does not match the prepared device and method")
             session["attempts"] += 1
             if not secrets.compare_digest(str(session["pin"]), pin):
@@ -375,7 +385,7 @@ class ControlState:
                     raise ValueError("Select Center hand on Dashboard or in Glove Academy before starting controls for this player.")
             config = self.load_config()
             if not str(config.get("receiver", "")).strip() or not config.get("token"):
-                raise ValueError("Configure your RetroPie destination and pairing in Connection before starting controls.")
+                raise ValueError("Configure your game console and pairing in Connection before starting controls.")
         self._persist_controller_enabled(enabled)
         with self.lock:
             self._controller_enabled = enabled
@@ -549,6 +559,7 @@ class ControlState:
         )
         return {
             "receiver": config.get("receiver", ""),
+            "platform": config.get("platform", ""),
             "port": int(config.get("port", 55355)),
             "profile": config.get("profile", "off"),
             "glove_color": config.get("glove_color", "none"),
@@ -575,6 +586,9 @@ class ControlState:
             "matrix_attract": config.get("matrix_attract", "on"),
             "paired": bool(config.get("receiver") and config.get("token")),
             "connection_configured": bool(str(config.get("receiver", "")).strip() and config.get("token")),
+            "pairing_configured": bool(str(config.get("receiver", "")).strip()
+                                       and config.get("token")
+                                       and config.get("platform") in CONSOLE_PLATFORMS),
             "controller_enabled": self.controller_enabled(),
             "camera_identity": identity,
             "saved_camera_profile": saved_camera_profile,
@@ -922,6 +936,11 @@ class ControlState:
         receiver = str(incoming.get("receiver", "")).strip()
         if len(receiver) > 253 or any(ch.isspace() for ch in receiver):
             raise ValueError("Enter a valid console hostname or IP address.")
+        platform = str(incoming.get("platform", "")).strip()
+        if platform not in ("",) + CONSOLE_PLATFORMS:
+            raise ValueError("Choose a supported console platform.")
+        if receiver and not platform:
+            raise ValueError("Choose the console platform before saving its address.")
         try:
             raw_port = incoming.get("port", 55355)
             if isinstance(raw_port, bool) or isinstance(raw_port, float):
@@ -974,7 +993,7 @@ class ControlState:
             token = secrets.token_urlsafe(24)
         saved = dict(current)
         saved.update({
-            "receiver": receiver, "port": port, "token": token,
+            "receiver": receiver, "platform": platform, "port": port, "token": token,
             "profile": profile, "glove_color": glove_color,
             "camera": camera, "camera_fps": camera_fps,
             "camera_buffers": camera_buffers,
@@ -1520,11 +1539,14 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                     self.require_secure_pairing()
                     incoming = self.json_body(require_json=True)
                     host = str(incoming.get("host", "")).strip()
-                    state.authorize_pairing(host, "code", str(incoming.get("device_code", "")))
+                    platform = str(incoming.get("platform", "")).strip()
+                    state.authorize_pairing(
+                        host, "code", platform, str(incoming.get("device_code", "")))
                     try:
                         pair_with_code(
                             host, PAIRING_PORT,
                             str(incoming.get("code", "")), str(state.load_config()["token"]),
+                            platform,
                         )
                     finally:
                         state.finish_pairing_display()
@@ -1533,7 +1555,9 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                     self.require_secure_pairing()
                     incoming = self.json_body(require_json=True)
                     host = str(incoming.get("host", "")).strip()
-                    state.authorize_pairing(host, "ssh", str(incoming.get("device_code", "")))
+                    platform = str(incoming.get("platform", "")).strip()
+                    state.authorize_pairing(
+                        host, "ssh", platform, str(incoming.get("device_code", "")))
                     password = str(incoming.get("password", ""))
                     try:
                         pair_over_ssh(
@@ -1541,6 +1565,7 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                             str(incoming.get("username", "")).strip(), password,
                             str(state.load_config()["token"]),
                             state.config_path.parent / "ssh" / "known_hosts",
+                            platform,
                         )
                     finally:
                         password = ""
@@ -1551,7 +1576,9 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                     self.require_secure_pairing()
                     incoming = self.json_body(require_json=True)
                     result = state.begin_pairing(
-                        str(incoming.get("host", "")).strip(), str(incoming.get("method", ""))
+                        str(incoming.get("host", "")).strip(),
+                        str(incoming.get("method", "")),
+                        str(incoming.get("platform", "")).strip(),
                     )
                     _send(self, 200, json.dumps(result).encode(), "application/json")
                 else:

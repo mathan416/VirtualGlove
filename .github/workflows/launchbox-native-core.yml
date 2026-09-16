@@ -1,0 +1,63 @@
+# Project: VirtualGlove
+# File: .github/workflows/launchbox-native-core.yml
+# Purpose: Build the LaunchBox Windows x86-64 native PowerGlove core.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+name: Build LaunchBox native core
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: LaunchBox Windows x86-64
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out VirtualGlove
+        uses: actions/checkout@v5
+      - name: Validate the Windows installer and runtime
+        shell: pwsh
+        run: |
+          Get-ChildItem launchbox -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
+          }
+          py -3 -m pip install ".[launchbox]"
+          py -3 -m unittest tests.test_windows_input tests.test_launchbox `
+            tests.test_pairing.PairingTests.test_certificate_falls_back_without_openssl
+      - name: Install the x86-64 MinGW build environment
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-python
+      - name: Build and verify the isolated native core
+        shell: msys2 {0}
+        run: bash scripts/build-launchbox-nestopia-powerglove.sh "$RUNNER_TEMP/launchbox-native"
+      - name: Upload the reviewed Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: launchbox-windows-x86_64
+          path: |
+            ${{ runner.temp }}/launchbox-native/manifest.json
+            ${{ runner.temp }}/launchbox-native/x86_64/nestopia_powerglove_libretro.dll
+            ${{ runner.temp }}/launchbox-native/x86_64/nestopia-powerglove-source.tar.gz
+          if-no-files-found: error
+          retention-days: 14

@@ -85,6 +85,8 @@ REQUIRED_FILES = {
 
     "VirtualGlove/scripts/install-uno-q.sh",
     "VirtualGlove/scripts/install-retropie.sh",
+    "VirtualGlove/scripts/install-recalbox.sh",
+    "VirtualGlove/scripts/install-batocera.sh",
     "VirtualGlove/scripts/install-package.py",
     "VirtualGlove/scripts/setup-machine.py",
     "VirtualGlove/scripts/installation-manifest.py",
@@ -148,6 +150,34 @@ REQUIRED_FILES = {
     "VirtualGlove/retropie/bin/virtualglove-profile",
     "VirtualGlove/retropie/bin/virtualglove-retropie-hook",
     "VirtualGlove/retropie/bin/virtualglove-bsb-zap",
+    "VirtualGlove/src/powerglove_vision/console_monitor.py",
+    "VirtualGlove/src/powerglove_vision/linux_uinput.py",
+    "VirtualGlove/recalbox/virtualglove-service",
+    "VirtualGlove/recalbox/virtualglove-core-mount",
+    "VirtualGlove/recalbox/retroarch-nes.cfg",
+    "VirtualGlove/scripts/build-recalbox-nestopia-powerglove.sh",
+    "VirtualGlove/scripts/install-recalbox-nestopia-powerglove.sh",
+    "VirtualGlove/scripts/configure-recalbox-super-glove-ball-core.py",
+    "VirtualGlove/batocera/VirtualGlove",
+    "VirtualGlove/batocera/virtualglove-game",
+    "VirtualGlove/batocera/virtualglove-core-mount",
+    "VirtualGlove/batocera/retroarch-nes.cfg",
+    "VirtualGlove/scripts/build-batocera-nestopia-powerglove.sh",
+    "VirtualGlove/scripts/install-batocera-nestopia-powerglove.sh",
+    "VirtualGlove/scripts/configure-batocera-super-glove-ball-core.py",
+    "VirtualGlove/src/powerglove_vision/windows_input.py",
+    "VirtualGlove/src/powerglove_vision/launchbox_hook.py",
+    "VirtualGlove/src/powerglove_vision/launchbox_runtime.py",
+    "VirtualGlove/launchbox/install-launchbox.ps1",
+    "VirtualGlove/launchbox/virtualglove-launchbox.cmd",
+    "VirtualGlove/launchbox/virtualglove-pair.ps1",
+    "VirtualGlove/launchbox/retroarch-nes.cfg",
+    "VirtualGlove/scripts/build-launchbox-nestopia-powerglove.sh",
+    "VirtualGlove/scripts/verify-launchbox-native-core.py",
+    "VirtualGlove/native/launchbox/nestopia-windows.patch",
+    "VirtualGlove/native/launchbox/manifest.json",
+    "VirtualGlove/native/launchbox/x86_64/nestopia_powerglove_libretro.dll",
+    "VirtualGlove/native/launchbox/x86_64/nestopia-powerglove-source.tar.gz",
     "VirtualGlove/bricks/local/profile_control/brick_config.yaml",
     "VirtualGlove/bricks/local/profile_control/brick_compose.yaml",
     "VirtualGlove/scripts/profile-relay.py",
@@ -191,6 +221,11 @@ LEGACY_RUNTIME_FILES = {
         "camera-recovery.py", "camera-recovery.conf", "camera-recovery.path",
         "camera-recovery.service",
     )},
+}
+EXECUTABLE_RUNTIME_FILES = {
+    "VirtualGlove/batocera/VirtualGlove",
+    "VirtualGlove/batocera/virtualglove-game",
+    "VirtualGlove/batocera/virtualglove-core-mount",
 }
 
 
@@ -243,6 +278,10 @@ def archive_errors(path: Path) -> list[str]:
                 errors.append(f"required package file is missing: {name}")
             for name in sorted(LEGACY_RUNTIME_FILES & names):
                 errors.append(f"legacy PowerGlove runtime file included: {name}")
+            info_by_name = {info.filename: info for info in archive.infolist()}
+            for name in sorted(EXECUTABLE_RUNTIME_FILES & names):
+                if not (info_by_name[name].external_attr >> 16) & 0o111:
+                    errors.append(f"runtime entry point is not executable: {name}")
             for relative in sorted(ENGINEERING_FILES):
                 name = "VirtualGlove/" + relative
                 if name in names:

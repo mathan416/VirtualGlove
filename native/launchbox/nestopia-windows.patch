@@ -1,0 +1,128 @@
+--- a/libretro/libretro.cpp
++++ b/libretro/libretro.cpp
+@@ -5,12 +5,16 @@
+ #include <math.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#ifdef _WIN32
++#include <windows.h>
++#else
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <time.h>
+ #include <unistd.h>
++#endif
+ #include <sstream>
+ #include <string>
+ 
+@@ -164,32 +168,88 @@
+ };
+ #pragma pack(pop)
+ 
++#ifdef _WIN32
++static HANDLE pgv_native_file = INVALID_HANDLE_VALUE;
++static HANDLE pgv_native_mapping = NULL;
++#else
+ static int pgv_native_fd = -1;
++#endif
+ static const volatile struct pgv_native_state *pgv_native = NULL;
+ 
+ static uint64_t pgv_monotonic_ns(void)
+ {
++#ifdef _WIN32
++   LARGE_INTEGER value, frequency;
++   if (!QueryPerformanceCounter(&value) || !QueryPerformanceFrequency(&frequency) ||
++       frequency.QuadPart <= 0)
++      return 0;
++   return (uint64_t)(value.QuadPart / frequency.QuadPart) * 1000000000ULL +
++      (uint64_t)(value.QuadPart % frequency.QuadPart) * 1000000000ULL /
++      (uint64_t)frequency.QuadPart;
++#else
+    struct timespec value;
+    return clock_gettime(CLOCK_MONOTONIC, &value) == 0
+       ? (uint64_t)value.tv_sec * 1000000000ULL + value.tv_nsec : 0;
++#endif
+ }
+ 
+ static void pgv_native_close(void)
+ {
++#ifdef _WIN32
+    if (pgv_native)
++      UnmapViewOfFile((const void*)pgv_native);
++   if (pgv_native_mapping)
++      CloseHandle(pgv_native_mapping);
++   if (pgv_native_file != INVALID_HANDLE_VALUE)
++      CloseHandle(pgv_native_file);
++   pgv_native = NULL;
++   pgv_native_mapping = NULL;
++   pgv_native_file = INVALID_HANDLE_VALUE;
++#else
++   if (pgv_native)
+       munmap((void*)pgv_native, sizeof(*pgv_native));
+    if (pgv_native_fd >= 0)
+       close(pgv_native_fd);
+    pgv_native = NULL;
+    pgv_native_fd = -1;
++#endif
+ }
+ 
+ static void pgv_native_open(void)
+ {
++#ifdef _WIN32
++   const wchar_t *path = _wgetenv(L"VIRTUALGLOVE_NATIVE_STATE");
++   if (!path || !*path)
++      path = L"native-state.bin";
++#else
+    const char *path = getenv("VIRTUALGLOVE_NATIVE_STATE");
+    if (!path || !*path)
+       path = "/run/virtualglove/native-state";
++#endif
+    pgv_native_close();
++#ifdef _WIN32
++   pgv_native_file = CreateFileW(path, GENERIC_READ,
++      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
++      FILE_ATTRIBUTE_NORMAL, NULL);
++   if (pgv_native_file == INVALID_HANDLE_VALUE)
++      return;
++   pgv_native_mapping = CreateFileMappingA(pgv_native_file, NULL, PAGE_READONLY, 0, 0, NULL);
++   if (!pgv_native_mapping)
++   {
++      CloseHandle(pgv_native_file);
++      pgv_native_file = INVALID_HANDLE_VALUE;
++      return;
++   }
++   pgv_native = (const volatile struct pgv_native_state*)MapViewOfFile(
++      pgv_native_mapping, FILE_MAP_READ, 0, 0, sizeof(struct pgv_native_state));
++   if (!pgv_native)
++   {
++      CloseHandle(pgv_native_mapping);
++      CloseHandle(pgv_native_file);
++      pgv_native_mapping = NULL;
++      pgv_native_file = INVALID_HANDLE_VALUE;
++   }
++#else
+    pgv_native_fd = open(path, O_RDONLY);
+    if (pgv_native_fd < 0)
+       return;
+@@ -202,6 +262,7 @@
+       return;
+    }
+    pgv_native = (const volatile struct pgv_native_state*)mapped;
++#endif
+ }
+ 
+ static bool pgv_native_read(struct pgv_native_state *out)
+@@ -211,7 +272,11 @@
+    if (!pgv_native)
+       return false;
+    memcpy(out, (const void*)pgv_native, sizeof(*out));
++#ifdef _WIN32
++   MemoryBarrier();
++#else
+    __sync_synchronize();
++#endif
+    if (memcmp(out->magic, "PGV1", 4) || out->version != 1 ||
+        out->size != sizeof(*out) || (out->guard_begin & 1) ||
+        out->guard_begin != out->guard_end || out->profile != 1 ||

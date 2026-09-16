@@ -258,6 +258,45 @@ class ArchiveTests(unittest.TestCase):
                          'native/powerglove-dot/powerglove_dot.cpp',
                          'src/powerglove_vision/dot_launcher.py'):
                 output.writestr('VirtualGlove/' + name, 'test')
+            console_members = {
+                'recalbox': (
+                    'src/powerglove_vision/console_monitor.py',
+                    'src/powerglove_vision/linux_uinput.py',
+                    'recalbox/virtualglove-service',
+                    'recalbox/virtualglove-core-mount',
+                    'recalbox/retroarch-nes.cfg',
+                    'scripts/build-recalbox-nestopia-powerglove.sh',
+                    'scripts/build-recalbox-native-matrix.sh',
+                    'scripts/install-recalbox-nestopia-powerglove.sh',
+                    'scripts/configure-recalbox-super-glove-ball-core.py',
+                    'scripts/verify-recalbox-native-core.py',
+                    'native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so',
+                    'native/recalbox/rpizero2/10.1/nestopia-powerglove-source.tar.gz',
+                    'python/ssh_pair.py',
+                ),
+                'batocera': (
+                    'src/powerglove_vision/linux_uinput.py',
+                    'recalbox/virtualglove-service',
+                    'batocera/VirtualGlove',
+                    'batocera/virtualglove-game',
+                    'batocera/virtualglove-core-mount',
+                    'batocera/retroarch-nes.cfg',
+                    'scripts/build-batocera-nestopia-powerglove.sh',
+                    'scripts/install-batocera-nestopia-powerglove.sh',
+                    'scripts/configure-batocera-super-glove-ball-core.py',
+                    'python/ssh_pair.py',
+                ),
+            }
+            for name in console_members.get(machine, ()):
+                output.writestr('VirtualGlove/' + name, 'test')
+            if machine == 'recalbox':
+                output.writestr('VirtualGlove/native/recalbox/manifest.json', json.dumps({
+                    'format': 2,
+                    'cores': {'rpizero2': {'10.1': {
+                        'file': 'rpizero2/10.1/nestopia_powerglove_libretro.so',
+                        'source_file': 'rpizero2/10.1/nestopia-powerglove-source.tar.gz',
+                    }}},
+                }))
             if extra:
                 output.writestr(*extra)
         return archive
@@ -277,6 +316,15 @@ class ArchiveTests(unittest.TestCase):
             for machine, version in [('uno-q', 'dev-test'), ('retropie', 'v-other')]:
                 with self.assertRaisesRegex(ValueError, 'does not match'):
                     installer.unpack(archive, Path(directory) / 'bad', machine, version)
+
+    def test_recalbox_and_batocera_packages_have_complete_identity(self):
+        for machine in ('recalbox', 'batocera'):
+            with self.subTest(machine=machine), tempfile.TemporaryDirectory() as directory:
+                archive = self.package(directory, machine=machine)
+                source = installer.unpack(
+                    archive, Path(directory) / 'extract', machine, 'dev-test')
+                self.assertTrue((source / 'src/powerglove_vision/linux_uinput.py').is_file())
+                self.assertTrue((source / machine).is_dir())
 
     def test_loading_and_staging_extracted_setup_creates_no_generated_files(self):
         with tempfile.TemporaryDirectory() as directory:

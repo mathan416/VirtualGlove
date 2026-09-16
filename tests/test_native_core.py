@@ -49,7 +49,8 @@ class NativeCoreTests(unittest.TestCase):
         self.assertNotIn("/opt/retropie/libretrocores", script)
         self.assertNotIn("reset --hard", script)
         self.assertIn('cat-file -e "$revision^{commit}"', script)
-        self.assertIn('make -C "$source_dir/libretro" -j"${JOBS:-2}" >&2', script)
+        self.assertIn('make -C "$source_dir/libretro" -j"${JOBS:-2}"', script)
+        self.assertIn("VIRTUALGLOVE_LIBRETRO_PLATFORM", script)
         self.assertIn("The patch changed Nestopia's original copyright/license header", script)
         self.assertIn("NstInpPowerGlove.cpp", script)
 
@@ -82,6 +83,9 @@ class NativeCoreTests(unittest.TestCase):
             "packet boundary falling-strobe",
             "packet clock=%lu bytes=",
             'library_name     = "Nestopia PowerGlove"',
+            "if (port == 0)",
+            "Api::Input::POWERGLOVE",
+            "return true;",
         ):
             self.assertIn(evidence, patch)
 
@@ -121,8 +125,12 @@ class NativeCoreTests(unittest.TestCase):
         self.assertIn('target/COPYING', installer)
         self.assertIn('POWERGLOVE-VISION-NOTICES.md', installer)
         self.assertIn("GNU General Public License, version 2", notice)
-        self.assertIn("not a compiled core", notice)
-        self.assertIn("1ed4eb4bc803a4d445b6e5a1c7b22ccb00cf8a18d465954730282212b8334c06", notice)
+        self.assertIn(
+            "each bundled binary is accompanied by its exact complete corresponding source",
+            notice,
+        )
+        self.assertIn("Recalbox 10.1 `rpizero2`", notice)
+        self.assertIn("fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f", notice)
         self.assertIn("Martin Freij", notice)
         self.assertIn("leaves it", notice)
         self.assertIn("byte-for-byte unchanged", notice)

@@ -37,7 +37,8 @@ class SetupReviewTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'device.json'
-        self.path.write_text(json.dumps(dict(receiver='cabinet.local', token=TOKEN, profile='off')))
+        self.path.write_text(json.dumps(dict(platform='retropie', receiver='cabinet.local',
+                                             token=TOKEN, profile='off')))
         self.state = ControlState(self.path)
 
     def test_settings_writes_preserve_concurrent_attract_change(self):
@@ -50,7 +51,7 @@ class SetupReviewTests(unittest.TestCase):
             atomic_write(*args)
         def save():
             try:
-                self.state.save_config({'receiver':'new.local','profile':'off'})
+                self.state.save_config({'platform':'retropie','receiver':'new.local','profile':'off'})
             except Exception as error:
                 errors.append(error)
         with patch('powerglove_vision.game_registry.atomic_write', side_effect=delayed_write):
@@ -67,7 +68,7 @@ class SetupReviewTests(unittest.TestCase):
         before = self.path.read_bytes()
         with patch('powerglove_vision.game_registry.os.replace', side_effect=OSError('disk failure')):
             with self.assertRaises(OSError):
-                self.state.save_config({'receiver':'new.local','profile':'off'})
+                self.state.save_config({'platform':'retropie','receiver':'new.local','profile':'off'})
         self.assertEqual(self.path.read_bytes(), before)
         self.assertEqual(self.state.revision, 0)
 
@@ -116,7 +117,8 @@ class SetupReviewTests(unittest.TestCase):
     def test_rotation_disarms_and_preserves_attract(self):
         self.state.set_controller_enabled(True)
         self.state.save_attract({'mode':'off'})
-        self.state.save_config({'receiver':'cabinet.local','profile':'off','rotate_token':True})
+        self.state.save_config({'platform':'retropie','receiver':'cabinet.local',
+                                'profile':'off','rotate_token':True})
         self.assertFalse(self.state.controller_enabled())
         saved = json.loads(self.path.read_text())
         self.assertNotEqual(saved['token'], TOKEN)

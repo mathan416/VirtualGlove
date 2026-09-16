@@ -59,7 +59,7 @@ the reader's configuration.
 Keep user guides focused on what people see and what they should do. Put timing,
 rendering, protocol, benchmark history, and other implementation details in the
 technical references. Technical guides may describe the project's current UNO Q,
-RetroPie system, tests, successful experiments, and rejected approaches when that
+supported console, tests, successful experiments, and rejected approaches when that
 evidence helps another developer reproduce or understand the result. Date or
 otherwise qualify measurements that may change.
 Use small contextual images in tables, place related images side by side, and
@@ -115,7 +115,7 @@ scripts/check-source-docs.py
 Run these commands from the repository root on your development computer.
 The [command reference](CONFIGURATION_REFERENCE.md#command-line-reference) explains their options.
 
-Core tests must remain independent of a physical camera, VirtualGlove Controller, and RetroPie:
+Core tests must remain independent of a physical camera, VirtualGlove Controller, and console:
 
 ```sh
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -162,7 +162,7 @@ PYTHONPATH=src python scripts/capture-guide-screenshots.py
 
 The development environment needs Playwright and Chrome. The script renders the
 current application templates against isolated sample responses and temporary
-player state. It never contacts a live Controller or RetroPie. Camera areas use
+player state. It never contacts a live Controller or console. Camera areas use
 a labelled placeholder and pairing inputs use non-secret examples. The capture
 covers Dashboard, Play, Academy learning and personalization, player settings
 and restoration, Setup, Games, Help, attract settings, and every guided-pairing

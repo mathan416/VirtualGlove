@@ -274,6 +274,6 @@ class AuditRegressionTests(unittest.TestCase):
         self.assertFalse(any(name.startswith(('output/install/','assets/matrix/')) for name in selected))
         self.assertFalse(any(name.endswith('.zip') for name in selected))
         generators=runpy.run_path(str(ROOT/'scripts/build-installer-scripts.py'))
-        for machine in ('uno-q','retropie'):
+        for machine in ('uno-q','retropie','recalbox','batocera'):
             self.assertEqual(generators['render'](machine),
                              (ROOT/f'scripts/install-{machine}.sh').read_text())

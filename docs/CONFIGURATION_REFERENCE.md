@@ -16,16 +16,19 @@ specific commands and filenames retain `uno-q` where that literal name is requir
 > authenticate controller packets and profile changes. Never paste it into an
 > issue, screenshot, command line, public backup, or Git commit.
 
-## The three places configuration lives
+## Where configuration lives
 
-VirtualGlove runs on two computers. A repository template is not always the
+VirtualGlove runs on a Controller and one console. A repository template is not always the
 file the running system reads.
 
 | Location | What it controls | Preferred way to change it |
 | --- | --- | --- |
-| VirtualGlove Controller Setup page | Console address, controller port, startup profile, camera, and pairing token | Browser Setup page |
+| VirtualGlove Controller Setup page | Console platform and address, controller port, startup profile, camera, and pairing token | Browser Setup page |
 | VirtualGlove Controller application files | Gesture sensitivity and advanced runtime defaults | Edit only when tuning is required |
 | RetroPie `/etc/virtualglove/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Protected files on RetroPie |
+| Recalbox `/recalbox/share/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Persistent Recalbox share |
+| Batocera `/userdata/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Persistent Batocera user data |
+| LaunchBox `%LOCALAPPDATA%\VirtualGlove\data\` | VirtualGlove Controller address, exact-ROM profiles, RetroArch paths, and receiver token | Current Windows user |
 
 The examples under the repository's `config/` directory are installation
 templates. Editing them does not change an already installed system. The active
@@ -36,7 +39,7 @@ In commands and examples, replace these placeholders:
 | Placeholder | Replace with |
 | --- | --- |
 | `UNO-Q-NAME.local` | Your VirtualGlove Controller hostname or reserved IP address |
-| `RETROPIE-NAME.local` | Your RetroPie hostname or reserved IP address |
+| `CONSOLE-NAME.local` | Your RetroPie, Recalbox, Batocera, or LaunchBox hostname or reserved IP address |
 | `/home/arduino/ArduinoApps/virtualglove` | Required directory for the supported VirtualGlove Controller installer and host helpers; do not substitute a different path |
 
 ## Find the setting or command you need
@@ -46,7 +49,7 @@ In commands and examples, replace these placeholders:
 | Install and pair both machines | [Installation Guide](INSTALL_README.md) |
 | Change the camera or startup profile | [VirtualGlove Controller settings](#virtualglove-controller-settings) |
 | Repair pairing or token permissions | [Pairing and token management](#pairing-and-token-management) |
-| Change the VirtualGlove Controller destination on RetroPie | [RetroPie connection settings](#retropie-connection-settings) |
+| Change the VirtualGlove Controller destination on the console | [Console connection settings](#console-connection-settings) |
 | Make a game select a profile | [Register games and select profiles](#register-games-and-select-profiles) |
 | Adjust gesture sensitivity | [Tune gesture sensitivity](#tune-gesture-sensitivity) |
 | Install or check engineering tools | [Engineering Toolkit command reference](#engineering-toolkit-command-reference) |
@@ -187,8 +190,8 @@ material, ROM names, or diagnostic results are stored as guide progress.
 
 ### Connection Doctor
 
-In **Setup → Pair with RetroPie**, select **Check connection** for a checklist
-and suggested next steps. Save address, port, or startup-profile edits first.
+In **Setup → Pair this Controller**, select **Check connection** for a checklist
+and suggested next steps. Save platform, address, port, or startup-profile edits first.
 The Doctor never saves settings, pairs devices, starts controller output, or
 changes player/calibration data. Existing save and pair controls remain explicit actions.
 
@@ -205,7 +208,7 @@ emulator, and input mode using the current native-mode rules. This is a runtime
 consistency check, not inspection of installed core files or proof that the ROM
 matches its registry entry. The current protocol does not report virtual-gamepad
 creation, native-state consumption, or game-side input receipt. Those checks
-remain **Not verified** and require testing on RetroPie; the Doctor does not send
+remain **Not verified** and require testing on the selected console; the Doctor does not send
 input or create a virtual controller to test them.
 
 **Download connection report** exports only fixed checklist labels, results,
@@ -217,14 +220,14 @@ page invalidate them. Run the check again after changing the console or game.
 ### Settings shown in the browser
 
 Setup groups **Controller status**, **Players**, **Matrix attract mode**,
-**Connection and startup**, **Pair with RetroPie**, **Camera**,
+**Connection and startup**, **Pair this Controller**, **Camera**,
 **Trust this Controller**, **Joystick dead zone**, **Games**, and
 **Show statistics**. Receiver port and key replacement are under **Advanced
 connection**. The connection settings appear immediately before the secure pairing wizard. Camera selection, rate, reader, exposure, and diagnostic hand label
 are in their own action-first Camera section. The concise
 [Camera guide](CAMERA_GUIDE.md) explains compatibility, lighting, and recovery.
 Key replacement stops output and requires pairing again. A saved destination and
-key are not proof that RetroPie has received that key. **Check console address**
+key are not proof that the selected console has received that key. **Check console address**
 verifies name resolution only.
 
 A failed initial load offers **Reload saved settings**; connection fields remain
@@ -237,8 +240,9 @@ from camera frames and controller packets, which remain newest-state-only.
 
 | Setting | Default | Meaning and recommendation |
 | --- | --- | --- |
-| Console hostname or IP | Empty (not configured) | Set your RetroPie hostname (`RETROPIE-NAME.local` in examples) or a reserved LAN address and pair through Connection before starting controls. Glove Academy and local settings work without a destination. Existing saved destinations are preserved. |
-| Receiver UDP port | `55355` | VirtualGlove Controller to RetroPie controller-state port. Leave it at the default unless both ends are changed. |
+| Console platform | Empty (not configured) | Choose RetroPie, Recalbox, Batocera, or LaunchBox before entering and saving the address. Pairing remains unavailable until both fields are saved. An upgraded installation with an existing address and token can continue operating, but must identify its platform before it can pair again. |
+| Console hostname or IP | Empty (not configured) | Set the selected console's `.local` hostname or a reserved LAN address and pair through Connection before starting controls. Glove Academy and local settings work without a destination. Existing saved destinations are preserved. |
+| Receiver UDP port | `55355` | VirtualGlove Controller to console controller-state port. Leave it at the default unless both ends are changed. |
 | Startup game profile | `off` | Fresh installations keep gestures and the camera off until the user selects a profile or launches a registered game. Existing saved startup profiles are preserved during upgrades. |
 | Hand or glove (diagnostic label) | `none` | `none`, `white`, or `black`. In the current release this is an informational diagnostic label; it does not change MediaPipe tracking. |
 | Camera | Automatic | Setup lists the currently discovered usable cameras. Prefer **Automatic — choose the connected camera**; choose a named camera only when more than one is attached or automatic selection is wrong. A saved disconnected camera remains visible as unavailable, and the list refreshes while Setup is open. |
@@ -246,7 +250,7 @@ from camera frames and controller packets, which remain newest-state-only.
 | Camera buffers | `1` | Selects one or two driver capture buffers. One minimizes queue depth; two may improve delivery continuity on some cameras. The latest-frame owner still discards superseded frames. Pixel Pal's camera test compares supported choices. |
 | Camera reader | Recommended — OpenCV | The portable, gameplay-validated capture path. **Engineering comparison — Direct V4L2** is an opt-in Linux 64-bit, 640×480 MJPEG experiment that drains to the newest driver buffer and falls back to OpenCV if its requirements are not met. |
 | Exposure behavior | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
-| Replace the pairing key when saving | Off | Rotates the shared secret. This immediately breaks the existing pairing until RetroPie is paired again. |
+| Replace the pairing key when saving | Off | Rotates the shared secret. This immediately breaks the existing pairing until the selected console is paired again. |
 
 ![Advanced camera settings showing the discovered-camera dropdown and exposure controls](images/setup-camera.png)
 
@@ -256,15 +260,20 @@ restarts the vision worker using the saved calibration.
 Recalibrate only if you have moved the camera, changed your playing position,
 or notice unwanted movement while your hand is at rest.
 
-Setup pairing uses the saved console address, with one active step at a time:
+Setup pairing uses the saved console platform and address, with one active step at a time:
 choose a method, confirm the Controller certificate and matrix approval PIN,
-then provide the RetroPie one-time code or SSH credentials. Unsaved settings
-block pairing. The existing two-minute authorization window and server attempt
-limits remain authoritative; changing the console or method is disabled during
-the active window. Expiry clears secrets and offers fresh confirmation. A failed
-submitted request also requires confirmation again. Password entry is disabled
-until the certificate comparison and six-digit PIN step is complete. Ordinary
-HTTP shows only a link to secure Setup. Start/Stop and shutdown remain on Dashboard.
+then provide the selected console's one-time code or SSH credentials. The page
+shows only the command for that platform and supplies its normal SSH username
+(`pi` for RetroPie, `root` for Recalbox and Batocera). LaunchBox uses
+one-time-code pairing and never accepts SSH password pairing. Unsaved settings block
+pairing. The existing two-minute authorization window and server attempt limits
+remain authoritative; changing the console or method is disabled during the
+active window. The console verifies that the selected platform matches its
+installed operating system before changing its token. Expiry clears secrets and
+offers fresh confirmation. A failed submitted request also requires confirmation
+again. Password entry is disabled until the certificate comparison and six-digit
+PIN step is complete. Ordinary HTTP shows only a link to secure Setup. Start/Stop
+and shutdown remain on Dashboard.
 See the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices).
 
 The Controller authority is stable across ordinary upgrades and website-leaf
@@ -770,7 +779,7 @@ program_f  program_g  program_h  program_i
 ```
 
 The startup profile does not assign a profile to a ROM. Per-game selection is
-controlled by the RetroPie game registry described below.
+controlled by the game registry on the selected console.
 
 ## Pairing and token management
 
@@ -780,6 +789,8 @@ Both machines must hold the same token:
 | --- | --- |
 | VirtualGlove Controller | Application `data/device.json`, in the `token` field |
 | RetroPie | `/etc/virtualglove/token` |
+| Recalbox | `/recalbox/share/system/virtualglove/data/token` |
+| Batocera | `/userdata/system/virtualglove/data/token` |
 
 Use one-time-code pairing whenever possible:
 
@@ -787,11 +798,25 @@ Use one-time-code pairing whenever possible:
 sudo /opt/virtualglove/bin/virtualglove-pair
 ```
 
-Leave that command running on RetroPie, then complete pairing at
+On Recalbox use:
+
+```sh
+sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair
+```
+
+On Batocera use:
+
+```sh
+/userdata/system/services/VirtualGlove pair
+```
+
+Leave the matching command running on the console, then complete pairing at
 `https://UNO-Q-NAME.local:8443/setup`. The code is single use and expires after
-two minutes. Password pairing is also available when RetroPie accepts SSH
-password login; the password is used for one encrypted operation and is not
-stored.
+five minutes. Setup shows only the command matching the saved platform. Password
+pairing is also available when the console accepts SSH password login; use
+`pi` on a standard RetroPie installation and `root` on Recalbox or Batocera.
+The password is used for one encrypted operation and is not stored. Both methods
+reject a platform mismatch before replacing the console token.
 
 The RetroPie token must contain at least 16 characters and should remain owned
 by `root`, readable by the `input` group, and inaccessible to other users:
@@ -807,24 +832,27 @@ Use this fallback only when neither browser pairing method works. Both machines
 must already have the software installed.
 
 1. In App Lab, open the active application's private `data/device.json` and locate its `token` value.
-2. On RetroPie, run `sudo nano /etc/virtualglove/token`. Replace the file contents with that same value on one line, without quotation marks. Do not enter it as a shell command.
-3. Save with Ctrl+O, confirm the filename, and exit with Ctrl+X. Apply the ownership and permission commands above.
-4. Run `sudo systemctl restart virtualglove-receiver.service`, then test controller delivery from Dashboard. Clear the token from your clipboard and close the private file afterward.
+2. On the console, open the token file in its private data location listed at the start of this guide. Replace the contents with that same value on one line, without quotation marks. Do not enter it as a shell command.
+3. Restore the restrictive ownership and permissions required by that platform, then restart its VirtualGlove receiver.
+4. Test controller delivery from Dashboard. Clear the token from your clipboard and close the private file afterward.
+
+Manual token copying is an emergency Linux-console recovery path. LaunchBox
+should be repaired with its one-time-code pairing command instead.
 
 If you replace the pairing key in Setup, controller output stops; pair the devices again before selecting Start controller.
 Do not transfer the new token through a command-line argument; process listings
 and shell history can expose it.
 
-## RetroPie connection settings
+## Console connection settings
 
-The active launcher file is:
+The active launcher file is `/etc/virtualglove/launcher.json` on RetroPie,
+`/recalbox/share/system/virtualglove/data/launcher.json` on Recalbox, and
+`/userdata/system/virtualglove/data/launcher.json` on Batocera. LaunchBox uses
+`%LOCALAPPDATA%\VirtualGlove\data\launcher.json` and also records its RetroArch
+and core paths.
 
-```text
-/etc/virtualglove/launcher.json
-```
-
-It tells the runcommand hooks where to send profile changes when a game starts
-or exits.
+It tells that console's game lifecycle integration where to send profile
+changes when a game starts or exits.
 
 ```json
 {
@@ -838,8 +866,8 @@ or exits.
 
 | Field | Meaning |
 | --- | --- |
-| `uno_q` | VirtualGlove Controller hostname or reserved address reachable from RetroPie. |
-| `port` | RetroPie to VirtualGlove Controller profile-control port. This is `55356`, not the controller-state port. |
+| `uno_q` | VirtualGlove Controller hostname or reserved address reachable from the console. |
+| `port` | Console-to-Controller profile-control port. This is `55356`, not the controller-state port. |
 | `token_file` | Protected shared-token file. Keep the token out of this JSON file. |
 | `registry` | Active ROM-to-profile mapping. |
 | `timeout` | Seconds to wait for each acknowledgement. The hook retries up to three times and never prevents a game from launching. |
@@ -1330,7 +1358,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 ### Upgrade both computers together
 
 1. Select **Stop controller** and back up both installations and private settings.
-2. Update RetroPie and the VirtualGlove Controller from the same development commit or compatible release. The default new receiver rejects old input, and the new sender does not downgrade to version 1; mixed versions will pause controller delivery.
+2. Update the selected console and the VirtualGlove Controller from the same development commit or compatible release. The receiver rejects retired input protocols, and the sender does not downgrade; mixed versions pause controller delivery.
 3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behavior and actual game input. Profile changes also establish a fresh controller session.
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
@@ -1455,12 +1483,12 @@ ports through a router or expose them directly to the Internet.
 
 | Port | Direction | Purpose |
 | --- | --- | --- |
-| UDP `55355` | VirtualGlove Controller to RetroPie | Authenticated live controller state |
-| UDP `55356` | RetroPie to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
+| UDP `55355` | VirtualGlove Controller to console | Authenticated live controller state |
+| UDP `55356` | Console to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
 | TCP `8088` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
 | TCP `8443` | Browser to VirtualGlove Controller | TLS Setup and pairing workflow |
-| TCP `55358` | VirtualGlove Controller to RetroPie | Paired game registry reads, saves, and restoration |
-| TCP `55357` | VirtualGlove Controller to RetroPie | Temporary one-time-code pairing helper |
+| TCP `55358` | VirtualGlove Controller to console | Paired game registry reads, saves, and restoration |
+| TCP `55357` | VirtualGlove Controller to console | Temporary one-time-code pairing helper |
 
 The two UDP ports serve different purposes despite their similar numbers. The
 `port` in VirtualGlove Controller `device.json` is normally `55355`; the `port` in RetroPie
@@ -1784,14 +1812,15 @@ need both the option and its value, such as `--port 55355`.
 ### Install or inspect a machine
 
 Run `sudo python3 scripts/setup-machine.py MACHINE [OPTIONS]` from the project
-directory on the target Linux machine. This is the recommended installer for
-both VirtualGlove Controller and RetroPie. `--check` performs read-only checks; using `sudo`
-also lets those checks read protected token files.
+directory on the target Linux machine. It supports the VirtualGlove Controller,
+RetroPie, Recalbox, and Batocera. The published entry script supplies the correct
+privilege model: normal user plus `sudo` where needed on Debian systems, and the
+existing `root` login on Recalbox or Batocera. `--check` performs read-only checks.
 
 | Argument or flag | Default | Meaning |
 | --- | --- | --- |
-| `MACHINE` | Required | `retropie` or `uno-q`; selects the machine to install or inspect. |
-| `--peer HOST` | None | Required for a new RetroPie launcher configuration; supplies the VirtualGlove Controller hostname or IPv4 address. Existing launcher settings are preserved. On VirtualGlove Controller, it prints guidance but does not change the saved receiver address. |
+| `MACHINE` | Required | `retropie`, `recalbox`, `batocera`, or `uno-q`; selects the machine to install or inspect. |
+| `--peer HOST` | None | Required for a new console launcher configuration; supplies the VirtualGlove Controller hostname or IPv4 address. Existing launcher settings are preserved. On VirtualGlove Controller, it prints guidance but does not change the saved receiver address. |
 | `--check` | Off | Checks the existing installation without installing, restarting, or changing it. |
 | `--wifi-status-only` | Off | With `uno-q`, install/update only the unprivileged Wi-Fi status sampler. Cannot be combined with `--check`. Normal setup and Wi-Fi deployment include it automatically. |
 | `-h`, `--help` | — | Prints usage and exits. |
@@ -2012,7 +2041,7 @@ maintainer's board and is not appropriate for other installations.
 
 | Script or setting | Arguments and defaults | Effect |
 | --- | --- | --- |
-| `scripts/deploy-uno-q-wifi.sh` | Optional positional `USER@HOST`; `-h` or `--help`; optional `UNO_Q_SSH_IDENTITY` private-key path | Transfers the Linux application, preserves `data/`, restarts the container, and checks web routes. Does not update RetroPie or flash the matrix sketch. |
+| `scripts/deploy-uno-q-wifi.sh` | Optional positional `USER@HOST`; `-h` or `--help`; optional `UNO_Q_SSH_IDENTITY` private-key path | Transfers the Linux application, preserves `data/`, restarts the container, and checks web routes. Privileged host maintenance runs only when `sudo -n` is already authorized; otherwise the script skips it without opening an invisible password prompt and prints the commands to run directly on the UNO Q. Does not update a console. |
 | `UNO_Q_SSH_TARGET` | Environment variable; overridden by a positional destination | Sets the SSH destination. Without either setting, deployment falls back to the maintainer's board. |
 | `UNO_Q_APP_DIR` | Environment variable; default `/home/arduino/ArduinoApps/virtualglove` | Remote deployment directory. Changing it does not change the host helpers' fixed path or the machine installer's path requirement. |
 | `scripts/install-uno-q-shutdown-helper.sh` | Optional positional `USER@HOST`; `-h` or `--help` | Installs the fixed shutdown watcher, service, and readiness rule. Uses the positional destination, then `UNO_Q_SSH_TARGET`, then the maintainer's fallback. The application directory is fixed. |
@@ -2034,10 +2063,19 @@ they may still perform their normal work.
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
 | `scripts/build-docs-pdf.py` | No flags or positional arguments | Rebuilds all registered PDF editions; requires ReportLab. Use only when ready to regenerate the PDFs. |
 | `scripts/build-nestopia-powerglove.sh` | Optional build-directory positional argument | Clones a pinned official Nestopia revision, applies the isolated native-compatibility patch, and builds the separately named VirtualGlove native core. It does not install the core by itself. |
+| `scripts/build-recalbox-nestopia-powerglove.sh` | `RECALBOX_SOURCE TARGET [DESTINATION]` | Uses Recalbox's official container and Buildroot Nestopia recipe with a source override. Accepts all seven Recalbox 10.x targets, requires an exact release tag, and accumulates target/version artifacts in one manifest. |
+| `scripts/build-recalbox-native-matrix.sh` | `RECALBOX_SOURCE [DESTINATION]` | Builds all seven targets from one exact Recalbox release tree. Use the single-target builder for a public target that remains on a different Recalbox release. |
+| `.github/workflows/recalbox-native-cores.yml` | Manual `recalbox_version` input | Builds the seven targets as isolated parallel jobs and retains each core, corresponding source archive, and target-specific manifest for review. It never publishes or deploys them. |
+| `scripts/build-batocera-nestopia-powerglove.sh` | `BATOCERA_SOURCE TARGET [DESTINATION]` | Initializes Batocera's stock Nestopia package for the named target, then builds the pinned VirtualGlove core with that target's exact compiler and sysroot. It rejects target names that have not been mapped to a verified Nestopia platform. |
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
 | `scripts/install-nestopia-powerglove.sh` | Optional build-directory positional argument | Run with `sudo` on RetroPie after exact-ROM validation. Builds and installs only `lr-nestopia-powerglove`, plus its upstream GPLv2 license and distribution note; stock Nestopia remains untouched. The normal RetroPie installer offers this step when a registered Super Glove Ball ROM is found. |
+| `scripts/install-recalbox-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Development-only replacement path after the base Recalbox installation. Rejects a running game, verifies the core against the packaged architecture manifest, load-checks it, installs it atomically, refreshes the runtime overlays, and optionally selects only the exact ROM. Normal releases already carry verified target binaries when available. |
+| `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--core`, `--arch`, and `--version`; optional `--load` | Verifies the target/version manifest, exact size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. |
+| `scripts/install-batocera-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Run as root on Batocera after the base VirtualGlove installation. Load-checks the target-built libretro core before atomic persistent installation, refreshes its reversible core overlays, and optionally selects the exact ROM. |
 | `scripts/install-powerglove-dot.sh` | Optional RetroPie prefix positional argument | Builds and installs the project-owned, ROM-free `lr-powerglove-dot` calibration core. The release installer offers it independently of Super Glove Ball and adds its fixed launcher to Ports. |
 | `scripts/configure-super-glove-ball-core.py` | `--rom PATH --mode MODE [--apply]`, where MODE is `native` or `fceumm` | Previews or atomically selects the custom core for one Super Glove Ball ROM. `--mode fceumm` is the explicit rollback. |
+| `scripts/configure-recalbox-super-glove-ball-core.py` | Optional system-list paths; optional `--rom PATH`; `--mode {native,fceumm}`; `--auto-select`; `--registry PATH`; `--rom-root PATH`; `--selection-only`; `--apply` | Adds the separate core to a temporary Recalbox NES system list and preserves unrelated keys while writing exact-ROM `.recalbox.conf` sidecars. Automatic mode selects only registered Super Glove Ball filenames without an existing core choice. Selection-only mode lets startup treat discovery errors as non-blocking after the required core registration succeeds. |
+| `scripts/configure-batocera-super-glove-ball-core.py` | `--rom PATH --mode {native,fceumm} [--config PATH] [--core PATH] [--info PATH] [--apply]` | Preserves unrelated `batocera.conf` entries while previewing or atomically changing only the exact ROM's emulator/core keys. Native mode requires the custom core and info record to be mounted first. |
 | `scripts/run-nestopia-powerglove-trace.py` | Core, exact ROM, trace/state/scratch paths | Runs controlled native phases, records the ROM digest and packet evidence, and can save temporary validation frames. |
 | `scripts/benchmark-direction-response.py` | Paths to both cores and the exact Super Glove Ball ROM, scratch path, optional FCEUmm reference ROM, frame count, and JSON output | Runs matched-savestate activation and release comparisons for the same ROM in native and FCEUmm modes. The optional reference lane uses Gun Smoke. ROMs and scratch output remain outside the project. |
 | `scripts/record-vision-benchmark.py` | Optional camera, output, size, and frame-rate flags | Records a fixed 30-second, local-only cue sequence for near/far recognition, X/Y travel, jitter, depth, and recovery comparisons. It is never run by installation or used for training. |
@@ -2499,8 +2537,9 @@ For stage timings and further checks, see
 ### Password pairing fails
 
 - Prepare a new attempt and use its new matrix PIN.
-- Confirm the RetroPie username and password can log in through SSH.
-- The account must be allowed to run `sudo` with that password.
+- Confirm the selected console's username and password can log in through SSH.
+- RetroPie normally uses `pi`, which must be allowed to run `sudo`; Recalbox and
+  Batocera normally use `root` and do not use `sudo` for this pairing step.
 - Prefer the one-time-code method if password SSH is disabled.
 
 ### Controller does not appear on RetroPie
@@ -2646,10 +2685,11 @@ personal tuning and neutral calibration remain available.
 
 
 
-## Versioned two-script installation
+## Versioned multi-platform installation
 
-The normal entry points are `scripts/install-uno-q.sh` and
-`scripts/install-retropie.sh`. Each resolves a published release tag, downloads
+The normal entry points are `scripts/install-uno-q.sh`,
+`scripts/install-retropie.sh`, `scripts/install-recalbox.sh`, and
+`scripts/install-batocera.sh`. Each resolves a published release tag, downloads
 its matching package and shared `install-package.py`, verifies SHA-256 checksums,
 and invokes the shared `setup-machine.py` with sudo. Downloads use GitHub HTTPS;
 checksums detect damaged or mismatched assets, not a compromised release account.
@@ -2667,27 +2707,28 @@ open in the read-only `/` directory, where `curl` cannot create
 directory instead.
 
 To pin a published release, append `--version TAG` to the saved script command,
-for example `bash install-uno-q.sh --version v0.3.0`. To test a published development
+for example `bash install-uno-q.sh --version v0.5.0-rc.1`. To test a published development
 prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replace
 these example tags with actual published tags, and use the matching option on
-RetroPie. No GitHub release is created by running an installer.
+the selected Linux console. No GitHub release is created by running an installer.
 
 | Option | Behavior |
 | --- | --- |
 | `--version TAG` | Use one exact published release on both machines. Without a tag, select the latest stable GitHub release. |
 | `--development TAG` | Explicitly use a published development prerelease, such as `dev-COMMIT`. This is a release tag, not a branch name. |
-| `--peer HOST` | VirtualGlove Controller hostname or IPv4 address for a new RetroPie installation; prompted if omitted in an interactive terminal. Existing destinations are preserved. |
-| `--hostname NAME` | UNO Q first installation only. Interactive setup suggests `virtualglove`; supply a different single DNS label if desired. The installer lowercases it, accepts an optional `.local` suffix, checks visible LAN ownership, updates the static and running host identity, and backs up the changed host files. It is rejected on RetroPie and on Controller upgrades. |
+| `--peer HOST` | VirtualGlove Controller hostname or IPv4 address for a new console installation; prompted if omitted in an interactive terminal. Existing destinations are preserved. |
+| `--hostname NAME` | UNO Q first installation only. Interactive setup suggests `virtualglove`; supply a different single DNS label if desired. The installer lowercases it, accepts an optional `.local` suffix, checks visible LAN ownership, updates the static and running host identity, and backs up the changed host files. It is rejected on console installers and on Controller upgrades. |
 | `--check` | Use the installed shared checker. No download, package installation, service restart, or helper release. Sudo may be needed to inspect protected settings. |
 | `--help` | Show the entry point options without installing. |
 
 Supported baseline: an already provisioned VirtualGlove Controller with App Lab CLI **0.13.0**,
-Arduino sketch platform **1.0.0**, the shipped pinned libraries, and a Debian-based
-RetroPie installation with Python **3.7 or newer**. The UNO installer rejects other
+Arduino sketch platform **1.0.0**, the shipped pinned libraries, and RetroPie with
+Python **3.7 or newer**, Recalbox 10.x, or Batocera 38+. The UNO installer rejects other
 App Lab CLI versions until compatibility has been validated. It does not upgrade
 the board OS or App Lab. Allow at least 3 GiB of free space in the Arduino home partition (VirtualGlove Controller) or
-`/var/tmp` (RetroPie), and 512 MiB on the system partition for package operations
-and backups. Larger updates may need more space.
+`/var/tmp` (RetroPie), `/recalbox/share` (Recalbox), or `/userdata` (Batocera),
+and 512 MiB in the platform's backup area for package operations and backups.
+Larger updates may need more space.
 
 UNO installation stages files in `/home/arduino/ArduinoApps/virtualglove`,
 verifies and flashes the package's precompiled Matrix image through the factory
@@ -2713,8 +2754,27 @@ exist, launch and exit FCEUmm once and rerun. Neither installer supplies ROMs,
 changes cabinet input mergers, nor adds a new RetroPie shutdown mechanism;
 existing operating-system shutdown controls remain available.
 
+Recalbox installs under `/recalbox/share/system/virtualglove`, adds one
+idempotent call to the persistent `custom.sh`, and observes RetroArch through
+`/proc` because Recalbox does not expose Batocera's game-event interface.
+Batocera installs under `/userdata/system/virtualglove` and uses its supported
+user-service and `gameStart`/`gameStop` script locations. Both merge only the
+eight VirtualGlove Player 1 keyboard bindings into the NES append configuration;
+the physical Player 1 joypad, Player 2, ROMs, saves, and unrelated settings are
+preserved. Their FCEUmm path supports every joystick profile. Batocera additionally
+supports the separately named `nestopia_powerglove` core for native Super Glove
+Ball. Recalbox also accepts only a core whose target/version manifest matches
+the running image. Batocera's core must be cross-built with the exact Batocera target toolchain, then is
+load-checked on that console before atomic installation. Reversible overlay mounts
+expose the persistent binary and a copied Nestopia info record through Batocera's
+read-only `/usr` paths without replacing stock Nestopia. Selecting FCEUmm for the
+same ROM is the explicit rollback.
+
 Updates replace managed files and save replaced versions under
-`/var/backups/virtualglove/TIMESTAMP/`, with a `RESTORE.txt`. Backups created
+`/var/backups/virtualglove/TIMESTAMP/` on Debian hosts,
+`/recalbox/share/system/virtualglove-backups/TIMESTAMP/` on Recalbox, or
+`/userdata/system/virtualglove-backups/TIMESTAMP/` on Batocera, with a
+`RESTORE.txt`. Backups created
 by the package installer are root-only. Resolve failures before continuing;
 the installer stops rather than claiming success. Rerunning is supported.
 A failed firmware update may require rerunning the previous release through
@@ -2768,8 +2828,8 @@ bash scripts/build-app-lab-package.sh
 python3 scripts/build-install-packages.py --version dev-COMMIT
 ```
 
-`output/install/` contains the Controller and RetroPie ZIPs, the optional
-Engineering Toolkit ZIP, the two entry scripts, their shared package installer,
+`output/install/` contains the Controller, RetroPie, Recalbox, Batocera, and
+LaunchBox packages, the optional Engineering Toolkit ZIP, the Linux entry scripts, their shared package installer,
 checksum companions, and `SHA256SUMS`. Package identity and safe paths are
 validated at build time and installation time. Private runtime files are
 excluded.
@@ -2785,17 +2845,18 @@ Publishing, tagging, or deploying firmware is not implied by building packages.
 
 Automated tests cover isolated fresh-directory installs and repeat updates,
 archive rejection, download failure, and settings preservation. These are not
-fresh-device tests. The new package installer was also run on the existing
-RetroPie cabinet: receiver, launch hooks, emulator, and Glove Zap checks passed
-with no technical failures. The VirtualGlove Controller full installer still needs an interactive
-sudo run. A provisioned spare VirtualGlove Controller and RetroPie system, real pairing,
-live gameplay, and a cold boot are required before declaring the installers
-validated for release. Run read-only checks on both devices after installation;
-no automated check proves that a hand gesture controls a game correctly.
+fresh-device tests. The current Controller and RetroPie paths have been deployed
+on the existing cabinet. On the available Raspberry Pi 3 running Recalbox
+10.1's `rpizero2` target, registered Super Mario Bros., native Super Glove Ball,
+simultaneous physical-joypad use, and reboot persistence have passed. Exact-image
+Recalbox targets other than `rpizero2`, Batocera hardware, and LaunchBox native
+gameplay remain explicit v0.5.0 acceptance items. Run read-only checks on both
+devices after installation; no automated check proves that a hand gesture
+controls a game correctly.
 
 ### Shared installer and application sources
 
-Both installer entry points are generated from `scripts/templates/install.sh.in`. Run
+The four Linux installer entry points are generated from `scripts/templates/install.sh.in`. Run
 `python3 scripts/build-installer-scripts.py` after editing that template; use `--check`
 to detect drift without changing files.
 

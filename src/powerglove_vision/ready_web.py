@@ -44,7 +44,7 @@ function readyMatcher(){
 function readyGameReason(s){
  if(typeof s.worker_status_age_seconds!=='number'||s.worker_status_age_seconds>=3||s.worker_status_age_seconds<0||s.worker_running!==true)return 'Waiting for fresh tracker status.';
  if(s.practice_mode||s.tuning?.active)return 'Waiting for all practice and tuning sessions to end.';
- if(s.game_session_active!==true)return 'Launch a registered game on RetroPie. Unregistered games cannot complete this guide.';
+ if(s.game_session_active!==true)return 'Launch a registered game on your console. Unregistered games cannot complete this guide.';
  const profile=s.active_profile||s.profile,core=s.emulator;
  if(!['super_glove_ball','bad_street_brawler',...Array.from({length:14},(_,i)=>'program_'+(i+1)),...'abcdefghi'.split('').map(x=>'program_'+x)].includes(profile))return 'This game has no supported mapping. Review Games in Setup.';
  if(!core||core==='unknown')return 'Waiting for the game’s emulator identity.';
@@ -93,7 +93,7 @@ function draw(){
  const key=readyChecks.find(k=>!done.includes(k));
  $('ready-example').hidden=stage!=='checks'||!key;
  if(stage==='checks'&&key){$('ready-example').src='/help-assets/gestures/actions/'+cues[key][2];$('ready-title').textContent=cues[key][0];$('ready-cue').textContent=cues[key][1]+' '+matcher.instruction();}
- else{$('ready-title').textContent=({player:'Choose your player',connection:'Console and pairing',camera:'Safe camera practice',checks:'Essential checks complete',release:'Ending practice',game:'Launch a registered game',done:'Ready to play'})[stage];$('ready-cue').textContent=({player:'Confirm the player who will use this Controller.',connection:'We check the saved address, console service, and authenticated pairing. Use Setup to save or pair if needed.',camera:'Show one open hand. Center it if required, or set a fresh center if the camera or your position moved.',checks:'Your checks are saved. The next action ends practice and allows controls for a registered game.',release:'Waiting for practice to stop completely. Other Academy or tuning tabs may keep practice active.',game:'Launch a game registered in Games on RetroPie. Controls can start only after practice ends and the reported mapping is consistent.',done:'The camera, saved center, registered-game mapping, and authenticated receiver link are available. Game-side input receipt is not verified.'})[stage];}
+ else{$('ready-title').textContent=({player:'Choose your player',connection:'Console and pairing',camera:'Safe camera practice',checks:'Essential checks complete',release:'Ending practice',game:'Launch a registered game',done:'Ready to play'})[stage];$('ready-cue').textContent=({player:'Confirm the player who will use this Controller.',connection:'We check the saved address, console service, and authenticated pairing. Use Setup to save or pair if needed.',camera:'Show one open hand. Center it if required, or set a fresh center if the camera or your position moved.',checks:'Your checks are saved. The next action ends practice and allows controls for a registered game.',release:'Waiting for practice to stop completely. Other Academy or tuning tabs may keep practice active.',game:'Launch a game registered in Games on your console. Controls can start only after practice ends and the reported mapping is consistent.',done:'The camera, saved center, registered-game mapping, and authenticated receiver link are available. Game-side input receipt is not verified.'})[stage];}
  $('ready-next').textContent=({player:'Confirm player',connection:'Start safe practice',camera:'Continue to essential checks',checks:key?'Follow the gesture above':'End practice and enable registered-game controls',release:'Finish ending practice',game:'Check game and enable controls',done:'Keep playing'})[stage];
  $('ready-next').hidden=stage==='done';
  $('ready-next').disabled=busy||!player||({player:!stopped(),connection:!stopped()||!connected,camera:!centered()||centerStarted!==null,checks:!!key||!centered(),release:false,game:!!readyGameReason(status)||!connected,done:true})[stage];
@@ -101,7 +101,7 @@ function draw(){
 }
 async function connect(){
  const revision=++connectionRun;connected=false;lastConnection=performance.now();
- try{const c=await api('/api/config');if(!c.receiver||c.connection_configured!==true){tell('Save your console and pair this Controller in Setup, then return here.');return;}
+ try{const c=await api('/api/config');if(!c.receiver||c.pairing_configured!==true){tell('Select and save your console platform and address, then pair this Controller in Setup before returning here.');return;}
  const signature=JSON.stringify([c.receiver,c.port]);
  if(signature!==connectionSignature){await api('/api/test-connection',{receiver:c.receiver});connectionSignature=signature;}
  const health=await api('/api/connection-status');
@@ -116,7 +116,7 @@ async function saveCheck(key,complete=false){
  const result=await api('/api/players',{action:'ready_progress',...who(),progress:{course:1,completed,completed_at:complete?new Date().toISOString().slice(0,19)+'Z':p.completed_at}});
  if(before!==identity)throw Error('Player changed. Confirm the active player again.');player=result;matcher.reset();
 }
-async function releasePractice(){const result=await guide('release',{confirmed:true,...who()});if(!result.released){tell(result.message);return;}guarded=false;stage='game';tell('Practice has ended. Launch a registered game on RetroPie.');lastConnection=0;}
+async function releasePractice(){const result=await guide('release',{confirmed:true,...who()});if(!result.released){tell(result.message);return;}guarded=false;stage='game';tell('Practice has ended. Launch a registered game on your console.');lastConnection=0;}
 async function work(fn){if(busy)return;busy=true;draw();try{await fn();}catch(e){matcher.reset();tell(e.message);}finally{busy=false;draw();}}
 $('ready-player').onchange=()=>work(async()=>{if(!stopped())throw Error('Wait for output to stop first.');player=await api('/api/players',{action:'select',...who(),id:$('ready-player').value});identity=null;resetLive();stage='player';});
 $('ready-center').onclick=()=>work(async()=>{if(!camera())throw Error('Wait for safe practice and the camera.');matcher.reset();centerRequired=true;centerStarted=performance.now();centerSeen=false;try{await api('/calibrate',{});}catch(e){centerStarted=null;throw e;}tell('Centering: hold one open hand still.');});

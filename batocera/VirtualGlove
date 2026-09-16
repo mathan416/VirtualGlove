@@ -1,0 +1,30 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: batocera/VirtualGlove
+# Purpose: Batocera v38+ user-service adapter for VirtualGlove.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+export VIRTUALGLOVE_ROOT=/userdata/system/virtualglove
+export VIRTUALGLOVE_MONITOR=0
+export VIRTUALGLOVE_NATIVE_STATE=/run/virtualglove/native-state
+core_mount="$VIRTUALGLOVE_ROOT/batocera/virtualglove-core-mount"
+service="$VIRTUALGLOVE_ROOT/recalbox/virtualglove-service"
+
+case "${1:-}" in
+    start)
+        "$core_mount" start || echo "ACTION  Native Super Glove Ball core is unavailable; FCEUmm remains usable." >&2
+        exec "$service" start
+        ;;
+    stop)
+        "$service" stop
+        exec "$core_mount" stop
+        ;;
+    restart)
+        "$service" stop
+        "$core_mount" restart || echo "ACTION  Native Super Glove Ball core is unavailable; FCEUmm remains usable." >&2
+        exec "$service" start
+        ;;
+    *) exec "$service" "$@" ;;
+esac

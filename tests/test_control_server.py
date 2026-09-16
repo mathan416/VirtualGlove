@@ -167,7 +167,7 @@ class ControlStateTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.path = Path(self.temporary.name) / "device.json"
         self.path.write_text(json.dumps({
-            "receiver": "retropieconsole.local", "port": 55355,
+            "receiver": "retropieconsole.local", "platform": "retropie", "port": 55355,
             "token": "private-token", "profile": "bad_street_brawler",
             "glove_color": "none", "camera": "auto", "camera_fps": "auto",
             "camera_backend": "opencv", "camera_exposure": "auto",
@@ -187,6 +187,7 @@ class ControlStateTests(unittest.TestCase):
         self.path.unlink()
         fresh = loader()
         self.assertEqual(fresh["receiver"], "")
+        self.assertEqual(fresh["platform"], "")
         self.assertEqual(fresh["profile"], "off")
         self.state = ControlState(self.path)
         self.assertFalse(self.state.public_config()["connection_configured"])
@@ -223,6 +224,36 @@ class ControlStateTests(unittest.TestCase):
         public = self.state.public_config()
         self.assertNotIn("token", public)
         self.assertTrue(public["paired"])
+        self.assertEqual(public["platform"], "retropie")
+        self.assertTrue(public["pairing_configured"])
+
+    def test_existing_connection_runs_but_cannot_pair_until_platform_is_saved(self):
+        existing = self.state.load_config()
+        existing.pop("platform")
+        self.path.write_text(json.dumps(existing))
+        state = ControlState(self.path, pairing_display=lambda _identity, _pin: True)
+        self.assertTrue(state.public_config()["connection_configured"])
+        self.assertFalse(state.public_config()["pairing_configured"])
+        state.set_controller_enabled(True)
+        self.assertTrue(state.controller_enabled())
+        with self.assertRaisesRegex(ValueError, "platform"):
+            state.begin_pairing("retropieconsole.local", "code", "retropie")
+
+    def test_pairing_is_bound_to_saved_platform_and_address(self):
+        state = ControlState(self.path, pairing_display=lambda _identity, _pin: True)
+        with self.assertRaisesRegex(ValueError, "platform"):
+            state.begin_pairing("retropieconsole.local", "code", "recalbox")
+        with self.assertRaisesRegex(ValueError, "saved console"):
+            state.begin_pairing("other.local", "code", "retropie")
+
+    def test_connection_save_requires_platform_with_an_address(self):
+        settings = self.state.public_config()
+        settings["platform"] = ""
+        with self.assertRaisesRegex(ValueError, "platform"):
+            self.state.save_config(settings)
+        settings["platform"] = "unsupported"
+        with self.assertRaisesRegex(ValueError, "supported console"):
+            self.state.save_config(settings)
 
     def test_system_report_is_useful_without_private_configuration(self):
         self.state.connection_probe = lambda _settings, refresh: {
@@ -479,7 +510,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertNotIn(b'id=experimental-tracking-section', SETUP)
         self.assertNotIn(b'id=directional-search', SETUP)
         self.state.save_config({
-            "receiver": "arcade.local", "port": 55357,
+            "receiver": "arcade.local", "platform": "recalbox", "port": 55357,
             "profile": "program_i", "glove_color": "white", "camera": "2",
             "camera_fps": "60",
             "camera_buffers": "1",
@@ -489,6 +520,7 @@ class ControlStateTests(unittest.TestCase):
         saved = json.loads(self.path.read_text())
         self.assertEqual(saved["token"], "private-token")
         self.assertEqual(saved["receiver"], "arcade.local")
+        self.assertEqual(saved["platform"], "recalbox")
         self.assertEqual(saved["camera_fps"], 60)
         self.assertEqual(saved["camera_backend"], "direct-v4l2")
         self.assertEqual(saved["camera_exposure"], "low-latency")
@@ -525,7 +557,7 @@ class ControlStateTests(unittest.TestCase):
         before = self.path.read_bytes()
         with self.assertRaisesRegex(ValueError, "Automatic, 30 fps, or 60 fps"):
             self.state.save_config({
-                "receiver": "arcade.local", "port": 55355,
+                "receiver": "arcade.local", "platform": "retropie", "port": 55355,
                 "profile": "program_i", "glove_color": "none",
                 "camera": "auto", "camera_fps": 24,
             })
@@ -543,7 +575,7 @@ class ControlStateTests(unittest.TestCase):
     def test_invalid_profile_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "supported gesture profile"):
             self.state.save_config({
-                "receiver": "arcade.local", "port": 55355,
+                "receiver": "arcade.local", "platform": "retropie", "port": 55355,
                 "profile": "shell_command", "glove_color": "none", "camera": "auto",
             })
 
@@ -587,6 +619,11 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b'id=game-session', DASHBOARD)
         self.assertIn(b'id=player-select', DASHBOARD)
         self.assertNotIn(b'<div class=label>RetroPie receiver</div>', DASHBOARD)
+
+    def test_dashboard_replaces_a_failed_camera_stream_with_guidance(self):
+        self.assertIn(b"Camera unavailable. Connect a USB camera to use gesture controls.", DASHBOARD)
+        self.assertIn(b"s.vision_state==='error'||s.camera_available===false", DASHBOARD)
+        self.assertIn(b"$('camera').removeAttribute('src')", DASHBOARD)
 
     def test_help_index_lists_the_public_guides(self):
         page = help_index_page()
@@ -805,7 +842,7 @@ class ControlStateTests(unittest.TestCase):
             servers.shutdown()
 
     def test_learn_page_is_offline_practice_mode(self):
-        self.assertIn(b"Practice gesture recognition without a RetroPie connection", LEARN)
+        self.assertIn(b"Practice gesture recognition without a console connection", LEARN)
         self.assertIn(b"Pixel Pal will guide you through 16 fun lessons", LEARN)
         self.assertNotIn(b"General controls: index curl is A", LEARN)
         self.assertIn(b"/api/practice", LEARN)
@@ -1319,17 +1356,17 @@ class ControlStateTests(unittest.TestCase):
         displayed = []
         state = ControlState(self.path, lambda identity, pin: displayed.append((identity, pin)))
         state.configure_pairing_identity("1A2B3C4")
-        result = state.begin_pairing("retropieconsole.local", "code")
+        result = state.begin_pairing("retropieconsole.local", "code", "retropie")
         self.assertEqual(result["certificate_id"], "1A2B3C4")
         self.assertEqual(displayed[0][0], "1A2B3C4")
         self.assertRegex(displayed[0][1], r"^\d{6}$")
 
         wrong_pin = "999999" if displayed[0][1] != "999999" else "000000"
         with self.assertRaisesRegex(ValueError, "rejected"):
-            state.authorize_pairing("retropieconsole.local", "code", wrong_pin)
-        state.authorize_pairing("retropieconsole.local", "code", displayed[0][1])
+            state.authorize_pairing("retropieconsole.local", "code", "retropie", wrong_pin)
+        state.authorize_pairing("retropieconsole.local", "code", "retropie", displayed[0][1])
         with self.assertRaisesRegex(ValueError, "expired"):
-            state.authorize_pairing("retropieconsole.local", "code", displayed[0][1])
+            state.authorize_pairing("retropieconsole.local", "code", "retropie", displayed[0][1])
 
     def test_connection_status_has_unknown_fallback_and_uses_shared_probe(self):
         state = ControlState(self.path)
@@ -1346,12 +1383,23 @@ class ControlStateTests(unittest.TestCase):
         state.configure_pairing_identity('0123456789abcdef')
         for method in ('code', 'ssh'):
             with self.assertRaises(ValueError):
-                state.authorize_pairing('retropie.local', method, '000000')
-            state.begin_pairing('retropie.local', method)
+                state.authorize_pairing('retropieconsole.local', method, 'retropie', '000000')
+            state.begin_pairing('retropieconsole.local', method, 'retropie')
             pin = displayed[-1]
             with self.assertRaises(ValueError):
-                state.authorize_pairing('retropie.local', 'ssh' if method == 'code' else 'code', pin)
-            state.authorize_pairing('retropie.local', method, pin)
+                state.authorize_pairing('retropieconsole.local', 'ssh' if method == 'code' else 'code', 'retropie', pin)
+            state.authorize_pairing('retropieconsole.local', method, 'retropie', pin)
+
+    def test_launchbox_allows_code_pairing_but_rejects_ssh(self):
+        displayed = []
+        state = ControlState(self.path, pairing_display=lambda identity, pin: displayed.append(pin))
+        state.save_config({'platform': 'launchbox', 'receiver': 'launchbox.local', 'profile': 'off'})
+        state.configure_pairing_identity('0123456789abcdef')
+        state.begin_pairing('launchbox.local', 'code', 'launchbox')
+        self.assertTrue(displayed)
+        state.finish_pairing_display()
+        with self.assertRaisesRegex(ValueError, 'one-time-code'):
+            state.begin_pairing('launchbox.local', 'ssh', 'launchbox')
 
     def test_https_pairing_route_requires_matrix_pin_before_token_export(self):
         displayed = []
@@ -1377,7 +1425,7 @@ class ControlStateTests(unittest.TestCase):
                 connection.close()
 
             connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
-            begin = json.dumps({"host": "retropie.local", "method": "code"})
+            begin = json.dumps({"host": "retropieconsole.local", "platform": "retropie", "method": "code"})
             connection.request("POST", "/api/pair/begin", begin, {"Content-Type": "application/json"})
             response = connection.getresponse()
             response.read()
@@ -1385,7 +1433,7 @@ class ControlStateTests(unittest.TestCase):
             connection.close()
 
             payload = json.dumps({
-                "host": "retropie.local", "code": "ABCDE-FGHIJ-23456-7ABCD",
+                "host": "retropieconsole.local", "platform": "retropie", "code": "ABCDE-FGHIJ-23456-7ABCD",
                 "device_code": displayed[0][1],
             })
             with mock.patch("powerglove_vision.control_server.pair_with_code") as send_token:
@@ -1395,7 +1443,7 @@ class ControlStateTests(unittest.TestCase):
                 response.read()
                 self.assertEqual(response.status, 200)
                 send_token.assert_called_once_with(
-                    "retropie.local", 55357, "ABCDE-FGHIJ-23456-7ABCD", "private-token"
+                    "retropieconsole.local", 55357, "ABCDE-FGHIJ-23456-7ABCD", "private-token", "retropie"
                 )
                 connection.close()
         finally:
@@ -1414,7 +1462,7 @@ class ControlStateTests(unittest.TestCase):
             for method in ('code', 'ssh'):
                 for failed in (False, True):
                     with self.subTest(method=method, failed=failed):
-                        state.begin_pairing('retropie.local', method)
+                        state.begin_pairing('retropieconsole.local', method, 'retropie')
                         finished.reset_mock()
                         def transport(*args):
                             finished.assert_not_called()
@@ -1424,7 +1472,7 @@ class ControlStateTests(unittest.TestCase):
                         with mock.patch('powerglove_vision.control_server.' + target, side_effect=transport):
                             connection = http.client.HTTPSConnection('127.0.0.1', port, context=ssl._create_unverified_context())
                             connection.request('POST', '/api/pair/' + method, json.dumps({
-                                'host':'retropie.local', 'device_code':displayed[-1],
+                                'host':'retropieconsole.local', 'platform':'retropie', 'device_code':displayed[-1],
                                 'code':'ABCDE-FGHIJ-23456-7ABCD', 'username':'pi', 'password':'test-only',
                             }), {'Content-Type':'application/json'})
                             response = connection.getresponse()
@@ -1432,7 +1480,7 @@ class ControlStateTests(unittest.TestCase):
                             self.assertEqual(response.status, 503 if failed else 200)
                             finished.assert_called_once_with()
                             connection.close()
-            state.begin_pairing('retropie.local', 'code')
+            state.begin_pairing('retropieconsole.local', 'code', 'retropie')
             finished.reset_mock()
             state.finish_pairing_display()
             finished.assert_not_called()  # An older request cannot clear a newer PIN.

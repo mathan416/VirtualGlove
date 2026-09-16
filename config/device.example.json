@@ -1,5 +1,6 @@
 {
   "receiver": "",
+  "platform": "",
   "token": "replace-with-the-same-long-random-value-used-by-the-receiver",
   "profile": "off",
   "glove_color": "none",

@@ -1,7 +1,7 @@
 # Troubleshooting by symptom
 
 Start at the first stage that fails: camera, recognition, Controller delivery,
-RetroPie reception, emulator selection, then the displayed game. Keep a normal
+console reception, emulator selection, then the displayed game. Keep a normal
 gamepad available. Change one setting at a time so you know what fixed the issue.
 
 <img src="images/gestures/v2/pixel-pal-safety.png" alt="Pixel Pal gives a friendly stop-and-check signal" width="150">
@@ -50,7 +50,7 @@ Use the plain `/setup` address; no `?ui=2` suffix is needed. Old query-string bo
 Another device answered for the requested `.local` name. Rerun the installer
 and choose a distinct short name, such as `virtualglove-den`. Do not disconnect
 the other device merely to bypass the check: duplicate `.local` names can change
-automatically and break browser bookmarks or RetroPie delivery. Updates do not
+automatically and break browser bookmarks or console delivery. Updates do not
 ask this question and never rename an installed Controller.
 
 ### The secure page shows a privacy warning
@@ -97,6 +97,11 @@ upgrade helper to update the host sampler.
 and wait for **Starting camera and gesture tracking** to finish. First startup
 can take longer than switching between active profiles.
 
+When no camera is connected, Dashboard deliberately shows **Camera unavailable**
+instead of repeatedly presenting a broken preview. This behavior belongs to the
+Controller and is the same for RetroPie, Recalbox, Batocera, and LaunchBox; it
+is not a Recalbox-specific failure.
+
 If no camera appears, check the powered USB hub, cable, and camera connection.
 On the Controller host, `lsusb` should show the camera. If it is absent there,
 the problem is below hand recognition. The documented helper attempts one
@@ -132,6 +137,12 @@ adding a runtime setting to `device.json`.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
 6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
 
+On RetroPie, confirm the `VirtualGlove` input device and its Player 1 mapping.
+On Recalbox, Batocera, and LaunchBox, keep the installer-managed Player 1
+keyboard bindings alongside the physical joypad. Verify the matching platform
+service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
+before editing RetroArch settings.
+
 A filename such as `Gun.Smoke (USA).7z` must keep its punctuation in the registry
 even though the displayed game name is **Gun Smoke**. See
 [Register games](CONFIGURATION_REFERENCE.md#register-games-and-select-profiles)
@@ -141,16 +152,26 @@ and the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 
 Both pairing methods need the six-digit approval PIN displayed on the Controller
 matrix and the certificate-ID comparison. **Code pairing** additionally uses the
-one-time code generated on RetroPie. **Password pairing** additionally uses the
-RetroPie SSH username and password. The two codes are not interchangeable.
+one-time code generated on the selected console. **Password pairing** additionally
+uses that console's SSH username and password. The two codes are not interchangeable.
 
 If confirmation expires, select **Start a new confirmation**. The saved console
 and method stay fixed during the two-minute window; change them after it ends.
 A failed submitted request also requires fresh confirmation. Save console edits
 with **Save settings** before pairing.
-The separate RetroPie one-time code remains valid for five minutes. If more than
-one RetroPie is online, run `virtualglove-pair` on the exact console named in Setup;
-a code displayed by a different console cannot open the intended listener.
+The separate console one-time code remains valid for five minutes. Setup shows
+the correct command after RetroPie, Recalbox, Batocera, or LaunchBox is selected and saved.
+LaunchBox uses one-time-code pairing only. Run the displayed PowerShell command
+as the same Windows user who runs LaunchBox. If Windows asks about network
+access, allow the Python runtime on Private networks only. VirtualGlove must run
+in that signed-in desktop session for its keys to reach RetroArch.
+Standard-profile keys are sent only while `retroarch.exe` is foreground. If
+gestures stop after switching windows, return focus to RetroArch; VirtualGlove
+deliberately releases its keys while another application is active.
+If more than one console is online, run it on the exact console named in Setup;
+a code displayed by a different console cannot open the intended listener. A
+platform-mismatch error means the saved selection does not match the operating
+system detected by that console; correct and save the selection before retrying.
 When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority. A completed attempt should not leave the old PIN scrolling for the rest of its two-minute window.
 
 Use the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices); never paste

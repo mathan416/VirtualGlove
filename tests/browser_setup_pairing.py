@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 async def main():
     """Test user-visible state transitions against controlled HTTP responses."""
-    config = dict(receiver='RETROPIE-NAME.local', port=55355, profile='off',
+    config = dict(platform='retropie', receiver='RETROPIE-NAME.local', port=55355, profile='off',
                   glove_color='none', camera='auto', camera_fps='auto', matrix_attract='on',
                   camera_buffers=2, camera_backend='opencv', camera_exposure='auto',
                   camera_manual_exposure=78, camera_manual_gain=96,
@@ -34,7 +34,8 @@ async def main():
                       dict(value='auto', label='Automatic — choose the connected camera'),
                       dict(value='2', label='Razer Kiyo Pro — camera 2'),
                   ],
-                  connection_configured=True, controller_enabled=False)
+                  connection_configured=True, pairing_configured=True,
+                  controller_enabled=False)
     calls = []
     worker_status = dict(worker_running=True, vision_state='idle',
                          controller_enabled=False, controller_context_active=False,
@@ -58,7 +59,7 @@ async def main():
             if path=='/api/config':
                 post=r.request.method=='POST';flag='save_error' if post else 'load_error'
                 if flags[flag]:flags[flag]=False;return await r.fulfill(status=503,json={'error':'Temporary settings failure'})
-                if post:config.update(r.request.post_data_json);config['connection_configured']=True
+                if post:config.update(r.request.post_data_json);config['connection_configured']=True;config['pairing_configured']=bool(config.get('platform') and config.get('receiver'))
                 return await r.fulfill(json=config)
             if path=='/api/camera-profile':
                 if r.request.method=='POST':
@@ -103,7 +104,7 @@ async def main():
             await page.locator(f'input[name=pair-method][value={method}]').check()
             await page.locator('#pair-begin').click()
             await expect(page.locator('#verified')).to_be_enabled()
-            assert calls[-1][1]=={'host':config['receiver'],'method':method}
+            assert calls[-1][1]=={'host':config['receiver'],'platform':config['platform'],'method':method}
             await expect(page.locator('#receiver')).to_be_disabled()
             await expect(page.locator('input[name=pair-method][value=code]')).to_be_disabled()
         async def confirm():
@@ -119,6 +120,19 @@ async def main():
                 await page.set_viewport_size({'width':width,'height':1000})
                 assert await page.evaluate('document.documentElement.scrollWidth')<=width,width
         await open_page()
+        await expect(page.locator('#platform')).to_have_value('retropie')
+        await expect(page.locator('#pair-command')).to_have_text('sudo /opt/virtualglove/bin/virtualglove-pair')
+        await expect(page.locator('#pair-user')).to_have_value('pi')
+        await page.locator('#platform').select_option('recalbox')
+        await expect(page.locator('#pair-command')).to_contain_text('virtualglove-service pair')
+        await expect(page.locator('#pair-user')).to_have_value('root')
+        await expect(page.locator('#pair-begin')).to_be_disabled()
+        await page.locator('#platform').select_option('launchbox')
+        await expect(page.locator('#pair-command')).to_contain_text('virtualglove-pair.ps1')
+        await expect(page.locator('input[name=pair-method][value=ssh]')).to_be_disabled()
+        await expect(page.locator('#pair-user')).to_have_value('')
+        await page.locator('#platform').select_option('retropie')
+        await expect(page.locator('#pair-user')).to_have_value('pi')
         await expect(page.locator('#camera-rate-status')).to_contain_text('30')
         await expect(page.locator('#camera option')).to_have_count(2)
         await expect(page.locator('#camera')).to_have_value('auto')
@@ -225,7 +239,7 @@ async def main():
         if '--screenshots' in sys.argv:await page.locator('#pairing-section').screenshot(path=str(ROOT/'docs/images/setup-pairing-confirm.png'))
         await confirm();await responsive()
         await page.locator('#pair-submit').click()
-        await expect(page.locator('#pair-notice')).to_contain_text('Enter the RetroPie one-time code')
+        await expect(page.locator('#pair-notice')).to_contain_text('Enter the console one-time code')
         await expect(page.locator('#pair-notice')).to_be_in_viewport()
         await page.locator('#pair-code').fill('ABCDE-FGHIJ-23456-7ABCD')
         if '--screenshots' in sys.argv:await page.locator('#pairing-section').screenshot(path=str(ROOT/'docs/images/setup-pairing-code.png'))
@@ -284,10 +298,10 @@ async def main():
         await page.locator('#pair-method-back').click()
         await expect(page.locator('#pair-step-1')).to_be_visible()
         flags['expiry']=120
-        config['connection_configured']=False;await open_page()
+        config['connection_configured']=False;config['pairing_configured']=False;await open_page()
         await expect(page.locator('#pair-begin')).to_be_disabled()
         await expect(page.locator('#pair-prerequisite')).to_contain_text('Save connection')
-        config['connection_configured']=True;flags['load_error']=True
+        config['connection_configured']=True;config['pairing_configured']=True;flags['load_error']=True
         await page.reload();await expect(page.locator('#setup-retry')).to_be_visible()
         await page.locator('#setup-retry').click();await expect(page.locator('#pair-begin')).to_be_enabled()
         save_settings=page.get_by_role('button',name='Save camera settings',exact=True)

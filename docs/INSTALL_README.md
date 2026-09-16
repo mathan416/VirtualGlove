@@ -1,7 +1,7 @@
 # VirtualGlove Installation Guide
 
 Install VirtualGlove with one script on the **VirtualGlove Controller
-(Arduino UNO Q)** and one on RetroPie.
+(Arduino UNO Q)** and one on a supported RetroArch console.
 The scripts prepare the software and startup helpers; you finish by pairing the
 devices, positioning the camera, and testing a game.
 
@@ -41,6 +41,217 @@ also updates the matrix firmware. Review [coordinated transport upgrades and
 rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
 before replacing an older installation.
 
+## v0.5.0 console support under development
+
+VirtualGlove 0.5.0 adds Recalbox 10.x, Batocera 38+, and LaunchBox on Windows x86-64 while retaining
+RetroPie. Each console has a separate release installer so the package can
+validate the intended operating system before changing it:
+
+| Console | Installer | Persistent VirtualGlove location | Game detection |
+| --- | --- | --- | --- |
+| RetroPie | `install-retropie.sh` | `/opt/virtualglove-src` and `/etc/virtualglove` | RetroPie runcommand hooks |
+| Recalbox 10.x | `install-recalbox.sh` | `/recalbox/share/system/virtualglove` | bounded RetroArch process monitor |
+| Batocera 38+ | `install-batocera.sh` | `/userdata/system/virtualglove` | supported `gameStart`/`gameStop` script events |
+| LaunchBox | `launchbox/install-launchbox.ps1` | `%LOCALAPPDATA%\VirtualGlove` | LaunchBox RetroArch wrapper |
+
+Recalbox, Batocera, and LaunchBox publish VirtualGlove as keyboard input mapped into
+RetroArch Player 1. The existing physical Player 1 joypad stays assigned and
+usable at the same time. Their installers change only the eight managed
+Player 1 keyboard bindings; Player 2 and unrelated RetroArch settings are
+preserved.
+
+Programs 1–14, A–I, Bad Street Brawler, and Super Glove Ball can use the
+standard FCEUmm joystick path. Recalbox, Batocera, and LaunchBox also support native Super
+Glove Ball through a separately named Nestopia (VirtualGlove) core. Each core
+must be built with its target system's own toolchain and load-checked on that
+target; neither replaces stock Nestopia. FCEUmm remains the reversible fallback.
+The ROM-free native calibration display remains RetroPie-only.
+
+All three platforms use the same authenticated controller transport and game
+registry as RetroPie. Their receiver, registry, token, launcher settings, logs,
+and startup integration stay in persistent storage rather than the read-only
+system image. Updates preserve the token, launcher destination, game registry,
+ROMs, saves, and controller configuration.
+
+After installing, the Setup page offers console-specific one-time-code commands.
+On Recalbox run:
+
+```sh
+sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair
+```
+
+On Batocera run:
+
+```sh
+/userdata/system/services/VirtualGlove pair
+```
+
+On LaunchBox run the PowerShell command shown by Setup. It invokes
+`%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-pair.ps1`. LaunchBox uses
+one-time-code pairing only; the Controller never requests a Windows password.
+
+SSH password pairing also recognizes the Linux console systems automatically;
+use their normal `root` SSH account. SSH pairing is not offered for LaunchBox.
+No console password is retained by the Controller.
+Physical validation on the target hardware remains required before v0.5.0 is
+published.
+
+### Recalbox native Super Glove Ball
+
+Recalbox 10.1 has seven build targets. Native cores are never shared across
+these targets merely because two machines use the same broad CPU family.
+
+| Recalbox target | Typical hardware | Core ABI | VirtualGlove package status |
+| --- | --- | --- | --- |
+| `rpizero2` | Raspberry Pi Zero 2 and compatible image variants | 32-bit ARM | Included and load-tested |
+| `rpi3` | Raspberry Pi 3 family | 32-bit ARM | Included; load-tested on Pi 3, exact `rpi3` image pending |
+| `rpi4_64` | Raspberry Pi 4/400 and CM4 | ARM64 | Validation pending |
+| `rpi5_64` | Raspberry Pi 5 | ARM64 | Validation pending |
+| `rg353x` | Anbernic RG353 family | ARM64 | Validation pending |
+| `odroidgo2` | ODROID Go Advance/Super | ARM64 | Validation pending |
+| `x86_64` | PCs and Steam Deck | x86-64 | Validation pending |
+
+The package manifest records the Recalbox target and version together with the
+ELF class and machine identity. The installer requires all four to agree with
+the local machine before it will expose the native core. This permits a release
+to carry multiple Recalbox versions for the same hardware target safely.
+
+The release package includes independently built Recalbox 10.1 `rpizero2` and
+`rpi3` ARM32 cores. Both load and report `Nestopia PowerGlove` on the available
+Raspberry Pi 3 running the `rpizero2` image; validation on an image that reports
+`rpi3` remains outstanding. Normal Recalbox installation verifies size,
+SHA-256, exact target/version and ARM ELF identity, libretro API, and core name
+before exposing a core through the reversible runtime overlay. Machines without
+a packaged target/version core still install normally and use FCEUmm.
+
+Maintainers can reproduce a target build with the matching official Recalbox
+source checkout on a Linux Docker host:
+
+```sh
+scripts/build-recalbox-nestopia-powerglove.sh /path/to/recalbox rpizero2
+```
+
+Build all seven targets supplied by one exact Recalbox release tree with:
+
+```sh
+scripts/build-recalbox-native-matrix.sh /path/to/recalbox
+```
+
+Public images may be on different releases. Build those targets separately
+from their exact tagged source tree and merge the resulting target/version
+entry only after target-side validation.
+
+The builder emits `nestopia_powerglove_libretro.so` and a matching
+`manifest.json`. To test a newly built core before promoting it into a future
+release, copy both to the appropriate architecture package directory. The
+manual target installer remains available for development validation:
+
+```sh
+sh /recalbox/share/system/virtualglove/scripts/install-recalbox-nestopia-powerglove.sh \
+  /path/to/nestopia_powerglove_libretro.so \
+  "/recalbox/share/roms/nes/Super Glove Ball (USA).7z"
+```
+
+The installer refuses to run while RetroArch is active, checks the release
+manifest, and loads the library on Recalbox before installation. A runtime overlay exposes the separate core in
+the read-only core directory and a temporary system list advertises it to
+EmulationStation. EmulationStation restarts only when that runtime view first
+appears or changes. The exact-ROM `.recalbox.conf` sidecar selects
+`nestopia_powerglove`; unrelated ROMs and settings retain their current cores.
+On installation and startup, VirtualGlove finds exact Super Glove Ball ROM
+filenames from the installed registry and creates the per-ROM selection only
+when that ROM has no existing core choice. Upgrades never replace an existing
+selection.
+To return only that ROM to joystick mode:
+
+```sh
+python3 /recalbox/share/system/virtualglove/scripts/configure-recalbox-super-glove-ball-core.py \
+  --rom "/recalbox/share/roms/nes/Super Glove Ball (USA).7z" \
+  --mode fceumm --apply
+```
+
+### Batocera native Super Glove Ball
+
+Batocera's operating-system core directories are read-only, and its cores are
+architecture-specific. Build Nestopia (VirtualGlove) from a Batocera source
+checkout matching the target image:
+
+```sh
+scripts/build-batocera-nestopia-powerglove.sh /path/to/batocera.linux TARGET
+```
+
+Use Batocera's target name, such as `bcm2711` for Raspberry Pi 4 or `bcm2712`
+for Raspberry Pi 5. The builder initializes only Batocera's stock Nestopia
+package and then compiles VirtualGlove's pinned, patched source with that exact
+cross-compiler and sysroot. Copy the resulting
+`nestopia_powerglove_libretro.so` to the Batocera system, then run as root:
+
+```sh
+/userdata/system/virtualglove/scripts/install-batocera-nestopia-powerglove.sh \
+  /path/to/nestopia_powerglove_libretro.so \
+  "/userdata/roms/nes/Super Glove Ball (USA).nes"
+```
+
+The installer first loads the core and checks its libretro ABI. It then places
+it atomically in persistent storage, exposes it under the separate
+`nestopia_powerglove` name through reversible overlay mounts, and changes only
+that exact ROM's Batocera core selection. Stock Nestopia and FCEUmm remain
+unchanged. To return the ROM to joystick mode:
+
+```sh
+python3 /userdata/system/virtualglove/scripts/configure-batocera-super-glove-ball-core.py \
+  --rom "/userdata/roms/nes/Super Glove Ball (USA).nes" --mode fceumm --apply
+```
+
+### LaunchBox on Windows x86-64
+
+LaunchBox remains the frontend and 64-bit RetroArch remains the emulator.
+Install 64-bit Python 3 with its `py` launcher, place the matching FCEUmm core
+in RetroArch, and connect to the Internet for the one-time isolated Python
+dependency installation, then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
+  -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch"
+```
+
+The installer uses the current user's Local AppData folder and preserves an
+existing token, game registry, and Controller address. A fresh installation
+uses `virtualglove.local`; pass `-ControllerHost` when the Controller has a
+different name or fixed address. Configure a LaunchBox emulator whose
+application path is
+`%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`, associate
+it with Nintendo Entertainment System, and pass only the ROM path.
+
+The wrapper exact-matches the ROM registry. Ordinary games launch with FCEUmm;
+Super Glove Ball launches with the separately named Windows x86-64
+`nestopia_powerglove_libretro.dll`. It keeps an authenticated game lease alive
+only while that exact RetroArch process runs. Unregistered games still launch
+with FCEUmm but do not enable gestures.
+
+For standard FCEUmm games, VirtualGlove injects arrow, X, Z, Enter, and Right
+Shift keys into RetroArch Player 1. RetroArch's normal XInput/autoconfiguration
+remains enabled, so the physical Player 1 joypad works at the same time. Keys
+are emitted only while `retroarch.exe` is foreground and are released when
+focus moves elsewhere. Native
+Super Glove Ball instead selects the emulated Power Glove peripheral; its
+physical-joypad behavior is not claimed until it is validated on Windows. The
+receiver runs in the signed-in user's desktop session; it is not installed as
+a Windows service.
+
+Maintainers build the Windows core through the manually dispatched
+`launchbox-native-core.yml` workflow or in a MinGW64 environment with:
+
+```sh
+bash scripts/build-launchbox-nestopia-powerglove.sh
+```
+
+The build applies the common native-glove patch followed by a Windows-only
+memory-mapping and monotonic-clock portability patch. The verifier requires a
+PE32+ AMD64 DLL carrying the `Nestopia PowerGlove` identity. Import the reviewed
+DLL and its generated complete corresponding source archive under
+`native/launchbox/x86_64/` before building release packages.
+
 VirtualGlove 0.4.1 is the oldest supported in-place upgrade. The installer
 preserves current `/etc/virtualglove` pairing, game-registry, and Controller
 settings, but no longer imports pre-0.4.1 `/etc/powerglove` installations.
@@ -51,13 +262,13 @@ retired unsigned transport.
 
 ## 1. Prepare your devices
 
-You need a provisioned VirtualGlove Controller, a working RetroPie system, a UVC USB camera,
+You need a provisioned VirtualGlove Controller, a supported RetroArch console, a UVC USB camera,
 a powered USB hub, and a physical controller for RetroArch setup. Put both devices
 on the same trusted local network with internet access. Supply your own games;
 no ROMs or BIOS files are included.
 
 For a new Controller, use Arduino App Lab to complete board setup and networking.
-Record the RetroPie's hostname and the UNO Q's current App Lab address. The
+Record the console's hostname and the UNO Q's current App Lab address. The
 VirtualGlove installer will offer the Controller's permanent friendly name.
 Connect the camera through the powered hub.
 You do not need to import VirtualGlove through App Lab, install Arduino build
@@ -164,9 +375,16 @@ change in plain language and how to stop or recover a camera test safely.
 
 ![Advanced camera settings with Automatic, a discovered camera, and optional manual exposure](images/setup-camera.png)
 
-## 3. Run the RetroPie installer
+## 3. Install the console
 
-Run this single line in the RetroPie terminal:
+Choose the one subsection for your console. Install the same published version
+on the Controller and console, and close RetroArch first. Repeating the same
+installer updates VirtualGlove while preserving pairing, the Controller
+destination, game registry, ROMs, saves, and unrelated controller settings.
+
+### RetroPie
+
+Run in the RetroPie terminal as the normal RetroPie user:
 
 ```sh
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-retropie.sh && bash install-retropie.sh
@@ -212,21 +430,99 @@ later installer run. It does not select an emulator for any NES game.
 **Checkpoint:** The report confirms that receiver startup is configured.
 Pairing and live gameplay checks will still be listed as actions.
 
+### Recalbox 10.x
+
+Download `install-recalbox.sh` from the same v0.5.0 release used on the
+Controller. Connect to Recalbox as `root`, then run:
+
+```sh
+bash install-recalbox.sh --version VERSION --peer virtualglove.local
+```
+
+Replace `VERSION` with the published tag and `virtualglove.local` if the
+Controller has a different saved name or address. Do not add `sudo`; Recalbox's
+SSH session already runs as root. The installer places all managed files in
+`/recalbox/share/system/virtualglove`, adds a bounded startup/process monitor to
+the persistent `custom.sh`, and changes only VirtualGlove's eight Player 1
+keyboard bindings. The physical Player 1 joypad remains enabled.
+
+Run the same command without `--peer` for later updates. To check without
+changing anything:
+
+```sh
+bash install-recalbox.sh --check
+sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service status
+```
+
+The available Raspberry Pi 3 running Recalbox 10.1's `rpizero2` image has
+passed FCEUmm play, native Super Glove Ball, simultaneous physical-joypad use,
+and reboot persistence. Other Recalbox targets require their own matching core
+and hardware validation.
+
+### Batocera 38 and newer
+
+Download `install-batocera.sh` from the same v0.5.0 release used on the
+Controller. Connect to Batocera as `root`, then run:
+
+```sh
+bash install-batocera.sh --version VERSION --peer virtualglove.local
+```
+
+The installer stores managed files in `/userdata/system/virtualglove`, enables
+Batocera's persistent **VirtualGlove** user service, and installs supported
+`gameStart`/`gameStop` lifecycle hooks. It changes only VirtualGlove's eight
+Player 1 keyboard bindings, leaving the physical Player 1 joypad enabled.
+
+Run the same command without `--peer` for later updates. To check without
+changing anything:
+
+```sh
+bash install-batocera.sh --check
+batocera-services is-enabled VirtualGlove
+/userdata/system/services/VirtualGlove status
+```
+
+Batocera hardware and native-core acceptance remain v0.5.0 release gates.
+
+### LaunchBox on Windows x86-64
+
+Install 64-bit Python with its `py` launcher and 64-bit RetroArch with FCEUmm.
+Extract the matching VirtualGlove Windows package. In PowerShell, as the same
+Windows user who runs LaunchBox, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
+  -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch" `
+  -ControllerHost "virtualglove.local"
+```
+
+Use the real folders and Controller name. The installer writes only to
+`%LOCALAPPDATA%\VirtualGlove`, creates an isolated Python environment, and
+preserves its pairing key, registry, and Controller destination on updates.
+If Windows requests network permission, allow Private networks only.
+
+In LaunchBox, add **VirtualGlove RetroArch** as an emulator. Set its application
+path to `%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`,
+associate Nintendo Entertainment System, and pass only the ROM path. FCEUmm
+keeps RetroArch's physical XInput Player 1 controller while VirtualGlove adds
+keyboard controls to the same player. The receiver runs only in the signed-in
+desktop session.
+
 ## 4. Pair the devices
 
 The **Controller status** panel at the top of Setup shows the four Off-mode checks in pixel order: app, console service, authenticated response, and Networking. Green means confirmed, red means disconnected or not confirmed, and grey means unknown. Networking reflects a physical Wi-Fi or Ethernet link, including USB dock Ethernet; it is independent of the console checks. These checks do not prove that the game received input.
 
-Both pairing methods below require the six-digit approval PIN shown on the Controller matrix and the certificate-ID comparison. The RetroPie one-time code or SSH password is an additional credential. A first visit may show a privacy warning because this is a private local Controller, not a public website.
+Both pairing methods below require the six-digit approval PIN shown on the Controller matrix and the certificate-ID comparison. The selected console's one-time code or SSH password is an additional credential. A first visit may show a privacy warning because this is a private local Controller, not a public website.
 
 Pairing gives both devices the same private token. Use the recommended
 one-time-code method after both installers finish.
 
-1. Open the secure Setup address printed by the Controller installer, normally `https://virtualglove.local:8443/setup`. Under **Connect to RetroPie**, enter your console address and select **Save connection**. Pairing uses this saved address; unsaved edits must be saved first.
+1. Open the secure Setup address printed by the Controller installer, normally `https://virtualglove.local:8443/setup`. Under **Connection and startup**, first choose RetroPie, Recalbox, Batocera, or LaunchBox, then enter that console's hostname or IP address and select **Save connection**. Pairing remains unavailable until both are saved; unsaved edits must be saved first.
 2. Continue to **Pair this Controller** in the same card, choose **One-time code (recommended)**, and select **Continue**. Use **Change** beside the saved console to edit its address before starting.
 3. In **Confirm your Controller**, compare the `ID` on the physical matrix with the beginning of the browser certificate's SHA-256 fingerprint. Expand **How to compare the certificate** for guidance. If they differ, stop pairing.
 4. If they match, check the confirmation box, enter the six-digit **Controller approval PIN** shown after `PN` on the matrix, and select **Continue**.
-5. On the RetroPie console shown in Setup, run `sudo /opt/virtualglove/bin/virtualglove-pair` and leave it running. Enter its 20-character code in **RetroPie one-time code**, then select **Pair with RetroPie** within five minutes. This single-use code is separate from the Controller approval PIN. If you have more than one RetroPie, confirm the terminal prompt belongs to the console named in Setup.
-6. Selecting **Pair with RetroPie** brings **Pairing in progress** into view while the request runs, followed by **Pairing complete** or an error with retry instructions. On success, the receiver was restarted and answered an authenticated controller handshake using the newly installed token; you can open Dashboard when ready. On RetroPie, `sudo systemctl status virtualglove-receiver.service` should report active. Pairing does not arm controller output or prove that a game received input.
+5. On the saved console, run the single command shown by Setup and leave it running. Enter its 20-character code in **Console one-time code**, then select **Pair with console** within five minutes. Setup shows only the command for the chosen platform: `sudo /opt/virtualglove/bin/virtualglove-pair` on RetroPie, `sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair` on Recalbox, `/userdata/system/services/VirtualGlove pair` on Batocera, or the installed `virtualglove-pair.ps1` command on LaunchBox. This single-use code is separate from the Controller approval PIN. Confirm that the terminal belongs to the console named in Setup.
+6. Selecting **Pair with console** brings **Pairing in progress** into view while the request runs, followed by **Pairing complete** or an error with retry instructions. Before changing its token, the console verifies that its detected platform matches the saved selection. On success, the receiver was restarted and answered an authenticated controller handshake using the newly installed token; you can open Dashboard when ready. Pairing does not arm controller output or prove that a game received input.
 
 ### Optional: remove the browser privacy warning
 
@@ -246,7 +542,7 @@ camera, Controller, network, receiver, emulator, and game work together.
 
 ![Controller confirmation with certificate comparison, matrix approval PIN, and remaining time.](images/setup-pairing-confirm.png)
 
-![Pairing in progress while the request waits for RetroPie.](images/setup-pairing-progress.png)
+![Pairing in progress while the request waits for the selected console.](images/setup-pairing-progress.png)
 
 ![Pairing complete, with the next step on Dashboard.](images/setup-pairing-complete.png)
 
@@ -255,20 +551,22 @@ pairing method stay fixed during that window. If it expires, the PIN and passwor
 are cleared; select **Start a new confirmation**. You can change methods after
 the window ends. A submitted failure also requires fresh confirmation before
 retrying. Existing server PIN attempt limits still apply. If the window expires
-while you obtain a RetroPie code, repeat confirmation and obtain a new code if
+while you obtain a console code, repeat confirmation and obtain a new code if
 needed; neither credential has an unlimited lifetime.
 
 <!-- PAGEBREAK -->
 
-### Alternative: pair with your RetroPie password
+### Alternative: pair with your console password
 
-Use this route only if RetroPie accepts SSH password login and your account
-can run `sudo` with that password.
+Use this route only if the console accepts SSH password login. RetroPie normally
+uses `pi` and requires that account to run `sudo`; Recalbox and Batocera normally
+use `root`. LaunchBox uses one-time-code pairing only and never asks for a
+Windows password.
 
-1. Save the console address in **Connect to RetroPie**.
+1. Save both the platform and console address in **Connection and startup**.
 2. In **Choose a pairing method**, select **SSH password**, then **Continue**.
 3. Complete the same certificate comparison and Controller approval PIN step.
-4. In **Pair with RetroPie**, enter your RetroPie username and password, then select **Pair with RetroPie**.
+4. In **Pair with your console**, enter the console username and password, then select **Pair with console**.
 5. **Pairing in progress** stays visible while the request runs; SSH pairing can take a few minutes. Wait for **Pairing complete**, which includes an authenticated receiver-token check, then check the receiver service or open Dashboard. Errors are brought into view with retry instructions.
 
 The password field is unavailable until certificate confirmation is complete.
@@ -292,8 +590,10 @@ controls stopped** to exit the output pause explicitly.
 
 ### Connection settings and recovery
 
-**Connect to RetroPie** saves the console address and startup game profile, then
-continues directly into secure pairing.
+**Connection and startup** saves the console platform, address, and startup game
+profile, then continues directly into secure pairing. Existing upgraded systems
+with an address and token keep operating, but must select and save their platform
+before pairing again.
 Port, camera, and pairing-key replacement are under **Advanced connection settings**.
 **Check console address** only checks name resolution. If loading fails, use
 **Reload saved settings**; if a save fails, correct or retry it without losing
@@ -312,14 +612,14 @@ Connection saves restart tracking. The separate **Save attract mode** action
 changes only the idle matrix display. Hand setup, players, and backups are in
 **Glove Academy**. Existing private settings and calibration remain preserved
 through the normal installation/upgrade process; the four-pixel display needs its matching matrix firmware. Extending the fourth pixel to Ethernet only needs the updated Controller app and host sampler. Normal installation
-and Wi-Fi deployment also install its unprivileged host status sampler. The receiver timeout correction takes effect after updating
-RetroPie as well as the Controller application.
+and Wi-Fi deployment also install its unprivileged host status sampler. Receiver
+changes take effect only after updating both the console and Controller.
 
 ## 5. Calibrate and test a game
 
 1. On Dashboard, select a profile, wait for the camera, and show your hand. On first use, the app collects a neutral reference automatically. Use **Center hand** if your resting position produces unwanted movement or your camera/playing position changed. Hold a relaxed, open hand still at the intended center and distance until the button reports completion.
-2. Select **Start controller**. This allows controller packets to reach RetroPie and creates the virtual input device.
-3. On RetroPie, run `grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices`. Look for the device name **VirtualGlove**. If it is missing, check pairing and the receiver service before changing emulator settings.
+2. Select **Start controller**. This arms authenticated output; delivery begins only for an active registered game or intentional manual profile.
+3. Verify the console receiver using its platform check above. On RetroPie, `grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices` should show the **VirtualGlove** device. Recalbox, Batocera, and LaunchBox merge VirtualGlove keyboard bindings into RetroArch Player 1 instead of adding that Linux gamepad device.
 
 For a visual calibration check, open **Ports → VirtualGlove Calibration Test**.
 The utility selects native coordinate delivery only while it is open. The
@@ -328,9 +628,8 @@ fresh calibrated sample. A red X means tracking, calibration, pairing, or the
 sample's freshness is not ready. Adjust center or **Movement reach** on the
 Controller, then reopen or return to the test. Exit normally to release the
 test profile.
-4. Use your physical controller to open RetroArch. Go to **Settings > Input > RetroPad Binds > Port 1 Controls** and select **VirtualGlove**. Menu labels can vary with the RetroArch version.
-5. Check the D-pad, A, B, Start, and Select assignments. The installer provides an automatic mapping; adjust bindings only if needed, then save the controller profile or RetroArch configuration.
-6. Test movement and buttons in a game. If your cabinet merges multiple controllers, also configure that merger to accept the virtual device.
+4. Use the physical controller to open RetroArch. On RetroPie, confirm the installed **VirtualGlove** Player 1 mapping. On Recalbox, Batocera, and LaunchBox, keep the physical Player 1 controller and the installer-managed keyboard bindings together.
+5. Test D-pad, A, B, Start, and Select in a registered game, then confirm the physical joypad still works. Do not replace the entire RetroArch configuration to repair one binding.
 
 For the first test, confirm the selected Program's control style rather than
 assuming every numeric profile uses ordinary hand-position movement:
@@ -379,8 +678,11 @@ shared by every profile. Closing Dashboard
 after this check stops its 5 fps diagnostic preview work without stopping hand
 tracking or controller delivery.
 
-For Super Glove Ball testing, enter RetroPie's launch menu while starting the
-ROM and choose either `lr-fceumm` or `lr-nestopia-powerglove`. FCEUmm uses the
+For Super Glove Ball testing on RetroPie, enter the launch menu while starting
+the ROM and choose either `lr-fceumm` or `lr-nestopia-powerglove`. Recalbox and
+Batocera use an exact-ROM selection for FCEUmm or their target-built Nestopia
+(VirtualGlove) core. The LaunchBox wrapper makes the same exact registry choice
+automatically. FCEUmm uses the
 ordinary D-pad and buttons for the whole session. The native core uses absolute
 X/Y/Z plus open-hand, fist, and index-point packets. Native movement uses
 **Latest coordinate** with MediaPipe Hands and the same saved center and reach.
@@ -431,7 +733,7 @@ before trying again.
 To update, repeat the same single-line commands on both machines. Each selects
 the latest published stable release. Changed managed files are backed up, and the installer prints their
 location. It asks before interrupting an active Controller session. Close RetroArch
-before updating RetroPie. `config/profiles.json` is intentionally replaced;
+before updating the console. `config/profiles.json` is intentionally replaced;
 saved personal tuning remains in `data/gesture-tuning.json`.
 
 For checks only, use the script you already downloaded:
@@ -441,10 +743,16 @@ For checks only, use the script you already downloaded:
 bash install-uno-q.sh --check
 # On RetroPie:
 bash install-retropie.sh --check
+# On Recalbox (as root):
+bash install-recalbox.sh --check
+# On Batocera (as root):
+bash install-batocera.sh --check
 ```
 
 Checks do not download, install, restart, or change anything. They may request
-sudo access to inspect protected settings.
+administrator access to inspect protected settings. LaunchBox does not have a
+separate system check mode: rerun its per-user installer after closing
+RetroArch, then complete the pairing and registered-game checks.
 
 | Report | Meaning |
 | --- | --- |
@@ -550,7 +858,7 @@ excluded from the public package; the live cabinet page supplies local details.
 
 ## Play Checklist
 
-1. Power the RetroPie and VirtualGlove Controller; leave the camera connected to the powered hub.
+1. Power the selected console and VirtualGlove Controller; leave the camera connected to the powered hub.
 2. Open `http://UNO-Q-NAME.local:8088/dashboard`.
 3. Select the active profile on the Dashboard, then confirm the expected profile and a detected hand. The saved startup profile remains on Setup.
 4. On first use, or after changing your camera or playing position, select **Center hand** while holding a comfortable neutral pose. Otherwise reuse the saved calibration.
@@ -569,7 +877,7 @@ Controller application restart can reconnect automatically. Game exit, an unknow
 or an expired session releases all controls and stops delivery without changing the
 armed preference. **Stop controller** remains sticky until explicitly started again.
 Install the same release on both devices because this behavior uses a matching Controller
-worker and RetroPie launch hook.
+worker and the selected console's game-session integration.
 
 Vision and the dashboard keep running while output is unarmed or waiting for a game,
 so setup never generates surprise game inputs.
@@ -577,13 +885,13 @@ so setup never generates surprise game inputs.
 
 ## Fresh hardware acceptance test
 
-Use this checklist for a new Controller and a newly imaged RetroPie. It deliberately
-starts without relying on settings from the development machines.
+Use this checklist for a new Controller and newly prepared supported console. It
+deliberately starts without relying on settings from the development machines.
 
 1. Install the same release on both devices. The Controller camera may be absent
    during installation; connect it afterward if needed.
-2. Run each installer's final checks. Confirm the Controller website opens and
-   RetroPie's receiver timer and game-profile hook are installed.
+2. Run each available installer's final checks. Confirm the Controller website
+   opens and the console receiver and game-session integration start normally.
 3. Pair once from Setup. Confirm **Saved console**, **Console service**, and
    **Authenticated response**, then download the privacy-safe system report.
 4. Create or rename Player 1, center the hand, set movement reach if desired, and
@@ -591,7 +899,7 @@ starts without relying on settings from the development machines.
    remain while controller output stays safely gated.
 5. Launch one registered FCEUmm game and Super Glove Ball with the native core.
    Confirm Setup shows an active authenticated link; game play remains the final proof.
-6. Restart the RetroPie receiver while the devices remain paired. Confirm the input
+6. Restart the console receiver while the devices remain paired. Confirm the input
    link repairs without pairing again and stale input releases during the gap.
 7. Change one device's DHCP address, or temporarily make its saved name unavailable,
    while both remain on the same ordinary LAN. Confirm signed discovery restores both

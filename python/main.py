@@ -74,9 +74,10 @@ def load_device_config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text())
     # A useful, portable first-run default. The same token must be copied to
-    # the RetroPie receiver before controller packets will be accepted.
+    # the selected console receiver before controller packets will be accepted.
     settings = {
         "receiver": "",
+        "platform": "",
         "token": secrets.token_urlsafe(24),
         "profile": "off",
         "glove_color": "none",

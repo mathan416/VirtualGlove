@@ -13,7 +13,7 @@ understood.
 ## Choose the right download
 
 Download `VirtualGlove-Engineering-Tools.zip` from the same GitHub release as
-the Controller and RetroPie installations. Do not mix toolkit and device
+the Controller and console installations. Do not mix toolkit and device
 versions when comparing behaviour.
 
 Also download `VirtualGlove-Engineering-Tools.zip.sha256`. Verify the download
@@ -203,7 +203,7 @@ The stop action restores production before collecting finalized traces.
 
 Before starting:
 
-1. Confirm Controller and RetroPie SSH access.
+1. Confirm Controller and target Linux console SSH access.
 2. Confirm the expected game and emulator are selected.
 3. Stop if either device is already unhealthy.
 4. Choose a short bounded duration.
@@ -230,7 +230,7 @@ continuity, ordering, thermal stability, and complete camera-to-game latency.
 Every retained result should record:
 
 - VirtualGlove release and toolkit version
-- Controller and RetroPie build identifiers
+- Controller and console build identifiers
 - Camera model, reader, frame rate, buffer count, exposure, and gain
 - Python and resolved package environment record
 - Exact command and input-file digests

@@ -12,12 +12,13 @@
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Short-lived HTTPS pairing for VirtualGlove and RetroPie."""
+"""Short-lived HTTPS pairing for VirtualGlove and a supported console."""
 
 from __future__ import annotations
 
 import argparse
 import base64
+import datetime
 import hashlib
 import hmac
 import http.client
@@ -36,6 +37,19 @@ from typing import Callable, Optional
 
 from .resolver import resolve_ipv4
 from .controller_protocol import encode_message, decode_message
+
+CONSOLE_PLATFORMS = ("retropie", "recalbox", "batocera", "launchbox")
+
+
+def console_platform() -> str:
+    """Identify the installed console platform without exposing host details."""
+    if os.name == "nt":
+        return "launchbox"
+    if Path("/recalbox/recalbox.version").is_file():
+        return "recalbox"
+    if Path("/usr/share/batocera/batocera.version").is_file():
+        return "batocera"
+    return "retropie"
 
 
 PAIRING_PORT = 55357
@@ -263,12 +277,38 @@ def generate_certificate(directory: Path, hostname: str, days: int = 1) -> tuple
     directory.mkdir(parents=True, exist_ok=True)
     certificate = directory / "pairing-cert.pem"
     private_key = directory / "pairing-key.pem"
-    subprocess.run([
-        "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
-        "-days", str(days), "-subj", f"/CN={hostname}",
-        "-addext", f"subjectAltName=DNS:{hostname}",
-        "-keyout", str(private_key), "-out", str(certificate),
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.run([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-days", str(days), "-subj", f"/CN={hostname}",
+            "-addext", f"subjectAltName=DNS:{hostname}",
+            "-keyout", str(private_key), "-out", str(certificate),
+        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # Stock Windows does not include the OpenSSL command. The LaunchBox
+        # package installs the wheel-backed library into its isolated runtime.
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.x509.oid import NameOID
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, hostname)])
+        now = datetime.datetime.now(datetime.timezone.utc)
+        leaf = (
+            x509.CertificateBuilder()
+            .subject_name(name).issuer_name(name).public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - datetime.timedelta(minutes=1))
+            .not_valid_after(now + datetime.timedelta(days=days))
+            .add_extension(x509.SubjectAlternativeName([x509.DNSName(hostname)]), critical=False)
+            .sign(key, hashes.SHA256())
+        )
+        private_key.write_bytes(key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        ))
+        certificate.write_bytes(leaf.public_bytes(serialization.Encoding.PEM))
     os.chmod(private_key, 0o600)
     pem = certificate.read_text()
     return certificate, private_key, pem
@@ -304,7 +344,7 @@ def serve_pairing(
     rejected_attempts = 0
     with tempfile.TemporaryDirectory(prefix="virtualglove-pair-") as temporary_name:
         temporary = Path(temporary_name)
-        certificate, private_key, pem = generate_certificate(temporary, "VirtualGlove-RetroPie-Pairing")
+        certificate, private_key, pem = generate_certificate(temporary, "VirtualGlove-Console-Pairing")
         code = display_pairing_code(certificate_code(pem), authorization)
 
         class PairingHandler(BaseHTTPRequestHandler):
@@ -325,9 +365,19 @@ def serve_pairing(
                     supplied = str(body.get("authorization", "")).upper()
                     if not hmac.compare_digest(supplied, authorization):
                         raise ValueError("pairing code was rejected")
+                    expected_platform = str(body.get("platform", ""))
+                    detected_platform = console_platform()
+                    if expected_platform not in CONSOLE_PLATFORMS:
+                        raise ValueError("choose a supported console platform")
+                    if expected_platform != detected_platform:
+                        raise ValueError(
+                            "selected platform does not match this console (detected "
+                            + detected_platform + ")"
+                        )
                     install_token(token_file, str(body.get("token", "")))
                     paired = True
-                    response = b'{"paired":true}'
+                    response = json.dumps({"paired": True,
+                                           "platform": detected_platform}).encode()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header("Content-Length", str(len(response)))
@@ -360,7 +410,8 @@ def serve_pairing(
     return code
 
 
-def pair_with_code(host: str, port: int, code: str, token: str, timeout: float = 8.0) -> None:
+def pair_with_code(host: str, port: int, code: str, token: str,
+                   platform: str, timeout: float = 8.0) -> None:
     """Verify a pinned certificate and transfer the shared token over TLS."""
     expected_certificate, authorization = normalize_pairing_code(code)
     discovery_context = ssl._create_unverified_context()
@@ -369,11 +420,14 @@ def pair_with_code(host: str, port: int, code: str, token: str, timeout: float =
             der = tls_connection.getpeercert(binary_form=True)
     pem = ssl.DER_cert_to_PEM_cert(der)
     if not hmac.compare_digest(certificate_code(pem), expected_certificate):
-        raise ValueError("pairing code does not match the RetroPie certificate")
+        raise ValueError("pairing code does not match the console certificate")
     context = ssl.create_default_context(cadata=pem)
     context.check_hostname = False
     connection = http.client.HTTPSConnection(resolve_ipv4(host), port, timeout=timeout, context=context)
-    payload = json.dumps({"authorization": authorization, "token": token}).encode()
+    if platform not in CONSOLE_PLATFORMS:
+        raise ValueError("choose a supported console platform")
+    payload = json.dumps({"authorization": authorization, "token": token,
+                          "platform": platform}).encode()
     connection.request("POST", "/pair", body=payload, headers={"Content-Type": "application/json"})
     response = connection.getresponse()
     body = response.read()
@@ -384,6 +438,12 @@ def pair_with_code(host: str, port: int, code: str, token: str, timeout: float =
         except (ValueError, json.JSONDecodeError):
             message = "pairing failed"
         raise ValueError(message)
+    try:
+        result = json.loads(body)
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise ValueError("pairing response did not identify the console platform") from exc
+    if result.get("platform") != platform:
+        raise ValueError("paired console platform did not match the saved selection")
     verify_controller_pairing(host, CONTROLLER_PORT, token)
 
 
@@ -410,7 +470,7 @@ def verify_controller_pairing(host: str, port: int, token: str, timeout: float =
                         return
             except (socket.timeout, ValueError, UnicodeError, RecursionError):
                 continue
-    raise ValueError("RetroPie did not accept the paired token; pair again from this Controller")
+    raise ValueError("The console did not accept the paired token; pair again from this Controller")
 
 
 def pair_over_ssh(
@@ -419,18 +479,21 @@ def pair_over_ssh(
     password: str,
     token: str,
     known_hosts: Path,
+    platform: str,
     timeout: float = 30.0,
 ) -> None:
     """Install the token with an isolated Python SSH client and private stdin."""
     allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
     if not host or len(host) > 253 or any(character.isspace() for character in host):
-        raise ValueError("enter a valid RetroPie hostname or IP address")
+        raise ValueError("enter a valid console hostname or IP address")
     if not username or len(username) > 64 or any(character not in allowed for character in username):
-        raise ValueError("enter a valid RetroPie username")
+        raise ValueError("enter a valid console username")
     if not password or "\n" in password or "\r" in password:
-        raise ValueError("enter a valid RetroPie password")
+        raise ValueError("enter a valid console password")
     if not 16 <= len(token) <= 256:
         raise ValueError("invalid controller token")
+    if platform not in CONSOLE_PLATFORMS:
+        raise ValueError("choose a supported console platform")
     helper = Path(__file__).resolve().parents[2] / "python" / "ssh_pair.py"
     command = [
         "uv", "run", "--no-project", "--python", "3.12",
@@ -462,6 +525,7 @@ def pair_over_ssh(
         "password": password,
         "token": token,
         "known_hosts": str(known_hosts),
+        "platform": platform,
         "timeout": timeout,
     }).encode()
     try:
@@ -474,7 +538,7 @@ def pair_over_ssh(
             env=environment,
         )
     except subprocess.TimeoutExpired:
-        raise ValueError("SSH pairing timed out connecting to or configuring RetroPie; check its hostname and SSH access") from None
+        raise ValueError("SSH pairing timed out connecting to or configuring the console; check its hostname and SSH access") from None
     finally:
         payload = b""
         password = ""
@@ -487,12 +551,14 @@ def pair_over_ssh(
 
 def build_parser() -> argparse.ArgumentParser:
     """Create the command-line parser for serving or initiating pairing."""
-    parser = argparse.ArgumentParser(description="Pair VirtualGlove with RetroPie")
+    parser = argparse.ArgumentParser(description="Pair VirtualGlove with a supported console")
     parser.add_argument("--listen", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=PAIRING_PORT)
     parser.add_argument("--token-file", type=Path, default=Path("/etc/virtualglove/token"))
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--receiver-service", default="virtualglove-receiver.service")
+    parser.add_argument("--receiver-restart-command", nargs="+",
+                        help="non-systemd console command used after pairing")
     return parser
 
 
@@ -502,7 +568,9 @@ def main() -> int:
 
     def restart_receiver() -> None:
         """Restart the installed receiver after accepting a new shared token."""
-        subprocess.run(["systemctl", "restart", args.receiver_service], check=True)
+        command = (args.receiver_restart_command or
+                   ["systemctl", "restart", args.receiver_service])
+        subprocess.run(command, check=True)
 
     try:
         serve_pairing(args.listen, args.port, args.token_file, args.timeout, restart_receiver)

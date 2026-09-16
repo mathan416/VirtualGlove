@@ -1,7 +1,7 @@
 # Play with VirtualGlove
 
 The **VirtualGlove Controller (Arduino UNO Q)** watches your hand and sends
-the recognized controls to RetroPie.
+the recognized controls to a paired RetroPie, Recalbox, Batocera, or LaunchBox console.
 
 This guide provides game-specific play cards and explains how to use the
 original Programs 1–14 and cartridge Programs A–I. It shows you which gestures to make, what controls
@@ -14,7 +14,7 @@ If the system is not installed yet, start with the [Installation Guide](INSTALL_
 
 Open **Play** at `http://UNO-Q-NAME.local:8088/play` for a first-to-three match
 against Pixel Pal. This local game uses the Controller camera and pauses cabinet
-input while the page is open, so RetroPie does not need to be connected.
+input while the page is open, so a console does not need to be connected.
 
 | Your move | Make this pose | See it |
 | --- | --- | --- |
@@ -673,7 +673,7 @@ and Select. No calibration or player data is erased.
 
 The original Power Glove could load nine reusable mappings from Bad Street
 Brawler and retain one while the player changed cartridges. VirtualGlove
-keeps all nine available at once: choose one on Dashboard or let RetroPie select
+keeps all nine available at once: choose one on Dashboard or let the console select
 one from the registered ROM filename. These mappings produce ordinary NES
 controller inputs, so they can be tried with games beyond the tested play cards.
 
@@ -690,7 +690,7 @@ ordinary NES controller inputs. The
 next game therefore did not need special Power Glove support.
 
 VirtualGlove keeps all nine profiles ready at once. Select one on
-Dashboard or let RetroPie choose it when a game launches. You do not need to
+Dashboard or let the console choose it when a game launches. You do not need to
 open Bad Street Brawler first.
 
 ## Quick selector - Programs A–I
@@ -896,7 +896,7 @@ complete wall of tiles, and follow the revealed arrows through the maze.
 
 **Nestopia (VirtualGlove)** means the custom `lr-nestopia-powerglove` core.
 Use the controls below for the emulator that actually starts; FCEUmm is the
-fallback. The RetroPie launch hook reports that running core automatically.
+fallback. The console's game-session integration reports that running core automatically.
 Only Super Glove Ball running in `lr-nestopia-powerglove` uses native input.
 Starting the same ROM in FCEUmm—or in any other or unknown core—keeps joystick
 output active for the whole session. The V sign sends Start in both modes.
@@ -1202,8 +1202,8 @@ pixels, startup animations, and the full display reference.
 
 Choose the current profile on Dashboard; choose the saved startup profile on
 Setup. Automatic selection matches the complete ROM filename, including its
-extension but excluding its folder path, against `/etc/virtualglove/games.json`
-on RetroPie. Matching ignores letter case.
+extension but excluding its folder path, against the protected game registry on
+the selected console. Matching ignores letter case.
 
 The launch hook sends an authenticated profile request. The VirtualGlove Controller releases held
 controls, changes the mapping, reuses the saved calibration, and acknowledges

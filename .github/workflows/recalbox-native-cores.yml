@@ -1,0 +1,80 @@
+# Project: VirtualGlove
+# File: .github/workflows/recalbox-native-cores.yml
+# Purpose: Build isolated Nestopia PowerGlove cores for every Recalbox target.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+name: Build Recalbox native cores
+
+on:
+  workflow_dispatch:
+    inputs:
+      recalbox_version:
+        description: Exact Recalbox 10.x release tag
+        required: true
+        default: "10.1"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Recalbox ${{ inputs.recalbox_version }} ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - rpizero2
+          - rpi3
+          - rpi4_64
+          - rpi5_64
+          - rg353x
+          - odroidgo2
+          - x86_64
+    steps:
+      - name: Check out VirtualGlove
+        uses: actions/checkout@v5
+      - name: Check exact Recalbox release input
+        env:
+          RECALBOX_VERSION: ${{ inputs.recalbox_version }}
+        run: |
+          case "$RECALBOX_VERSION" in
+            10.*) ;;
+            *) echo "Recalbox version must be an exact 10.x release tag" >&2; exit 2 ;;
+          esac
+      - name: Check out exact Recalbox source
+        env:
+          RECALBOX_VERSION: ${{ inputs.recalbox_version }}
+        run: |
+          git clone --branch "$RECALBOX_VERSION" --depth 1 \
+            https://gitlab.com/recalbox/recalbox.git "$RUNNER_TEMP/recalbox"
+          test "$(git -C "$RUNNER_TEMP/recalbox" describe --tags --exact-match)" = \
+            "$RECALBOX_VERSION"
+      - name: Build exact target core and corresponding source
+        env:
+          RECALBOX_TARGET: ${{ matrix.target }}
+        run: |
+          scripts/build-recalbox-nestopia-powerglove.sh \
+            "$RUNNER_TEMP/recalbox" "$RECALBOX_TARGET" \
+            "$RUNNER_TEMP/recalbox-native"
+      - name: Verify packaged bytes and architecture metadata
+        env:
+          RECALBOX_TARGET: ${{ matrix.target }}
+          RECALBOX_VERSION: ${{ inputs.recalbox_version }}
+        run: |
+          python scripts/verify-recalbox-native-core.py \
+            --manifest "$RUNNER_TEMP/recalbox-native/manifest.json" \
+            --core "$RUNNER_TEMP/recalbox-native/$RECALBOX_TARGET/$RECALBOX_VERSION/nestopia_powerglove_libretro.so" \
+            --arch "$RECALBOX_TARGET" --version "$RECALBOX_VERSION"
+      - name: Upload target-specific review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: recalbox-${{ inputs.recalbox_version }}-${{ matrix.target }}
+          path: |
+            ${{ runner.temp }}/recalbox-native/manifest.json
+            ${{ runner.temp }}/recalbox-native/${{ matrix.target }}/${{ inputs.recalbox_version }}/
+          if-no-files-found: error
+          retention-days: 14

@@ -75,8 +75,8 @@ Setup repeats these four checks in a labelled **Controller status** panel at the
 
 Connection checks run in the background while Off is selected and the display
 is idle, or while a visible Setup page requests status, at most once every ten seconds. Results expire after thirty seconds.
-They never send gameplay input. This uses the existing RetroPie Games service
-on TCP port `55358`; no RetroPie update is required.
+They never send gameplay input. This uses the selected console's Games service
+on TCP port `55358`; no receiver change is required.
 
 The setting affects only the gestures-off attract display. Game/profile artwork,
 T, L, startup, errors, pairing, and application shutdown retain their normal
@@ -139,7 +139,7 @@ identify individual finger curls, movements, or button presses.
 The important distinction is **tracking versus delivery**. A pulsing **GB** can
 appear while controller output is stopped. Confirm **Start controller** has been
 used and Dashboard shows output enabled, then confirm the action in the game.
-The matrix does not acknowledge RetroPie receipt or the game's response.
+The matrix does not acknowledge console receipt or the game's response.
 
 A generic **PG** ready symbol or a small pulsing tracking symbol can appear when
 no recognized profile identifier is available. These are fallback displays;

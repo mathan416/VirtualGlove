@@ -22,7 +22,7 @@ configuration, or working exploit instructions in a public issue.
 Include these details in the private report:
 
 - the affected commit or release;
-- the VirtualGlove Controller, RetroPie, browser, and network environment involved;
+- the VirtualGlove Controller, selected console platform, browser, and network environment involved;
 - concise reproduction steps and the observed result;
 - the security boundary that was crossed;
 - logs or screenshots after removing tokens, passwords, pairing codes, local addresses, and unrelated personal information.
@@ -38,15 +38,15 @@ The **VirtualGlove Controller** is the Arduino UNO Q device that owns the
 camera, recognition pipeline, local website, and controller sender.
 
 VirtualGlove is designed for a trusted home or workshop network. The VirtualGlove Controller
-performs hand tracking and sends virtual-controller state to RetroPie. RetroPie
-sends per-game profile changes back to the VirtualGlove Controller. Neither device should be
+performs hand tracking and sends virtual-controller state to the paired console.
+The console sends per-game profile changes back to the VirtualGlove Controller. Neither device should be
 treated as an Internet-facing service.
 
 The main protected assets are:
 
 - the shared controller token;
-- the VirtualGlove Controller and RetroPie operating systems;
-- the privileged `/dev/uinput` receiver;
+- the VirtualGlove Controller and console operating systems;
+- the console receiver and its virtual-input interface;
 - the physical pairing display and single-use PIN;
 - the fixed-purpose VirtualGlove Controller shutdown and USB-camera recovery helpers;
 - the integrity of the App Lab installation ZIP, MediaPipe wheel, bundled or downloaded model, and Arduino dependencies.
@@ -57,21 +57,26 @@ both paired hosts.
 
 ## Pairing boundaries
 
-The VirtualGlove Controller and RetroPie share one random token of at least 16 characters. The
+The VirtualGlove Controller and selected console share one random token of at least 16 characters. The
 active token belongs only in the VirtualGlove Controller's private `data/device.json` and
-RetroPie's `/etc/virtualglove/token`. It must not be committed, placed in a shell
+the console's private VirtualGlove data directory: `/etc/virtualglove` on
+RetroPie, `/recalbox/share/system/virtualglove/data` on Recalbox,
+`/userdata/system/virtualglove/data` on Batocera, or
+`%LOCALAPPDATA%\VirtualGlove\data` on LaunchBox. It must not be committed, placed in a shell
 argument, stored in `launcher.json`, or included in a screenshot or log.
 
 The supervised vision worker reads its token using `--device-config`, keeping
 the secret out of process arguments. Device settings are created and replaced
-atomically with mode `0600`. Legacy `--token` remains a compatibility option for
-manual commands; prefer `--token-file` or `--device-config` for the worker.
+atomically with restrictive permissions. Console processes use a token file;
+the token is never a command-line value.
 Browser mutation routes reject cross-site origins, and connection-setting writes
 require JSON. These browser protections do not add local-user authentication or
 change the trusted-network model.
 
 The recommended setup path uses a short-lived one-time code to authenticate
-the RetroPie pairing server over pinned TLS. Password pairing uses authenticated SSH. After the initial connection
+the selected console's pairing server over pinned TLS. Linux-console password
+pairing uses authenticated SSH; LaunchBox intentionally supports code pairing
+only. After the initial connection
 establishes trust, subsequent connections verify the saved remote host key.
 The password is not placed on the process command line.
 
@@ -101,7 +106,7 @@ the containerized website reads it instead of trusting its transient Docker
 hostname when issuing the HTTPS leaf.
 
 After installing the token, the Controller sends a signed controller hello and
-reports success only after RetroPie returns a valid matching challenge. This
+reports success only after the console returns a valid matching challenge. This
 post-write check confirms that the receiver accepts the newly shared token; it
 does not arm output or establish that an emulator consumed controller input.
 
@@ -115,8 +120,8 @@ requires explicit security review.
 
 | Port | Protocol | Direction | Boundary |
 | --- | --- | --- | --- |
-| `55355` | UDP | VirtualGlove Controller to RetroPie | Authenticated virtual-controller packets |
-| `55356` | UDP | RetroPie to VirtualGlove Controller | HMAC-authenticated profile commands and acknowledgements |
+| `55355` | UDP | VirtualGlove Controller to console | Authenticated virtual-controller packets |
+| `55356` | UDP | Console to VirtualGlove Controller | HMAC-authenticated profile commands and acknowledgements |
 | `55357` | TCP/TLS | Pairing client to temporary server | Short-lived code-pairing exchange only |
 | `8088` | HTTP | Browser to VirtualGlove Controller | Local dashboard, Play, public Help guides, diagnostics, and ordinary controls; no pairing credentials accepted |
 | `8443` | HTTPS | Browser to VirtualGlove Controller | Protected setup and pairing operations |
@@ -205,7 +210,7 @@ and corresponding tests and documentation.
 
 ## Paired game editing and gesture tuning
 
-The separate RetroPie Games service listens on TCP `55358`. Only the paired UNO
+The separate console Games service listens on TCP `55358`. Only the paired Controller
 proxy uses it; browsers call the UNO website. Requests and replies use a distinct
 HMAC-authenticated protocol. Server challenges expire after fifteen seconds and
 are consumed once. The shared token never goes to the browser. This protects
@@ -298,7 +303,7 @@ firewalls may prevent it, which is a safe availability failure rather than an
 authentication bypass. A copied pairing key can impersonate the console and
 must be rotated if exposed.
 
-The reverse profile path follows the same identity rule. When RetroPie cannot
+The reverse profile path follows the same identity rule. When the console cannot
 reach the configured Controller address, it broadcasts a signed discovery request
 that contains no ROM or requested profile. It accepts only a signed,
 request-matched acknowledgement, sends the profile command to that authenticated

@@ -1,0 +1,98 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: recalbox/virtualglove-service
+# Purpose: Run persistent VirtualGlove processes on Recalbox without systemd.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+set -u
+
+APP="${VIRTUALGLOVE_ROOT:-/recalbox/share/system/virtualglove}"
+CONFIG="$APP/data"
+RUN="$APP/run"
+LOG="$APP/log"
+NATIVE_STATE="${VIRTUALGLOVE_NATIVE_STATE:-/run/virtualglove/native-state}"
+export PYTHONPATH="$APP/src"
+MONITOR="${VIRTUALGLOVE_MONITOR:-1}"
+
+valid_pid() {
+    name="$1"
+    pidfile="$RUN/$name.pid"
+    [ -f "$pidfile" ] || return 1
+    pid="$(cat "$pidfile" 2>/dev/null)"
+    case "$pid" in *[!0-9]*|'') return 1 ;; esac
+    [ -d "/proc/$pid" ] || return 1
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "powerglove_vision.$name"
+}
+
+start_one() {
+    name="$1"
+    shift
+    valid_pid "$name" && return 0
+    rm -f "$RUN/$name.pid"
+    # Pairing is commonly run from an interactive SSH session. Recalbox's
+    # native daemon launcher fully detaches the process and records its real
+    # PID, so closing that terminal cannot stop a freshly restarted receiver.
+    start-stop-daemon -S -b -m -p "$RUN/$name.pid" -x /usr/bin/python3 -- \
+        -m "powerglove_vision.$name" "$@" \
+        </dev/null >> "$LOG/$name.log" 2>&1
+}
+
+stop_one() {
+    name="$1"
+    if valid_pid "$name"; then
+        pid="$(cat "$RUN/$name.pid")"
+        kill "$pid" 2>/dev/null || true
+        count=0
+        while kill -0 "$pid" 2>/dev/null && [ "$count" -lt 20 ]; do
+            sleep 0.1
+            count=$((count + 1))
+        done
+        kill -KILL "$pid" 2>/dev/null || true
+    fi
+    rm -f "$RUN/$name.pid"
+}
+
+start_all() {
+    mkdir -p "$RUN" "$LOG" "$(dirname "$NATIVE_STATE")"
+    sh "$APP/recalbox/virtualglove-core-mount" start || {
+        echo "VirtualGlove native core overlay could not be prepared" >&2
+        return 1
+    }
+    if [ -s "$CONFIG/token" ]; then
+        start_one game_registry --settings "$CONFIG/launcher.json"
+        [ "$MONITOR" = 1 ] && start_one console_monitor --settings "$CONFIG/launcher.json"
+        start_one receiver --listen 0.0.0.0 --token-file "$CONFIG/token" \
+            --native-state "$NATIVE_STATE" --output-device keyboard
+    fi
+}
+
+stop_all() {
+    stop_one console_monitor
+    stop_one game_registry
+    stop_one receiver
+}
+
+case "${1:-}" in
+    start) start_all ;;
+    stop) stop_all ;;
+    restart) stop_all; start_all ;;
+    pair)
+        mkdir -p "$RUN" "$LOG" "$CONFIG"
+        exec /usr/bin/python3 -m powerglove_vision.pairing \
+            --token-file "$CONFIG/token" \
+            --receiver-restart-command sh "$0" restart-receiver
+        ;;
+    restart-receiver) stop_all; start_all ;;
+    status)
+        failed=0
+        processes="game_registry receiver"
+        [ "$MONITOR" = 1 ] && processes="game_registry console_monitor receiver"
+        for name in $processes; do
+            if valid_pid "$name"; then echo "RUNNING $name"; else echo "STOPPED $name"; failed=1; fi
+        done
+        exit "$failed"
+        ;;
+    *) echo "Usage: $0 {start|stop|restart|restart-receiver|pair|status}" >&2; exit 2 ;;
+esac

@@ -23,7 +23,7 @@ else if(path==='/api/players'){
  result=structuredClone(player);
 }
 else if(path==='/status')result=status();
-else if(path==='/api/config')result={receiver:'private.local',port:55355,connection_configured:true};
+else if(path==='/api/config')result={receiver:'private.local',platform:'retropie',port:55355,connection_configured:true,pairing_configured:true};
 else if(path==='/api/connection-status')result={console_service:true,console_authenticated:pairing,checked_seconds_ago:0};
 else if(path==='/api/practice'){assert(!data.reset);if(data.enabled)assert(locked&&!enabled);lease=data.enabled;result={practice_mode:lease};}
 else if(path==='/calibrate'){assert(locked&&lease&&!enabled);if(failCalibration){ok=false;}else{calibrating=true;calibrated=false;}}

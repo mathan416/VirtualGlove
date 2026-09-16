@@ -104,11 +104,12 @@ instead of retaining the last sample.
 
 ## Latest-sample interface
 
-The RetroPie receiver owns `/run/virtualglove/native-state` and creates it read-only
+The authenticated console receiver owns `/run/virtualglove/native-state` on
+Linux; LaunchBox uses its per-user mapped record. It creates the record read-only
 for consumers. Format version 1 is a fixed 64-byte little-endian record containing:
 
 - magic, format version, record size, and matching begin/end coherence guards;
-- sample sequence and a RetroPie monotonic timestamp taken at publication; for Super Glove Ball the native record is written immediately after receiver validation and before the unrelated virtual-gamepad update;
+- sample sequence and a console monotonic timestamp taken at publication; for Super Glove Ball the native record is written immediately after receiver validation and before the unrelated Player 1 output update;
 - signed normalized X, Y, Z, and roll axes;
 - detected and calibrated flags;
 - four compact finger-flex levels;
@@ -144,6 +145,38 @@ a temporary directory, installs the core under its separate name, copies the
 upstream GPLv2 `COPYING` file beside it, and adds the native entry to the launch
 menu. It deliberately leaves that ROM's current FCEUmm selection unchanged.
 
+Batocera cores are target-specific and its `/usr` tree is read-only. Use
+`scripts/build-batocera-nestopia-powerglove.sh` with a matching Batocera source
+checkout and target name. On the console,
+`scripts/install-batocera-nestopia-powerglove.sh` load-checks the shared object
+before placing it atomically in persistent storage. Reversible overlay mounts
+add the separately named core and info entry to Batocera's frontend view without
+replacing stock Nestopia. The optional second installer argument selects only
+the named Super Glove Ball ROM; the companion configuration script can switch
+that ROM back to FCEUmm at any time.
+
+Recalbox likewise requires a target build, but its official 10.1 image reports
+the tested Raspberry Pi 3 installation as target `rpizero2`. Run
+`scripts/build-recalbox-nestopia-powerglove.sh /path/to/recalbox rpizero2`, copy
+the resulting library to the console, and pass it plus the exact ROM to
+`scripts/install-recalbox-nestopia-powerglove.sh`. The installer load-checks the
+32-bit ARM library on Recalbox, keeps it in the persistent share, and exposes it
+through a reversible runtime core overlay. A temporary system list adds the
+separate core to Recalbox's NES choices; the ROM-specific `.recalbox.conf`
+selects it without changing stock Nestopia or any other game. Normal startup
+finds exact Super Glove Ball filenames in the installed game registry and
+creates this selection only when a matching ROM has no existing `nes.core`
+choice. Existing choices are preserved, and a registry/discovery problem does
+not prevent VirtualGlove's receiver or game monitor from starting.
+
+LaunchBox uses a Windows x86-64 DLL built from the same pinned Nestopia source.
+The common native patch is followed by `native/launchbox/nestopia-windows.patch`,
+which uses Windows file mapping and the high-resolution performance counter for
+the guarded sample record. The LaunchBox wrapper selects
+`nestopia_powerglove_libretro.dll` only for exact registered Super Glove Ball
+filenames; all other NES games retain FCEUmm. The DLL is separately named and
+does not replace RetroArch's stock Nestopia core.
+
 Set `VIRTUALGLOVE_NATIVE_STATE` to use a test record at a different path. Set
 `VIRTUALGLOVE_TRACE=1` when launching the custom core to log controller writes,
 latch/counter transitions, returned stream bits, and each candidate output
@@ -167,7 +200,9 @@ per-ROM emulator choice on another cabinet or after changing the core protocol:
    uncalibrated input must immediately neutralize; a brief missed observation may
    hold only X/Y for up to 180 ms, with actions already released, before sustained
    loss neutralizes coordinates.
-8. Build the core on the RetroPie host under the separate name `lr-nestopia-powerglove`, verify the camera-to-receiver path, and only then create the per-ROM override.
+8. Build the core with the target system's own toolchain under the separate
+   `lr-nestopia-powerglove`/`nestopia_powerglove` name, verify the
+   camera-to-receiver path, and only then create the per-ROM override.
 
 Keep an explicit FCEUmm per-ROM choice available. If native detection or tracking
 regresses, remove only the per-ROM override; the shared FCEUmm fallback remains
@@ -190,6 +225,18 @@ core, or an unknown core selects joystick output. A core change invalidates the
 previous output state before the new mode begins, preventing a held direction or
 native sample from crossing the transition. Dashboard status exposes the
 reported emulator and the resulting `native` or `joystick` input mode.
+
+Batocera's game hook normalizes its `nestopia_powerglove` core name to the same
+authenticated `lr-nestopia-powerglove` identity. The custom core selects the
+native peripheral internally, so frontend device timing cannot make the ROM
+miss its startup detection. This behavior exists only in the separately named
+core.
+
+Recalbox's bounded process monitor reads the actual
+`nestopia_powerglove_libretro.so` command line and reports that same authenticated
+identity. Its runtime system-list mount is rebuilt from the current Recalbox
+template at boot, so an operating-system upgrade does not preserve or overwrite
+an obsolete copied list.
 
 The launch-menu selection for a ROM is persistent, so a test session should be
 followed by choosing `lr-nestopia-powerglove` again if that is the desired saved

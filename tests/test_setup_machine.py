@@ -121,6 +121,24 @@ class SetupTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             setup.hook_content("#!/usr/bin/python3\nprint('custom')\n", "start")
 
+    def test_recalbox_hook_preserves_custom_startup_and_is_idempotent(self):
+        original = "#!/bin/sh\necho cabinet-lighting \"$1\"\n"
+        updated = setup.recalbox_custom_hook(original)
+        self.assertIn("echo cabinet-lighting", updated)
+        self.assertIn('sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service "$1"', updated)
+        self.assertEqual(setup.recalbox_custom_hook(updated), updated)
+
+    def test_recalbox_retroarch_merge_is_bounded_and_idempotent(self):
+        existing = ('video_smooth = "false"\ninput_player1_a = "q"\n'
+                    'input_player2_a = "v"\n')
+        managed = (ROOT / "recalbox/retroarch-nes.cfg").read_text()
+        updated = setup.merge_retroarch_keys(existing, managed)
+        self.assertIn('video_smooth = "false"', updated)
+        self.assertIn('input_player2_a = "v"', updated)
+        self.assertIn('input_player1_a = "x"', updated)
+        self.assertNotIn('input_player1_a = "q"', updated)
+        self.assertEqual(setup.merge_retroarch_keys(updated, managed), updated)
+
     def test_files_are_backed_up_and_tokens_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

@@ -15,9 +15,10 @@ licenses or terms that apply to third-party software and model files.
 | MediaPipe 0.10.35 ARM64/Python 3.12 wheel | Yes | Apache 2.0; the wheel retains its own licence and the release includes `licenses/Apache-2.0.txt` |
 | Google Hand Landmarker model | Yes | Apache 2.0; see `licenses/Apache-2.0.txt` and the model record below |
 | VirtualGlove Nestopia patch and reproducible build recipe | Yes | GNU GPL version 2; see `licenses/GPL-2.0.txt` |
-| Compiled `lr-nestopia-powerglove` core | Built on RetroPie when the user selects native support; not bundled in the Controller archive | GNU GPL version 2; the installer preserves upstream copying information with the installed core |
+| Compiled `lr-nestopia-powerglove` core | Recalbox and LaunchBox packages include only explicitly identified, target-built binaries listed below; RetroPie builds locally and other targets retain FCEUmm until validated | GNU GPL version 2; each bundled binary is accompanied by its exact complete corresponding source, GPL text, notices, patch, and build recipe |
+| Python Cryptography | Downloaded into the isolated LaunchBox runtime; not bundled | Apache License 2.0 or BSD License, under its upstream package notices |
 | `uhubctl` | Installed from Debian only when the camera-recovery option is used; not bundled | GNU GPL version 2 or later, under the Debian package's own notices |
-| RetroArch, FCEUmm, stock Nestopia, and RetroPie | Already supplied by or installed through RetroPie; not bundled | Their respective upstream licences |
+| RetroArch, FCEUmm, stock Nestopia, RetroPie, Recalbox, Batocera, and LaunchBox | Already supplied by or installed on the selected console; not bundled | Their respective upstream licences |
 | Arduino platform and libraries listed below | Downloaded by the Arduino toolchain; not bundled in the Controller archive | Their respective upstream licences |
 
 Keep `LICENSE`, this notice, `licenses/Apache-2.0.txt`, and
@@ -153,15 +154,28 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Pinned revision | `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` |
 | Upstream license | GNU General Public License, version 2 |
 | Local modification | `native/nestopia-powerglove/nestopia-powerglove.patch` |
-| Patch SHA-256 | `1ed4eb4bc803a4d445b6e5a1c7b22ccb00cf8a18d465954730282212b8334c06` |
+| Patch SHA-256 | `fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f` |
+| Windows portability patch | `native/launchbox/nestopia-windows.patch` |
+| Windows patch SHA-256 | `e68000fb2f14a46cdf7269fd3a973e203ca2b21067727964daecbccef50860b4` |
 | Modified upstream files | `libretro/libretro.cpp`; `source/core/input/NstInpPowerGlove.cpp` |
 | Modification ledger | This guide, under **Nestopia modification ledger** |
-| Build recipe | `scripts/build-nestopia-powerglove.sh` |
-| Built core name | `nestopia_powerglove_libretro.so` on RetroPie |
-| Installed core directory | `/opt/retropie/libretrocores/lr-nestopia-powerglove/` |
+| Build recipe | `scripts/build-nestopia-powerglove.sh`; Recalbox target wrapper `scripts/build-recalbox-nestopia-powerglove.sh`; Batocera target wrapper `scripts/build-batocera-nestopia-powerglove.sh`; Windows target wrapper `scripts/build-launchbox-nestopia-powerglove.sh` |
+| Built core name | `nestopia_powerglove_libretro.so` or `nestopia_powerglove_libretro.dll` |
+| Recalbox 10.1 `rpizero2` core SHA-256 | `4814b043926547bb7ab306a3d65b8044a9cb8c28a9181d59376ccb9a4a82c876` |
+| Recalbox 10.1 `rpi3` core SHA-256 | `5aa74d1e2f41b0cb2f85125feeb1b3551d828566fb3401fa0a97e72be994f829` |
+| Recalbox corresponding source archives | `native/recalbox/rpizero2/10.1/nestopia-powerglove-source.tar.gz`; `native/recalbox/rpi3/10.1/nestopia-powerglove-source.tar.gz` |
+| Recalbox source archive SHA-256 | `98edc8fa41bd5023293403434b7e67e9ed2410ba4838ec1854d18b1580f22bda` |
+| LaunchBox Windows x86-64 core SHA-256 | `d94283c6b95bf381c3652aba95de368b72e53bb2efb7485074200c2f8f888638` |
+| LaunchBox corresponding source archive | `native/launchbox/x86_64/nestopia-powerglove-source.tar.gz` |
+| LaunchBox source archive SHA-256 | `3584f410dfc0aa189f6770493ac963d05a9cd743d10d3e8fa29e15c01f40ccfd` |
+| Installed core directory | `/opt/retropie/libretrocores/lr-nestopia-powerglove/` on RetroPie; persistent `/recalbox/share/system/virtualglove/native/recalbox/TARGET/VERSION/` on Recalbox; persistent `/userdata/system/virtualglove/native/batocera/runtime/` on Batocera; `%LOCALAPPDATA%\VirtualGlove\native\` on LaunchBox |
 
-Ordinary releases contain the patch and build recipe, not a compiled core. If
-the user accepts the RetroPie installer's optional native-core step,
+There is no compiled core that can run everywhere. Recalbox and Batocera builds
+are target-specific. The Recalbox package currently carries separately built
+Recalbox 10.1 `rpizero2` and `rpi3` ARM32 cores and a corresponding complete
+patched source archive for each binary. Other target/version pairs retain
+FCEUmm. If the user accepts the
+RetroPie installer's optional native-core step,
 the target machine downloads the pinned upstream source, including its author
 notices and `COPYING` file, applies the patch, and builds for its own processor.
 The core installer places `COPYING` and this consolidated VirtualGlove
@@ -171,8 +185,8 @@ Nestopia copyright/GPL header in
 future patch changes it. Stock Nestopia remains untouched and FCEUmm remains
 available.
 
-If prebuilt cores are published in the future, produce separately identified
-artifacts for every tested RetroPie architecture. Accompany each binary with
+For every additional prebuilt core, produce a separately identified artifact
+for the exact tested operating-system target and architecture. Accompany each binary with
 the exact complete corresponding source archive used to build it, the local
 patch and build instructions, all upstream notices, and the GPLv2 license. A
 Git commit or patch URL alone is not the project's binary-distribution plan.
@@ -181,8 +195,10 @@ ROM images are never part of a source or binary core artifact.
 At runtime, RetroArch loads the custom core only for an explicitly selected ROM.
 The launch entry passes the read-only latest-sample file through
 `VIRTUALGLOVE_NATIVE_STATE`; the default path is `/run/virtualglove/native-state`.
-The patch registers a separately named **VirtualGlove** controller and
-identifies the library as **Nestopia PowerGlove**. Invalid, stale, uncalibrated,
+The patch registers a separately named **VirtualGlove** controller, identifies
+the library as **Nestopia PowerGlove**, and forces port 1 of this isolated core
+to the native peripheral even when a frontend initially requests Auto or a
+gamepad. Invalid, stale, uncalibrated,
 lost-tracking, or wrong-profile samples are neutralized. The compatibility
 record in [Super Glove Ball native compatibility](docs/super-glove-ball-native.md)
 separates exact-ROM-confirmed X/Y/Z and hand-pose packet behavior from wrist and
@@ -212,10 +228,10 @@ The September 4 `libretro.cpp` changes added the versioned latest-sample
 structure; coherence, profile, calibration, detection, and freshness checks;
 neutral invalid-input behavior; a separately selectable controller; calibrated
 X/Y plus Start and Select delivery; the `Nestopia PowerGlove` identity; and
-callback cleanup. The matching `NstInpPowerGlove.cpp` changes enable native
-input only when `VIRTUALGLOVE_NATIVE_STATE` is present, provide the exact-ROM
-ten-byte stream while retaining Nestopia's ordinary twelve-byte path, and add
-opt-in trace hooks without altering normal latch processing. Cabinet testing
+callback cleanup. The matching `NstInpPowerGlove.cpp` changes provide the
+exact-ROM ten-byte native stream intrinsically for this separately named core;
+`VIRTUALGLOVE_NATIVE_STATE` may still override the default state-file path.
+Opt-in trace hooks do not alter normal latch processing. Cabinet testing
 corrected camera-to-Nestopia Y orientation; unknown fields remained neutral and
 FCEUmm remained available.
 
@@ -268,9 +284,9 @@ result permits a port cycle. Unsupported hardware retains the project's
 identity-checked whole-hub driver fallback. Debian remains responsible for the
 installed binary and accompanying copyright and license files.
 
-## External RetroPie emulator dependencies
+## External console and emulator dependencies
 
-VirtualGlove uses RetroPie-provided emulator software but does not include
+VirtualGlove uses console-provided emulator and frontend software but does not include
 those binaries in its installation archives. When either dependency is absent,
 the RetroPie installer can ask the user's existing RetroPie Setup installation
 to install it. That operation remains governed by RetroPie and the upstream
@@ -278,13 +294,13 @@ licenses.
 
 | Component | VirtualGlove use | Upstream and license | Distribution boundary |
 | --- | --- | --- | --- |
-| RetroArch | Libretro frontend used to load FCEUmm and `lr-nestopia-powerglove` | [RetroArch](https://github.com/libretro/RetroArch), GPLv3 | Installed by RetroPie; not modified or redistributed by VirtualGlove |
-| FCEUmm | Default NES core for standard D-pad/button mappings and the complete Super Glove Ball fallback | [FCEUmm](https://github.com/libretro/libretro-fceumm), GPLv2 | Stock RetroPie core; not modified or redistributed by VirtualGlove |
+| RetroArch | Libretro frontend used to load FCEUmm and Nestopia (VirtualGlove) | [RetroArch](https://github.com/libretro/RetroArch), GPLv3 | Installed on the console; not modified or redistributed by VirtualGlove |
+| FCEUmm | Default NES core for standard D-pad/button mappings and the complete Super Glove Ball fallback | [FCEUmm](https://github.com/libretro/libretro-fceumm), GPLv2 | Stock console core; not modified or redistributed by VirtualGlove |
 
 The deterministic direction benchmark separately builds stock FCEUmm revision
 `236ccdfc911e84c60fea6b9d0699c2d440a8de14` in an isolated working directory.
 That pin makes the benchmark reproducible; it does not replace the user's
-RetroPie core, install FCEUmm, or make the benchmark binary a release artifact.
+installed console core, install FCEUmm, or make the benchmark binary a release artifact.
 
 <!-- PAGEBREAK -->
 
@@ -310,7 +326,7 @@ Before changing the Nestopia revision or native patch:
 2. Update the identical revision pin in `scripts/build-nestopia-powerglove.sh`, this modification ledger, tests, and compatibility/benchmark documents. Do not use a moving branch or tag as the build identity.
 3. Rebase `native/nestopia-powerglove/nestopia-powerglove.patch` onto a clean checkout. Preserve all upstream headers and notices. The guarded build must still reject changes to the original `NstInpPowerGlove.cpp` header.
 4. Run the native-core, state-bridge, installer, selection, exact-ROM trace, safe-neutral, and direction-response tests. Reconfirm packet length, detection, bit order, boundaries, timing, X/Y/Z orientation, open/fist/index values, Start behavior, tracking-loss release, and the explicit FCEUmm rollback on the cabinet.
-5. Build the RetroPie installation archive and verify it contains the patch, build/install recipes, this modification ledger, and upstream notices, but no ROM or compiled core. If publishing a binary separately, provide the exact complete corresponding source and GPL materials described above.
+5. Build the RetroPie, Recalbox, and Batocera installation archives. Verify that every packaged binary is restricted to its exact architecture, matches its manifest, and is accompanied by the exact complete corresponding source and GPL materials described above. No ROM may appear in any archive.
 
 When the benchmark FCEUmm pin changes, record the new official revision in the
 benchmark document and rerun both the native and standard-joypad lanes. Normal

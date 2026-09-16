@@ -112,7 +112,8 @@ class NativeStateWriter:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         descriptor = os.open(self.path, os.O_CREAT | os.O_RDWR, 0o644)
         try:
-            os.fchmod(descriptor, 0o644)
+            if hasattr(os, "fchmod"):
+                os.fchmod(descriptor, 0o644)
             os.ftruncate(descriptor, RECORD_SIZE)
             self.mapping = mmap.mmap(descriptor, RECORD_SIZE, access=mmap.ACCESS_WRITE)
         finally:

@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: src/powerglove_vision/receiver.py
-# Purpose: Validate controller datagrams and publish them as a Linux virtual gamepad through uinput.
+# Purpose: Validate controller datagrams and publish them through the selected local input backend.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -13,7 +13,7 @@
 #   2026-09-02 - Added to VirtualGlove.
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 
-"""Validate controller datagrams and publish them as a Linux virtual gamepad through uinput."""
+"""Validate controller datagrams and publish them through a local input backend."""
 
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ class UInputDevice:
 
 def build_parser() -> argparse.ArgumentParser:
     """Create the virtual-controller receiver command-line parser."""
-    parser = argparse.ArgumentParser(description="Receive VirtualGlove as a Linux gamepad")
+    parser = argparse.ArgumentParser(description="Receive VirtualGlove as a local input device")
     parser.add_argument("--listen", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=55355)
     tokens = parser.add_mutually_exclusive_group(required=True)
@@ -114,6 +114,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--native-state", type=Path, default=DEFAULT_NATIVE_STATE_PATH,
                         help="latest validated sample for the custom Nestopia core")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--output-device", choices=("gamepad", "keyboard", "windows-keyboard"),
+                        default="gamepad",
+                        help="publish a gamepad or merge keys beside physical Player 1")
     return parser
 
 
@@ -193,7 +196,13 @@ def main() -> int:
                     native.write(state)
                     native_completed_ns = time.monotonic_ns() if received_ns else 0
                 if device is None:
-                    device = UInputDevice()
+                    if args.output_device == "windows-keyboard":
+                        from .windows_input import WindowsKeyboardDevice
+                        device = WindowsKeyboardDevice()
+                    else:
+                        from .linux_uinput import UInputKeyboardDevice
+                        device = (UInputKeyboardDevice() if args.output_device == "keyboard"
+                                  else UInputDevice())
                 device.write_state(state)
                 if native is not None and not native_first:
                     native_started_ns = time.monotonic_ns() if received_ns else 0

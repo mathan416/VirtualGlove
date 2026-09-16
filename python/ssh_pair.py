@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: python/ssh_pair.py
-# Purpose: Pair an UNO Q with RetroPie over password-authenticated SSH without exposing credentials on the command line.
+# Purpose: Pair an UNO Q with a supported console over SSH without exposing credentials on the command line.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -10,7 +10,7 @@
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Password-authenticated RetroPie pairing using a temporary Python SSH client."""
+"""Password-authenticated console pairing using a temporary Python SSH client."""
 
 from __future__ import annotations
 
@@ -35,19 +35,38 @@ import subprocess
 import sys
 
 source = sys.argv[1]
-destination = "/etc/virtualglove/token"
+recalbox = os.path.isfile("/recalbox/recalbox.version")
+batocera = os.path.isfile("/usr/share/batocera/batocera.version")
+platform = "recalbox" if recalbox else ("batocera" if batocera else "retropie")
+expected_platform = sys.argv[2]
+destination = ("/recalbox/share/system/virtualglove/data/token" if recalbox else
+               ("/userdata/system/virtualglove/data/token" if batocera else
+                "/etc/virtualglove/token"))
 try:
+    if expected_platform != platform:
+        raise ValueError("selected platform does not match this console (detected " + platform + ")")
     with open(source, encoding="utf-8") as token_file:
         token = token_file.readline().strip()
     assert 16 <= len(token) <= 256 and not any(character.isspace() for character in token)
-    os.makedirs("/etc/virtualglove", exist_ok=True)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
     temporary = destination + ".pairing-tmp"
     with open(temporary, "w", encoding="utf-8") as token_file:
         token_file.write(token + "\\n")
-    os.chmod(temporary, 0o640)
-    os.chown(temporary, 0, grp.getgrnam("input").gr_gid)
+    if not recalbox and not batocera:
+        os.chmod(temporary, 0o640)
+        os.chown(temporary, 0, grp.getgrnam("input").gr_gid)
     os.replace(temporary, destination)
-    subprocess.check_call(["systemctl", "restart", "virtualglove-receiver.service"])
+    if recalbox:
+        subprocess.check_call([
+            "sh", "/recalbox/share/system/virtualglove/recalbox/virtualglove-service",
+            "restart-receiver",
+        ])
+    elif batocera:
+        subprocess.check_call([
+            "/userdata/system/services/VirtualGlove", "restart-receiver",
+        ])
+    else:
+        subprocess.check_call(["systemctl", "restart", "virtualglove-receiver.service"])
 finally:
     try:
         os.unlink(source)
@@ -89,20 +108,20 @@ def main() -> int:
         with sftp.file(remote_token, "wx") as token_file:
             token_file.write(str(request["token"]) + "\n")
         sftp.chmod(remote_token, 0o600)
-        command = (
-            "sudo -k -S -p '' /usr/bin/python3 -c "
-            + shlex.quote(REMOTE_PROGRAM)
-            + " "
-            + shlex.quote(remote_token)
-        )
+        python_command = ("/usr/bin/python3 -c " + shlex.quote(REMOTE_PROGRAM) + " "
+                          + shlex.quote(remote_token) + " "
+                          + shlex.quote(str(request["platform"])))
+        command = (python_command if str(request["username"]) == "root" else
+                   "sudo -k -S -p '' " + python_command)
         stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
-        stdin.write(str(request["password"]) + "\n")
+        if str(request["username"]) != "root":
+            stdin.write(str(request["password"]) + "\n")
         stdin.flush()
         stdin.channel.shutdown_write()
         status = stdout.channel.recv_exit_status()
         error = stderr.read().decode("utf-8", "replace").strip()
         if status:
-            raise RuntimeError(error.splitlines()[-1] if error else "RetroPie pairing command failed")
+            raise RuntimeError(error.splitlines()[-1] if error else "Console pairing command failed")
         client.save_host_keys(str(known_hosts))
         os.chmod(known_hosts, 0o600)
         return 0

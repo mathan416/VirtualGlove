@@ -7,8 +7,8 @@
 Use this guide to install, pair, check, and operate your VirtualGlove system.
 The **VirtualGlove Controller** is the project's camera and recognition
 device, built on an Arduino UNO Q. Replace `UNO-Q-NAME.local` with your
-VirtualGlove Controller hostname and `RETROPIE-NAME.local`
-with your Raspberry Pi hostname. Each command section identifies the machine
+VirtualGlove Controller hostname and `CONSOLE-NAME.local`
+with your RetroPie, Recalbox, Batocera, or LaunchBox host name. Each command section identifies the machine
 on which to run it. Keep passwords and pairing tokens out of this document.
 
 ## Your installation
@@ -16,7 +16,8 @@ on which to run it. Keep passwords and pairing tokens out of this document.
 | Item | Value |
 | --- | --- |
 | VirtualGlove Controller network address | `UNO-Q-NAME.local` |
-| RetroPie network address | `RETROPIE-NAME.local` |
+| Console platform | RetroPie / Recalbox / Batocera / LaunchBox |
+| Console network address | `CONSOLE-NAME.local` |
 | VirtualGlove Controller App Lab application | VirtualGlove |
 | VirtualGlove Controller application directory | `/home/arduino/ArduinoApps/virtualglove` |
 | Camera | UVC-compatible USB camera; select **Automatic — choose the connected camera** in Setup |
@@ -68,7 +69,7 @@ python3 scripts/verify-app-lab-package.py
 
 ### Prepare the VirtualGlove Controller
 
-1. Connect the VirtualGlove Controller by USB and complete its setup in App Lab. Join the same network as RetroPie and record the board's hostname.
+1. Connect the VirtualGlove Controller by USB and complete its setup in App Lab. Join the same trusted network as the console and record the board's hostname.
 2. Import `output/app-lab/VirtualGlove-Uno-Q.zip` from your computer's checkout. Open **VirtualGlove** and select **Run** to transfer and start the app and matrix sketch.
 3. Connect the camera through the powered USB hub. Follow the [Installation Guide](INSTALL_README.md) if you need help with the initial board setup.
 
@@ -90,12 +91,25 @@ to start at boot, and restarts it. Review every **FAIL** or **ACTION** result.
 The installer requires the application directory shown above. Run `exit` after
 setup to leave the VirtualGlove Controller terminal. Check Dashboard, Play, and Learn before pairing.
 
-### Install the Raspberry Pi receiver before pairing
+### Install the console receiver before pairing
 
-The Raspberry Pi needs the receiver, pairing command, game registry, and launch
-hooks before you can pair it with the VirtualGlove Controller. Run the following in a terminal
-**on the Raspberry Pi running RetroPie**. You can use a local terminal or SSH
-with your RetroPie account.
+The console needs its receiver, pairing command, game registry, and game-session
+integration before it can pair with the Controller. For a published release,
+use the platform installer from the same release as the Controller:
+
+| Console | Command and account |
+| --- | --- |
+| RetroPie | `bash install-retropie.sh --version VERSION --peer UNO-Q-NAME.local` as the normal RetroPie user |
+| Recalbox 10.x | `bash install-recalbox.sh --version VERSION --peer UNO-Q-NAME.local` as `root` |
+| Batocera 38+ | `bash install-batocera.sh --version VERSION --peer UNO-Q-NAME.local` as `root` |
+| LaunchBox x86-64 | Run `launchbox\install-launchbox.ps1` as the Windows user who runs LaunchBox |
+
+Replace `VERSION` with the same published v0.5.0 tag on both machines. The
+[Installation Guide](INSTALL_README.md#3-install-the-console) gives full commands,
+persistent paths, prerequisites, and checks.
+
+The following source-checkout path is specifically for RetroPie developers. Run
+it in a local terminal or SSH session with the normal RetroPie account.
 
 For a new installation, download the same `main` branch used on the VirtualGlove Controller:
 
@@ -108,7 +122,7 @@ cd VirtualGlove
 ```
 
 If you already have a checkout, open that directory instead of cloning again.
-Then install the RetroPie components, substituting your VirtualGlove Controller hostname:
+Then install the RetroPie components, substituting the Controller hostname:
 
 ```sh
 sudo python3 scripts/setup-machine.py retropie --peer UNO-Q-NAME.local
@@ -171,19 +185,21 @@ The terminal prompts for the VirtualGlove Controller account password if needed.
 requests a Linux halt; the tested board restarts afterward. See the shutdown
 limitation below.
 
-## Pair your RetroPie
+## Pair your console
 
 Complete both machine installations above, then use the one-time-code method:
 
-1. Open `https://UNO-Q-NAME.local:8443/setup`. In **Connect to RetroPie**, enter the console address and select **Save connection**.
-2. Continue to **Pair this Controller** in the same card, choose **One-time code (recommended)**, and select **Continue**. Pairing uses the saved console address.
+1. Open `https://UNO-Q-NAME.local:8443/setup`. In **Connection and startup**, choose RetroPie, Recalbox, Batocera, or LaunchBox, enter the console address, and select **Save connection**.
+2. Continue to **Pair this Controller**, choose **One-time code (recommended)**, and select **Continue**. Pairing uses the saved platform and address.
 3. Compare the matrix `ID` with the beginning of the browser certificate's SHA-256 fingerprint. If they match, check the confirmation box, enter the six-digit **Controller approval PIN**, and select **Continue**.
-4. On RetroPie, run `sudo /opt/virtualglove/bin/virtualglove-pair` and leave it running. Enter its 20-character **RetroPie one-time code**, then select **Pair with RetroPie**. This is not the Controller PIN.
-5. Wait for **Pairing complete**. This includes a signed receiver-token check. Check `sudo systemctl status virtualglove-receiver.service` on RetroPie; open Dashboard for controller Start/Stop and shutdown.
+4. On the console, run the one command displayed by Setup and leave it running. Enter its 20-character **Console one-time code**, then select **Pair with console**. This is not the Controller PIN.
+5. Wait for **Pairing complete**. This includes platform verification and a signed receiver-token check. Open Dashboard for controller Start/Stop and shutdown.
 
 For SSH, choose **SSH password** in the first step, complete the same Controller
-confirmation, then enter the RetroPie username and password in the final step.
-RetroPie must accept SSH password login and allow that account to run `sudo`.
+confirmation, then enter the console username and password in the final step.
+The console must accept SSH password login. RetroPie normally uses `pi` with
+`sudo`; Recalbox and Batocera normally use `root`. LaunchBox uses one-time-code
+pairing only; run its displayed PowerShell command as the Windows user who runs LaunchBox.
 The Controller does not save the password. Confirmation expires after two
 minutes; use **Start a new confirmation** after expiry or a submitted failure.
 Console and method changes are locked during the active window. Pairing alone
@@ -212,17 +228,25 @@ status readings should show the following while your hand is visible:
 With **Gestures off**, an inactive camera is normal. Select a profile on
 Dashboard or open Glove Academy to check tracking.
 
-Run these checks **on RetroPie**:
+Run the matching check **on the console**:
 
 ```sh
+# RetroPie
 sudo systemctl status virtualglove-receiver.service
 sudo systemctl status virtualglove-receiver.timer
 sudo journalctl -u virtualglove-receiver.service -n 100 --no-pager
 grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices
+# Recalbox
+sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service status
+# Batocera
+batocera-services is-enabled VirtualGlove
+/userdata/system/services/VirtualGlove status
 ```
 
-The virtual controller appears after the first authenticated packet. Select
-**Start controller** on Dashboard when you are ready to send input.
+RetroPie's virtual controller appears after the first authenticated packet.
+Recalbox, Batocera, and LaunchBox use managed Player 1 keyboard bindings instead.
+Select **Start controller** on Dashboard when ready, launch a registered game,
+and verify gameplay with both VirtualGlove and the physical joypad.
 
 ### Run the local software tests
 
@@ -335,7 +359,7 @@ hand travel. Numerical values and diagnostics remain collapsed under **Advanced*
 
 When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority.
 
-Setup begins with four status markers in Off-mode pixel order: app, console service, authenticated response, and Networking. Green means confirmed, red disconnected or not confirmed, and grey unknown. Networking reflects physical Wi-Fi or Ethernet connectivity, independently of RetroPie. These checks do not prove game delivery. Open secure Setup on port 8443 to pair; both pairing methods require the Controller matrix PIN and certificate-ID comparison.
+Setup begins with four status markers in Off-mode pixel order: app, console service, authenticated response, and Networking. Green means confirmed, red disconnected or not confirmed, and grey unknown. Networking reflects physical Wi-Fi or Ethernet connectivity, independently of the selected console. These checks do not prove game delivery. Open secure Setup on port 8443 to pair; both pairing methods require the Controller matrix PIN and certificate-ID comparison.
 
 ### Games within Setup
 
@@ -510,10 +534,11 @@ or the game's automatic profile assignment.
 
 ### Make a game use your chosen profile automatically
 
-Once a profile works well, register the game **on RetroPie**. The launch hook
-reads `/etc/virtualglove/games.json` to choose the profile each time a game starts.
+Once a profile works well, register the game through **Setup → Games**. The
+console's game-session integration reads its protected registry and chooses the
+profile each time the exact game filename starts.
 
-1. Find the game file in your RetroPie ROM folder, usually `~/RetroPie/roms/nes/`. Record its complete filename, including the extension. For example, `/home/pi/RetroPie/roms/nes/My Game (USA).zip` has the filename `My Game (USA).zip`. Use the archive filename when launching an archive, not the filename inside it.
+1. Find the game in the selected console's NES ROM folder and record its complete filename, including the extension. Use the archive filename when launching an archive, not the filename inside it.
 2. Open **Setup → Games** on the VirtualGlove Controller website and select **Download backup**.
 3. Edit the loaded JSON in the Games section.
 4. Add the filename and your chosen profile inside the existing `games` object. Keep all existing entries, separate entries with commas, and leave no comma after the last entry.
@@ -530,7 +555,9 @@ your actual filename and merge the entry into your existing file:
 }
 ```
 
-For a manual file edit outside the website, check syntax on RetroPie:
+For a manual file edit outside the website, use the platform path listed below
+and validate it with `python3 -m json.tool PATH`. Prefer Setup because it
+provides revision checks, validation, and a recoverable previous save.
 
 ```sh
 python3 -m json.tool /etc/virtualglove/games.json >/dev/null
@@ -566,9 +593,10 @@ for the recording recipes, neutral calibration, image-quality advice, and shared
 | Item | Location or name |
 | --- | --- |
 | RetroPie virtual controller | `VirtualGlove` |
-| RetroPie pairing token | `/etc/virtualglove/token` |
-| RetroPie game registry | `/etc/virtualglove/games.json` |
-| RetroPie connection settings | `/etc/virtualglove/launcher.json` |
+| RetroPie private data | `/etc/virtualglove/` |
+| Recalbox installation and private data | `/recalbox/share/system/virtualglove/` |
+| Batocera installation and private data | `/userdata/system/virtualglove/` |
+| LaunchBox installation and private data | `%LOCALAPPDATA%\VirtualGlove\` |
 | Receiver service | `virtualglove-receiver.service` |
 | Receiver startup timer | `virtualglove-receiver.timer`; starts 45 seconds after boot |
 | VirtualGlove Controller shutdown watcher | `virtualglove-system-shutdown.path` |
@@ -599,6 +627,8 @@ ls -l /home/arduino/ArduinoApps/virtualglove/data/.shutdown-enabled
 Expect `enabled`, `active`, and an existing marker file. On RetroPie, keep the
 receiver timer enabled and the receiver service disabled for direct boot
 activation. The timer starts the service after EmulationStation initializes.
+Recalbox starts through its persistent `custom.sh`; Batocera uses its enabled
+user service; LaunchBox starts the receiver in the signed-in desktop session.
 
 ## Network ports
 
@@ -606,9 +636,10 @@ activation. The timer starts the service after EmulationStation initializes.
 | --- | --- | --- |
 | TCP `8088` | Browser → VirtualGlove Controller | Dashboard, Play, Learn, Help, Setup, status, and camera stream |
 | TCP `8443` | Browser → VirtualGlove Controller | Secure Setup and pairing |
-| UDP `55355` | VirtualGlove Controller → RetroPie | Controller-state packets |
-| UDP `55356` | RetroPie → VirtualGlove Controller | Profile requests and acknowledgements |
-| TCP `55357` | VirtualGlove Controller → RetroPie | Temporary one-time-code pairing server |
+| UDP `55355` | VirtualGlove Controller → console | Controller-state packets |
+| UDP `55356` | Console → VirtualGlove Controller | Profile requests and acknowledgements |
+| TCP `55357` | VirtualGlove Controller → console | Temporary one-time-code pairing server |
+| TCP `55358` | VirtualGlove Controller → console | Authenticated game-registry service |
 
 Keep these ports on your trusted local network. Do not expose them to the internet.
 

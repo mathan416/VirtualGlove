@@ -8,13 +8,13 @@ Super Glove Ball can instead consume a native Power Glove packet through
 The distinction is what the game receives. It does not require a second camera
 system or a different hand calibration.
 
-![Shared camera and MediaPipe front end branching on RetroPie into conventional FCEUmm input or native Nestopia Power Glove input](images/architecture/end-to-end.png)
+![Shared camera and MediaPipe front end branching on the console into conventional FCEUmm input or native Nestopia Power Glove input](images/architecture/end-to-end.png)
 
 ## Follow one hand movement
 
 1. The **VirtualGlove Controller (Arduino UNO Q)** captures the newest camera frame. Older waiting frames are replaced rather than queued.
 2. MediaPipe Hands finds hand landmarks. Shared calibration and gesture processing turn them into position, depth, finger, and pose states.
-3. The Controller sends authenticated state to RetroPie. The receiver validates it and publishes the newest usable state.
+3. The Controller sends authenticated state to the paired console. Its receiver validates it and publishes the newest usable state.
 4. The chosen emulator core presents that state as the kind of controller input the game understands.
 5. The game updates its world, and the display shows the result.
 
@@ -23,7 +23,7 @@ successful send is not proof that a displayed frame has caught up.
 
 The Dashboard is an observer of this path. Its preview and optional statistics
 can be turned off without changing the coordinates or controller packets sent
-to RetroPie.
+to the paired console.
 
 ### Camera reader and buffer choices
 
@@ -43,8 +43,10 @@ assuming that the more technical reader or larger buffer count is faster.
 
 ## Joystick-style input: directions and buttons
 
-With FCEUmm, RetroPie exposes the **VirtualGlove** virtual gamepad. A profile
-maps recognized gestures to D-pad directions, A, B, Start, and Select.
+With FCEUmm, the console exposes VirtualGlove as Player 1 input. RetroPie uses
+the **VirtualGlove** virtual gamepad; Recalbox, Batocera, and LaunchBox merge
+managed keyboard bindings beside the physical Player 1 joypad. A profile maps
+recognized gestures to D-pad directions, A, B, Start, and Select.
 Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated
 presses near the boundary.
@@ -98,10 +100,10 @@ for the next fresh result. This one-result guard rejects reacquisition jumps
 without predicting a position or smoothing ordinary motion.
 
 The running core, not merely the ROM profile, decides whether this packet path
-is active. RetroPie's launch hook detects the libretro core from the running
-process and includes it in the authenticated profile heartbeat. Only
-`super_glove_ball` with `lr-nestopia-powerglove` selects native input. FCEUmm,
-another core, or an unknown core selects the ordinary joystick path.
+is active. The console's game-session integration detects the libretro core and
+includes it in the authenticated profile heartbeat. Only `super_glove_ball`
+with the separately named Nestopia (VirtualGlove) core selects native input.
+FCEUmm, another core, or an unknown core selects ordinary joystick input.
 
 | What you do | Native Super Glove Ball behavior confirmed in live play |
 | --- | --- |
@@ -136,8 +138,8 @@ without sending controls.
 
 ## Why the custom core is separate
 
-The modified core preserves stock Nestopia and leaves FCEUmm available. RetroPie
-selects it for the chosen ROM rather than changing every NES game. Its launch
+The modified core preserves stock Nestopia and leaves FCEUmm available. The
+console selects it for the chosen ROM rather than changing every NES game. Its launch
 configuration attaches the emulated Power Glove before the game's detection
 sequence begins.
 

@@ -119,13 +119,13 @@ class UdpSender:
         retries after an error so tracking and the dashboard remain responsive.
         """
         if not self.destination[0].strip():
-            self.last_error = "Configure your RetroPie destination in Connection before starting controls."
+            self.last_error = "Configure your console destination in Connection before starting controls."
             return False
         now = time.monotonic()
         if now < self._retry_at:
             return False
         if not self.token:
-            self.last_error = "Pair with RetroPie before starting controls."
+            self.last_error = "Pair with your console before starting controls."
             return False
         try:
             # Drain only a bounded number of small handshake replies; input itself

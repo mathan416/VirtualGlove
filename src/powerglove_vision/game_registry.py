@@ -72,7 +72,8 @@ def atomic_write(path: Path, text: str, mode: int = 0o600) -> None:
     fd, temporary = tempfile.mkstemp(prefix="." + path.name + ".", dir=str(path.parent))
     try:
         with os.fdopen(fd, "w") as stream:
-            os.fchmod(stream.fileno(), mode)
+            if hasattr(os, "fchmod"):
+                os.fchmod(stream.fileno(), mode)
             stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
@@ -154,7 +155,7 @@ class RegistryService:
         except ValueError as exc:
             response.update(ok=False, error=str(exc))
         except (OSError, UnicodeError):
-            response.update(ok=False, error="Cannot access the registry or its previous save. Check RetroPie setup.")
+            response.update(ok=False, error="Cannot access the registry or its previous save. Check console setup.")
         return sign_message(response, token)
 
 
@@ -197,7 +198,7 @@ def registry_request(settings: dict, operation: str, payload: dict | None = None
     token = settings.get("token", "")
     host = settings.get("receiver", "")
     if not host or len(token) < 16:
-        raise ValueError("Configure and pair your RetroPie before opening Games.")
+        raise ValueError("Configure and pair your console before opening Games.")
     url = "http://%s:%d/registry" % (resolve_ipv4(host), port)
     request_id = secrets.token_hex(16)
 
@@ -214,7 +215,7 @@ def registry_request(settings: dict, operation: str, payload: dict | None = None
                 raise ValueError("Games service response is too large.")
             result = json.loads(body)
         except (OSError, ValueError) as exc:
-            raise ValueError("Cannot reach the paired Games service. Check the console is online and update RetroPie setup.") from exc
+            raise ValueError("Cannot reach the paired Games service. Check the console is online and update its VirtualGlove setup.") from exc
         if (not isinstance(result, dict) or result.get("protocol") != PROTOCOL
                 or result.get("request_id") != request_id or not verify_message(result, token)):
             raise ValueError("Games service authentication failed. Check pairing.")
