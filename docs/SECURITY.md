@@ -116,6 +116,25 @@ the physical display requirement, accepting pairing credentials over ordinary
 HTTP, or extending the listener indefinitely weakens the intended boundary and
 requires explicit security review.
 
+## Console input boundaries
+
+On Recalbox and Batocera, the root-owned merger reads only the explicitly saved
+physical controller mapping and the receiver's bounded local datagrams. It emits
+one fixed-capability device named **VirtualGlove Merged Player 1**. The physical
+hotkey maps to a dedicated output button; VirtualGlove Select has no path to
+that button. Malformed mappings and local states are rejected, tracking timeout
+clears only the VirtualGlove source, and a physical disconnect releases only
+physical state. The device emits neutral state outside RetroArch so it cannot
+duplicate navigation in EmulationStation. Its Unix socket and controller record
+must remain inside the platform's private VirtualGlove directories.
+
+LaunchBox intentionally uses keyboard injection because no Windows virtual-pad
+or device-hiding driver is installed. Installation and each wrapped launch audit
+the eight gesture keys against RetroArch command and Hotkey Enable bindings.
+Any collision disables VirtualGlove for that launch, reports the exact setting,
+and leaves the physical XInput controller working. Foreground-process checks and
+release-on-focus-loss remain mandatory defenses against typing into other apps.
+
 ## Network exposure
 
 | Port | Protocol | Direction | Boundary |

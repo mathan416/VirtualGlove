@@ -108,6 +108,11 @@ Replace `VERSION` with the same published v0.5.0 tag on both machines. The
 [Installation Guide](INSTALL_README.md#3-install-the-console) gives full commands,
 persistent paths, prerequisites, and checks.
 
+Recalbox and Batocera select one configured physical Player 1 controller. One
+connected pad is automatic; with several, run the matching installer with
+`--list-player1-devices`, then repeat it with `--player1-device DEVICE-ID`.
+Their NES gamepad is named **VirtualGlove Merged Player 1**.
+
 The following source-checkout path is specifically for RetroPie developers. Run
 it in a local terminal or SSH session with the normal RetroPie account.
 
@@ -243,8 +248,11 @@ batocera-services is-enabled VirtualGlove
 /userdata/system/services/VirtualGlove status
 ```
 
-RetroPie's virtual controller appears after the first authenticated packet.
-Recalbox, Batocera, and LaunchBox use managed Player 1 keyboard bindings instead.
+RetroPie's separate virtual controller appears after the first authenticated
+packet. Recalbox and Batocera keep **VirtualGlove Merged Player 1** present from
+service startup; their checks confirm the selected physical pad, merged device,
+and NES joypad index. LaunchBox retains physical XInput and audits its VirtualGlove
+keys for RetroArch command/hotkey conflicts before every launch.
 Select **Start controller** on Dashboard when ready, launch a registered game,
 and verify gameplay with both VirtualGlove and the physical joypad.
 
@@ -393,7 +401,9 @@ the tracker. The elapsed time shows how long initialization has been running.
 Wait for the live camera view before calibrating.
 
 **Gestures off — no active profile** closes the camera and stops only
-VirtualGlove-generated input. The merged physical Player 1 joypad remains available.
+VirtualGlove-generated input. Recalbox/Batocera's merged physical source and
+LaunchBox's physical XInput controller remain available. Generic RetroPie keeps
+its separate physical pad only according to that system's controller assignment.
 Glove Academy temporarily opens the camera for practice and suppresses game input.
 Leaving Glove Academy restores the selected profile. **Program 14 — Physical
 controller only** also closes the camera, but retains the numbered profile and

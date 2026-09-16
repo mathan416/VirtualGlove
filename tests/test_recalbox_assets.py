@@ -25,14 +25,19 @@ class RecalboxAssetsTests(unittest.TestCase):
                 "batocera/virtualglove-core-mount"):
             self.assertTrue((ROOT / relative).stat().st_mode & 0o111, relative)
 
-    def test_service_uses_persistent_paths_and_keyboard_receiver(self):
+    def test_service_uses_persistent_merged_gamepad_and_receiver(self):
         text = (ROOT / "recalbox/virtualglove-service").read_text()
         self.assertIn("/recalbox/share/system/virtualglove", text)
         self.assertIn("powerglove_vision.$name", text)
-        self.assertIn("--output-device keyboard", text)
+        self.assertIn("merged_gamepad serve", text)
+        self.assertIn("--output-device merged-gamepad", text)
+        self.assertIn("--merged-socket", text)
+        self.assertIn('MERGED_SOCKET="$SOCKET_DIR/merged-gamepad.sock"', text)
+        self.assertIn('VIRTUALGLOVE_SOCKET_DIR:-/run/virtualglove', text)
+        self.assertNotIn('$RUN/merged-gamepad.sock', text)
+        self.assertIn("player1-controller.json", text)
         self.assertIn("/run/virtualglove/native-state", text)
-        self.assertIn('virtualglove-core-mount" start', text)
-        self.assertIn('sh "$APP/recalbox/virtualglove-core-mount" start', text)
+        self.assertIn('sh "$CORE_MOUNT" start', text)
         self.assertIn('--receiver-restart-command sh "$0" restart-receiver', text)
         self.assertIn('start-stop-daemon -S -b -m -p "$RUN/$name.pid"', text)
         self.assertIn('-x /usr/bin/python3 --', text)
@@ -42,12 +47,11 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)
 
-    def test_nes_override_maps_only_keyboard_side_of_player_one(self):
+    def test_nes_override_is_runtime_managed_without_keyboard_bindings(self):
         text = (ROOT / "recalbox/retroarch-nes.cfg").read_text()
         for key in ("a", "b", "start", "select", "up", "down", "left", "right"):
-            self.assertIn("input_player1_" + key + " = ", text)
-        self.assertNotIn("_btn", text)
-        self.assertNotIn("joypad_index", text)
+            self.assertNotIn("input_player1_" + key + " = ", text)
+        self.assertIn("merged Player 1", text)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()
@@ -64,6 +68,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         event = (ROOT / "batocera/virtualglove-game").read_text()
         self.assertIn("VIRTUALGLOVE_MONITOR=0", service)
         self.assertIn("VIRTUALGLOVE_NATIVE_STATE=/run/virtualglove/native-state", service)
+        self.assertIn('VIRTUALGLOVE_CORE_MOUNT="$core_mount"', service)
         self.assertIn("virtualglove-core-mount", service)
         self.assertIn("/userdata/system/virtualglove", service)
         self.assertIn("gameStart", event)

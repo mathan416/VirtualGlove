@@ -261,7 +261,7 @@ class ArchiveTests(unittest.TestCase):
             console_members = {
                 'recalbox': (
                     'src/powerglove_vision/console_monitor.py',
-                    'src/powerglove_vision/linux_uinput.py',
+                    'src/powerglove_vision/merged_gamepad.py',
                     'recalbox/virtualglove-service',
                     'recalbox/virtualglove-core-mount',
                     'recalbox/retroarch-nes.cfg',
@@ -275,7 +275,7 @@ class ArchiveTests(unittest.TestCase):
                     'python/ssh_pair.py',
                 ),
                 'batocera': (
-                    'src/powerglove_vision/linux_uinput.py',
+                    'src/powerglove_vision/merged_gamepad.py',
                     'recalbox/virtualglove-service',
                     'batocera/VirtualGlove',
                     'batocera/virtualglove-game',
@@ -323,7 +323,7 @@ class ArchiveTests(unittest.TestCase):
                 archive = self.package(directory, machine=machine)
                 source = installer.unpack(
                     archive, Path(directory) / 'extract', machine, 'dev-test')
-                self.assertTrue((source / 'src/powerglove_vision/linux_uinput.py').is_file())
+                self.assertTrue((source / 'src/powerglove_vision/merged_gamepad.py').is_file())
                 self.assertTrue((source / machine).is_dir())
 
     def test_loading_and_staging_extracted_setup_creates_no_generated_files(self):

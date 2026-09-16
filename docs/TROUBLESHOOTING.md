@@ -137,11 +137,23 @@ adding a runtime setting to `device.json`.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
 6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
 
-On RetroPie, confirm the `VirtualGlove` input device and its Player 1 mapping.
-On Recalbox, Batocera, and LaunchBox, keep the installer-managed Player 1
-keyboard bindings alongside the physical joypad. Verify the matching platform
-service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
+On generic RetroPie, confirm the separate `VirtualGlove` input device and its
+Player 1 mapping. On Recalbox or Batocera, run the installation check and confirm
+the selected physical controller is connected, **VirtualGlove Merged Player 1**
+exists, and its current index is assigned to NES Player 1. The merged device is
+intentionally neutral in EmulationStation. On LaunchBox, inspect the reported
+input warning: a VirtualGlove key assigned to a RetroArch command or Hotkey
+Enable disables gestures for that launch but leaves physical XInput working.
+Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
 before editing RetroArch settings.
+
+If a Recalbox/Batocera update reports several possible Player 1 controllers,
+run the installer with `--list-player1-devices`, identify the intended pad, and
+repeat it with `--player1-device DEVICE-ID`. Two identical, non-serialized pads
+are not guessed. If the selected pad disconnects during play, only its held
+state releases; VirtualGlove remains available. Reconnect that saved pad, or
+explicitly select its replacement. Seeing no response from the merged device in
+EmulationStation is expected—it deliberately becomes active only in RetroArch.
 
 A filename such as `Gun.Smoke (USA).7z` must keep its punctuation in the registry
 even though the displayed game name is **Gun Smoke**. See

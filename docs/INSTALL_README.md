@@ -54,11 +54,23 @@ validate the intended operating system before changing it:
 | Batocera 38+ | `install-batocera.sh` | `/userdata/system/virtualglove` | supported `gameStart`/`gameStop` script events |
 | LaunchBox | `launchbox/install-launchbox.ps1` | `%LOCALAPPDATA%\VirtualGlove` | LaunchBox RetroArch wrapper |
 
-Recalbox, Batocera, and LaunchBox publish VirtualGlove as keyboard input mapped into
-RetroArch Player 1. The existing physical Player 1 joypad stays assigned and
-usable at the same time. Their installers change only the eight managed
-Player 1 keyboard bindings; Player 2 and unrelated RetroArch settings are
-preserved.
+Recalbox and Batocera publish a separate Linux gamepad named **VirtualGlove
+Merged Player 1**. It combines one explicitly selected physical controller with
+VirtualGlove, and NES RetroArch uses that one merged device. The original
+physical controller continues to operate EmulationStation without duplicate
+navigation. LaunchBox retains physical XInput Player 1 plus an audited keyboard
+bridge. Player 2 and unrelated RetroArch settings are preserved on every target.
+
+Generic RetroPie continues to publish a separate **VirtualGlove** gamepad. The
+cabinet's combined Player 1 merger is a specialized configuration and is not
+silently installed on other RetroPie systems.
+
+In the Recalbox/Batocera merger, a physical direction or stick axis wins while
+it is active and ordinary buttons combine across both sources. The physical
+hotkey has its own merged-device button; VirtualGlove Select can never enable
+RetroArch hotkeys. Unplugging the pad releases only its held controls and leaves
+VirtualGlove active until the saved controller reconnects. The merged device is
+neutral outside RetroArch so EmulationStation sees no duplicate navigation.
 
 Programs 1–14, A–I, Bad Street Brawler, and Super Glove Ball can use the
 standard FCEUmm joystick path. Recalbox, Batocera, and LaunchBox also support native Super
@@ -233,7 +245,9 @@ For standard FCEUmm games, VirtualGlove injects arrow, X, Z, Enter, and Right
 Shift keys into RetroArch Player 1. RetroArch's normal XInput/autoconfiguration
 remains enabled, so the physical Player 1 joypad works at the same time. Keys
 are emitted only while `retroarch.exe` is foreground and are released when
-focus moves elsewhere. Native
+focus moves elsewhere. The installer and wrapper audit those keys against
+RetroArch commands and Hotkey Enable. Any collision disables VirtualGlove for
+that launch, records the exact setting, and leaves XInput and the game active. Native
 Super Glove Ball instead selects the emulated Power Glove peripheral; its
 physical-joypad behavior is not claimed until it is validated on Windows. The
 receiver runs in the signed-in user's desktop session; it is not installed as
@@ -443,8 +457,22 @@ Replace `VERSION` with the published tag and `virtualglove.local` if the
 Controller has a different saved name or address. Do not add `sudo`; Recalbox's
 SSH session already runs as root. The installer places all managed files in
 `/recalbox/share/system/virtualglove`, adds a bounded startup/process monitor to
-the persistent `custom.sh`, and changes only VirtualGlove's eight Player 1
-keyboard bindings. The physical Player 1 joypad remains enabled.
+the persistent `custom.sh`, and asks which configured gamepad is physical Player
+1. If exactly one configured gamepad is connected it is selected automatically.
+If several are present, list their stable IDs and repeat the install with one:
+
+```sh
+bash install-recalbox.sh --version VERSION --list-player1-devices
+bash install-recalbox.sh --version VERSION --peer virtualglove.local \
+  --player1-device DEVICE-ID
+```
+
+The saved identity and EmulationStation mapping do not depend on a changing
+`/dev/input/event*` number. At boot, **VirtualGlove Merged Player 1** is created
+before a game starts and only the NES Player 1 joypad index is managed. An
+upgrade removes only the former eight VirtualGlove keyboard values and backs up
+the displaced NES configuration. ROMs, saves, Player 2, and unrelated settings
+remain unchanged.
 
 Run the same command without `--peer` for later updates. To check without
 changing anything:
@@ -470,8 +498,11 @@ bash install-batocera.sh --version VERSION --peer virtualglove.local
 
 The installer stores managed files in `/userdata/system/virtualglove`, enables
 Batocera's persistent **VirtualGlove** user service, and installs supported
-`gameStart`/`gameStop` lifecycle hooks. It changes only VirtualGlove's eight
-Player 1 keyboard bindings, leaving the physical Player 1 joypad enabled.
+`gameStart`/`gameStop` lifecycle hooks. Controller selection follows Recalbox:
+one configured gamepad is automatic; otherwise use
+`--list-player1-devices` and `--player1-device DEVICE-ID`. Batocera creates
+**VirtualGlove Merged Player 1** before RetroArch and manages only its NES Player
+1 assignment. The original physical controller remains the frontend controller.
 
 Run the same command without `--peer` for later updates. To check without
 changing anything:
@@ -505,8 +536,12 @@ In LaunchBox, add **VirtualGlove RetroArch** as an emulator. Set its application
 path to `%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`,
 associate Nintendo Entertainment System, and pass only the ROM path. FCEUmm
 keeps RetroArch's physical XInput Player 1 controller while VirtualGlove adds
-keyboard controls to the same player. The receiver runs only in the signed-in
-desktop session.
+keyboard controls to the same player. Installation and every wrapped launch
+audit the effective RetroArch command and Hotkey Enable bindings. If `Up`,
+`Down`, `Left`, `Right`, `X`, `Z`, `Enter`, or Right Shift conflicts,
+VirtualGlove is disabled for that launch and the exact conflict is reported;
+the physical XInput controller and game remain usable. The receiver runs only
+in the signed-in desktop session.
 
 ## 4. Pair the devices
 
@@ -619,7 +654,7 @@ changes take effect only after updating both the console and Controller.
 
 1. On Dashboard, select a profile, wait for the camera, and show your hand. On first use, the app collects a neutral reference automatically. Use **Center hand** if your resting position produces unwanted movement or your camera/playing position changed. Hold a relaxed, open hand still at the intended center and distance until the button reports completion.
 2. Select **Start controller**. This arms authenticated output; delivery begins only for an active registered game or intentional manual profile.
-3. Verify the console receiver using its platform check above. On RetroPie, `grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices` should show the **VirtualGlove** device. Recalbox, Batocera, and LaunchBox merge VirtualGlove keyboard bindings into RetroArch Player 1 instead of adding that Linux gamepad device.
+3. Verify the console receiver using its platform check above. On RetroPie, `grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices` should show the separate **VirtualGlove** device. On Recalbox or Batocera it should show **VirtualGlove Merged Player 1** and the installation check should confirm its current NES joypad index. LaunchBox reports whether its gesture keys are free of command/hotkey collisions.
 
 For a visual calibration check, open **Ports → VirtualGlove Calibration Test**.
 The utility selects native coordinate delivery only while it is open. The
@@ -628,7 +663,7 @@ fresh calibrated sample. A red X means tracking, calibration, pairing, or the
 sample's freshness is not ready. Adjust center or **Movement reach** on the
 Controller, then reopen or return to the test. Exit normally to release the
 test profile.
-4. Use the physical controller to open RetroArch. On RetroPie, confirm the installed **VirtualGlove** Player 1 mapping. On Recalbox, Batocera, and LaunchBox, keep the physical Player 1 controller and the installer-managed keyboard bindings together.
+4. Use the physical controller to open RetroArch. On generic RetroPie, confirm the separate **VirtualGlove** mapping. On Recalbox and Batocera, confirm NES Player 1 is **VirtualGlove Merged Player 1** while EmulationStation still responds only to the original pad. On LaunchBox, keep physical XInput and the conflict-audited keyboard mappings together.
 5. Test D-pad, A, B, Start, and Select in a registered game, then confirm the physical joypad still works. Do not replace the entire RetroArch configuration to repair one binding.
 
 For the first test, confirm the selected Program's control style rather than

@@ -20,6 +20,8 @@ $Token = Join-Path $DataRoot "token"
 $Settings = Join-Path $DataRoot "launcher.json"
 $NativeState = Join-Path $InstallRoot "run\native-state.bin"
 $RetroConfig = Join-Path $LaunchBoxFiles "retroarch-nes.cfg"
+$RetroMainConfig = Join-Path $RetroArchRoot "retroarch.cfg"
+$InputWarning = Join-Path $DataRoot "input-warning.txt"
 
 if (-not [Environment]::Is64BitOperatingSystem) { throw "LaunchBox support requires 64-bit Windows." }
 if (-not (Test-Path $LaunchBoxRoot -PathType Container)) { throw "LaunchBox folder was not found." }
@@ -94,11 +96,18 @@ $Config = [ordered]@{
     native_core = $Native
     native_state = $NativeState
     retroarch_config = $RetroConfig
+    retroarch_main_config = $RetroMainConfig
+    input_warning = $InputWarning
     heartbeat_seconds = 2.0
     lease_seconds = 6.0
 }
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($Settings, ($Config | ConvertTo-Json), $Utf8NoBom)
+
+& $Python -m powerglove_vision.retroarch_hotkeys --config $RetroMainConfig --config $RetroConfig
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "VirtualGlove keyboard input will stay disabled until the reported RetroArch hotkey conflict is removed. The physical controller remains usable."
+}
 
 & $Python -m powerglove_vision.launchbox_runtime ensure --settings $Settings
 

@@ -168,7 +168,7 @@ def unpack(archive, destination, machine, version):
                       "uno-q/virtualglove-camera-recovery.path", "uno-q/virtualglove-camera-recovery.service"]
                      if machine == "uno-q" else ([
                          "src/powerglove_vision/console_monitor.py",
-                         "src/powerglove_vision/linux_uinput.py",
+                         "src/powerglove_vision/merged_gamepad.py",
                          "recalbox/virtualglove-service",
                          "recalbox/virtualglove-core-mount",
                          "recalbox/retroarch-nes.cfg",
@@ -181,7 +181,7 @@ def unpack(archive, destination, machine, version):
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "python/ssh_pair.py",
                      ] if machine == "recalbox" else ([
-                         "src/powerglove_vision/linux_uinput.py",
+                         "src/powerglove_vision/merged_gamepad.py",
                          "src/powerglove_vision/retropie_hook.py",
                          "recalbox/virtualglove-service",
                          "batocera/VirtualGlove",
@@ -480,11 +480,16 @@ def main(argv=None):
     parser.add_argument("--version", required=True)
     parser.add_argument("--peer")
     parser.add_argument("--hostname")
+    parser.add_argument("--player1-device")
+    parser.add_argument("--list-player1-devices", action="store_true")
     args = parser.parse_args(argv)
     setup = None
     try:
         if args.machine != "uno-q" and args.hostname is not None:
             raise ValueError("--hostname applies only to the VirtualGlove Controller installer")
+        if ((args.player1_device or args.list_player1_devices) and
+                args.machine not in ("recalbox", "batocera")):
+            raise ValueError("Player 1 selection applies only to Recalbox and Batocera")
         existing_install = APP.exists() if args.machine == "uno-q" else False
         selected_hostname = (select_controller_hostname(args.hostname, existing_install)
                              if args.machine == "uno-q" else None)
@@ -498,6 +503,11 @@ def main(argv=None):
             setup = load_setup(source)
             if args.peer:
                 setup.valid_host(args.peer)
+            if args.list_player1_devices:
+                if args.machine not in ("recalbox", "batocera"):
+                    raise ValueError("--list-player1-devices applies only to Recalbox and Batocera")
+                setup.list_player1_devices(args.machine)
+                return 0
             launcher_exists = (retropie_launcher_exists() if args.machine == "retropie" else
                                (RECALBOX_LAUNCHER.is_file() if args.machine == "recalbox" else
                                 (BATOCERA_LAUNCHER.is_file() if args.machine == "batocera" else True)))
@@ -522,9 +532,9 @@ def main(argv=None):
                 setup.install_retropie(args.peer)
                 setup.configure_games(confirm)
             elif args.machine == "recalbox":
-                setup.install_recalbox(args.peer)
+                setup.install_recalbox(args.peer, args.player1_device)
             else:
-                setup.install_batocera(args.peer)
+                setup.install_batocera(args.peer, args.player1_device)
             report = setup.Report()
             {"uno-q": setup.check_unoq, "retropie": setup.check_retropie,
              "recalbox": setup.check_recalbox,

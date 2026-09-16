@@ -43,9 +43,12 @@ assuming that the more technical reader or larger buffer count is faster.
 
 ## Joystick-style input: directions and buttons
 
-With FCEUmm, the console exposes VirtualGlove as Player 1 input. RetroPie uses
-the **VirtualGlove** virtual gamepad; Recalbox, Batocera, and LaunchBox merge
-managed keyboard bindings beside the physical Player 1 joypad. A profile maps
+With FCEUmm, the console exposes VirtualGlove as Player 1 input. Generic RetroPie
+uses a separate **VirtualGlove** virtual gamepad. Recalbox and Batocera expose
+**VirtualGlove Merged Player 1**, combining a selected physical controller and
+gestures in one NES gamepad while leaving the original pad in charge of the
+frontend. LaunchBox retains physical XInput plus conflict-audited keyboard
+input. A profile maps
 recognized gestures to D-pad directions, A, B, Start, and Select.
 Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated
@@ -71,6 +74,11 @@ Program 13 emits gesture-based A/B and leaves D-pad movement to the merged
 physical Player 1 controller; Program 14 closes the camera and emits no
 VirtualGlove controls while keeping the game session visible. The detailed
 gesture and game tables are in the [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14).
+
+That same-player hybrid is automatic on Recalbox/Batocera through their merged
+gamepad and on LaunchBox through physical XInput plus audited keys. Generic
+RetroPie intentionally installs a separate VirtualGlove gamepad; use its normal
+controller assignment or an explicitly configured local merger.
 
 <!-- PAGEBREAK -->
 

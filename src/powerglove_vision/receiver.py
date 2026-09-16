@@ -114,9 +114,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--native-state", type=Path, default=DEFAULT_NATIVE_STATE_PATH,
                         help="latest validated sample for the custom Nestopia core")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--output-device", choices=("gamepad", "keyboard", "windows-keyboard"),
+    parser.add_argument("--output-device", choices=("gamepad", "merged-gamepad", "windows-keyboard"),
                         default="gamepad",
-                        help="publish a gamepad or merge keys beside physical Player 1")
+                        help="publish a gamepad, feed a persistent merger, or inject audited Windows keys")
+    parser.add_argument("--merged-socket", type=Path,
+                        help="local merged-gamepad daemon socket")
     return parser
 
 
@@ -129,6 +131,11 @@ def main() -> int:
     # Keep an idle virtual controller out of frontend startup. Create the real
     # uinput device only after an authenticated controller packet arrives.
     device = DryRunDevice() if args.dry_run else None
+    if not args.dry_run and args.output_device == "merged-gamepad":
+        if args.merged_socket is None:
+            raise ValueError("merged-gamepad requires --merged-socket")
+        from .merged_gamepad import MergedGamepadClient
+        device = MergedGamepadClient(args.merged_socket)
     native = None
     try:
         native = NativeStateWriter(args.native_state)
@@ -200,9 +207,7 @@ def main() -> int:
                         from .windows_input import WindowsKeyboardDevice
                         device = WindowsKeyboardDevice()
                     else:
-                        from .linux_uinput import UInputKeyboardDevice
-                        device = (UInputKeyboardDevice() if args.output_device == "keyboard"
-                                  else UInputDevice())
+                        device = UInputDevice()
                 device.write_state(state)
                 if native is not None and not native_first:
                     native_started_ns = time.monotonic_ns() if received_ns else 0

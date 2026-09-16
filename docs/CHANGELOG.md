@@ -37,10 +37,11 @@ authoritative record for line-level and file-level history.
   and Batocera 38+ installation targets. Recalbox uses its persistent share and
   supported boot hook; Batocera uses its supported user-service and
   `gameStart`/`gameStop` script interfaces.
-- Added a dependency-free Linux `uinput` keyboard publisher so VirtualGlove
-  gestures can feed RetroArch Player 1 while the player's physical joypad
-  remains assigned to that same port. The existing RetroPie gamepad publisher
-  remains the default and unchanged.
+- Added a dependency-free Recalbox/Batocera Player 1 merger. It translates one
+  selected physical controller's EmulationStation mapping, combines it with
+  VirtualGlove in a persistent **VirtualGlove Merged Player 1** gamepad, keeps
+  the physical hotkey isolated from VirtualGlove Select, and remains neutral in
+  the frontend. The generic RetroPie gamepad publisher remains unchanged.
 - Added a hook-free RetroArch game monitor for Recalbox, plus authenticated
   SSH pairing paths that recognize RetroPie, Recalbox, and Batocera persistent
   token and service locations.
@@ -84,9 +85,15 @@ authoritative record for line-level and file-level history.
   update, Player 1 coexistence, native-core fallback, and acceptance boundaries;
   and replaced RetroPie-only language where the behavior is shared.
 - Extended release-package generation and validation with separate Recalbox
-  and Batocera installers. Console updates preserve tokens, game registries,
-  custom startup scripts, RetroArch settings outside the eight managed Player
-  1 keyboard bindings, ROMs, saves, and physical-controller configuration.
+  and Batocera installers. Fresh installs select a stable physical Player 1
+  identity; updates replace the former eight managed keyboard values with only
+  the merged NES joypad assignment. Tokens, game registries, custom startup
+  scripts, unrelated RetroArch settings, ROMs, saves, and controller mappings
+  are preserved.
+- LaunchBox now audits its eight gesture keys against effective RetroArch command
+  and Hotkey Enable bindings during installation and before every wrapped game.
+  A conflict disables VirtualGlove only for that launch, reports the exact
+  setting, and leaves the physical XInput controller and game running.
 - Required executable metadata on every packaged Batocera runtime entry point.
   Recalbox entry points are invoked explicitly through `sh` because its
   persistent exFAT share intentionally mounts files without execute bits.
@@ -96,6 +103,13 @@ authoritative record for line-level and file-level history.
 
 ### Fixed
 
+- Recalbox and Batocera now project authenticated controller frames onto the
+  merged gamepad's exact input contract. Recognition-only button fields no
+  longer cause otherwise valid directions and buttons to be discarded.
+- Merged Player 1 now translates the selected physical controller's RetroArch
+  hotkey actions onto its canonical buttons. The physical Hotkey Enable button
+  remains isolated from VirtualGlove Select, while normal exit, menu, state,
+  screenshot, recording, and axis-based hotkey combinations keep working.
 - The shared Controller Dashboard now replaces an unavailable camera stream
   with clear USB-camera guidance instead of repeatedly retrying a broken image,
   consistently for RetroPie, Recalbox, Batocera, and LaunchBox consoles.

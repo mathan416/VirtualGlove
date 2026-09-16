@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("setup_machine", ROOT / "scripts/setup-machine.py")
@@ -128,16 +128,38 @@ class SetupTests(unittest.TestCase):
         self.assertIn('sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service "$1"', updated)
         self.assertEqual(setup.recalbox_custom_hook(updated), updated)
 
-    def test_recalbox_retroarch_merge_is_bounded_and_idempotent(self):
-        existing = ('video_smooth = "false"\ninput_player1_a = "q"\n'
-                    'input_player2_a = "v"\n')
-        managed = (ROOT / "recalbox/retroarch-nes.cfg").read_text()
-        updated = setup.merge_retroarch_keys(existing, managed)
-        self.assertIn('video_smooth = "false"', updated)
-        self.assertIn('input_player2_a = "v"', updated)
-        self.assertIn('input_player1_a = "x"', updated)
-        self.assertNotIn('input_player1_a = "q"', updated)
-        self.assertEqual(setup.merge_retroarch_keys(updated, managed), updated)
+    def test_player1_device_listing_uses_stable_ids(self):
+        module = Mock()
+        module.controller_candidates.return_value = [
+            {"id": "abc123", "name": "Configured Pad"}
+        ]
+        with patch.object(setup, "merged_controller_module", return_value=module), \
+                patch("builtins.print") as output:
+            setup.list_player1_devices("recalbox")
+        output.assert_called_once_with("abc123  Configured Pad")
+
+    def test_saved_player1_controller_must_belong_to_current_platform(self):
+        module = Mock()
+        module.load_controller.return_value = {"platform": "recalbox"}
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(setup, "merged_controller_module", return_value=module), \
+                patch.object(
+                    setup, "merged_controller_paths",
+                    return_value=(Path(directory) / "es_input.cfg",
+                                  Path(directory) / "player1-controller.json"),
+                ):
+            (Path(directory) / "player1-controller.json").write_text("{}")
+            with self.assertRaisesRegex(ValueError, "belongs to recalbox"):
+                setup.configure_merged_player1("batocera")
+
+    def test_check_mode_never_runs_an_installer(self):
+        with patch.object(setup.sys, "argv", ["setup-machine.py", "recalbox", "--check"]), \
+                patch.object(setup.sys, "platform", "linux"), \
+                patch.object(setup, "install_recalbox") as install, \
+                patch.object(setup, "check_recalbox"), \
+                patch.object(setup.Report, "finish", return_value=0):
+            self.assertEqual(setup.main(), 0)
+        install.assert_not_called()
 
     def test_files_are_backed_up_and_tokens_preserved(self):
         with tempfile.TemporaryDirectory() as directory:

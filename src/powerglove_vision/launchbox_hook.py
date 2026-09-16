@@ -16,12 +16,14 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 import time
 import uuid
 from pathlib import Path
 from typing import Callable
 
 from .profile_control import load_registry, read_token, select_profile_settings, send_request
+from .retroarch_hotkeys import conflicts as hotkey_conflicts, format_conflicts
 
 
 SUPPORTED_ROM_EXTENSIONS = {".nes", ".zip", ".7z"}
@@ -80,6 +82,27 @@ def run_game(
         # A damaged or unavailable optional registry must not turn LaunchBox
         # into a game-launch blocker. Fall back to ordinary FCEUmm with no lease.
         selection = None
+    conflict = hotkey_conflicts([
+        Path(settings.get("retroarch_main_config", Path(settings["retroarch"]).with_name("retroarch.cfg"))),
+        Path(settings["retroarch_config"]),
+    ]) if settings.get("retroarch_config") else []
+    if conflict:
+        message = "VirtualGlove input disabled for this launch: " + format_conflicts(conflict)
+        print(message, file=sys.stderr)
+        warning = settings.get("input_warning")
+        if warning:
+            try:
+                Path(warning).write_text(message + "\n")
+            except OSError:
+                pass
+        selection = None
+    elif settings.get("input_warning"):
+        try:
+            Path(settings["input_warning"]).unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
     command, emulator = launch_command(settings, rom, selection)
     environment = os.environ.copy()
     environment["VIRTUALGLOVE_NATIVE_STATE"] = str(settings.get(

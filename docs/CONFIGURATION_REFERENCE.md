@@ -26,8 +26,8 @@ file the running system reads.
 | VirtualGlove Controller Setup page | Console platform and address, controller port, startup profile, camera, and pairing token | Browser Setup page |
 | VirtualGlove Controller application files | Gesture sensitivity and advanced runtime defaults | Edit only when tuning is required |
 | RetroPie `/etc/virtualglove/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Protected files on RetroPie |
-| Recalbox `/recalbox/share/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Persistent Recalbox share |
-| Batocera `/userdata/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Persistent Batocera user data |
+| Recalbox `/recalbox/share/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, receiver token, and selected physical Player 1 identity/mapping | Installer or persistent Recalbox share |
+| Batocera `/userdata/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, receiver token, and selected physical Player 1 identity/mapping | Installer or persistent Batocera user data |
 | LaunchBox `%LOCALAPPDATA%\VirtualGlove\data\` | VirtualGlove Controller address, exact-ROM profiles, RetroArch paths, and receiver token | Current Windows user |
 
 The examples under the repository's `config/` directory are installation
@@ -507,9 +507,10 @@ select an active profile or open Glove Academy. An active startup profile reques
 capture automatically after preloading. The player's explicit controller choice is
 restored as **armed** or **stopped**, but an armed worker does not transmit until a
 live registered game session or intentional manual Dashboard profile exists.
-Gestures off affects only VirtualGlove-generated input; the merged physical
-Player 1 joypad on RetroPie remains available. **Program 14 — Physical controller
-only** has the same neutral camera/output behavior while deliberately retaining
+Gestures off affects only VirtualGlove-generated input. Recalbox/Batocera's
+merged physical source and LaunchBox's physical XInput controller remain
+available; generic RetroPie follows its separate gamepad assignments. **Program
+14 — Physical controller only** has the same neutral camera/output behavior while deliberately retaining
 the numbered profile and authenticated registered-game session.
 
 Activation waits for any unfinished preload, verifies the saved model, opens
@@ -1822,6 +1823,8 @@ existing `root` login on Recalbox or Batocera. `--check` performs read-only chec
 | `MACHINE` | Required | `retropie`, `recalbox`, `batocera`, or `uno-q`; selects the machine to install or inspect. |
 | `--peer HOST` | None | Required for a new console launcher configuration; supplies the VirtualGlove Controller hostname or IPv4 address. Existing launcher settings are preserved. On VirtualGlove Controller, it prints guidance but does not change the saved receiver address. |
 | `--check` | Off | Checks the existing installation without installing, restarting, or changing it. |
+| `--list-player1-devices` | Off | Recalbox/Batocera only. Lists configured, connected gamepads with stable selection IDs and installs nothing. |
+| `--player1-device ID` | Automatic only when exactly one pad is available | Recalbox/Batocera only. Selects or replaces the physical controller merged into NES Player 1. Use an ID from `--list-player1-devices`. |
 | `--wifi-status-only` | Off | With `uno-q`, install/update only the unprivileged Wi-Fi status sampler. Cannot be combined with `--check`. Normal setup and Wi-Fi deployment include it automatically. |
 | `-h`, `--help` | — | Prints usage and exits. |
 
@@ -2758,10 +2761,17 @@ Recalbox installs under `/recalbox/share/system/virtualglove`, adds one
 idempotent call to the persistent `custom.sh`, and observes RetroArch through
 `/proc` because Recalbox does not expose Batocera's game-event interface.
 Batocera installs under `/userdata/system/virtualglove` and uses its supported
-user-service and `gameStart`/`gameStop` script locations. Both merge only the
-eight VirtualGlove Player 1 keyboard bindings into the NES append configuration;
-the physical Player 1 joypad, Player 2, ROMs, saves, and unrelated settings are
-preserved. Their FCEUmm path supports every joystick profile. Batocera additionally
+user-service and `gameStart`/`gameStop` script locations. Both save one selected
+controller's stable identity and EmulationStation mapping in
+`data/player1-controller.json`. Their boot service creates **VirtualGlove Merged
+Player 1**, keeps it neutral outside RetroArch, and updates only the NES Player 1
+joypad index. Physical input has per-axis priority, buttons combine, and only the
+physical hotkey can assert the dedicated Hotkey Enable button. A disconnect
+releases the physical source without disabling VirtualGlove; the saved controller
+reconnects automatically. Player 2, ROMs, saves, frontend control, and unrelated
+settings are preserved. Upgrades remove only the eight former managed keyboard
+values and back up the previous NES append configuration. Their FCEUmm path
+supports every joystick profile. Batocera additionally
 supports the separately named `nestopia_powerglove` core for native Super Glove
 Ball. Recalbox also accepts only a core whose target/version manifest matches
 the running image. Batocera's core must be cross-built with the exact Batocera target toolchain, then is

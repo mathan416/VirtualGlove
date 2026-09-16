@@ -93,7 +93,7 @@ verify the camera and learn the gestures before debugging game delivery.
 1. Make sure the selected console already plays an NES game with its conventional controller.
 2. Provision the Controller using Arduino's supported App Lab workflow. Arrange its power, powered hub/dock, and camera according to the hardware guidance.
 3. Put both machines on the same reachable LAN. A USB Ethernet link can be used alongside Wi-Fi; the addresses may differ. Record their hostnames and current addresses.
-4. Follow the [Installation Guide](INSTALL_README.md) for matching software on both machines. Use its maintained commands rather than copying an old release command from a forum post.
+4. Follow the [Installation Guide](INSTALL_README.md) for matching software on both machines. Use its maintained commands rather than copying an old release command from a forum post. Recalbox/Batocera also ask which configured pad is physical Player 1; identify it before installation when several controllers are attached.
 5. Open Glove Academy, choose your player, and verify that the whole hand stays visible. Work through the sixteen lessons and save your centre.
 6. In Setup, select and save the console platform and address, then pair. Every method requires the Controller's matrix PIN and certificate-ID check. LaunchBox uses one-time-code pairing only; the Linux consoles may also use SSH password pairing.
 7. Start with a standard game mapping. Try native Super Glove Ball after ordinary delivery works, using the [Gameplay Guide](GAMEPLAY_GUIDE.md).

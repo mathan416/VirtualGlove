@@ -631,6 +631,11 @@ merged physical controller's movement and menus.
 provide the two action buttons while the merged physical Player 1 controller
 supplies movement or menu combinations. Shared gesture Start, Select, and Menu
 Guard remain available, but camera movement never sends a D-pad direction.
+Recalbox and Batocera provide this combined Player 1 automatically through
+**VirtualGlove Merged Player 1**; LaunchBox combines physical XInput with its
+audited keys. Generic RetroPie exposes VirtualGlove as a separate gamepad, so a
+same-player hybrid requires an explicit local controller merger such as the
+cabinet's specialized configuration.
 
 **First round:**
 
@@ -659,6 +664,8 @@ authenticated game session and physical Player 1 controller available.
 temporarily for manual menu or password entry. It preserves the visible profile
 and authenticated game session but neutralizes VirtualGlove D-pad, A, B, Start,
 and Select. No calibration or player data is erased.
+The physical pad remains in NES Player 1 automatically on Recalbox, Batocera,
+and LaunchBox. On generic RetroPie, verify its separate controller assignment.
 
 **First round:**
 

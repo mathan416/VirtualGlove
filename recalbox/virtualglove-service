@@ -12,7 +12,12 @@ APP="${VIRTUALGLOVE_ROOT:-/recalbox/share/system/virtualglove}"
 CONFIG="$APP/data"
 RUN="$APP/run"
 LOG="$APP/log"
+SOCKET_DIR="${VIRTUALGLOVE_SOCKET_DIR:-/run/virtualglove}"
+MERGED_SOCKET="$SOCKET_DIR/merged-gamepad.sock"
 NATIVE_STATE="${VIRTUALGLOVE_NATIVE_STATE:-/run/virtualglove/native-state}"
+CONTROLLER_CONFIG="$CONFIG/player1-controller.json"
+RETROARCH_CONFIG="${VIRTUALGLOVE_RETROARCH_CONFIG:-/recalbox/share/system/configs/retroarch/nes.cfg}"
+CORE_MOUNT="${VIRTUALGLOVE_CORE_MOUNT:-$APP/recalbox/virtualglove-core-mount}"
 export PYTHONPATH="$APP/src"
 MONITOR="${VIRTUALGLOVE_MONITOR:-1}"
 
@@ -55,16 +60,29 @@ stop_one() {
 }
 
 start_all() {
-    mkdir -p "$RUN" "$LOG" "$(dirname "$NATIVE_STATE")"
-    sh "$APP/recalbox/virtualglove-core-mount" start || {
+    mkdir -p "$RUN" "$LOG" "$SOCKET_DIR" "$(dirname "$NATIVE_STATE")"
+    sh "$CORE_MOUNT" start || {
         echo "VirtualGlove native core overlay could not be prepared" >&2
         return 1
     }
+    valid_pid merged_gamepad || rm -f "$MERGED_SOCKET"
+    start_one merged_gamepad serve --controller-config "$CONTROLLER_CONFIG" \
+        --retroarch-config "$RETROARCH_CONFIG" --socket "$MERGED_SOCKET"
+    count=0
+    while [ ! -S "$MERGED_SOCKET" ] && valid_pid merged_gamepad && [ "$count" -lt 50 ]; do
+        sleep 0.1
+        count=$((count + 1))
+    done
+    if [ ! -S "$MERGED_SOCKET" ]; then
+        echo "VirtualGlove merged Player 1 did not become ready" >&2
+        return 1
+    fi
     if [ -s "$CONFIG/token" ]; then
         start_one game_registry --settings "$CONFIG/launcher.json"
         [ "$MONITOR" = 1 ] && start_one console_monitor --settings "$CONFIG/launcher.json"
         start_one receiver --listen 0.0.0.0 --token-file "$CONFIG/token" \
-            --native-state "$NATIVE_STATE" --output-device keyboard
+            --native-state "$NATIVE_STATE" --output-device merged-gamepad \
+            --merged-socket "$MERGED_SOCKET"
     fi
 }
 
@@ -72,6 +90,7 @@ stop_all() {
     stop_one console_monitor
     stop_one game_registry
     stop_one receiver
+    stop_one merged_gamepad
 }
 
 case "${1:-}" in
@@ -87,8 +106,8 @@ case "${1:-}" in
     restart-receiver) stop_all; start_all ;;
     status)
         failed=0
-        processes="game_registry receiver"
-        [ "$MONITOR" = 1 ] && processes="game_registry console_monitor receiver"
+        processes="merged_gamepad game_registry receiver"
+        [ "$MONITOR" = 1 ] && processes="$processes console_monitor"
         for name in $processes; do
             if valid_pid "$name"; then echo "RUNNING $name"; else echo "STOPPED $name"; failed=1; fi
         done

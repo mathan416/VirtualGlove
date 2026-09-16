@@ -20,6 +20,7 @@ from unittest import mock
 
 from powerglove_vision.launchbox_hook import launch_command, run_game
 from powerglove_vision.launchbox_runtime import service_commands
+from powerglove_vision.retroarch_hotkeys import conflicts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +93,68 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertEqual(calls[0][1]["emulator"], "lr-fceumm")
         self.assertFalse(calls[0][1]["rapid_a"])
         self.assertIsNone(calls[-1][0][3])
+
+    def test_keyboard_hotkey_conflict_disables_virtualglove_but_launches_game(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            settings = self.settings(root)
+            settings["retroarch_main_config"] = str(root / "retroarch.cfg")
+            settings["retroarch_config"] = str(root / "retroarch-nes.cfg")
+            settings["input_warning"] = str(root / "warning.txt")
+            (root / "retroarch.cfg").write_text('input_exit_emulator = "x"\n')
+            (root / "retroarch-nes.cfg").write_text('input_player1_a = "x"\n')
+            (root / "games.json").write_text(json.dumps({"games": {
+                "Super Mario Bros. (USA).nes": "program_12"
+            }}))
+            (root / "token").write_text("0123456789abcdef")
+            launched, requested = [], []
+            code = run_game(
+                settings, root / "Super Mario Bros. (USA).nes",
+                popen=lambda command, env: launched.append(command) or FakeProcess(),
+                request=lambda *args, **kwargs: requested.append((args, kwargs)),
+            )
+            warning = (root / "warning.txt").read_text()
+        self.assertEqual(code, 0)
+        self.assertEqual(requested, [])
+        self.assertIn("fceumm_libretro.dll", launched[0][2])
+        self.assertIn("input_exit_emulator uses x", warning)
+
+    def test_hotkey_audit_ignores_intentional_player_and_gamepad_binds(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "retroarch.cfg"
+            path.write_text('input_player1_a = "x"\ninput_enable_hotkey_btn = "12"\n')
+            self.assertEqual(conflicts([path]), [])
+
+    def test_hotkey_audit_rejects_other_player_and_unmanaged_player1_collisions(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "retroarch.cfg"
+            path.write_text('input_player2_a = "x"\ninput_player1_y = "z"\n')
+            found = conflicts([path])
+        self.assertEqual([item["setting"] for item in found],
+                         ["input_player2_a", "input_player1_y"])
+
+    def test_hotkey_audit_reports_every_virtualglove_key_and_hotkey_enable(self):
+        keys = ("up", "down", "left", "right", "x", "z", "enter", "rshift")
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "retroarch.cfg"
+            path.write_text("\n".join(
+                ('input_enable_hotkey' if index == 0 else 'input_command_%d' % index) +
+                ' = "' + key + '"' for index, key in enumerate(keys)
+            ) + "\n")
+            found = conflicts([path])
+        self.assertEqual([item["key"] for item in found], list(keys))
+        self.assertEqual(found[0]["setting"], "input_enable_hotkey")
+
+    def test_hotkey_audit_uses_effective_last_assignment_across_configs(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            main = root / "retroarch.cfg"
+            append = root / "nes.cfg"
+            main.write_text('input_exit_emulator = "x"\ninput_menu_toggle = "escape"\n')
+            append.write_text('input_exit_emulator = "escape"\ninput_menu_toggle = "z"\n')
+            found = conflicts([main, append])
+        self.assertEqual([(item["setting"], item["key"]) for item in found],
+                         [("input_menu_toggle", "z")])
 
     def test_unregistered_game_uses_fceumm_without_enabling_gestures(self):
         with tempfile.TemporaryDirectory() as name:

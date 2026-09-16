@@ -48,9 +48,9 @@ camera, receiver, or game is working.
 | VirtualGlove Controller Linux application | Web server, vision-worker supervision, camera tracking, calibration, thresholds, profile mapping, network sender | RetroArch button consumption |
 | VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
 | RetroPie services | Receive controller packets, expose a virtual gamepad, signal game launches, serve paired game-registry edits | Camera processing |
-| Recalbox integration | Run from `/recalbox/share`, observe RetroArch without patching the read-only OS, and merge gesture keys beside the physical Player 1 joypad | Recalbox system-image files |
-| Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and merge gesture keys beside the physical Player 1 joypad | Batocera system-image files |
-| LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and inject Player 1 keys from the signed-in Windows session beside the physical XInput joypad | LaunchBox database files and global joypad configuration |
+| Recalbox integration | Run from `/recalbox/share`, observe RetroArch without patching the read-only OS, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Recalbox system-image files and frontend control |
+| Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Batocera system-image files and frontend control |
+| LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, audit command-key collisions, and inject Player 1 keys from the signed-in Windows session beside the physical XInput joypad | LaunchBox database files and global joypad configuration |
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
 App Lab starts `python/main.py` in the main application container. This
@@ -59,6 +59,16 @@ with the sole packaged MediaPipe 0.10.35 ARM64 wheel. There is no installed
 0.10.18 fallback or runtime selector. It polls worker status, updates the matrix,
 and retries a worker that stops. The worker's internal HTTP interface is on
 loopback port 8089; the public website is on 8088, with secure Setup on 8443.
+
+On Recalbox and Batocera, a persistent merger creates its uinput gamepad before
+RetroArch starts. It translates the chosen controller's saved EmulationStation
+mapping into a canonical RetroPad, then combines that state with authenticated
+VirtualGlove state over a private local socket. Physical directions and axes
+win on the axis they actively occupy; ordinary buttons combine. The physical
+hotkey has a dedicated output button, and VirtualGlove Select can never assert
+it. The merged gamepad remains neutral outside RetroArch, so EmulationStation
+continues to use only the original controller. Disconnect releases only physical
+state; the saved stable identity reconnects without relying on an event number.
 
 The supervisor passes the private `data/device.json` path to the worker using
 `--device-config`; the token itself is absent from process arguments. Device
@@ -142,7 +152,7 @@ newest controller state before it performs handshake maintenance.
 
 | Activity | Normal cadence | Failure or recovery boundary | Gameplay effect and representative load |
 | --- | --- | --- | --- |
-| Controller state, Controller to console UDP 55355 | Every fresh inference result, normally 15-30 Hz | The console neutralizes gamepad/keyboard and native state after 250 ms without a valid packet | Time-critical path. A representative signed state is about 610 bytes, or about 18 KiB/s at 30 Hz. The timeout adds no normal-play delay. |
+| Controller state, Controller to console UDP 55355 | Every fresh inference result, normally 15-30 Hz | The console neutralizes its VirtualGlove source and native state after 250 ms without a valid packet; a Recalbox/Batocera merger separately retains current physical-controller state | Time-critical path. A representative signed state is about 610 bytes, or about 18 KiB/s at 30 Hz. The timeout adds no normal-play delay. |
 | Signed controller handshake, UDP 55355 | Every 250 ms until challenged; every 1 second after establishment | Three seconds without an authenticated reply starts paired-console discovery; discovery repeats every 2 seconds until a valid challenge arrives | Runs after the current state when established. A representative signed hello is about 212 bytes; no controller state is broadcast or replayed. |
 | Registered-game profile renewal, console to Controller UDP 55356 | Every 2 seconds while RetroArch and the platform's session ownership remain active | Each renewal carries a 6-second lease. A request may try up to three 0.4-second acknowledgement waits, outside game launch. If the saved destination fails, a signed discovery request finds and briefly caches the paired Controller's current address. | Keeps the correct ROM/core mapping active and lets the Controller recover after a restart or DHCP change. A representative renewal is about 365 bytes every 2 seconds. |
 | Setup console check, Controller to console TCP 55358 | Visible Setup polls every 5 seconds; the Controller starts at most one real probe every 10 seconds | A result becomes stale after 30 seconds; destination or key changes invalidate it immediately | Status only. It does not confirm that an emulator consumed input and does not run in the inference path. |
@@ -573,7 +583,7 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | Native-state record | Authenticated console receiver to native cores | `/run/virtualglove/native-state` on Linux or a per-user mapped file on LaunchBox; guarded latest sample for Super Glove Ball |
 | TCP 55357 | Pairing participants | Temporary one-time-code pairing service |
 | TCP 55358 | VirtualGlove Controller to console | Paired game-registry service |
-| Private Unix sockets | App resolver to host Avahi | Local hostname resolution |
+| Private Unix sockets | App resolver to host Avahi; Recalbox/Batocera receiver to Player 1 merger | Local hostname resolution and bounded local VirtualGlove state delivery |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
 
 The LAN remains a trust boundary. Controller version 2 uses its own domain-separated HMAC-SHA256 and receiver-issued challenges. It does not encrypt input. Version 1 is neither accepted nor emitted. Do not describe all links as equivalent secure channels. Pairing and registry exchange have their

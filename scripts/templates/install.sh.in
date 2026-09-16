@@ -22,6 +22,8 @@ v.add_argument("--development", metavar="TAG", help="Explicit prerelease tag bui
 p.add_argument("--check", action="store_true", help="Check installed software without downloads or changes")
 p.add_argument("--peer", help="UNO Q hostname, required for a new console installation")
 p.add_argument("--hostname", help="Controller name for a first UNO Q installation (for example, virtualglove)")
+p.add_argument("--list-player1-devices", action="store_true", help="List configured Recalbox/Batocera gamepads")
+p.add_argument("--player1-device", help="Stable gamepad ID reported by --list-player1-devices")
 a = p.parse_args()
 try:
     if sys.version_info < (3, 7) or sys.platform != "linux":
@@ -39,6 +41,8 @@ try:
         raise ValueError("Run as your normal login user, without sudo. The installer will request sudo when needed.")
     if "@@MACHINE@@" != "uno-q" and a.hostname:
         raise ValueError("--hostname is available only with install-uno-q.sh")
+    if "@@MACHINE@@" not in ("recalbox", "batocera") and (a.list_player1_devices or a.player1_device):
+        raise ValueError("Player 1 selection is available only with Recalbox and Batocera installers")
     tag = a.version or a.development
     def download(url, path):
         with urllib.request.urlopen(url, timeout=60) as response, path.open("wb") as output:
@@ -80,6 +84,10 @@ try:
             cmd += ["--peer", a.peer]
         if a.hostname:
             cmd += ["--hostname", a.hostname]
+        if a.list_player1_devices:
+            cmd += ["--list-player1-devices"]
+        if a.player1_device:
+            cmd += ["--player1-device", a.player1_device]
         sys.exit(subprocess.call(cmd))
 except (OSError, ValueError, KeyError) as error:
     print("FAIL  " + str(error) + ". Check the release exists and your network connection; retry safely.", file=sys.stderr)

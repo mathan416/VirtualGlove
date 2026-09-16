@@ -86,6 +86,17 @@ def write_file(path, content, mode=0o644, preserve=False):
     os.replace(str(temporary), str(path))
 
 
+def backup_file(path):
+    """Make one recovery copy before a runtime helper updates a managed setting."""
+    path = Path(path)
+    if not path.is_file() or path.is_symlink():
+        return
+    backup = BACKUPS / str(path).lstrip("/")
+    if not backup.exists():
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(path), str(backup))
+
+
 def hook_content(text, action):
     """Add an early, failure-safe shell hook once; preserve all existing commands."""
     executable = "/opt/virtualglove-src/retropie/runcommand-on" + action + "-virtualglove.sh"
@@ -469,34 +480,55 @@ def recalbox_custom_hook(text):
     return "#!/bin/sh\n" + block + text
 
 
-def merge_retroarch_keys(current, managed):
-    """Replace only VirtualGlove's keyboard keys in a Recalbox append config."""
-    keys = {}
-    for line in managed.splitlines():
-        match = re.match(r"^(input_player1_[a-z]+)\s*=", line)
-        if match:
-            keys[match.group(1)] = line
-    output = []
-    seen = set()
-    for line in current.splitlines():
-        match = re.match(r"^\s*(input_player1_[a-z]+)\s*=", line)
-        if match and match.group(1) in keys:
-            key = match.group(1)
-            if key not in seen:
-                output.append(keys[key])
-                seen.add(key)
-        else:
-            output.append(line)
-    missing = [keys[key] for key in keys if key not in seen]
-    if missing:
-        if output and output[-1]:
-            output.append("")
-        output.append("# VirtualGlove Player 1 keyboard merge")
-        output.extend(missing)
-    return "\n".join(output).rstrip() + "\n"
+def merged_controller_module():
+    """Load the shared dependency-free merged-controller implementation."""
+    if str(SOURCE / "src") not in sys.path:
+        sys.path.insert(0, str(SOURCE / "src"))
+    from powerglove_vision import merged_gamepad
+    return merged_gamepad
 
 
-def install_recalbox(peer):
+def merged_controller_paths(platform):
+    """Return the platform's frontend map and saved Player 1 record paths."""
+    if platform == "recalbox":
+        return (Path("/recalbox/share/system/.emulationstation/es_input.cfg"),
+                Path("/recalbox/share/system/virtualglove/data/player1-controller.json"))
+    return (Path("/userdata/system/configs/emulationstation/es_input.cfg"),
+            Path("/userdata/system/virtualglove/data/player1-controller.json"))
+
+
+def list_player1_devices(platform):
+    """Print stable configured-gamepad identifiers for unattended installation."""
+    merged = merged_controller_module()
+    es_inputs, _config = merged_controller_paths(platform)
+    candidates = merged.controller_candidates(es_inputs)
+    if not candidates:
+        raise ValueError("no connected configured gamepads were found")
+    for item in candidates:
+        print(item["id"] + "  " + item["name"])
+
+
+def configure_merged_player1(platform, requested=None):
+    """Preserve or explicitly select the physical source for merged Player 1."""
+    merged = merged_controller_module()
+    es_inputs, config = merged_controller_paths(platform)
+    if config.is_file() and requested is None:
+        saved = merged.load_controller(config)
+        if saved["platform"] != platform:
+            raise ValueError(
+                "saved Player 1 controller belongs to " + saved["platform"] +
+                "; select this console's controller with --player1-device")
+        return
+    candidate = merged.choose_controller(
+        merged.controller_candidates(es_inputs), requested=requested)
+    data = {"format": merged.FORMAT, "platform": platform,
+            **{key: candidate.get(key, "") for key in
+               ("id", "name", "guid", "vendor", "product", "version", "uniq", "phys")},
+            "mapping": candidate["mapping"]}
+    write_file(config, json.dumps(data, indent=2) + "\n")
+
+
+def install_recalbox(peer, player1_device=None):
     """Install into Recalbox's persistent share without modifying its read-only OS."""
     version_file = Path("/recalbox/recalbox.version")
     if not version_file.is_file():
@@ -554,15 +586,14 @@ def install_recalbox(peer):
     })
     write_file(launcher, json.dumps(settings, indent=2) + "\n", preserve=True)
     write_file(data / "token", b"", preserve=True)
+    configure_merged_player1("recalbox", player1_device)
 
     service = destination / "recalbox/virtualglove-service"
     custom = Path("/recalbox/share/system/custom.sh")
     write_file(custom, recalbox_custom_hook(
         custom.read_text() if custom.exists() else ""), 0o755)
     custom.chmod(0o755)
-    nes = Path("/recalbox/share/system/configs/retroarch/nes.cfg")
-    managed = (destination / "recalbox/retroarch-nes.cfg").read_text()
-    write_file(nes, merge_retroarch_keys(nes.read_text() if nes.exists() else "", managed))
+    backup_file("/recalbox/share/system/configs/retroarch/nes.cfg")
     run("sh", service, "restart")
 
 
@@ -574,6 +605,20 @@ def check_recalbox(report):
     report.check("Persistent VirtualGlove installation", (root / "src/powerglove_vision/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
+    controller = root / "data/player1-controller.json"
+    try:
+        merged = merged_controller_module()
+        selected = merged.load_controller(controller)
+        report.check("Physical Player 1 selected", bool(selected.get("name")))
+        report.check("Physical Player 1 connected", merged.find_saved_controller(
+            selected, merged.input_devices()) is not None, pending=True)
+        index = merged.merged_joypad_index()
+        report.check("Merged Player 1 gamepad available", index is not None)
+        nes_text = Path("/recalbox/share/system/configs/retroarch/nes.cfg").read_text()
+        report.check("RetroArch uses merged Player 1", index is not None and
+                     ('input_player1_joypad_index = "%d"' % index) in nes_text)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Merged Player 1 configuration", False)
     native = (root / "native/recalbox" /
               Path("/recalbox/recalbox.arch").read_text().strip() /
               Path("/recalbox/recalbox.version").read_text().strip() /
@@ -612,7 +657,7 @@ def batocera_version():
         return 0
 
 
-def install_batocera(peer):
+def install_batocera(peer, player1_device=None):
     """Install persistent Batocera service and game-event integrations."""
     version = batocera_version()
     if version < 38:
@@ -641,6 +686,7 @@ def install_batocera(peer):
                      "registry": str(data / "games.json")})
     write_file(launcher, json.dumps(settings, indent=2) + "\n", preserve=True)
     write_file(data / "token", b"", preserve=True)
+    configure_merged_player1("batocera", player1_device)
 
     service = Path("/userdata/system/services/VirtualGlove")
     event = Path("/userdata/system/scripts/virtualglove-game")
@@ -655,9 +701,7 @@ def install_batocera(peer):
     ]
     for executable in executables:
         executable.chmod(0o755)
-    nes = Path("/userdata/system/configs/retroarch/nes.cfg")
-    managed = (destination / "batocera/retroarch-nes.cfg").read_text()
-    write_file(nes, merge_retroarch_keys(nes.read_text() if nes.exists() else "", managed))
+    backup_file("/userdata/system/configs/retroarch/nes.cfg")
     run("batocera-services", "enable", "VirtualGlove")
     subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
     run("batocera-services", "start", "VirtualGlove")
@@ -672,6 +716,20 @@ def check_batocera(report):
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
     report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
     report.check("Batocera game hook installed", Path("/userdata/system/scripts/virtualglove-game").is_file())
+    controller = root / "data/player1-controller.json"
+    try:
+        merged = merged_controller_module()
+        selected = merged.load_controller(controller)
+        report.check("Physical Player 1 selected", bool(selected.get("name")))
+        report.check("Physical Player 1 connected", merged.find_saved_controller(
+            selected, merged.input_devices()) is not None, pending=True)
+        index = merged.merged_joypad_index()
+        report.check("Merged Player 1 gamepad available", index is not None)
+        nes_text = Path("/userdata/system/configs/retroarch/nes.cfg").read_text()
+        report.check("RetroArch uses merged Player 1", index is not None and
+                     ('input_player1_joypad_index = "%d"' % index) in nes_text)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Merged Player 1 configuration", False)
     native = Path("/usr/lib/libretro/nestopia_powerglove_libretro.so")
     native_info = Path("/usr/share/libretro/info/nestopia_powerglove_libretro.info")
     report.check("Optional native Super Glove Ball core", native.is_file() and
@@ -872,6 +930,10 @@ def main():
     parser.add_argument("--peer", type=valid_host,
                         help="Other machine hostname; required for a new console installation")
     parser.add_argument("--check", action="store_true", help="Read-only checks; install nothing")
+    parser.add_argument("--list-player1-devices", action="store_true",
+                        help="List configured connected gamepads and install nothing")
+    parser.add_argument("--player1-device",
+                        help="Stable gamepad ID from --list-player1-devices")
     parser.add_argument("--wifi-status-only", action="store_true", help="Install/update only the UNO Q Wi-Fi status sampler")
     parser.add_argument("--runtime-names-only", action="store_true",
                         help="Migrate only UNO Q host helpers to virtualglove names")
@@ -880,9 +942,16 @@ def main():
         parser.error("helper-only options require uno-q without --check")
     if args.wifi_status_only and args.runtime_names_only:
         parser.error("choose only one helper-only option")
-    if sys.platform != "linux" or (not args.check and os.geteuid() != 0):
+    if args.list_player1_devices and args.machine not in ("recalbox", "batocera"):
+        parser.error("--list-player1-devices applies only to Recalbox and Batocera")
+    if args.player1_device and args.machine not in ("recalbox", "batocera"):
+        parser.error("--player1-device applies only to Recalbox and Batocera")
+    if sys.platform != "linux" or (not args.check and not args.list_player1_devices and os.geteuid() != 0):
         parser.error("Run installation on the target Linux machine with sudo")
     try:
+        if args.list_player1_devices:
+            list_player1_devices(args.machine)
+            return 0
         if args.wifi_status_only:
             install_wifi_status()
             print("Wi-Fi status sampler installed; backups: " + str(BACKUPS))
@@ -907,12 +976,15 @@ def main():
             for relative in required:
                 if not (SOURCE / relative).is_file():
                     raise ValueError("Incomplete project download: missing " + relative)
-            {"retropie": install_retropie, "recalbox": install_recalbox,
-             "batocera": install_batocera,
-             "uno-q": install_unoq}[args.machine](args.peer)
+            if args.machine == "recalbox":
+                install_recalbox(args.peer, args.player1_device)
+            elif args.machine == "batocera":
+                install_batocera(args.peer, args.player1_device)
+            else:
+                {"retropie": install_retropie, "uno-q": install_unoq}[args.machine](args.peer)
+                if args.machine == "uno-q":
+                    wait_unoq()
             print("Managed-file backups, when changed: " + str(BACKUPS))
-            if args.machine == "uno-q":
-                wait_unoq()
         report = Report()
         {"retropie": check_retropie, "recalbox": check_recalbox,
          "batocera": check_batocera,

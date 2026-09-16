@@ -635,7 +635,7 @@ def main():
     build(
         install, OUTPUT / "VirtualGlove-Guide.pdf",
         "VirtualGlove Installation Guide",
-        "Install, pair, and play with the VirtualGlove Controller and RetroPie.",
+        "Install, pair, and play with the VirtualGlove Controller and supported consoles.",
         "Installation instructions",
     )
     build(

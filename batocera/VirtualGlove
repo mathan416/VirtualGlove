@@ -9,12 +9,13 @@
 export VIRTUALGLOVE_ROOT=/userdata/system/virtualglove
 export VIRTUALGLOVE_MONITOR=0
 export VIRTUALGLOVE_NATIVE_STATE=/run/virtualglove/native-state
+export VIRTUALGLOVE_RETROARCH_CONFIG=/userdata/system/configs/retroarch/nes.cfg
 core_mount="$VIRTUALGLOVE_ROOT/batocera/virtualglove-core-mount"
+export VIRTUALGLOVE_CORE_MOUNT="$core_mount"
 service="$VIRTUALGLOVE_ROOT/recalbox/virtualglove-service"
 
 case "${1:-}" in
     start)
-        "$core_mount" start || echo "ACTION  Native Super Glove Ball core is unavailable; FCEUmm remains usable." >&2
         exec "$service" start
         ;;
     stop)
