@@ -123,10 +123,13 @@ these targets merely because two machines use the same broad CPU family.
 | `odroidgo2` | ODROID Go Advance/Super | ARM64 | Included and manifest-verified; hardware validation pending |
 | `x86_64` | PCs and Steam Deck | x86-64 | Included and manifest-verified; hardware validation pending |
 
-The package manifest records the Recalbox target and version together with the
-ELF class and machine identity. The installer requires all four to agree with
-the local machine before it will expose the native core. This permits a release
-to carry multiple Recalbox versions for the same hardware target safely.
+The package manifest records the Recalbox target and build version together
+with the ELF class and machine identity. The installer requires the exact target
+and ELF identity. It prefers an exact Recalbox release build; when that is not
+packaged, it selects the newest build from the same major series and load-tests
+the core on the console before exposing it. It never crosses a Recalbox major
+release. This also permits a release to carry multiple builds for one hardware
+target safely.
 
 The release package includes independently built Recalbox 10.1 cores and
 complete corresponding source archives for all seven targets. The `rpizero2`
@@ -134,10 +137,11 @@ and `rpi3` ARM32 cores both load and report `Nestopia PowerGlove` on the
 available Raspberry Pi 3 running the `rpizero2` image; validation on an image
 that reports `rpi3` remains outstanding. The five additional cores have passed
 manifest, checksum, and ELF-identity validation but have not been claimed as
-hardware-tested. Normal Recalbox installation verifies size, SHA-256, exact
-target/version and ELF identity, libretro API, and core name before exposing a
-core through the reversible runtime overlay. Machines without a packaged
-target/version core still install normally and use FCEUmm.
+hardware-tested. Normal Recalbox installation verifies size, SHA-256, target
+and same-major compatibility, ELF identity, libretro API, and core name before
+exposing a core through the reversible runtime overlay. Machines without a
+packaged core for their target and major release still install normally and use
+FCEUmm.
 
 Maintainers can reproduce a target build with the matching official Recalbox
 source checkout on a Linux Docker host:

@@ -1,0 +1,22 @@
+{
+  "cores": {
+    "x86_64": {
+      "43.1": {
+        "batocera_revision": "185da2171cdd6eb39e12515a0d052c7360971659",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "x86_64",
+        "file": "x86_64/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "a0da6c4ced012c7c818b9d252493dd7ad3a0fec4a32c606d438988efa8e44ba4",
+        "size": 5966696,
+        "source_file": "x86_64/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "0374bcb4cfdcc8e66ed30bd3baf9092cbbd0940c8fe1fbb3a3ade07231b33b54",
+        "source_size": 1192780
+      }
+    }
+  },
+  "format": 2
+}

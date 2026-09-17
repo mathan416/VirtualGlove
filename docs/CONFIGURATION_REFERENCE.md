@@ -2073,7 +2073,7 @@ they may still perform their normal work.
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
 | `scripts/install-nestopia-powerglove.sh` | Optional build-directory positional argument | Run with `sudo` on RetroPie after exact-ROM validation. Builds and installs only `lr-nestopia-powerglove`, plus its upstream GPLv2 license and distribution note; stock Nestopia remains untouched. The normal RetroPie installer offers this step when a registered Super Glove Ball ROM is found. |
 | `scripts/install-recalbox-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Development-only replacement path after the base Recalbox installation. Rejects a running game, verifies the core against the packaged architecture manifest, load-checks it, installs it atomically, refreshes the runtime overlays, and optionally selects only the exact ROM. Normal releases already carry verified target binaries when available. |
-| `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--core`, `--arch`, and `--version`; optional `--load` | Verifies the target/version manifest, exact size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. |
+| `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build in the same Recalbox major series. It verifies the exact target, size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. Cross-major fallback is rejected. |
 | `scripts/install-batocera-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Run as root on Batocera after the base VirtualGlove installation. Load-checks the target-built libretro core before atomic persistent installation, refreshes its reversible core overlays, and optionally selects the exact ROM. |
 | `scripts/install-powerglove-dot.sh` | Optional RetroPie prefix positional argument | Builds and installs the project-owned, ROM-free `lr-powerglove-dot` calibration core. The release installer offers it independently of Super Glove Ball and adds its fixed launcher to Ports. |
 | `scripts/configure-super-glove-ball-core.py` | `--rom PATH --mode MODE [--apply]`, where MODE is `native` or `fceumm` | Previews or atomically selects the custom core for one Super Glove Ball ROM. `--mode fceumm` is the explicit rollback. |
@@ -2773,8 +2773,9 @@ settings are preserved. Upgrades remove only the eight former managed keyboard
 values and back up the previous NES append configuration. Their FCEUmm path
 supports every joystick profile. Batocera additionally
 supports the separately named `nestopia_powerglove` core for native Super Glove
-Ball. Recalbox also accepts only a core whose target/version manifest matches
-the running image. Batocera's core must be cross-built with the exact Batocera target toolchain, then is
+Ball. Recalbox requires an exact target match, prefers an exact release build,
+and otherwise accepts the newest packaged build from the same major series only
+after its on-console load test passes. Batocera's core must be cross-built with the exact Batocera target toolchain, then is
 load-checked on that console before atomic installation. Reversible overlay mounts
 expose the persistent binary and a copied Nestopia info record through Batocera's
 read-only `/usr` paths without replacing stock Nestopia. Selecting FCEUmm for the

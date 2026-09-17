@@ -6,7 +6,8 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
-#   2026-09-15 - Added exact target/version, ELF, and source verification.
+#   2026-09-15 - Added target/version, ELF, and source verification.
+#   2026-09-17 - Allowed load-tested native cores across one Recalbox major series.
 # Full history: docs/CHANGELOG.md and Git history.
 
 """Validate packaged Recalbox core metadata, bytes, and optional runtime identity."""
@@ -30,15 +31,37 @@ TARGET_ELF = {
 }
 
 
+def version_tuple(version):
+    """Return a numeric Recalbox version tuple or reject ambiguous versions."""
+    if not isinstance(version, str) or not version or any(
+            not part.isdigit() for part in version.split(".")):
+        raise ValueError("Invalid Recalbox version")
+    return tuple(int(part) for part in version.split("."))
+
+
+def compatible_version(versions, requested):
+    """Prefer an exact build, then the newest build from the same major series."""
+    requested_parts = version_tuple(requested)
+    if requested in versions:
+        return requested
+    candidates = []
+    for candidate in versions:
+        parts = version_tuple(candidate)
+        if parts[0] == requested_parts[0]:
+            candidates.append((parts, candidate))
+    return max(candidates)[1] if candidates else None
+
+
 def manifest_entry(manifest_path, architecture, version):
-    """Return and validate one exact target/version manifest entry."""
+    """Return and validate the best compatible target/version manifest entry."""
     data = json.loads(Path(manifest_path).read_text())
     if data.get("format") != 2 or not isinstance(data.get("cores"), dict):
         raise ValueError("Unsupported Recalbox native-core manifest")
     versions = data["cores"].get(architecture)
     if versions is not None and not isinstance(versions, dict):
         raise ValueError("Malformed Recalbox native-core target")
-    entry = versions.get(version) if versions else None
+    selected_version = compatible_version(versions, version) if versions else None
+    entry = versions.get(selected_version) if selected_version else None
     if entry is None:
         return None
     required = {"file", "sha256", "size", "elf_class", "elf_machine",
@@ -61,11 +84,11 @@ def manifest_entry(manifest_path, architecture, version):
         raise ValueError("Unsupported Recalbox native-core target")
     if (entry["elf_class"], entry["elf_machine"]) != expected_elf:
         raise ValueError("Recalbox target and native-core ELF identity do not match")
-    expected_prefix = Path(architecture) / version
+    expected_prefix = Path(architecture) / selected_version
     if any(Path(entry[name]).parent != expected_prefix
            for name in ("file", "source_file")):
         raise ValueError("Recalbox native-core path does not match target and version")
-    if entry["recalbox_version"] != version:
+    if entry["recalbox_version"] != selected_version:
         raise ValueError("Recalbox native-core version key does not match its entry")
     for name in ("sha256", "source_sha256", "patch_sha256"):
         value = entry[name]
@@ -125,13 +148,29 @@ def main(argv=None):
     """Run the command-line verifier."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", required=True, type=Path)
-    parser.add_argument("--core", required=True, type=Path)
+    parser.add_argument("--core", type=Path)
     parser.add_argument("--arch", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--load", action="store_true")
+    parser.add_argument("--resolve-core", action="store_true",
+                        help="print the selected packaged core path")
     args = parser.parse_args(argv)
+    if args.resolve_core:
+        if args.core is not None or args.load:
+            parser.error("--resolve-core cannot be combined with --core or --load")
+        entry = manifest_entry(args.manifest, args.arch, args.version)
+        if entry is None:
+            raise ValueError("No compatible packaged native core for Recalbox " +
+                             args.arch + " " + args.version)
+        print((args.manifest.resolve().parent / entry["file"]).resolve())
+        return 0
+    if args.core is None:
+        parser.error("--core is required unless --resolve-core is used")
     verify(args.manifest, args.core, args.arch, args.version, args.load)
-    print("PASS  Recalbox native core verified for " + args.arch + " " + args.version)
+    entry = manifest_entry(args.manifest, args.arch, args.version)
+    built_for = entry["recalbox_version"]
+    suffix = "" if built_for == args.version else " using compatible build " + built_for
+    print("PASS  Recalbox native core verified for " + args.arch + " " + args.version + suffix)
     return 0
 
 

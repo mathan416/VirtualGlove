@@ -550,10 +550,16 @@ def install_recalbox(peer, player1_device=None):
     if native_manifest.is_file():
         native_names.append(str(native_manifest.relative_to(SOURCE)))
         native_data = json.loads(native_manifest.read_text())
-        native_entry = native_data.get("cores", {}).get(architecture, {}).get(version)
-        if native_entry:
-            candidate = native_manifest.parent / native_entry.get("file", "")
-            verifier = SOURCE / "scripts/verify-recalbox-native-core.py"
+        verifier = SOURCE / "scripts/verify-recalbox-native-core.py"
+        resolved = subprocess.run(
+            ["python3", str(verifier), "--manifest", str(native_manifest),
+             "--arch", architecture, "--version", version, "--resolve-core"],
+            check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True)
+        if resolved.returncode == 0 and resolved.stdout.strip():
+            candidate = Path(resolved.stdout.strip())
+            selected_version = candidate.parent.name
+            native_entry = native_data["cores"][architecture][selected_version]
             subprocess.run(["python3", str(verifier), "--manifest", str(native_manifest),
                             "--core", str(candidate), "--arch", architecture,
                             "--version", version, "--load"],
@@ -562,7 +568,7 @@ def install_recalbox(peer, player1_device=None):
             source_archive = native_manifest.parent / native_entry["source_file"]
             native_names.append(str(source_archive.relative_to(SOURCE)))
         else:
-            print("ACTION  Native Super Glove Ball is not packaged for Recalbox " +
+            print("ACTION  No compatible native Super Glove Ball core is packaged for Recalbox " +
                   version + " target " + architecture + "; FCEUmm remains available.")
     names = [str(path.relative_to(SOURCE))
              for directory in ("src", "recalbox", "config", "scripts", "python")
@@ -619,12 +625,20 @@ def check_recalbox(report):
                      ('input_player1_joypad_index = "%d"' % index) in nes_text)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
-    native = (root / "native/recalbox" /
-              Path("/recalbox/recalbox.arch").read_text().strip() /
-              Path("/recalbox/recalbox.version").read_text().strip() /
-              "nestopia_powerglove_libretro.so")
+    native_manifest = root / "native/recalbox/manifest.json"
+    native = None
+    if native_manifest.is_file():
+        resolved = subprocess.run(
+            ["python3", str(root / "scripts/verify-recalbox-native-core.py"),
+             "--manifest", str(native_manifest), "--arch",
+             Path("/recalbox/recalbox.arch").read_text().strip(), "--version",
+             Path("/recalbox/recalbox.version").read_text().strip(), "--resolve-core"],
+            check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True)
+        if resolved.returncode == 0 and resolved.stdout.strip():
+            native = Path(resolved.stdout.strip())
     report.check("Optional Nestopia (VirtualGlove) core",
-                 native.is_file(), pending=not native.is_file())
+                 bool(native and native.is_file()), pending=not (native and native.is_file()))
     report.check("Boot hook installed", "virtualglove-service" in
                  (Path("/recalbox/share/system/custom.sh").read_text()
                   if Path("/recalbox/share/system/custom.sh").is_file() else ""))

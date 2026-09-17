@@ -53,16 +53,16 @@ authoritative record for line-level and file-level history.
   a one-command native/FCEUmm choice.
 - Added the corresponding isolated Recalbox native-core path for `rpizero2`,
   `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`. It uses
-  each target's own Recalbox Buildroot recipe, verifies the exact Recalbox
-  version and resulting ELF architecture on the target, exposes the core
+  each target's own Recalbox Buildroot recipe, verifies the Recalbox major
+  series and resulting ELF architecture on the target, exposes the core
   through reversible runtime mounts, and adds only `nestopia_powerglove` to a
   temporary NES system list. An exact ROM sidecar selects the core for Super
   Glove Ball while stock Nestopia, FCEUmm, ROMs, saves, and other per-game
   settings remain unchanged.
 - Added a reproducible Recalbox build-matrix command and a versioned native-core
-  manifest. ARM32, ARM64, and x86-64 artifacts are isolated by target and exact
-  Recalbox release so an installer cannot apply a compatible-looking binary to
-  the wrong system.
+  manifest. ARM32, ARM64, and x86-64 artifacts are isolated by target and build
+  release so an installer cannot apply a compatible-looking binary to the wrong
+  architecture or Recalbox major series.
 - Added a manually dispatched seven-job build workflow so all Recalbox targets
   can be compiled in parallel from an exact release tag. It retains
   target-specific review artifacts and never publishes or deploys them.
@@ -73,7 +73,9 @@ authoritative record for line-level and file-level history.
   for `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`.
   Recalbox verifies a packaged binary and its `Nestopia
   PowerGlove` libretro identity before exposing it through the reversible
-  overlay. Unpackaged target/version pairs retain FCEUmm.
+  overlay. Installation prefers an exact release build and otherwise uses the
+  newest packaged build from the same Recalbox major series after the on-device
+  load test; unpackaged targets and major releases retain FCEUmm.
 
 ### Changed
 

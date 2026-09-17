@@ -160,8 +160,10 @@ separate cores and complete source archives for `rpizero2`, `rpi3`, `rpi4_64`,
 `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`; the official image on the tested
 Raspberry Pi 3 reports `rpizero2`. Maintainers can reproduce one target with
 `scripts/build-recalbox-nestopia-powerglove.sh /path/to/recalbox TARGET`.
-The installer verifies the packaged checksum, exact target/version, ELF identity,
-libretro API, and core name on Recalbox before keeping it in the persistent share
+The installer prefers an exact Recalbox release build, otherwise selects the
+newest packaged build from the same major series. It verifies the packaged
+checksum, exact target, same-major compatibility, ELF identity, libretro API,
+and core name on Recalbox before keeping it in the persistent share
 and exposing it through a reversible runtime core overlay. A temporary system list adds the
 separate core to Recalbox's NES choices; the ROM-specific `.recalbox.conf`
 selects it without changing stock Nestopia or any other game. Normal startup

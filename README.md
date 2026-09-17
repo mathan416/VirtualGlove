@@ -29,13 +29,15 @@ the stable v0.4.2 downloads yet. Batocera's target-built, separately named
 Nestopia (VirtualGlove) core now provides the native Super Glove Ball path
 without replacing stock Nestopia. Recalbox packages are selected by its exact
 target (`rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, or
-`x86_64`) and verified against their recorded ELF identity. The available
+`x86_64`) and verified against their recorded ELF identity. Within Recalbox
+10.x, an exact release build is preferred and the newest packaged 10.x build is
+the load-tested fallback. Builds are never reused across a major release. The available
 Raspberry Pi 3 running Recalbox's `rpizero2` image has passed Super Mario Bros.,
 native Super Glove Ball, physical-joypad coexistence, and reboot-persistence
 checks. Recalbox 10.1 binaries and corresponding source archives are packaged
 for all seven targets; targets other than the tested `rpizero2` image remain
 subject to their own load and hardware validation. An unpackaged target or
-version safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
+major release safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
 its keys conflicts with a RetroArch command, leaving the physical controller and
 game usable, and selects a separate Windows Nestopia core only for Super Glove Ball.
 

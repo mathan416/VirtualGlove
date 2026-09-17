@@ -15,7 +15,7 @@ licenses or terms that apply to third-party software and model files.
 | MediaPipe 0.10.35 ARM64/Python 3.12 wheel | Yes | Apache 2.0; the wheel retains its own licence and the release includes `licenses/Apache-2.0.txt` |
 | Google Hand Landmarker model | Yes | Apache 2.0; see `licenses/Apache-2.0.txt` and the model record below |
 | VirtualGlove Nestopia patch and reproducible build recipe | Yes | GNU GPL version 2; see `licenses/GPL-2.0.txt` |
-| Compiled `lr-nestopia-powerglove` core | Recalbox and LaunchBox packages include only explicitly identified, target-built binaries listed below; RetroPie builds locally and other targets retain FCEUmm until validated | GNU GPL version 2; each bundled binary is accompanied by its exact complete corresponding source, GPL text, notices, patch, and build recipe |
+| Compiled `lr-nestopia-powerglove` core | Recalbox 10.1 packages include seven explicitly identified target builds; LaunchBox includes one Windows x86-64 build; RetroPie builds locally; Batocera retains FCEUmm until its target builds are validated and packaged | GNU GPL version 2; each bundled binary is accompanied by its exact complete corresponding source, GPL text, notices, patch, and build recipe |
 | Python Cryptography | Downloaded into the isolated LaunchBox runtime; not bundled | Apache License 2.0 or BSD License, under its upstream package notices |
 | `uhubctl` | Installed from Debian only when the camera-recovery option is used; not bundled | GNU GPL version 2 or later, under the Debian package's own notices |
 | RetroArch, FCEUmm, stock Nestopia, RetroPie, Recalbox, Batocera, and LaunchBox | Already supplied by or installed on the selected console; not bundled | Their respective upstream licences |
@@ -163,18 +163,26 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Built core name | `nestopia_powerglove_libretro.so` or `nestopia_powerglove_libretro.dll` |
 | Recalbox 10.1 `rpizero2` core SHA-256 | `4814b043926547bb7ab306a3d65b8044a9cb8c28a9181d59376ccb9a4a82c876` |
 | Recalbox 10.1 `rpi3` core SHA-256 | `5aa74d1e2f41b0cb2f85125feeb1b3551d828566fb3401fa0a97e72be994f829` |
-| Recalbox corresponding source archives | `native/recalbox/rpizero2/10.1/nestopia-powerglove-source.tar.gz`; `native/recalbox/rpi3/10.1/nestopia-powerglove-source.tar.gz` |
-| Recalbox source archive SHA-256 | `98edc8fa41bd5023293403434b7e67e9ed2410ba4838ec1854d18b1580f22bda` |
+| Recalbox 10.1 `rpi4_64` core SHA-256 | `a8c0913eefabf41a2fa3dae18ed160eb0e22ecdb6de461659c9961607fb5266d` |
+| Recalbox 10.1 `rpi5_64` core SHA-256 | `1c6f3898caf6a0d561492292fd9dd7a95025720d2b91e28d87efe6d7eab67679` |
+| Recalbox 10.1 `rg353x` core SHA-256 | `b5f55883027f35a87f7f4d2885ef082f72940ed7c81b93f67743d3bae849da68` |
+| Recalbox 10.1 `odroidgo2` core SHA-256 | `7f8b23f179b38f511d060ed73de757732100ec42a073ca4b7802a6e0bd7a25b4` |
+| Recalbox 10.1 `x86_64` core SHA-256 | `8c28daedbe401e4d022a3c7210258107c736a74595c462dc60659ff8b69c76f3` |
+| Recalbox corresponding source archives | One `native/recalbox/TARGET/10.1/nestopia-powerglove-source.tar.gz` archive is supplied beside each of the seven target binaries |
+| Recalbox `rpizero2` and `rpi3` source SHA-256 | `98edc8fa41bd5023293403434b7e67e9ed2410ba4838ec1854d18b1580f22bda`; built with patch `f28592eef2c5773f85c7874b746093de8538131ba66164ab042ac294e1129d37` |
+| Recalbox five ARM64/x86-64 source SHA-256 | `bddfdf413befd0f513adfd8eca7d64ee3c5fda2a8e6836250ac72f26b3f1684c`; built with the current patch SHA-256 listed above |
 | LaunchBox Windows x86-64 core SHA-256 | `d94283c6b95bf381c3652aba95de368b72e53bb2efb7485074200c2f8f888638` |
 | LaunchBox corresponding source archive | `native/launchbox/x86_64/nestopia-powerglove-source.tar.gz` |
 | LaunchBox source archive SHA-256 | `3584f410dfc0aa189f6770493ac963d05a9cd743d10d3e8fa29e15c01f40ccfd` |
 | Installed core directory | `/opt/retropie/libretrocores/lr-nestopia-powerglove/` on RetroPie; persistent `/recalbox/share/system/virtualglove/native/recalbox/TARGET/VERSION/` on Recalbox; persistent `/userdata/system/virtualglove/native/batocera/runtime/` on Batocera; `%LOCALAPPDATA%\VirtualGlove\native\` on LaunchBox |
 
 There is no compiled core that can run everywhere. Recalbox and Batocera builds
-are target-specific. The Recalbox package currently carries separately built
-Recalbox 10.1 `rpizero2` and `rpi3` ARM32 cores and a corresponding complete
-patched source archive for each binary. Other target/version pairs retain
-FCEUmm. If the user accepts the
+are target-specific. The Recalbox package carries separate Recalbox 10.1 builds
+for `rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and
+`x86_64`, with the exact complete patched source archive beside every binary.
+The Batocera package does not yet carry a compiled Nestopia PowerGlove core;
+Batocera retains FCEUmm until exact target builds receive the same manifest,
+source, dependency, and hardware validation. If the user accepts the
 RetroPie installer's optional native-core step,
 the target machine downloads the pinned upstream source, including its author
 notices and `COPYING` file, applies the patch, and builds for its own processor.

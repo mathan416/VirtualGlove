@@ -11,8 +11,10 @@ set -u
 APP=/recalbox/share/system/virtualglove
 ARCH=$(cat /recalbox/recalbox.arch 2>/dev/null || true)
 VERSION=$(cat /recalbox/recalbox.version 2>/dev/null || true)
-CORE="$APP/native/recalbox/$ARCH/$VERSION/nestopia_powerglove_libretro.so"
 MANIFEST="$APP/native/recalbox/manifest.json"
+CORE=$(python3 "$APP/scripts/verify-recalbox-native-core.py" \
+    --manifest "$MANIFEST" --arch "$ARCH" --version "$VERSION" \
+    --resolve-core 2>/dev/null || true)
 STATE=/run/virtualglove-core
 CORE_TARGET=/usr/lib/libretro
 SYSTEM_TARGET=/recalbox/share_init/system/.emulationstation/systemlist.xml

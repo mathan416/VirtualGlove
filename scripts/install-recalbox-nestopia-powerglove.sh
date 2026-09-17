@@ -27,8 +27,9 @@ app=/recalbox/share/system/virtualglove
 # Load-check on the target before making the core persistent or visible.
 arch=$(cat /recalbox/recalbox.arch)
 version=$(cat /recalbox/recalbox.version)
-target="$app/native/recalbox/$arch/$version/nestopia_powerglove_libretro.so"
 manifest="$app/native/recalbox/manifest.json"
+target=$(python3 "$app/scripts/verify-recalbox-native-core.py" \
+    --manifest "$manifest" --arch "$arch" --version "$version" --resolve-core)
 python3 "$app/scripts/verify-recalbox-native-core.py" \
     --manifest "$manifest" --core "$source_core" --arch "$arch" \
     --version "$version" --load

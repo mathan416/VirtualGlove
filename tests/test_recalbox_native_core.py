@@ -175,11 +175,35 @@ class RecalboxNativeCoreTests(unittest.TestCase):
                 self.assertEqual((entry["elf_class"], entry["elf_machine"]), elf)
                 self.assertEqual(entry["size"], core.stat().st_size)
 
-    def test_manifest_rejects_unpackaged_version(self):
+    def test_manifest_uses_same_major_build_for_new_minor_version(self):
+        entry = VERIFY["verify"](
+            ROOT / "native/recalbox/manifest.json",
+            ROOT / "native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so",
+            "rpizero2", "10.2")
+        self.assertEqual(entry["recalbox_version"], "10.1")
+
+    def test_manifest_rejects_cross_major_fallback(self):
         with self.assertRaisesRegex(ValueError, "No packaged native core"):
             VERIFY["verify"](ROOT / "native/recalbox/manifest.json",
                              ROOT / "native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so",
-                             "rpizero2", "10.2")
+                             "rpizero2", "11.0")
+
+    def test_manifest_prefers_exact_then_newest_compatible_build(self):
+        source = json.loads((ROOT / "native/recalbox/manifest.json").read_text())
+        original = source["cores"]["rpizero2"]["10.1"]
+        source["cores"]["rpizero2"]["10.3"] = {
+            **original,
+            "file": original["file"].replace("/10.1/", "/10.3/"),
+            "source_file": original["source_file"].replace("/10.1/", "/10.3/"),
+            "recalbox_version": "10.3",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            manifest.write_text(json.dumps(source))
+            exact = VERIFY["manifest_entry"](manifest, "rpizero2", "10.1")
+            fallback = VERIFY["manifest_entry"](manifest, "rpizero2", "10.4")
+        self.assertEqual(exact["recalbox_version"], "10.1")
+        self.assertEqual(fallback["recalbox_version"], "10.3")
 
     def test_manifest_rejects_target_elf_and_path_mismatches(self):
         source = json.loads((ROOT / "native/recalbox/manifest.json").read_text())

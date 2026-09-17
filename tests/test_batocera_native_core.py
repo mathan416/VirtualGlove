@@ -56,9 +56,14 @@ class BatoceraNativeCoreTests(unittest.TestCase):
 
     def test_cross_build_uses_batocera_target_toolchain(self):
         text = (ROOT / "scripts/build-batocera-nestopia-powerglove.sh").read_text()
-        self.assertIn('"$target-pkg" PKG=libretro-nestopia', text)
-        self.assertIn('output/$target/host/bin', text)
-        self.assertIn("VIRTUALGLOVE_LIBRETRO_PLATFORM", text)
+        self.assertIn("virtualglove/batocera-linux-build:43.1", text)
+        self.assertIn('docker build -t "$image" - < "$batocera/Dockerfile"', text)
+        self.assertIn('destination=$(CDPATH= cd -- "$destination" && pwd)', text)
+        self.assertIn("-C /build/buildroot toolchain", text)
+        self.assertIn('CC="$prefix-gcc" CXX="$cxx"', text)
+        self.assertIn("platform='\"$platform\"'", text)
+        self.assertIn("BR2_DL_DIR=/downloads", text)
+        self.assertIn("Batocera core ELF identity does not match its target", text)
         self.assertIn("nestopia_powerglove_libretro.so", text)
 
     def test_target_installer_load_checks_before_atomic_replacement(self):
