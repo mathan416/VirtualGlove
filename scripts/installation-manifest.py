@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: scripts/installation-manifest.py
-# Purpose: Track and transactionally update application-owned files without deleting local changes.
+# Purpose: Track and transactionally replace application-owned files while preserving private data.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -26,7 +26,6 @@ JOURNAL = '.virtualglove-install-pending.json'
 LOCK = '.virtualglove-install.lock'
 PRIVATE = {'data', '.cache', '.git', '.venv', '__pycache__'}
 PRESERVED = {'docs/cheatsheet.md'}
-REPLACED = {'config/profiles.json'}
 
 
 def retired_python_package():
@@ -57,10 +56,10 @@ def validate_retired_python_tree(root, previous):
                 raise ValueError('Unexpected generated file in retired package: ' + name)
             continue
         record = previous['files'].get(name)
-        if record is None or fingerprint(path) != record:
+        if record is None:
             raise ValueError(
-                'Locally modified retired Python package file; back it up and '
-                'restore the released 0.4.2 file before upgrading: ' + name
+                'Unknown file in retired Python package; back it up and remove '
+                'it before upgrading: ' + name
             )
     return package
 
@@ -244,25 +243,23 @@ def apply(source, root, backup, names=None):
             relative(name)
             incoming[name] = fingerprint(source / name)
         names = sorted(set(names))
-        inventory, writes, deletes, kept = {}, [], [], []
+        inventory, writes, deletes, changed = {}, [], [], []
         for name, record in incoming.items():
             target = safe(root / name)
             old = previous['files'].get(name)
             current = fingerprint(target) if target.exists() else None
-            if old and current is not None and current != old and current != record and name not in REPLACED:
-                inventory[name] = old
-                kept.append(name)
-            else:
-                inventory[name] = record
-                if current != record: writes.append(name)
+            inventory[name] = record
+            if old and current is not None and current != old and current != record:
+                changed.append(name)
+            if current != record:
+                writes.append(name)
         for name, record in previous['files'].items():
             if name in incoming: continue
             target = safe(root / name)
             if target.exists():
-                if fingerprint(target) == record: deletes.append(name)
-                else:
-                    kept.append(name)
-                    inventory[name] = record
+                if fingerprint(target) != record:
+                    changed.append(name)
+                deletes.append(name)
         for name in names:
             if name in PRESERVED and not (root / name).exists(): writes.append(name)
         # Preserved settings are never entered into the ownership inventory.
@@ -272,8 +269,7 @@ def apply(source, root, backup, names=None):
         new = {'format': 1, 'root': str(root), 'release': release, 'files': inventory}
         data = (json.dumps(new, sort_keys=True, indent=2) + '\n').encode()
         if not writes and not deletes and (root / MANIFEST).exists() and (root / MANIFEST).read_bytes() == data:
-            for name in kept: print('ACTION  Local change preserved: ' + name)
-            return {'removed': [], 'preserved': kept}
+            return {'removed': [], 'backed_up_changes': []}
         backup.mkdir(parents=True, exist_ok=True, mode=0o700)
         backup.chmod(0o700)
         entries = {}
@@ -304,9 +300,9 @@ def apply(source, root, backup, names=None):
         except BaseException:
             rollback(root)
             raise
-        print('Manifest: %d files; removed %d obsolete files; retained %d local changes. Backup: %s' % (len(inventory),len(deletes),len(kept),backup))
-        for name in kept: print('ACTION  Local change preserved: ' + name)
-        return {'removed': deletes, 'preserved': kept}
+        print('Manifest: %d files; removed %d obsolete files; backed up %d changed managed files. Backup: %s' % (len(inventory),len(deletes),len(changed),backup))
+        for name in changed: print('ACTION  Changed managed file backed up and replaced: ' + name)
+        return {'removed': deletes, 'backed_up_changes': changed}
 
 
 def main():

@@ -154,6 +154,7 @@ class SetupTests(unittest.TestCase):
                 path.mkdir()
                 (path / "cmdline").write_bytes(b"\0".join(arguments) + b"\0")
             self.assertEqual(setup.retired_runtime_processes(proc), [101])
+            self.assertEqual(setup.managed_runtime_processes(proc), [101, 102])
 
     def test_saved_player1_controller_must_belong_to_current_platform(self):
         module = Mock()

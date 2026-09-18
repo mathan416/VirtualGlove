@@ -835,8 +835,10 @@ a disconnected website or blank matrix is not proof that power can be removed.
 ## Updates and checks
 
 Updates keep an inventory of installed application files. After the first inventory
-is created, unchanged obsolete files are backed up and removed; your own changes
-are kept and reported. If an update is interrupted, follow its recovery instructions
+is created, the installer stops managed runtime processes before changing code.
+Changed application-owned files are backed up and replaced; obsolete owned files
+are backed up and removed. Private settings and unknown files stay in place. If an
+update is interrupted, follow its recovery instructions
 before trying again.
 
 To update, repeat the same single-line commands on both machines. Each selects
@@ -860,11 +862,12 @@ calibration, tuning, dead-zone settings, camera/device configuration, pairing
 credentials, console game registry, ROMs, saves, controller assignments, and
 the installed native core.
 
-If an old application file was edited locally or the retired package is not
-covered by a valid installation manifest, the installer stops before writing
-anything. Back up the reported file and restore its released v0.4.2 copy before
-retrying, or reconcile the customization manually. Do not delete the manifest
-to bypass this protection.
+If an old managed application file was edited locally, the installer includes
+that copy in the transaction backup and removes it with the retired runtime.
+If the retired package contains an unknown file or is not covered by a valid
+installation manifest, the installer stops before writing anything. Back up and
+remove the reported unknown file before retrying. Do not delete the manifest to
+bypass this protection.
 
 After updating both machines, run the checks below. They now report a failure if
 the retired Python package remains. Confirm that both installations report the

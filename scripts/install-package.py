@@ -31,6 +31,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 
@@ -474,6 +475,54 @@ def preflight(machine):
             raise ValueError("Close the running game before installing VirtualGlove")
 
 
+def stop_managed_runtime(machine, setup):
+    """Stop console publishers before replacing any managed runtime files."""
+    if machine == "uno-q":
+        return None
+    present = False
+    if machine == "retropie":
+        units = ("virtualglove-receiver.timer", "virtualglove-receiver.service",
+                 "virtualglove-games.service")
+        present = any(Path("/etc/systemd/system", unit).exists() for unit in units)
+        for unit in units:
+            subprocess.run(["systemctl", "stop", unit], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif machine == "recalbox":
+        service = Path("/recalbox/share/system/virtualglove/recalbox/virtualglove-service")
+        present = service.is_file()
+        if present:
+            subprocess.run(["sh", str(service), "stop"], check=True)
+    else:
+        service = Path("/userdata/system/services/VirtualGlove")
+        present = service.is_file()
+        if present:
+            subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
+    deadline = time.monotonic() + 5
+    while setup.managed_runtime_processes() and time.monotonic() < deadline:
+        time.sleep(0.1)
+    remaining = setup.managed_runtime_processes()
+    if remaining:
+        raise ValueError("Could not stop existing VirtualGlove runtime processes: " +
+                         ", ".join(map(str, remaining)))
+    return machine if present else None
+
+
+def restart_managed_runtime(machine):
+    """Best-effort recovery when an upgrade fails after stopping an old runtime."""
+    if machine == "retropie":
+        subprocess.run(["systemctl", "start", "virtualglove-games.service"], check=False)
+        subprocess.run(["systemctl", "start", "virtualglove-receiver.timer"], check=False)
+        token = Path("/etc/virtualglove/token")
+        if token.is_file() and len(token.read_text().strip()) >= 16:
+            subprocess.run(["systemctl", "start", "virtualglove-receiver.service"], check=False)
+    elif machine == "recalbox":
+        service = Path("/recalbox/share/system/virtualglove/recalbox/virtualglove-service")
+        if service.is_file():
+            subprocess.run(["sh", str(service), "start"], check=False)
+    elif machine == "batocera":
+        subprocess.run(["batocera-services", "start", "VirtualGlove"], check=False)
+
+
 def stage_unoq(source, setup):
     """Back up managed app files and update them without touching data or local documents."""
     user = pwd.getpwnam("arduino")
@@ -569,18 +618,24 @@ def main(argv=None):
                 "Copy only the files you need back to those paths, retaining ownership/permissions.\n"
                 "Private settings were preserved in place. To recover code/firmware, rerun the previous release installer.\n"
                 "Then reload systemd and rerun the installer --check. Do not copy the entire backup over /.\n")
-            if args.machine == "uno-q":
-                active_hostname = configure_controller_hostname(setup, selected_hostname)
-                stage_unoq(source, setup)
-                setup.install_unoq(args.peer)
-                setup.wait_unoq()
-            elif args.machine == "retropie":
-                setup.install_retropie(args.peer)
-                setup.configure_games(confirm)
-            elif args.machine == "recalbox":
-                setup.install_recalbox(args.peer, args.player1_device)
-            else:
-                setup.install_batocera(args.peer, args.player1_device)
+            stopped_runtime = stop_managed_runtime(args.machine, setup)
+            try:
+                if args.machine == "uno-q":
+                    active_hostname = configure_controller_hostname(setup, selected_hostname)
+                    stage_unoq(source, setup)
+                    setup.install_unoq(args.peer)
+                    setup.wait_unoq()
+                elif args.machine == "retropie":
+                    setup.install_retropie(args.peer)
+                    setup.configure_games(confirm)
+                elif args.machine == "recalbox":
+                    setup.install_recalbox(args.peer, args.player1_device)
+                else:
+                    setup.install_batocera(args.peer, args.player1_device)
+            except BaseException:
+                if stopped_runtime:
+                    restart_managed_runtime(stopped_runtime)
+                raise
             report = setup.Report()
             {"uno-q": setup.check_unoq, "retropie": setup.check_retropie,
              "recalbox": setup.check_recalbox,

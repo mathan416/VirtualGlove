@@ -117,6 +117,11 @@ authoritative record for line-level and file-level history.
   successful upgrade from leaving duplicate input publishers alive. Process
   inspection also tolerates the normal race where a process exits while `/proc`
   is being read, without printing a misleading upgrade warning.
+- Linux console installers now stop all managed input publishers before replacing
+  application files and refuse to continue while an exact managed process remains.
+  A failed upgrade makes a best-effort restart of the previous runtime. Managed
+  files are backed up and overwritten from the coherent release; obsolete managed
+  files are backed up and removed. Private data and unknown files remain preserved.
 - Setup no longer offers pairing-key replacement as a connection-save option.
   Pairing credentials are established or replaced only through the explicit,
   physically confirmed pairing flow.

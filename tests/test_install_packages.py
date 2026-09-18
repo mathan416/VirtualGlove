@@ -521,7 +521,7 @@ class NamespaceUpgradeTests(unittest.TestCase):
             self.assertEqual(installed['release'], 'v0.5.0')
             self.assertFalse(any(self.old_package in name for name in installed['files']))
 
-    def test_042_upgrade_refuses_modified_retired_code_before_writing(self):
+    def test_042_upgrade_backs_up_and_removes_modified_managed_retired_code(self):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory).resolve()
             root = directory / 'installed'
@@ -529,10 +529,13 @@ class NamespaceUpgradeTests(unittest.TestCase):
             modified = root / 'src' / self.old_package / 'receiver.py'
             modified.write_text('local modification\n')
             source = self.current_source(directory)
-            with self.assertRaisesRegex(ValueError, 'Locally modified retired Python'):
-                self.manifest['apply'](source, root, directory / 'backup')
-            self.assertEqual(modified.read_text(), 'local modification\n')
-            self.assertFalse((root / 'src/virtualglove').exists())
+            backup = directory / 'backup'
+            result = self.manifest['apply'](source, root, backup)
+            retired = 'src/' + self.old_package + '/receiver.py'
+            self.assertIn(retired, result['backed_up_changes'])
+            self.assertEqual((backup / retired).read_text(), 'local modification\n')
+            self.assertFalse((root / 'src' / self.old_package).exists())
+            self.assertTrue((root / 'src/virtualglove').is_dir())
 
     def test_untracked_retired_tree_requires_manual_backup(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -665,6 +668,36 @@ class PreflightTests(unittest.TestCase):
                  patch.object(installer, 'confirm', return_value=False):
                 with self.assertRaisesRegex(ValueError, message):
                     installer.preflight('uno-q')
+
+
+class RuntimeLifecycleTests(unittest.TestCase):
+    def test_retropie_publishers_stop_before_managed_files_are_replaced(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[]))
+        with patch('pathlib.Path.exists', return_value=True), \
+                patch.object(installer.subprocess, 'run') as run:
+            self.assertEqual(installer.stop_managed_runtime('retropie', setup),
+                             'retropie')
+        commands = [tuple(item.args[0]) for item in run.call_args_list]
+        self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.timer'), commands)
+        self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.service'), commands)
+        self.assertIn(('systemctl', 'stop', 'virtualglove-games.service'), commands)
+
+    def test_batocera_service_stops_before_managed_files_are_replaced(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[]))
+        with patch('pathlib.Path.is_file', return_value=True), \
+                patch.object(installer.subprocess, 'run') as run:
+            self.assertEqual(installer.stop_managed_runtime('batocera', setup),
+                             'batocera')
+        run.assert_called_once_with(
+            ['batocera-services', 'stop', 'VirtualGlove'], check=False)
+
+    def test_upgrade_refuses_to_replace_files_while_publishers_remain(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[321]))
+        with patch('pathlib.Path.is_file', return_value=False), \
+                patch.object(installer.time, 'monotonic', side_effect=[0, 6]), \
+                patch.object(installer.time, 'sleep'):
+            with self.assertRaisesRegex(ValueError, 'Could not stop existing'):
+                installer.stop_managed_runtime('batocera', setup)
 
 
 class GameSetupTests(unittest.TestCase):

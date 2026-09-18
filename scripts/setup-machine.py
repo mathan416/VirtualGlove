@@ -59,10 +59,9 @@ def run(*args):
     subprocess.run(list(map(str, args)), check=True)
 
 
-def retired_runtime_processes(proc_root=Path("/proc")):
-    """Return only known pre-0.5.0 module processes, without matching shell text."""
-    prefix = ("power" + "glove_vision.").encode()
-    modules = {prefix + name.encode() for name in (
+def runtime_module_processes(prefixes, proc_root=Path("/proc")):
+    """Return exact managed module processes, without matching shell command text."""
+    modules = {prefix.encode() + name.encode() for prefix in prefixes for name in (
         "merged_gamepad", "game_registry", "console_monitor", "receiver",
         "vision_app", "profile_control",
     )}
@@ -83,6 +82,17 @@ def retired_runtime_processes(proc_root=Path("/proc")):
                 found.append(int(process.name))
                 break
     return sorted(found)
+
+
+def retired_runtime_processes(proc_root=Path("/proc")):
+    """Return only known pre-0.5.0 module processes."""
+    return runtime_module_processes(["power" + "glove_vision."], proc_root)
+
+
+def managed_runtime_processes(proc_root=Path("/proc")):
+    """Return current and retired managed runtime processes."""
+    return runtime_module_processes(
+        ["virtualglove.", "power" + "glove_vision."], proc_root)
 
 
 def write_file(path, content, mode=0o644, preserve=False):
