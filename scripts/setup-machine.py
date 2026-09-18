@@ -59,6 +59,32 @@ def run(*args):
     subprocess.run(list(map(str, args)), check=True)
 
 
+def retired_runtime_processes(proc_root=Path("/proc")):
+    """Return only known pre-0.5.0 module processes, without matching shell text."""
+    prefix = ("power" + "glove_vision.").encode()
+    modules = {prefix + name.encode() for name in (
+        "merged_gamepad", "game_registry", "console_monitor", "receiver",
+        "vision_app", "profile_control",
+    )}
+    found = []
+    try:
+        processes = proc_root.iterdir()
+    except OSError:
+        return found
+    for process in processes:
+        if not process.name.isdigit():
+            continue
+        try:
+            arguments = (process / "cmdline").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        for index, argument in enumerate(arguments[:-1]):
+            if argument == b"-m" and arguments[index + 1] in modules:
+                found.append(int(process.name))
+                break
+    return sorted(found)
+
+
 def write_file(path, content, mode=0o644, preserve=False):
     """Back up changed managed files; never overwrite a symlink or preserved setting."""
     path = Path(path)
@@ -606,6 +632,7 @@ def install_recalbox(peer, player1_device=None):
 def check_recalbox(report):
     """Check only persistent Recalbox integration and active processes."""
     root = Path("/recalbox/share/system/virtualglove")
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.check("Recalbox 10.x detected", Path("/recalbox/recalbox.version").is_file() and
                  Path("/recalbox/recalbox.version").read_text().strip().startswith("10."))
     report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
@@ -726,6 +753,7 @@ def install_batocera(peer, player1_device=None):
 def check_batocera(report):
     """Check persistent Batocera integration without inspecting private values."""
     root = Path("/userdata/system/virtualglove")
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.check("Supported Batocera release", batocera_version() >= 38)
     report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
@@ -825,6 +853,7 @@ def check_inventory(report, root):
 def check_retropie(report):
     """Inspect boot configuration, receiver prerequisites and launch integration."""
     check_inventory(report, Path("/opt/virtualglove-src"))
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
     report.command("Avahi running", ["systemctl", "is-active", "--quiet", "avahi-daemon"])
     report.command("mDNS hostname dependency installed", ["dpkg", "--verify", "libnss-mdns"])
@@ -885,6 +914,7 @@ def check_retropie(report):
 def check_unoq(report):
     """Check boot persistence, the app-owned resolver and public application health."""
     check_inventory(report, Path(UNOQ_APP))
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
     report.command("mDNS hostname dependency installed", ["dpkg", "--verify", "libnss-mdns"])
     report.command("Avahi running", ["systemctl", "is-active", "--quiet", "avahi-daemon"])

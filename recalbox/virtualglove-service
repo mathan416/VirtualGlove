@@ -20,6 +20,37 @@ RETROARCH_CONFIG="${VIRTUALGLOVE_RETROARCH_CONFIG:-/recalbox/share/system/config
 CORE_MOUNT="${VIRTUALGLOVE_CORE_MOUNT:-$APP/recalbox/virtualglove-core-mount}"
 export PYTHONPATH="$APP/src"
 MONITOR="${VIRTUALGLOVE_MONITOR:-1}"
+RETIRED_MODULE="power""glove_vision"
+
+retired_pid() {
+    pid="$1"
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    command="$(tr '\000' ' ' < "/proc/$pid/cmdline")"
+    case " $command " in
+        *" -m $RETIRED_MODULE.merged_gamepad "*|*" -m $RETIRED_MODULE.game_registry "*|\
+        *" -m $RETIRED_MODULE.console_monitor "*|*" -m $RETIRED_MODULE.receiver "*) return 0 ;;
+    esac
+    return 1
+}
+
+stop_retired() {
+    pids=""
+    for process in /proc/[0-9]*; do
+        pid="${process##*/}"
+        retired_pid "$pid" && pids="$pids $pid"
+    done
+    [ -n "$pids" ] || return 0
+    kill $pids 2>/dev/null || true
+    count=0
+    while [ "$count" -lt 20 ]; do
+        live=""
+        for pid in $pids; do retired_pid "$pid" && live="$live $pid"; done
+        [ -z "$live" ] && return 0
+        sleep 0.1
+        count=$((count + 1))
+    done
+    for pid in $pids; do retired_pid "$pid" && kill -KILL "$pid" 2>/dev/null || true; done
+}
 
 valid_pid() {
     name="$1"
@@ -87,6 +118,7 @@ start_all() {
 }
 
 stop_all() {
+    stop_retired
     stop_one console_monitor
     stop_one game_registry
     stop_one receiver

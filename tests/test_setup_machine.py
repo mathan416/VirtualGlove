@@ -138,6 +138,23 @@ class SetupTests(unittest.TestCase):
             setup.list_player1_devices("recalbox")
         output.assert_called_once_with("abc123  Configured Pad")
 
+    def test_retired_runtime_scan_matches_only_exact_managed_modules(self):
+        with tempfile.TemporaryDirectory() as directory:
+            proc = Path(directory)
+            commands = {
+                "101": [b"/usr/bin/python3", b"-m",
+                        b"power" + b"glove_vision.receiver", b"--listen"],
+                "102": [b"/usr/bin/python3", b"-m", b"virtualglove.receiver"],
+                "103": [b"sh", b"-c", b"power" + b"glove_vision.receiver"],
+                "104": [b"/usr/bin/python3", b"-m",
+                        b"power" + b"glove_vision.unmanaged_tool"],
+            }
+            for pid, arguments in commands.items():
+                path = proc / pid
+                path.mkdir()
+                (path / "cmdline").write_bytes(b"\0".join(arguments) + b"\0")
+            self.assertEqual(setup.retired_runtime_processes(proc), [101])
+
     def test_saved_player1_controller_must_belong_to_current_platform(self):
         module = Mock()
         module.load_controller.return_value = {"platform": "recalbox"}
