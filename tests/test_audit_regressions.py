@@ -12,7 +12,9 @@
 
 """Exercise failure paths without camera, bridge, or administrator access."""
 import json
+import re
 import runpy
+import subprocess
 import sys
 import tempfile
 import time
@@ -21,13 +23,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from concurrent.futures import Future
 from unittest.mock import Mock, patch
-from powerglove_vision import receiver, vision_app
-from powerglove_vision.transport import validate_state
-from powerglove_vision.controller_protocol import ReceiverSessions, decode_message, encode_message
-from powerglove_vision.gesture import GestureEngine, HeldGesture, GestureConfig
-from powerglove_vision.model import Calibration, ControllerState, HandObservation
-from powerglove_vision.matrix import UnoQMatrix, MatrixStatus
-from powerglove_vision.tuning import TuningManager
+from virtualglove import receiver, vision_app
+from virtualglove.transport import validate_state
+from virtualglove.controller_protocol import ReceiverSessions, decode_message, encode_message
+from virtualglove.gesture import GestureEngine, HeldGesture, GestureConfig
+from virtualglove.model import Calibration, ControllerState, HandObservation
+from virtualglove.matrix import UnoQMatrix, MatrixStatus
+from virtualglove.tuning import TuningManager
 
 ROOT = Path(__file__).resolve().parents[1]
 CAL = Calibration(.5, .5, .2, 0)
@@ -41,6 +43,29 @@ def packet(**extra):
 
 
 class AuditRegressionTests(unittest.TestCase):
+    def test_retired_python_and_product_names_are_absent_from_tracked_files(self):
+        tracked = subprocess.check_output(
+            ["git", "ls-files", "-z"], cwd=ROOT
+        ).decode().split("\0")
+        old_brand, vision = "power" + "glove", "vision"
+        retired = re.compile(
+            old_brand + r"[_ -]?" + vision + "|" +
+            vision + r"[_ -]?" + old_brand,
+            re.IGNORECASE,
+        )
+        matches = []
+        for relative in filter(None, tracked):
+            path = ROOT / relative
+            if not path.is_file():
+                continue
+            try:
+                content = path.read_text()
+            except UnicodeDecodeError:
+                continue
+            if retired.search(relative) or retired.search(content):
+                matches.append(relative)
+        self.assertEqual(matches, [])
+
     def test_help_audit_ignores_nested_documentation_support_files(self):
         audit = runpy.run_path(str(ROOT / 'scripts/check-documentation.py'))
         errors = []
@@ -103,11 +128,11 @@ class AuditRegressionTests(unittest.TestCase):
         for method, value in [('set_status',MatrixStatus.LOADING), ('set_profile','program_h')]:
             rpc = Mock(side_effect=[OSError('temporary failure'),None])
             matrix = UnoQMatrix(call=rpc)
-            with patch('powerglove_vision.matrix.time.monotonic',return_value=10):
+            with patch('virtualglove.matrix.time.monotonic',return_value=10):
                 self.assertFalse(getattr(matrix,method)(value))
                 self.assertFalse(getattr(matrix,method)(value))
             self.assertEqual(rpc.call_count,1)
-            with patch('powerglove_vision.matrix.time.monotonic',return_value=11):
+            with patch('virtualglove.matrix.time.monotonic',return_value=11):
                 self.assertTrue(getattr(matrix,method)(value))
                 self.assertTrue(getattr(matrix,method)(value))
             self.assertEqual(rpc.call_count,2)

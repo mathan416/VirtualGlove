@@ -12,7 +12,7 @@ import threading
 from unittest import mock
 import unittest
 
-from powerglove_vision import retroarch_remote
+from virtualglove import retroarch_remote
 
 
 class RetroArchRemoteTests(unittest.TestCase):

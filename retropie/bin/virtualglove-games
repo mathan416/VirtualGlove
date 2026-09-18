@@ -11,4 +11,4 @@
 # Full history: docs/CHANGELOG.md and Git history.
 
 export PYTHONPATH=/opt/virtualglove-src/src
-exec /usr/bin/python3 -m powerglove_vision.game_registry "$@"
+exec /usr/bin/python3 -m virtualglove.game_registry "$@"

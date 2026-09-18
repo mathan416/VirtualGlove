@@ -12,7 +12,7 @@
 import socket
 import unittest
 from unittest.mock import patch
-from powerglove_vision import resolver
+from virtualglove import resolver
 
 
 class ResolverTests(unittest.TestCase):

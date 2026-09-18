@@ -24,7 +24,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.pairing import (
+from virtualglove.pairing import (
     build_parser,
     certificate_code,
     certificate_fingerprint,
@@ -65,7 +65,7 @@ class PairingTests(unittest.TestCase):
                          "LaunchBox certificate dependency is not installed")
     def test_certificate_falls_back_without_openssl(self):
         with tempfile.TemporaryDirectory() as temporary_name, mock.patch(
-                "powerglove_vision.pairing.subprocess.run",
+                "virtualglove.pairing.subprocess.run",
                 side_effect=FileNotFoundError):
             certificate, key, pem = generate_certificate(
                 Path(temporary_name), "launchbox-test"
@@ -124,8 +124,8 @@ class PairingTests(unittest.TestCase):
             self.assertEqual(token_file.read_text(), "a-secure-controller-token\n")
             self.assertEqual(token_file.stat().st_mode & 0o777, 0o640)
 
-    @mock.patch("powerglove_vision.pairing.verify_controller_pairing")
-    @mock.patch("powerglove_vision.pairing.subprocess.run")
+    @mock.patch("virtualglove.pairing.verify_controller_pairing")
+    @mock.patch("virtualglove.pairing.subprocess.run")
     def test_password_pairing_uses_python_ssh_without_command_line_secrets(self, run, verify):
         run.return_value.returncode = 0
         run.return_value.stderr = b""
@@ -149,7 +149,7 @@ class PairingTests(unittest.TestCase):
         self.assertEqual(payload["platform"], "retropie")
         verify.assert_called_once_with("retropie.local", 55355, "paired-controller-token")
 
-    @mock.patch("powerglove_vision.pairing.verify_controller_pairing")
+    @mock.patch("virtualglove.pairing.verify_controller_pairing")
     def test_one_time_code_pairs_over_pinned_https(self, verify):
         with tempfile.TemporaryDirectory() as temporary_name:
             token_file = Path(temporary_name) / "token"

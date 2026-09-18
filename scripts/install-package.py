@@ -145,12 +145,12 @@ def unpack(archive, destination, machine, version):
         required = [
             "scripts/setup-machine.py",
             "scripts/installation-manifest.py",
-            "src/powerglove_vision/receiver.py",
-            "src/powerglove_vision/gesture.py",
-            "src/powerglove_vision/tracker.py",
-            "src/powerglove_vision/tuning.py",
-            "src/powerglove_vision/vision_app.py",
-            "src/powerglove_vision/profile_control.py",
+            "src/virtualglove/receiver.py",
+            "src/virtualglove/gesture.py",
+            "src/virtualglove/tracker.py",
+            "src/virtualglove/tuning.py",
+            "src/virtualglove/vision_app.py",
+            "src/virtualglove/profile_control.py",
             "config/games.json",
             "config/profiles.json",
             "THIRD_PARTY_NOTICES.md",
@@ -167,8 +167,8 @@ def unpack(archive, destination, machine, version):
                       "uno-q/virtualglove-camera-recovery.py", "uno-q/virtualglove-camera-recovery.conf",
                       "uno-q/virtualglove-camera-recovery.path", "uno-q/virtualglove-camera-recovery.service"]
                      if machine == "uno-q" else ([
-                         "src/powerglove_vision/console_monitor.py",
-                         "src/powerglove_vision/merged_gamepad.py",
+                         "src/virtualglove/console_monitor.py",
+                         "src/virtualglove/merged_gamepad.py",
                          "recalbox/virtualglove-service",
                          "recalbox/virtualglove-core-mount",
                          "recalbox/retroarch-nes.cfg",
@@ -181,8 +181,8 @@ def unpack(archive, destination, machine, version):
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "python/ssh_pair.py",
                      ] if machine == "recalbox" else ([
-                         "src/powerglove_vision/merged_gamepad.py",
-                         "src/powerglove_vision/retropie_hook.py",
+                         "src/virtualglove/merged_gamepad.py",
+                         "src/virtualglove/retropie_hook.py",
                          "recalbox/virtualglove-service",
                          "batocera/VirtualGlove",
                          "batocera/virtualglove-game",
@@ -200,7 +200,7 @@ def unpack(archive, destination, machine, version):
                          "retropie/virtualglove-receiver.service",
                          "retropie/virtualglove-receiver.timer",
                          "retropie/virtualglove-games.service",
-                         "src/powerglove_vision/retropie_hook.py",
+                         "src/virtualglove/retropie_hook.py",
                          "retropie/bin/virtualglove-retropie-hook",
                          "retropie/bin/virtualglove-receiver",
                          "retropie/bin/virtualglove-games",
@@ -214,7 +214,7 @@ def unpack(archive, destination, machine, version):
                          "scripts/configure-super-glove-ball-core.py",
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "native/powerglove-dot/powerglove_dot.cpp",
-                         "src/powerglove_vision/dot_launcher.py",
+                         "src/virtualglove/dot_launcher.py",
                          "retropie/bin/virtualglove-dot",
                      ])))
         if machine == "recalbox":
@@ -285,7 +285,7 @@ def unpack(archive, destination, machine, version):
                 raise ValueError("Incomplete package: " + relative)
         if machine == "uno-q":
             firmware = json.loads(package.read("VirtualGlove/firmware/matrix/manifest.json"))
-            build = json.loads(package.read("VirtualGlove/src/powerglove_vision/_build_info.json"))
+            build = json.loads(package.read("VirtualGlove/src/virtualglove/_build_info.json"))
             if not isinstance(firmware, dict) or not isinstance(build, dict):
                 raise ValueError("Invalid Matrix firmware or application identity")
             if firmware.get("firmware_source_id") != build.get("firmware_expected"):

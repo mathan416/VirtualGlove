@@ -50,15 +50,15 @@ test = [
 ]
 
 [project.scripts]
-virtualglove-games = "powerglove_vision.game_registry:main"
-virtualglove = "powerglove_vision.vision_app:main"
-virtualglove-receiver = "powerglove_vision.receiver:main"
-virtualglove-profile = "powerglove_vision.profile_control:main"
-virtualglove-retropie-hook = "powerglove_vision.retropie_hook:main"
-virtualglove-console-monitor = "powerglove_vision.console_monitor:main"
-virtualglove-pair = "powerglove_vision.pairing:main"
-virtualglove-launchbox = "powerglove_vision.launchbox_hook:main"
-virtualglove-launchbox-runtime = "powerglove_vision.launchbox_runtime:main"
+virtualglove-games = "virtualglove.game_registry:main"
+virtualglove = "virtualglove.vision_app:main"
+virtualglove-receiver = "virtualglove.receiver:main"
+virtualglove-profile = "virtualglove.profile_control:main"
+virtualglove-retropie-hook = "virtualglove.retropie_hook:main"
+virtualglove-console-monitor = "virtualglove.console_monitor:main"
+virtualglove-pair = "virtualglove.pairing:main"
+virtualglove-launchbox = "virtualglove.launchbox_hook:main"
+virtualglove-launchbox-runtime = "virtualglove.launchbox_runtime:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

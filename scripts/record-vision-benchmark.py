@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.camera import camera_candidates  # noqa: E402
+from virtualglove.camera import camera_candidates  # noqa: E402
 
 
 CUES = (

@@ -12,7 +12,7 @@
 
 import unittest
 
-from powerglove_vision.vision_app import _launch_guard_active, build_parser
+from virtualglove.vision_app import _launch_guard_active, build_parser
 
 
 class LaunchGuardTests(unittest.TestCase):

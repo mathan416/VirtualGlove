@@ -25,10 +25,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from powerglove_vision.diagnostic_trace import DiagnosticTrace, session_key
-from powerglove_vision.transport import UdpSender
-from powerglove_vision.model import ControllerState
-from powerglove_vision.native_state import decode_record
+from virtualglove.diagnostic_trace import DiagnosticTrace, session_key
+from virtualglove.transport import UdpSender
+from virtualglove.model import ControllerState
+from virtualglove.native_state import decode_record
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -238,7 +238,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_duration_begins_with_first_event_not_trace_preparation(self):
         with tempfile.TemporaryDirectory() as folder:
-            with patch('powerglove_vision.diagnostic_trace.time.monotonic_ns',
+            with patch('virtualglove.diagnostic_trace.time.monotonic_ns',
                        side_effect=(100, 10_000, 10_001, 10_002)):
                 trace = DiagnosticTrace(Path(folder)/'trace', 'controller', seconds=2)
                 self.assertIsNone(trace.started_ns)
@@ -300,7 +300,7 @@ class DiagnosticTests(unittest.TestCase):
             sock.close()
             env = dict(os.environ, VIRTUALGLOVE_DIAGNOSTIC_TRACE=str(root/'run'),
                        VIRTUALGLOVE_DIAGNOSTIC_SECONDS='10')
-            process = subprocess.Popen([sys.executable, '-m', 'powerglove_vision.receiver',
+            process = subprocess.Popen([sys.executable, '-m', 'virtualglove.receiver',
                 '--listen', '127.0.0.1', '--port', str(port), '--token-file', str(root/'token'),
                 '--native-state', str(root/'native'), '--dry-run'], env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)

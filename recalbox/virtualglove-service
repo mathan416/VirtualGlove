@@ -28,7 +28,7 @@ valid_pid() {
     pid="$(cat "$pidfile" 2>/dev/null)"
     case "$pid" in *[!0-9]*|'') return 1 ;; esac
     [ -d "/proc/$pid" ] || return 1
-    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "powerglove_vision.$name"
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "virtualglove.$name"
 }
 
 start_one() {
@@ -40,7 +40,7 @@ start_one() {
     # native daemon launcher fully detaches the process and records its real
     # PID, so closing that terminal cannot stop a freshly restarted receiver.
     start-stop-daemon -S -b -m -p "$RUN/$name.pid" -x /usr/bin/python3 -- \
-        -m "powerglove_vision.$name" "$@" \
+        -m "virtualglove.$name" "$@" \
         </dev/null >> "$LOG/$name.log" 2>&1
 }
 
@@ -99,7 +99,7 @@ case "${1:-}" in
     restart) stop_all; start_all ;;
     pair)
         mkdir -p "$RUN" "$LOG" "$CONFIG"
-        exec /usr/bin/python3 -m powerglove_vision.pairing \
+        exec /usr/bin/python3 -m virtualglove.pairing \
             --token-file "$CONFIG/token" \
             --receiver-restart-command sh "$0" restart-receiver
         ;;

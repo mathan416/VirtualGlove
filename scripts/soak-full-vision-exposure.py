@@ -30,7 +30,7 @@ import urllib.request
 def worker_command(args):
     """Build the deliberately isolated controller-disabled worker command."""
     return [
-        sys.executable, "-m", "powerglove_vision.vision_app",
+        sys.executable, "-m", "virtualglove.vision_app",
         "--receiver", "127.0.0.1", "--port", "55999",
         "--token", "0123456789abcdef", "--profile",
         "off" if getattr(args, "transition_profile", None) else "practice",
@@ -56,7 +56,7 @@ def status(url, timeout=.5):
 
 def automatic_state(device):
     """Read the two standard exposure controls after the worker has closed."""
-    from powerglove_vision import camera_controls as controls
+    from virtualglove import camera_controls as controls
     fd = os.open(device, os.O_RDWR | getattr(os, "O_CLOEXEC", 0))
     try:
         result = {}
@@ -118,7 +118,7 @@ def run_cycle(args, index):
             else:
                 error = "idle profile listener did not become ready"
             if error is None:
-                from powerglove_vision.profile_control import send_request
+                from virtualglove.profile_control import send_request
                 send_request(
                     "127.0.0.1", args.profile_port, "0123456789abcdef",
                     args.transition_profile, "nes", "Super Glove Ball (USA).nes", 1.0,
@@ -146,7 +146,7 @@ def run_cycle(args, index):
                 time.sleep(.5)
                 snapshots.append(status(endpoint))
                 if args.transition_profile and time.monotonic() >= renew_at:
-                    from powerglove_vision.profile_control import send_request
+                    from virtualglove.profile_control import send_request
                     send_request(
                         "127.0.0.1", args.profile_port, "0123456789abcdef",
                         args.transition_profile, "nes", "Super Glove Ball (USA).nes", 1.0,
@@ -154,7 +154,7 @@ def run_cycle(args, index):
                     )
                     renew_at = time.monotonic() + 7
             if args.transition_profile:
-                from powerglove_vision.profile_control import send_request
+                from virtualglove.profile_control import send_request
                 send_request(
                     "127.0.0.1", args.profile_port, "0123456789abcdef",
                     None, "nes", "", 1.0,

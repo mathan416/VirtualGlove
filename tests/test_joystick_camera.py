@@ -15,14 +15,14 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision.debug_server import SharedDebugState
-from powerglove_vision.joystick_web import JOYSTICK_SCRIPT, JOYSTICK_CONTENT
+from virtualglove.debug_server import SharedDebugState
+from virtualglove.joystick_web import JOYSTICK_SCRIPT, JOYSTICK_CONTENT
 
 
 class JoystickPracticeTests(unittest.TestCase):
     def test_own_lease_is_distinct_from_other_tabs_and_expires(self):
         shared=SharedDebugState()
-        with patch('powerglove_vision.debug_server.time.monotonic',return_value=100):
+        with patch('virtualglove.debug_server.time.monotonic',return_value=100):
             shared.request_practice('other-tab',True)
             self.assertEqual(shared.practice_status('joystick-tab'),dict(practice_mode=True,session_active=False))
             shared.request_practice('joystick-tab',True)
@@ -31,7 +31,7 @@ class JoystickPracticeTests(unittest.TestCase):
             self.assertTrue(shared.practice_status('other-tab')['session_active'])
             self.assertFalse(shared.practice_status('joystick-tab')['session_active'])
             shared.request_practice('joystick-tab',True)
-        with patch('powerglove_vision.debug_server.time.monotonic',return_value=107):
+        with patch('virtualglove.debug_server.time.monotonic',return_value=107):
             self.assertEqual(shared.practice_status('joystick-tab'),dict(practice_mode=False,session_active=False))
 
     def test_reset_cannot_be_mistaken_for_an_owned_lease(self):
@@ -52,8 +52,8 @@ class JoystickCameraTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr)
 
     def test_preview_agrees_with_gameplay_frame_boundaries(self):
-        from powerglove_vision.gesture import GestureEngine, GestureConfig, joystick_deadzone_bounds
-        from powerglove_vision.model import Calibration, HandObservation
+        from virtualglove.gesture import GestureEngine, GestureConfig, joystick_deadzone_bounds
+        from virtualglove.model import Calibration, HandObservation
         samples=[]
         calibrations=[Calibration(.5,.5,.2,0),Calibration(.2,.8,.3,0)]
         for size in [.1,.28,.6,1.0]:
@@ -109,7 +109,7 @@ class JoystickCameraTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr)
 
     def test_setup_places_dead_zone_immediately_after_players(self):
-        from powerglove_vision.setup_web import SETUP_CONTENT
+        from virtualglove.setup_web import SETUP_CONTENT
         players=SETUP_CONTENT.index('id=players')
         joystick=SETUP_CONTENT.index('id=joystick-settings')
         matrix=SETUP_CONTENT.index('Matrix attract mode')
@@ -120,7 +120,7 @@ class JoystickCameraTests(unittest.TestCase):
 class PracticeResponseTests(unittest.TestCase):
     def test_http_practice_response_confirms_only_its_session(self):
         import http.client
-        from powerglove_vision.debug_server import start_debug_server
+        from virtualglove.debug_server import start_debug_server
         shared=SharedDebugState();shared.request_practice('another-practice-tab',True)
         server=start_debug_server(shared,'127.0.0.1',0)
         try:

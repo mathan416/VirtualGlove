@@ -484,7 +484,7 @@ def merged_controller_module():
     """Load the shared dependency-free merged-controller implementation."""
     if str(SOURCE / "src") not in sys.path:
         sys.path.insert(0, str(SOURCE / "src"))
-    from powerglove_vision import merged_gamepad
+    from virtualglove import merged_gamepad
     return merged_gamepad
 
 
@@ -608,7 +608,7 @@ def check_recalbox(report):
     root = Path("/recalbox/share/system/virtualglove")
     report.check("Recalbox 10.x detected", Path("/recalbox/recalbox.version").is_file() and
                  Path("/recalbox/recalbox.version").read_text().strip().startswith("10."))
-    report.check("Persistent VirtualGlove installation", (root / "src/powerglove_vision/receiver.py").is_file())
+    report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
     controller = root / "data/player1-controller.json"
@@ -727,7 +727,7 @@ def check_batocera(report):
     """Check persistent Batocera integration without inspecting private values."""
     root = Path("/userdata/system/virtualglove")
     report.check("Supported Batocera release", batocera_version() >= 38)
-    report.check("Persistent VirtualGlove installation", (root / "src/powerglove_vision/receiver.py").is_file())
+    report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
     report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
@@ -936,7 +936,7 @@ def check_unoq(report):
         report.check("Application HTTP status", False)
     report.check("App-owned Avahi resolver configured", "local:avahi_resolver" in (SOURCE / "app.yaml").read_text() and (SOURCE / "bricks/local/avahi_resolver/brick_compose.yaml").is_file())
     report.command("Profile UDP ingress published", ["docker", "port", "virtualglove-profile-relay-1", "55356/udp"])
-    code = ("import json; from pathlib import Path; from powerglove_vision.resolver import resolve_ipv4; "
+    code = ("import json; from pathlib import Path; from virtualglove.resolver import resolve_ipv4; "
             "d=json.loads(Path('/app/data/device.json').read_text()); resolve_ipv4(d['receiver'])")
     if status.get("connection_configured"):
         report.command("Configured receiver resolves inside app", ["docker", "exec", "-e", "PYTHONPATH=/app/src", "virtualglove-main-1", "python3", "-c", code])
@@ -992,13 +992,13 @@ def main():
             return 0
         if not args.check:
             if args.machine == "retropie":
-                required = ("src/powerglove_vision/receiver.py", "config/games.json",
+                required = ("src/virtualglove/receiver.py", "config/games.json",
                             "retropie/virtualglove-receiver.timer")
             elif args.machine == "recalbox":
-                required = ("src/powerglove_vision/receiver.py", "config/games.json",
+                required = ("src/virtualglove/receiver.py", "config/games.json",
                             "recalbox/virtualglove-service")
             elif args.machine == "batocera":
-                required = ("src/powerglove_vision/receiver.py", "config/games.json",
+                required = ("src/virtualglove/receiver.py", "config/games.json",
                             "recalbox/virtualglove-service", "batocera/VirtualGlove",
                             "batocera/virtualglove-game")
             else:

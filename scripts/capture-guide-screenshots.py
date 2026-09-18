@@ -23,11 +23,11 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from playwright.async_api import async_playwright, expect
-from powerglove_vision.control_server import DASHBOARD, LEARN, PLAY, SETUP
-from powerglove_vision.control_server import help_document_page, help_index_page
-from powerglove_vision.model import Calibration
-from powerglove_vision.tuning import TuningManager
-from powerglove_vision.versioning import current_identity
+from virtualglove.control_server import DASHBOARD, LEARN, PLAY, SETUP
+from virtualglove.control_server import help_document_page, help_index_page
+from virtualglove.model import Calibration
+from virtualglove.tuning import TuningManager
+from virtualglove.versioning import current_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'docs/images'

@@ -50,7 +50,7 @@ class EngineeringPackageTests(unittest.TestCase):
                 self.assertIn(prefix + "scripts/setup-engineering-tools.py", names)
                 self.assertIn(prefix + "docs/ENGINEERING_TOOLKIT.md", names)
                 self.assertIn(prefix + "README.md", names)
-                self.assertIn(prefix + "src/powerglove_vision/gesture.py", names)
+                self.assertIn(prefix + "src/virtualglove/gesture.py", names)
                 self.assertIn(prefix + "native/nestopia-powerglove/diagnostic_trace.h", names)
                 self.assertNotIn(prefix + "scripts/deploy-uno-q-wifi.sh", names)
                 self.assertNotIn(prefix + "scripts/build-docs-pdf.py", names)

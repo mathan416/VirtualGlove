@@ -207,7 +207,7 @@ def check_pdfs(errors: list[str]) -> None:
 
 def check_help_coverage(markdown: list[Path], errors: list[str]) -> None:
     """Require every portable guide to appear in the built-in Help library."""
-    source = (ROOT / "src" / "powerglove_vision" / "help_content.py").read_text()
+    source = (ROOT / "src" / "virtualglove" / "help_content.py").read_text()
     help_files = set(HELP_FILE.findall(source))
     portable_guides = {
         path.name

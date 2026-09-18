@@ -14,9 +14,9 @@ import unittest
 from pathlib import Path
 import ast
 
-from powerglove_vision.gesture import GestureConfig, GestureEngine
-from powerglove_vision.model import Calibration
-from powerglove_vision.vision_app import _joystick_grid_status
+from virtualglove.gesture import GestureConfig, GestureEngine
+from virtualglove.model import Calibration
+from virtualglove.vision_app import _joystick_grid_status
 
 
 class JoystickGridTests(unittest.TestCase):
@@ -79,7 +79,7 @@ class JoystickGridTests(unittest.TestCase):
 
     def test_status_publication_is_conditional_and_has_no_persistence(self):
         # The actual publication block is executed with both kinds of practice state.
-        source=Path('src/powerglove_vision/vision_app.py').read_text()
+        source=Path('src/virtualglove/vision_app.py').read_text()
         tree=ast.parse(source)
         assignment=next(n for n in ast.walk(tree) if isinstance(n,ast.Assign) and isinstance(n.value,ast.Call) and isinstance(n.value.func,ast.Name) and n.value.func.id=='_joystick_grid_status')
         condition=next(n for n in ast.walk(tree) if isinstance(n,ast.If) and any(isinstance(x,ast.Constant) and x.value=='joystick_grid' for x in ast.walk(n)) and isinstance(n.test,ast.Compare) and isinstance(n.test.left,ast.Name) and n.test.left.id=='grid')

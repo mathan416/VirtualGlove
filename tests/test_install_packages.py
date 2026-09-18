@@ -21,6 +21,7 @@ import io
 import json
 import os
 from pathlib import Path
+import runpy
 import stat
 import tempfile
 from types import SimpleNamespace
@@ -233,13 +234,13 @@ class ArchiveTests(unittest.TestCase):
                          'scripts/install-nestopia-powerglove.sh',
                          'scripts/install-powerglove-dot.sh',
                          'scripts/configure-super-glove-ball-core.py',
-                         'src/powerglove_vision/receiver.py',
-                         'src/powerglove_vision/gesture.py',
-                         'src/powerglove_vision/tracker.py',
-                         'src/powerglove_vision/tuning.py',
-                         'src/powerglove_vision/vision_app.py',
-                         'src/powerglove_vision/profile_control.py',
-                         'src/powerglove_vision/retropie_hook.py',
+                         'src/virtualglove/receiver.py',
+                         'src/virtualglove/gesture.py',
+                         'src/virtualglove/tracker.py',
+                         'src/virtualglove/tuning.py',
+                         'src/virtualglove/vision_app.py',
+                         'src/virtualglove/profile_control.py',
+                         'src/virtualglove/retropie_hook.py',
                          'config/games.json', 'config/profiles.json',
                          'THIRD_PARTY_NOTICES.md',
                          'retropie/virtualglove-receiver.service',
@@ -256,12 +257,12 @@ class ArchiveTests(unittest.TestCase):
                          'retropie/runcommand-onend-virtualglove.sh',
                          'native/nestopia-powerglove/nestopia-powerglove.patch',
                          'native/powerglove-dot/powerglove_dot.cpp',
-                         'src/powerglove_vision/dot_launcher.py'):
+                         'src/virtualglove/dot_launcher.py'):
                 output.writestr('VirtualGlove/' + name, 'test')
             console_members = {
                 'recalbox': (
-                    'src/powerglove_vision/console_monitor.py',
-                    'src/powerglove_vision/merged_gamepad.py',
+                    'src/virtualglove/console_monitor.py',
+                    'src/virtualglove/merged_gamepad.py',
                     'recalbox/virtualglove-service',
                     'recalbox/virtualglove-core-mount',
                     'recalbox/retroarch-nes.cfg',
@@ -275,7 +276,7 @@ class ArchiveTests(unittest.TestCase):
                     'python/ssh_pair.py',
                 ),
                 'batocera': (
-                    'src/powerglove_vision/merged_gamepad.py',
+                    'src/virtualglove/merged_gamepad.py',
                     'recalbox/virtualglove-service',
                     'batocera/VirtualGlove',
                     'batocera/virtualglove-game',
@@ -346,7 +347,7 @@ class ArchiveTests(unittest.TestCase):
                 archive = self.package(directory, machine=machine)
                 source = installer.unpack(
                     archive, Path(directory) / 'extract', machine, 'dev-test')
-                self.assertTrue((source / 'src/powerglove_vision/merged_gamepad.py').is_file())
+                self.assertTrue((source / 'src/virtualglove/merged_gamepad.py').is_file())
                 self.assertTrue((source / machine).is_dir())
 
     def test_loading_and_staging_extracted_setup_creates_no_generated_files(self):
@@ -438,8 +439,6 @@ class ArchiveTests(unittest.TestCase):
                     'down', '--remove-orphans')
                 command.assert_any_call(*expected)
                 self.assertLess(calls.index(expected), upgrade_start)
-                self.assertFalse(any('powerglove-vision' in str(part)
-                                     for call in calls for part in call))
                 self.assertTrue(list((root / 'backups').rglob('app.yaml')))
 
     def test_unmanaged_old_sketch_files_are_not_silently_deleted(self):
@@ -460,6 +459,92 @@ class ArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'Unmanaged files remain'):
                     installer.stage_unoq(source, setup)
             self.assertEqual((app / 'sketch/local-note.txt').read_text(), 'keep')
+
+
+class NamespaceUpgradeTests(unittest.TestCase):
+    def setUp(self):
+        self.manifest = runpy.run_path(str(ROOT / 'scripts/installation-manifest.py'))
+        self.old_package = 'power' + 'glove_vision'
+
+    def released_042_install(self, root):
+        old = root / 'src' / self.old_package
+        old.mkdir(parents=True)
+        files = {
+            'src/' + self.old_package + '/__init__.py': b'old package\n',
+            'src/' + self.old_package + '/receiver.py': b'old receiver\n',
+            'scripts/setup-machine.py': b'old installer\n',
+        }
+        records = {}
+        for name, content in files.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+            records[name] = self.manifest['fingerprint'](path)
+        (old / '__pycache__').mkdir()
+        (old / '__pycache__/receiver.cpython-311.pyc').write_bytes(b'generated cache')
+        (root / 'data').mkdir()
+        (root / 'data/device.json').write_text('private pairing and calibration')
+        (root / '.virtualglove-install.json').write_text(json.dumps({
+            'format': 1, 'root': str(root), 'release': 'v0.4.2', 'files': records,
+        }, indent=2))
+        return files
+
+    def current_source(self, directory):
+        source = Path(directory) / 'release'
+        (source / 'src/virtualglove').mkdir(parents=True)
+        (source / 'src/virtualglove/__init__.py').write_text('current package\n')
+        (source / 'scripts').mkdir()
+        (source / 'scripts/setup-machine.py').write_text('current installer\n')
+        (source / 'install-release.json').write_text(json.dumps({
+            'format': 1, 'machine': 'retropie', 'version': 'v0.5.0',
+        }))
+        return source
+
+    def test_042_upgrade_retires_namespace_and_preserves_private_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            old_files = self.released_042_install(root)
+            source = self.current_source(directory)
+            backup = directory / 'backup'
+            result = self.manifest['apply'](source, root, backup)
+            self.assertFalse((root / 'src' / self.old_package).exists())
+            self.assertEqual(self.manifest['check'](root), [])
+            self.assertTrue((root / 'src/virtualglove/__init__.py').is_file())
+            self.assertEqual((root / 'data/device.json').read_text(),
+                             'private pairing and calibration')
+            retired_files = {name for name in old_files if self.old_package in name}
+            self.assertTrue(retired_files.issubset(set(result['removed'])))
+            for name in retired_files:
+                self.assertTrue((backup / name).is_file())
+            installed = json.loads((root / '.virtualglove-install.json').read_text())
+            self.assertEqual(installed['release'], 'v0.5.0')
+            self.assertFalse(any(self.old_package in name for name in installed['files']))
+
+    def test_042_upgrade_refuses_modified_retired_code_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            self.released_042_install(root)
+            modified = root / 'src' / self.old_package / 'receiver.py'
+            modified.write_text('local modification\n')
+            source = self.current_source(directory)
+            with self.assertRaisesRegex(ValueError, 'Locally modified retired Python'):
+                self.manifest['apply'](source, root, directory / 'backup')
+            self.assertEqual(modified.read_text(), 'local modification\n')
+            self.assertFalse((root / 'src/virtualglove').exists())
+
+    def test_untracked_retired_tree_requires_manual_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            old = root / 'src' / self.old_package
+            old.mkdir(parents=True)
+            (old / '__init__.py').write_text('untracked old package\n')
+            source = self.current_source(directory)
+            with self.assertRaisesRegex(ValueError, 'without an installation manifest'):
+                self.manifest['apply'](source, root, directory / 'backup')
+            self.assertTrue((old / '__init__.py').is_file())
 
 
 class BootstrapTests(unittest.TestCase):

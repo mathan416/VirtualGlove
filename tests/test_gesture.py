@@ -18,8 +18,8 @@
 
 import unittest
 
-from powerglove_vision.gesture import GestureConfig, GestureEngine
-from powerglove_vision.model import HandObservation
+from virtualglove.gesture import GestureConfig, GestureEngine
+from virtualglove.model import HandObservation
 
 
 def hand(t: float, **changes) -> HandObservation:
@@ -263,8 +263,8 @@ class GestureTests(unittest.TestCase):
         self.assertTrue(engine.update(hand(2,palm_x=.650001)).dpad['right'])
 
     def test_joystick_box_uses_saved_center_and_translates_intact_at_edges(self):
-        from powerglove_vision.gesture import joystick_deadzone_bounds
-        from powerglove_vision.model import Calibration
+        from virtualglove.gesture import joystick_deadzone_bounds
+        from virtualglove.model import Calibration
         config=GestureConfig(joystick_deadzone=.3)
         center=Calibration(.3,.7,.1,0)
         centered=joystick_deadzone_bounds(config,center)
@@ -281,7 +281,7 @@ class GestureTests(unittest.TestCase):
         self.assertTrue(state.dpad['right']);self.assertTrue(state.dpad['up'])
 
     def test_live_hand_size_does_not_make_joystick_bounds_breathe(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         engine=GestureEngine('program_h',GestureConfig(joystick_deadzone=.1),
                              calibration=Calibration(.5,.5,.2,0))
         for index,scale in enumerate((.08,.2,.6),1):
@@ -587,7 +587,7 @@ class GestureTests(unittest.TestCase):
         self.assertTrue(engine.menu_feedback()["recognized"])
 
     def test_menu_guard_is_exact_and_suppresses_every_mapping(self):
-        from powerglove_vision.gesture import SUPPORTED_PROFILES
+        from virtualglove.gesture import SUPPORTED_PROFILES
         pose = dict(thumb_curl=.9, ring_curl=.9)
         for profile in SUPPORTED_PROFILES:
             engine = calibrated_engine(profile)
@@ -675,7 +675,7 @@ class CalibrationRetentionTests(unittest.TestCase):
     def test_roundtrip_and_replacement(self):
         import tempfile
         from pathlib import Path
-        from powerglove_vision.gesture import load_calibration, save_calibration
+        from virtualglove.gesture import load_calibration, save_calibration
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "calibration.json"
             self.assertIsNone(load_calibration(path))
@@ -695,7 +695,7 @@ class CalibrationRetentionTests(unittest.TestCase):
     def test_invalid_saved_reference(self):
         import tempfile
         from pathlib import Path
-        from powerglove_vision.gesture import load_calibration
+        from virtualglove.gesture import load_calibration
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "calibration.json"
             for value in ('broken', '{}', '{"version":1,"neutral":{"palm_x":0,"palm_y":0,"palm_scale":0,"roll":0}}'):
@@ -736,7 +736,7 @@ class CalibrationRetentionTests(unittest.TestCase):
             self.assertFalse(result.dpad['left'] and result.dpad['right'], interrupt)
 
     def test_other_profiles_do_not_emit_brawler_zap_combination(self):
-        from powerglove_vision.gesture import SUPPORTED_PROFILES
+        from virtualglove.gesture import SUPPORTED_PROFILES
         for profile in SUPPORTED_PROFILES:
             if profile == 'bad_street_brawler': continue
             result = calibrated_engine(profile).update(hand(1., palm_scale=.35))

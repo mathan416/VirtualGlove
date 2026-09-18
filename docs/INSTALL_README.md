@@ -302,9 +302,9 @@ PE32+ AMD64 DLL carrying the `Nestopia VirtualGlove` identity. Import the review
 DLL and its generated complete corresponding source archive under
 `native/launchbox/x86_64/` before building release packages.
 
-VirtualGlove 0.4.1 is the oldest supported in-place upgrade. The installer
+VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.0. The installer
 preserves current `/etc/virtualglove` pairing, game-registry, and Controller
-settings, but no longer imports pre-0.4.1 `/etc/powerglove` installations.
+settings, but does not import unsupported pre-v0.4.2 installation layouts.
 Unsupported older data is left untouched for manual recovery. A fresh
 installation creates only `virtualglove-*` runtime names. Install both devices
 from the same release; signed protocol version 2 does not fall back to the
@@ -703,7 +703,7 @@ controls stopped** to exit the output pause explicitly.
 profile, then continues directly into secure pairing. Existing upgraded systems
 with an address and token keep operating, but must select and save their platform
 before pairing again.
-Port, camera, and pairing-key replacement are under **Advanced connection settings**.
+Receiver port and camera engineering controls are under their respective advanced settings.
 **Check console address** only checks name resolution. If loading fails, use
 **Reload saved settings**; if a save fails, correct or retry it without losing
 fields. Controller Start/Stop and shutdown are on **Dashboard**; Setup keeps
@@ -844,6 +844,32 @@ the latest published stable release. Changed managed files are backed up, and th
 location. It asks before interrupting an active Controller session. Close RetroArch
 before updating the console. `config/profiles.json` is intentionally replaced;
 saved personal tuning remains in `data/gesture-tuning.json`.
+
+### Upgrade from v0.4.2 to v0.5.0
+
+Version 0.5.0 changes the internal Python package name. This is a managed
+upgrade from the released v0.4.2 installation, not a fresh-install requirement.
+Stop the Controller, close any running game, and update the Controller and
+RetroPie from the same v0.5.0 release.
+
+The installers use the v0.4.2 installation manifest to verify and back up the
+retired application files before removing them. They also clear only generated
+Python bytecode from the retired package directory, then install the current
+`virtualglove` package. The upgrade preserves Controller player records,
+calibration, tuning, dead-zone settings, camera/device configuration, pairing
+credentials, console game registry, ROMs, saves, controller assignments, and
+the installed native core.
+
+If an old application file was edited locally or the retired package is not
+covered by a valid installation manifest, the installer stops before writing
+anything. Back up the reported file and restore its released v0.4.2 copy before
+retrying, or reconcile the customization manually. Do not delete the manifest
+to bypass this protection.
+
+After updating both machines, run the checks below. They now report a failure if
+the retired Python package remains. Confirm that both installations report the
+same v0.5.0 build, then verify pairing, neutral release, a standard FCEUmm game,
+and Super Glove Ball before returning the cabinet to service.
 
 For checks only, use the script you already downloaded:
 

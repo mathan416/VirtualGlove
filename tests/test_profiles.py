@@ -20,10 +20,9 @@ import time
 import unittest
 from pathlib import Path
 
-from powerglove_vision.profile_control import (
+from virtualglove.profile_control import (
     ActiveGameLease,
     load_registry,
-    select_profile,
     select_profile_settings,
     sign_message,
     send_request,
@@ -31,7 +30,7 @@ from powerglove_vision.profile_control import (
     ProfileCommandServer,
     ProfileRequest,
 )
-from powerglove_vision.vision_app import _consume_game_lease, _controller_context_active
+from virtualglove.vision_app import _consume_game_lease, _controller_context_active
 
 
 class ProfileTests(unittest.TestCase):
@@ -46,9 +45,10 @@ class ProfileTests(unittest.TestCase):
             path = Path(directory) / "games.json"
             path.write_text(json.dumps({"games": {"Joust (USA).nes": "program_b"}}))
             registry = load_registry(path)
-        self.assertEqual(select_profile(registry, "nes", "/roms/JOUST (USA).NES"), "program_b")
-        self.assertIsNone(select_profile(registry, "snes", "/roms/JOUST (USA).NES"))
-        self.assertIsNone(select_profile(registry, "nes", "/roms/Other.nes"))
+        self.assertEqual(select_profile_settings(registry, "nes", "/roms/JOUST (USA).NES"),
+                         {"profile": "program_b"})
+        self.assertIsNone(select_profile_settings(registry, "snes", "/roms/JOUST (USA).NES"))
+        self.assertIsNone(select_profile_settings(registry, "nes", "/roms/Other.nes"))
 
     def test_registry_rejects_unknown_profile(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -69,10 +69,6 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(
             select_profile_settings(registry, "nes", "Blaster Master (USA).nes"),
             {"profile": "program_1", "rapid_a": False},
-        )
-        self.assertEqual(
-            select_profile(registry, "nes", "Blaster Master (USA).nes"),
-            "program_1",
         )
 
     def test_structured_registry_rejects_unknown_or_non_boolean_settings(self):
@@ -233,7 +229,8 @@ class ProfileTests(unittest.TestCase):
                                ("Sesame Street 123 (USA)", "program_f"),
                                ("Super Mario Bros. (Europe) (Rev A)", "program_12")):
             for extension in (".nes", ".zip", ".7z"):
-                self.assertEqual(select_profile(registry, "nes", name + extension), expected)
+                settings = select_profile_settings(registry, "nes", name + extension)
+                self.assertEqual(settings["profile"] if settings else None, expected)
 
     def test_command_server_acknowledges_profile(self):
         token = "a-long-test-token"

@@ -154,9 +154,9 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Pinned revision | `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` |
 | Upstream license | GNU General Public License, version 2 |
 | Local modification | `native/nestopia-powerglove/nestopia-powerglove.patch` |
-| Patch SHA-256 | `fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f` |
+| Patch SHA-256 | `272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706` |
 | Windows portability patch | `native/launchbox/nestopia-windows.patch` |
-| Windows patch SHA-256 | `e68000fb2f14a46cdf7269fd3a973e203ca2b21067727964daecbccef50860b4` |
+| Windows patch SHA-256 | `88c7bae02bfdb1cda8866dadb676710889da7910a8ac695a2a9eb4b62b72e4e7` |
 | Modified upstream files | `libretro/libretro.cpp`; `source/core/input/NstInpPowerGlove.cpp` |
 | Modification ledger | This guide, under **Nestopia modification ledger** |
 | Build recipe | `scripts/build-nestopia-powerglove.sh`; Recalbox target/matrix wrappers; Batocera target/matrix wrappers; Windows target wrapper `scripts/build-launchbox-nestopia-powerglove.sh` |
@@ -169,13 +169,12 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Recalbox 10.1 `odroidgo2` core SHA-256 | `7f8b23f179b38f511d060ed73de757732100ec42a073ca4b7802a6e0bd7a25b4` |
 | Recalbox 10.1 `x86_64` core SHA-256 | `8c28daedbe401e4d022a3c7210258107c736a74595c462dc60659ff8b69c76f3` |
 | Recalbox corresponding source archives | One `native/recalbox/TARGET/10.1/nestopia-powerglove-source.tar.gz` archive is supplied beside each of the seven target binaries |
-| Recalbox `rpizero2` and `rpi3` source SHA-256 | `98edc8fa41bd5023293403434b7e67e9ed2410ba4838ec1854d18b1580f22bda`; built with patch `f28592eef2c5773f85c7874b746093de8538131ba66164ab042ac294e1129d37` |
-| Recalbox five ARM64/x86-64 source SHA-256 | `bddfdf413befd0f513adfd8eca7d64ee3c5fda2a8e6836250ac72f26b3f1684c`; built with the current patch SHA-256 listed above |
+| Recalbox source checksums | `native/recalbox/manifest.json` records the exact size and SHA-256 of each target's corresponding source archive; all use the current patch SHA-256 listed above |
 | Batocera 43.1 targets | `bcm2835`, `bcm2836`, `bcm2837`, `bcm2711`, `bcm2712`, `x86_64`, `rk3326`, `rk3399`, `rk3568`, `rk3588`, `s905`, `s905gen2`, `s905gen3`, `s922x`, and `sm8250` |
 | Batocera binary/source ledger | `native/batocera/manifest.json` records the exact build image, Batocera and Nestopia revisions, ELF identity, sizes, and SHA-256 values for each binary and corresponding source archive |
 | LaunchBox Windows x86-64 core SHA-256 | `d94283c6b95bf381c3652aba95de368b72e53bb2efb7485074200c2f8f888638` |
 | LaunchBox corresponding source archive | `native/launchbox/x86_64/nestopia-powerglove-source.tar.gz` |
-| LaunchBox source archive SHA-256 | `3584f410dfc0aa189f6770493ac963d05a9cd743d10d3e8fa29e15c01f40ccfd` |
+| LaunchBox source archive SHA-256 | `a1c3e574b8b65195dab63d3865bf70d3371a44a059ea7d08ef67b3c6595f5033` |
 | Installed core directory | `/opt/retropie/libretrocores/lr-nestopia-powerglove/` on RetroPie; persistent `/recalbox/share/system/virtualglove/native/recalbox/TARGET/VERSION/` on Recalbox; persistent `/userdata/system/virtualglove/native/batocera/TARGET/VERSION/` on Batocera (the `runtime` subdirectory is reserved for a manually reviewed override); `%LOCALAPPDATA%\VirtualGlove\native\` on LaunchBox |
 
 There is no compiled core that can run everywhere. Recalbox and Batocera builds
@@ -324,7 +323,7 @@ Before publishing a wheel or model update, complete these steps. The
 explains the build and verification scripts.
 
 1. Record the official source URL, version, license, size, and SHA-256 here.
-2. Update the pinned values in `src/powerglove_vision/runtime_assets.py`, `scripts/fetch-runtime-assets.sh`, `scripts/verify-app-lab-package.py`, and `models/SHA256SUMS` when changing the model.
+2. Update the pinned values in `src/virtualglove/runtime_assets.py`, `scripts/fetch-runtime-assets.sh`, `scripts/verify-app-lab-package.py`, and `models/SHA256SUMS` when changing the model.
 3. If repackaging another wheel, record every difference from upstream and retain its license files.
 4. Build the App Lab installation ZIP and confirm it contains one wheel, the verified model, its license and notices, and only the root `sketch/` application sketch.
 5. Test first-launch offline model installation, download fallback, and checksum verification, background preloading with capture off, first activation after reboot, camera initialization, tracking, the Glove Academy and Dashboard pages, and controller output on the VirtualGlove Controller before publishing the package.

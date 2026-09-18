@@ -19,21 +19,21 @@ import unittest
 from socket import gaierror
 from unittest.mock import Mock, patch
 
-from powerglove_vision.model import ControllerState
-from powerglove_vision.controller_protocol import decode_message, encode_message
-from powerglove_vision.transport import (
+from virtualglove.model import ControllerState
+from virtualglove.controller_protocol import decode_message, encode_message
+from virtualglove.transport import (
     DISCOVERY_ADDRESS, UdpSender, validate_state,
 )
 
 
 class TransportTests(unittest.TestCase):
     def setUp(self):
-        resolver = patch("powerglove_vision.transport.resolve_ipv4", return_value="192.0.2.1")
+        resolver = patch("virtualglove.transport.resolve_ipv4", return_value="192.0.2.1")
         resolver.start()
         self.addCleanup(resolver.stop)
 
-    @patch("powerglove_vision.transport.resolve_ipv4")
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.resolve_ipv4")
+    @patch("virtualglove.transport.socket.socket")
     def test_blank_destination_never_resolves_or_sends(self, socket_factory, resolver):
         """Local practice cannot accidentally send to an implicit network destination."""
         sender = UdpSender("", 55355, "secret")
@@ -57,7 +57,7 @@ class TransportTests(unittest.TestCase):
                 protocol="virtualglove-vision/1",
             ))
 
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.socket.socket")
     def test_temporary_name_failure_does_not_stop_sender(self, socket_factory):
         udp_socket = Mock()
         udp_socket.recvfrom.side_effect = BlockingIOError
@@ -72,7 +72,7 @@ class TransportTests(unittest.TestCase):
         self.assertFalse(sender.send(state))
         udp_socket.sendto.assert_called_once()
 
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.socket.socket")
     def test_successful_send_reports_receiver_available(self, socket_factory):
         sender = UdpSender("192.0.2.1", 55355, "secret")
         self.addCleanup(sender.close)
@@ -86,7 +86,7 @@ class TransportTests(unittest.TestCase):
         self.assertIsNone(sender.last_error)
         self.assertEqual(sender.active_address, "192.0.2.1")
 
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.socket.socket")
     def test_established_state_precedes_due_maintenance_hello(self, socket_factory):
         sender = UdpSender("192.0.2.1", 55355, "secret")
         self.addCleanup(sender.close)
@@ -101,8 +101,8 @@ class TransportTests(unittest.TestCase):
                  for call in udp_socket.sendto.call_args_list]
         self.assertEqual(kinds, ["state", "hello"])
 
-    @patch("powerglove_vision.transport.time.monotonic", return_value=10.0)
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.time.monotonic", return_value=10.0)
+    @patch("virtualglove.transport.socket.socket")
     def test_stale_literal_address_discovers_only_authenticated_receiver(self, socket_factory, _clock):
         udp_socket = socket_factory.return_value
         udp_socket.recvfrom.side_effect = BlockingIOError
@@ -135,7 +135,7 @@ class TransportTests(unittest.TestCase):
         self.assertIn(("state", ("192.0.2.44", 55355)), sent)
         self.assertEqual(sender._peer, ("192.0.2.44", 55355))
 
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.socket.socket")
     def test_missing_hostname_resolution_starts_authenticated_discovery(self, socket_factory):
         udp_socket = socket_factory.return_value
         udp_socket.recvfrom.side_effect = BlockingIOError
@@ -151,8 +151,8 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(decode_message(payload, "secret")["kind"], "hello")
         self.assertIn("Looking for", sender.last_error)
 
-    @patch("powerglove_vision.transport.decode_message", side_effect=ValueError("junk"))
-    @patch("powerglove_vision.transport.socket.socket")
+    @patch("virtualglove.transport.decode_message", side_effect=ValueError("junk"))
+    @patch("virtualglove.transport.socket.socket")
     def test_handshake_reply_work_is_bounded_per_frame(self, socket_factory, decode):
         sender = UdpSender("192.0.2.1", 55355, "secret")
         self.addCleanup(sender.close)

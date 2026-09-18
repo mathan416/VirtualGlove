@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision.tuning import TuningManager
+from virtualglove.tuning import TuningManager
 
 
 class PlayerTests(unittest.TestCase):
@@ -82,8 +82,8 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(TuningManager(self.path).needs_center())
 
     def test_complete_backup_roundtrip_reuses_confirmed_calibration(self):
-        from powerglove_vision.gesture import save_calibration, load_calibration
-        from powerglove_vision.model import Calibration
+        from virtualglove.gesture import save_calibration, load_calibration
+        from virtualglove.model import Calibration
         reference=Calibration(.4,.6,.2,.3,.01,.02)
         path=self.path.with_name('calibration.json')
         save_calibration(path,reference)
@@ -106,10 +106,10 @@ class PlayerTests(unittest.TestCase):
         backup=self.command('export')['backup']
         backup['calibration']={'version':2,'neutral':dict(palm_x=.5,palm_y=.5,palm_scale=.2,roll=0)}
         self.command('restore',backup=backup,reuse_calibration=True)
-        with patch('powerglove_vision.tuning.save_calibration',side_effect=OSError('disk full')):
+        with patch('virtualglove.tuning.save_calibration',side_effect=OSError('disk full')):
             with self.assertRaises(OSError):self.manager.apply_calibration_restore()
         self.assertTrue(TuningManager(self.path).player_snapshot()['restoring_calibration'])
-        with patch('powerglove_vision.game_registry.atomic_write',side_effect=OSError('disk full')):
+        with patch('virtualglove.game_registry.atomic_write',side_effect=OSError('disk full')):
             with self.assertRaises(OSError):self.manager.apply_calibration_restore()
         self.assertTrue(self.manager.needs_center())
         self.command('create',name='Other')
@@ -161,7 +161,7 @@ class PlayerTests(unittest.TestCase):
         self.assertEqual(self.path.read_bytes(), before)
 
     def test_player_selection_automatically_restores_its_isolated_center(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         first=Calibration(.3,.4,.2,0)
         second=Calibration(.6,.5,.3,0)
         self.manager.begin_center();self.manager.finish_center(first)
@@ -177,7 +177,7 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(restarted.needs_center())
 
     def test_latest_player_selection_replaces_pending_center(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         first=Calibration(.3,.4,.2,0)
         second=Calibration(.6,.5,.3,0)
         self.manager.begin_center();self.manager.finish_center(first)
@@ -189,7 +189,7 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(self.manager.needs_center())
 
     def test_effective_thresholds_are_complete_and_import_is_explicit(self):
-        from powerglove_vision.tuning import CHANNELS
+        from virtualglove.tuning import CHANNELS
         backup=self.command('export')['backup']
         self.assertEqual(set(backup['effective_thresholds']),set(CHANNELS))
         self.assertEqual(set(backup['source']),{'version','commit'})
@@ -198,7 +198,7 @@ class PlayerTests(unittest.TestCase):
         self.command('restore',backup=backup,use_effective_thresholds=True)
         self.assertEqual(self.manager.saved,backup['effective_thresholds'])
         # Explicit saved values survive different future default thresholds.
-        from powerglove_vision.gesture import GestureConfig
+        from virtualglove.gesture import GestureConfig
         effective=self.manager.configuration(GestureConfig())
         self.assertEqual(effective.pair('index'),tuple(backup['effective_thresholds']['index'][k] for k in ('on','off')))
 
@@ -224,7 +224,7 @@ class PlayerTests(unittest.TestCase):
         backup=self.command("export")["backup"]
         for bad in (dict(backup,token="private"),dict(backup,calibration={}),dict(backup,thresholds={"index":{"on":float('nan'),"off":.1}}),{}):
             with self.assertRaises(ValueError):self.command("restore",backup=bad)
-        with patch('powerglove_vision.game_registry.atomic_write',side_effect=OSError):
+        with patch('virtualglove.game_registry.atomic_write',side_effect=OSError):
             with self.assertRaises(OSError):self.command("create",name="Unwritten")
         self.assertEqual(self.path.read_bytes(),original)
         self.assertEqual(len(self.manager.player_snapshot()["players"]),1)

@@ -681,22 +681,22 @@ it does not claim every path has been independently security-audited.
 | Responsibility | Start reading here |
 | --- | --- |
 | Supervisor, worker launch, matrix ownership | `python/main.py` |
-| Camera lifecycle and frame-to-send loop | `src/powerglove_vision/vision_app.py`, `realtime.py` |
-| Capture selection, Kiyo controls, and landmark measurements | `src/powerglove_vision/camera.py`, `kiyo_camera.py`, `tracker.py` |
+| Camera lifecycle and frame-to-send loop | `src/virtualglove/vision_app.py`, `realtime.py` |
+| Capture selection, Kiyo controls, and landmark measurements | `src/virtualglove/camera.py`, `kiyo_camera.py`, `tracker.py` |
 | Current native X/Y implementation and diagnostics | `gesture.py`, `realtime.py` |
-| Observation/state data objects | `src/powerglove_vision/model.py` |
-| Calibration, thresholds, held gestures, mappings | `src/powerglove_vision/gesture.py` |
-| Recording, suggestions, previews, persistence | `src/powerglove_vision/tuning.py` |
-| Public HTTP routing and worker proxy | `src/powerglove_vision/control_server.py` |
+| Observation/state data objects | `src/virtualglove/model.py` |
+| Calibration, thresholds, held gestures, mappings | `src/virtualglove/gesture.py` |
+| Recording, suggestions, previews, persistence | `src/virtualglove/tuning.py` |
+| Public HTTP routing and worker proxy | `src/virtualglove/control_server.py` |
 | Shared page shell and maintained browser modules | `web_common.py`, `dashboard_web.py`, `academy_web.py`, `games_web.py`, `tuning_web.py`, `setup_web.py`, `player_web.py` |
-| Worker requests, status, practice leases | `src/powerglove_vision/debug_server.py` |
-| Controller packets and virtual gamepad | `src/powerglove_vision/transport.py`, `controller_protocol.py`, `receiver.py` |
-| Profile requests, launch hooks, UDP relay | `src/powerglove_vision/profile_control.py`, `retropie_hook.py`, `scripts/profile-relay.py` |
-| Paired Games editing | `src/powerglove_vision/game_registry.py` |
-| Pairing and hostname resolution | `src/powerglove_vision/pairing.py`, `python/ssh_pair.py`, `src/powerglove_vision/resolver.py` |
-| Matrix translation and firmware | `src/powerglove_vision/matrix.py`, `sketch/sketch.ino` |
+| Worker requests, status, practice leases | `src/virtualglove/debug_server.py` |
+| Controller packets and virtual gamepad | `src/virtualglove/transport.py`, `controller_protocol.py`, `receiver.py` |
+| Profile requests, launch hooks, UDP relay | `src/virtualglove/profile_control.py`, `retropie_hook.py`, `scripts/profile-relay.py` |
+| Paired Games editing | `src/virtualglove/game_registry.py` |
+| Pairing and hostname resolution | `src/virtualglove/pairing.py`, `python/ssh_pair.py`, `src/virtualglove/resolver.py` |
+| Matrix translation and firmware | `src/virtualglove/matrix.py`, `sketch/sketch.ino` |
 | App services and installation | `app.yaml`, `bricks/local/`, `scripts/setup-machine.py` |
-| Help and printable guides | `src/powerglove_vision/help_content.py`, `scripts/build-docs-pdf.py` |
+| Help and printable guides | `src/virtualglove/help_content.py`, `scripts/build-docs-pdf.py` |
 
 ## Validation boundaries
 

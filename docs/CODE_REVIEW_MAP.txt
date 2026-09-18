@@ -52,7 +52,7 @@ THIRD_PARTY_NOTICES.md: dependencies, licensing, assets, and native-core changes
 TRACE THE RUNTIME
 -----------------
 python/main.py supervises the application, matrix, and worker lifecycle.
-src/powerglove_vision/control_server.py owns the always-available HTTP/HTTPS API.
+src/virtualglove/control_server.py owns the always-available HTTP/HTTPS API.
 web_common.py, setup_web.py, player_web.py, academy_web.py, statistics_web.py,
 and help_content.py provide the shared page shell, Setup, players, optional
 browser-local statistics, Academy, and built-in guides.
@@ -413,7 +413,7 @@ COMPLETE SOURCE INVENTORY
 |   |-- sketch.ino
 |   `-- sketch.yaml
 |-- src
-|   `-- powerglove_vision
+|   `-- virtualglove
 |       |-- __init__.py
 |       |-- academy_diagnostics.py
 |       |-- academy_web.py

@@ -15,6 +15,7 @@
 """Check the reproducible native research spike without building over the network."""
 
 from pathlib import Path
+import hashlib
 import shutil
 import subprocess
 import tempfile
@@ -67,7 +68,7 @@ class NativeCoreTests(unittest.TestCase):
             "glove.y = 128",
             "Nestopia's 128-glove.y packet",
             "host value directly compensates",
-            "PowerGloveVisionNativeEnabled() ? 10U : 12U",
+            "VirtualGloveNativeEnabled() ? 10U : 12U",
             "glove.distance = 0",
             "glove.wrist = 0",
             "GESTURE_OPEN",
@@ -123,14 +124,17 @@ class NativeCoreTests(unittest.TestCase):
         notice = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
         self.assertIn('destination/source/COPYING', installer)
         self.assertIn('target/COPYING', installer)
-        self.assertIn('POWERGLOVE-VISION-NOTICES.md', installer)
+        self.assertIn('VIRTUALGLOVE-NOTICES.md', installer)
         self.assertIn("GNU General Public License, version 2", notice)
         self.assertIn(
             "each bundled binary is accompanied by its exact complete corresponding source",
             notice,
         )
         self.assertIn("Recalbox 10.1 `rpizero2`", notice)
-        self.assertIn("fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f", notice)
+        patch_digest = hashlib.sha256(
+            (ROOT / "native/nestopia-powerglove/nestopia-powerglove.patch").read_bytes()
+        ).hexdigest()
+        self.assertIn(patch_digest, notice)
         self.assertIn("Martin Freij", notice)
         self.assertIn("leaves it", notice)
         self.assertIn("byte-for-byte unchanged", notice)

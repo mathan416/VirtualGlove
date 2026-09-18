@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from powerglove_vision.runtime_assets import ensure_hand_landmarker_model
+from virtualglove.runtime_assets import ensure_hand_landmarker_model
 
 
 class RuntimeAssetTests(unittest.TestCase):

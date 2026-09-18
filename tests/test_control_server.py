@@ -38,18 +38,18 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.control_server import (
+from virtualglove.control_server import (
     CAMERA_PROFILE_MEASURE_SECONDS, CAMERA_PROFILE_READY_SECONDS,
     CAMERA_PROFILE_STAGES, DASHBOARD, LEARN, LOGO_PATH, PLAY, SETUP,
     ControlState, help_document_page, help_index_page, start_control_server,
 )
-from powerglove_vision.debug_server import SharedDebugState
-from powerglove_vision.help_content import guide_pdf, help_asset, render_markdown
-from powerglove_vision.help_content import cabinet_reference_content, request_browser_address
-from powerglove_vision.vision_app import (
+from virtualglove.debug_server import SharedDebugState
+from virtualglove.help_content import guide_pdf, help_asset, render_markdown
+from virtualglove.help_content import cabinet_reference_content, request_browser_address
+from virtualglove.vision_app import (
     _base_status, _effective_profile, _requested_rapid_fire,
 )
-from powerglove_vision.profile_control import ProfileRequest
+from virtualglove.profile_control import ProfileRequest
 
 
 class AutomaticGameControllerTests(unittest.TestCase):
@@ -129,7 +129,7 @@ class ControlStateTests(unittest.TestCase):
             for extra in ({}, {"X-VirtualGlove-Action":"players", "Sec-Fetch-Site":"cross-site"},
                           {"X-VirtualGlove-Action":"players", "Origin":"http://other.invalid"}):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
-                with mock.patch('powerglove_vision.control_server.urllib.request.urlopen') as forward:
+                with mock.patch('virtualglove.control_server.urllib.request.urlopen') as forward:
                     connection.request("POST", "/api/players", json.dumps({"action":"read"}),
                                        dict({"Content-Type":"application/json"}, **extra))
                     response = connection.getresponse()
@@ -150,7 +150,7 @@ class ControlStateTests(unittest.TestCase):
                 self.assertFalse(state._controller_marker.exists())
                 raise ValueError("worker unavailable")
             connection = http.client.HTTPConnection("127.0.0.1", servers.servers[0].server_address[1], timeout=2)
-            with mock.patch('powerglove_vision.control_server.urllib.request.urlopen', side_effect=fail_forward):
+            with mock.patch('virtualglove.control_server.urllib.request.urlopen', side_effect=fail_forward):
                 connection.request("POST", "/api/players", json.dumps({"action":"select", "id":"other"}),
                                    {"Content-Type":"application/json", "X-VirtualGlove-Action":"players"})
                 response = connection.getresponse()
@@ -314,7 +314,7 @@ class ControlStateTests(unittest.TestCase):
             "active": False, "phase": "complete", "camera": identity,
             "recommendation": {"settings": settings}, "results": [],
         }
-        with mock.patch("powerglove_vision.control_server.camera_device_identity", return_value=identity):
+        with mock.patch("virtualglove.control_server.camera_device_identity", return_value=identity):
             self.state.apply_camera_profile()
         after = self.state.load_config()
         for key, value in before.items():
@@ -419,8 +419,8 @@ class ControlStateTests(unittest.TestCase):
         self.state.update_worker({"active_profile": "program_1"})
         with mock.patch.object(self.state, "public_config",
                                side_effect=AssertionError("slow config path")), \
-                mock.patch("powerglove_vision.control_server.camera_device_identity") as identity, \
-                mock.patch("powerglove_vision.control_server.camera_device_options") as options:
+                mock.patch("virtualglove.control_server.camera_device_identity") as identity, \
+                mock.patch("virtualglove.control_server.camera_device_options") as options:
             for _ in range(100):
                 status = self.state.snapshot()
                 self.assertEqual(status["configured_profile"], "bad_street_brawler")
@@ -439,13 +439,13 @@ class ControlStateTests(unittest.TestCase):
         identity = {"key": "camera:auto", "label": "Automatic"}
         options = [{"value": "auto", "label": "Automatic"}]
         with mock.patch(
-            "powerglove_vision.control_server.camera_device_identity",
+            "virtualglove.control_server.camera_device_identity",
             return_value=identity,
         ) as identify, mock.patch(
-            "powerglove_vision.control_server.camera_device_options",
+            "virtualglove.control_server.camera_device_options",
             return_value=options,
         ) as enumerate_cameras, mock.patch(
-            "powerglove_vision.control_server.time.monotonic",
+            "virtualglove.control_server.time.monotonic",
             side_effect=[10.0, 12.0, 16.0, 17.0, 17.1],
         ):
             self.state.public_config()
@@ -459,10 +459,10 @@ class ControlStateTests(unittest.TestCase):
     def test_wifi_status_cache_expires_and_returns_defensive_copies(self):
         report = {"state": "connected", "ssid": "Cabinet"}
         with mock.patch(
-            "powerglove_vision.wifi_status.read_wifi_status",
+            "virtualglove.wifi_status.read_wifi_status",
             return_value=report,
         ) as read_status, mock.patch(
-            "powerglove_vision.control_server.time.monotonic",
+            "virtualglove.control_server.time.monotonic",
             side_effect=[10.0, 10.5, 11.1],
         ):
             first = self.state._cached_wifi_status()
@@ -865,7 +865,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b".camera-centre-target", DASHBOARD)
         self.assertIn(b"cameraImageReady", DASHBOARD)
 
-    @mock.patch("powerglove_vision.control_server.urllib.request.urlopen")
+    @mock.patch("virtualglove.control_server.urllib.request.urlopen")
     def test_calibration_request_is_forwarded_to_worker(self, open_worker):
         """Both web calibration buttons must reach the private vision worker."""
         open_worker.return_value.__enter__.return_value = mock.MagicMock()
@@ -889,7 +889,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"reset:true", DASHBOARD)
 
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             self.assertTrue(shared.request_practice("existing-learn-tab", True))
             self.assertIs(shared.take_practice_request(), True)
             self.assertFalse(shared.request_practice("", False, reset=True))
@@ -903,7 +903,7 @@ class ControlStateTests(unittest.TestCase):
 
     def test_practice_leases_support_multiple_pages_and_clean_release(self):
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             self.assertTrue(shared.request_practice("learn-page-one", True))
             self.assertIs(shared.take_practice_request(), True)
             self.assertTrue(shared.request_practice("learn-page-two", True))
@@ -915,10 +915,10 @@ class ControlStateTests(unittest.TestCase):
 
     def test_abandoned_practice_lease_expires(self):
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             shared.request_practice("abandoned-page", True)
             self.assertIs(shared.take_practice_request(), True)
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=17.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=17.0):
             self.assertIs(shared.take_practice_request(), False)
 
     def test_practice_uses_general_tracking_without_changing_selected_off_mode(self):
@@ -1009,7 +1009,7 @@ class ControlStateTests(unittest.TestCase):
                         LEARN.index(b"sequence<=sequenceFloor"))
 
     def test_footer_version_and_application_start_metadata(self):
-        from powerglove_vision import __version__
+        from virtualglove import __version__
         for page in (DASHBOARD, LEARN, PLAY, SETUP):
             self.assertIn(("VirtualGlove v" + __version__).encode(), page)
         self.assertNotIn(b"id=app-started", DASHBOARD)
@@ -1109,7 +1109,7 @@ class ControlStateTests(unittest.TestCase):
             port = servers.servers[0].server_address[1]
             reply = mock.MagicMock()
             reply.__enter__.return_value.read.return_value = b'{"active_profile":"program_h"}'
-            with mock.patch("powerglove_vision.control_server.urllib.request.urlopen", return_value=reply) as open_worker:
+            with mock.patch("virtualglove.control_server.urllib.request.urlopen", return_value=reply) as open_worker:
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 connection.request(
                     "POST", "/api/profile", json.dumps({"profile": "program_h"}),
@@ -1136,7 +1136,7 @@ class ControlStateTests(unittest.TestCase):
             reply = mock.MagicMock()
             reply.__enter__.return_value.read.return_value = b'{"practice_mode":true}'
             with mock.patch(
-                "powerglove_vision.control_server.urllib.request.urlopen",
+                "virtualglove.control_server.urllib.request.urlopen",
                 return_value=reply,
             ) as open_worker:
                 for payload in (
@@ -1168,7 +1168,7 @@ class ControlStateTests(unittest.TestCase):
     def test_shutdown_uses_only_the_fixed_host_trigger(self):
         marker = self.path.parent / ".shutdown-enabled"
         marker.touch()
-        with mock.patch("powerglove_vision.control_server.os.replace", wraps=os.replace) as replace:
+        with mock.patch("virtualglove.control_server.os.replace", wraps=os.replace) as replace:
             self.state.schedule_system_shutdown(delay_seconds=0)
             trigger = self.path.parent / "shutdown-request"
             for _attempt in range(50):
@@ -1314,7 +1314,7 @@ class ControlStateTests(unittest.TestCase):
 
     def test_controller_authority_download_requires_https(self):
         (self.path.parent / "controller-hostname").write_text("virtualglove\n")
-        with mock.patch("powerglove_vision.control_server.socket.gethostname",
+        with mock.patch("virtualglove.control_server.socket.gethostname",
                         return_value="transient-container-id"):
             servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
         try:
@@ -1415,7 +1415,7 @@ class ControlStateTests(unittest.TestCase):
                 "host": "attacker.local", "code": "ABCDE-FGHIJ-23456-7ABCD",
                 "device_code": "000000",
             })
-            with mock.patch("powerglove_vision.control_server.pair_with_code") as send_token:
+            with mock.patch("virtualglove.control_server.pair_with_code") as send_token:
                 connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
                 connection.request("POST", "/api/pair/code", unauthorized, {"Content-Type": "application/json"})
                 response = connection.getresponse()
@@ -1436,7 +1436,7 @@ class ControlStateTests(unittest.TestCase):
                 "host": "retropieconsole.local", "platform": "retropie", "code": "ABCDE-FGHIJ-23456-7ABCD",
                 "device_code": displayed[0][1],
             })
-            with mock.patch("powerglove_vision.control_server.pair_with_code") as send_token:
+            with mock.patch("virtualglove.control_server.pair_with_code") as send_token:
                 connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
                 connection.request("POST", "/api/pair/code", payload, {"Content-Type": "application/json"})
                 response = connection.getresponse()
@@ -1469,7 +1469,7 @@ class ControlStateTests(unittest.TestCase):
                             if failed:
                                 raise OSError('test connection failure')
                         target = 'pair_with_code' if method == 'code' else 'pair_over_ssh'
-                        with mock.patch('powerglove_vision.control_server.' + target, side_effect=transport):
+                        with mock.patch('virtualglove.control_server.' + target, side_effect=transport):
                             connection = http.client.HTTPSConnection('127.0.0.1', port, context=ssl._create_unverified_context())
                             connection.request('POST', '/api/pair/' + method, json.dumps({
                                 'host':'retropieconsole.local', 'platform':'retropie', 'device_code':displayed[-1],

@@ -18,8 +18,8 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
-from powerglove_vision.gesture import GestureConfig, GestureEngine
-from powerglove_vision.model import Calibration, HandObservation
+from virtualglove.gesture import GestureConfig, GestureEngine
+from virtualglove.model import Calibration, HandObservation
 
 
 def step_response(distance, hz=60, unsmoothed=False):

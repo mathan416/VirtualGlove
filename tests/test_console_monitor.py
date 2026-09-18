@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from powerglove_vision import console_monitor
+from virtualglove import console_monitor
 
 
 class ConsoleMonitorTests(unittest.TestCase):

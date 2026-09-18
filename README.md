@@ -44,6 +44,11 @@ target safely keeps using FCEUmm. LaunchBox reports conflicts affecting its
 manual keyboard fallback without disabling the independent VirtualGlove RetroPad.
 Its installer load-tests the separate Windows Nestopia core and its
 wrapper falls back to FCEUmm joystick mode if that DLL is later missing or changed.
+The v0.5.0 installers also provide a guarded upgrade from the released v0.4.2
+Controller and RetroPie packages: the retired managed runtime is verified and
+backed up before removal, while players, calibration, tuning, pairing, device
+configuration, game registries, ROMs, saves, and controller assignments are
+preserved. Unexpected local runtime changes stop the upgrade before it writes.
 
 ## Why VirtualGlove?
 

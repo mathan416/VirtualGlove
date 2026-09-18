@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from powerglove_vision.camera import CameraRecoveryRequester
+from virtualglove.camera import CameraRecoveryRequester
 
 
 class CameraRecoveryRequesterTests(unittest.TestCase):

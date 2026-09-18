@@ -18,8 +18,8 @@ from urllib.parse import urlsplit
 
 from playwright.async_api import async_playwright
 
-from powerglove_vision.control_server import SETUP
-from powerglove_vision.dashboard_web import DASHBOARD
+from virtualglove.control_server import SETUP
+from virtualglove.dashboard_web import DASHBOARD
 
 
 async def main():

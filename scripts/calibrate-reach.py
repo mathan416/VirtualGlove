@@ -32,9 +32,9 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
-from powerglove_vision.game_registry import atomic_write
-from powerglove_vision.gesture import load_calibration
-from powerglove_vision.players import calibration_value
+from virtualglove.game_registry import atomic_write
+from virtualglove.gesture import load_calibration
+from virtualglove.players import calibration_value
 
 DIRECTIONS = ('left', 'right', 'up', 'down')
 

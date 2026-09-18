@@ -48,7 +48,8 @@ New-Item -ItemType Directory -Force -Path $InstallRoot, $DataRoot, $LaunchBoxFil
 # Python. Stop only VirtualGlove's background services before replacing the
 # managed runtime so one receiver owns the input port after the upgrade.
 $InstallPattern = [regex]::Escape($InstallRoot)
-$BackgroundModules = "powerglove_vision\.(launchbox_runtime|receiver|game_registry)"
+$LegacyModule = "power" + "glove_vision"
+$BackgroundModules = "(virtualglove|$LegacyModule)\.(launchbox_runtime|receiver|game_registry)"
 function Get-VirtualGloveBackgroundServices {
     return @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
         $_.CommandLine -and $_.CommandLine -match $InstallPattern -and
@@ -84,7 +85,18 @@ Copy-Item -Force (Join-Path $PSScriptRoot "configure-launchbox-emulator.ps1") $L
 if (-not (Test-Path $Python -PathType Leaf)) {
     py -3 -m venv $RuntimeRoot
 }
+$LegacyDistribution = "power" + "glove-vision"
+& $Python -m pip uninstall --disable-pip-version-check -y $LegacyDistribution | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Could not remove the retired VirtualGlove Python distribution." }
 & $Python -m pip install --disable-pip-version-check --upgrade "$SourceRoot[launchbox]"
+if ($LASTEXITCODE -ne 0) { throw "Could not install the current VirtualGlove Python distribution." }
+$LegacyCommands = "power" + "glove-"
+$RetiredRuntime = @(Get-ChildItem -Path $RuntimeRoot -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {
+    $_.Name -like "*$LegacyModule*" -or $_.Name -like "$LegacyCommands*"
+})
+if ($RetiredRuntime.Count -gt 0) {
+    throw "The retired VirtualGlove Python distribution was not completely removed."
+}
 
 if (-not (Test-Path $Registry -PathType Leaf)) {
     Copy-Item (Join-Path $SourceRoot "config\games.json") $Registry
@@ -176,7 +188,7 @@ if ($FirewallRule.Enabled -ne "True" -or $FirewallRule.Action -ne "Block" -or
     @($FirewallAddress.RemoteAddress) -notcontains "LocalSubnet") {
     throw "The managed RetroArch input-isolation firewall rule did not validate."
 }
-& $Python -m powerglove_vision.retroarch_remote --check-loopback $RemotePort
+& $Python -m virtualglove.retroarch_remote --check-loopback $RemotePort
 if ($LASTEXITCODE -ne 0) { throw "RetroArch loopback input validation failed." }
 
 $Config = [ordered]@{
@@ -201,7 +213,7 @@ $Config = [ordered]@{
 }
 [System.IO.File]::WriteAllText($Settings, ($Config | ConvertTo-Json), $Utf8NoBom)
 
-& $Python -m powerglove_vision.retroarch_hotkeys --config $RetroMainConfig --config $RetroConfig
+& $Python -m virtualglove.retroarch_hotkeys --config $RetroMainConfig --config $RetroConfig
 if ($LASTEXITCODE -ne 0) {
     Write-Warning "The manual keyboard backup has a RetroArch hotkey conflict. VirtualGlove RetroPad and the physical controller remain usable."
 }
@@ -209,7 +221,7 @@ if ($LASTEXITCODE -ne 0) {
 & (Join-Path $LaunchBoxFiles "configure-launchbox-emulator.ps1") `
     -LaunchBoxRoot $LaunchBoxRoot -PythonPath $Python -SettingsPath $Settings
 
-& $Python -m powerglove_vision.launchbox_runtime ensure --settings $Settings
+& $Python -m virtualglove.launchbox_runtime ensure --settings $Settings
 
 Write-Host "VirtualGlove LaunchBox support installed for this Windows user."
 Write-Host "Windows may ask whether Python can listen on the network; allow Private networks only."

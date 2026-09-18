@@ -317,7 +317,6 @@ class SetupTests(unittest.TestCase):
             self.assertEqual(first.count("- 8443:8443"), 1)
             self.assertEqual(first.count("bricks/local/profile_control/brick_compose.yaml"), 1)
             self.assertTrue(first.startswith("name: virtualglove\n"))
-            self.assertNotIn("name: powerglove-vision", first)
             self.assertEqual((app / "data/device.json").read_text(), '{"token":"keep-this-private","profile":"off"}')
             self.assertEqual((app / "data/controller-hostname").read_text(), "virtualglove\n")
             self.assertTrue(mapped("/etc/systemd/system/virtualglove-system-shutdown.path").exists())

@@ -28,6 +28,6 @@ esac
 install -d -m 0755 "$target"
 install -m 0644 "$core" "$target/nestopia_powerglove_libretro.so"
 install -m 0644 "$destination/source/COPYING" "$target/COPYING"
-install -m 0644 "$root/THIRD_PARTY_NOTICES.md" "$target/POWERGLOVE-VISION-NOTICES.md"
+install -m 0644 "$root/THIRD_PARTY_NOTICES.md" "$target/VIRTUALGLOVE-NOTICES.md"
 printf '%s\n' "Installed $target/nestopia_powerglove_libretro.so"
 printf '%s\n' "Use configure-super-glove-ball-core.py to opt one ROM into native mode or restore FCEUmm."

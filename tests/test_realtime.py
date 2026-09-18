@@ -22,14 +22,14 @@ from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
-from powerglove_vision.diagnostic_trace import DiagnosticTrace
+from virtualglove.diagnostic_trace import DiagnosticTrace
 
-from powerglove_vision.debug_server import SharedDebugState
-from powerglove_vision.realtime import (
+from virtualglove.debug_server import SharedDebugState
+from virtualglove.realtime import (
     DashboardCadence, LatestFrameCapture, LatestPreviewEncoder, LatestStatusPublisher,
     RollingPerformance,
 )
-from powerglove_vision.v4l2_capture import DirectV4L2Capture
+from virtualglove.v4l2_capture import DirectV4L2Capture
 
 
 class QueuedCapture:
@@ -101,9 +101,9 @@ class RealtimePipelineTests(unittest.TestCase):
         source=DirectV4L2Capture.__new__(DirectV4L2Capture)
         source.fd=7;source.running=True;source.maps=[];events=[]
         source.before_close=lambda fd:events.append(('restore',fd))
-        with patch('powerglove_vision.v4l2_capture.fcntl.ioctl',
+        with patch('virtualglove.v4l2_capture.fcntl.ioctl',
                    side_effect=lambda fd,op,data:events.append(('ioctl',op))), \
-             patch('powerglove_vision.v4l2_capture.os.close',
+             patch('virtualglove.v4l2_capture.os.close',
                    side_effect=lambda fd:events.append(('close',fd))):
             source.close();source.close()
         self.assertEqual(events[0],('restore',7))

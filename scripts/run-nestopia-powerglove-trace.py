@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.native_state import NativeStateWriter  # noqa: E402
+from virtualglove.native_state import NativeStateWriter  # noqa: E402
 
 
 RETRO_DEVICE_ANALOG = 5

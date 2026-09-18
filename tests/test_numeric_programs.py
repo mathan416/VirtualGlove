@@ -13,7 +13,7 @@
 import math
 import unittest
 
-from powerglove_vision.gesture import (
+from virtualglove.gesture import (
     GestureConfig, GestureEngine, SUPPORTED_PROFILES, rapid_fire_defaults,
 )
 from tests.test_gesture import calibrated_engine, hand

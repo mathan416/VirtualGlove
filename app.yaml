@@ -11,7 +11,7 @@
 # Full history: docs/CHANGELOG.md and Git history.
 
 name: VirtualGlove
-description: Camera-only hand controller for UNO Q and RetroPie
+description: Camera-only hand controller for UNO Q and supported retro-gaming consoles
 ports:
   - 8088
   - 8443

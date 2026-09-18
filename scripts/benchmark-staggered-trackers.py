@@ -266,7 +266,7 @@ def main():
         parser.error("The output path must not already exist")
     import sys
     sys.path.insert(0, str(args.source_root / "src"))
-    from powerglove_vision.tracker import MediaPipeTracker
+    from virtualglove.tracker import MediaPipeTracker
 
     baseline = run_lane(args.clip, MediaPipeTracker, 1, 4,
                         args.tracking_confidence)

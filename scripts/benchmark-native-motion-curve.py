@@ -25,11 +25,11 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.gesture import (  # noqa: E402
+from virtualglove.gesture import (  # noqa: E402
     GestureConfig, GestureEngine, _camera_coordinate, _field_coordinate,
     load_calibration,
 )
-from powerglove_vision.model import Calibration, HandObservation  # noqa: E402
+from virtualglove.model import Calibration, HandObservation  # noqa: E402
 
 
 def percentile(values, fraction):

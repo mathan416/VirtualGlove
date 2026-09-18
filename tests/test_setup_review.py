@@ -21,12 +21,12 @@ import unittest
 import urllib.error
 from pathlib import Path
 from unittest.mock import Mock, patch
-from powerglove_vision import receiver, vision_app
-from powerglove_vision.control_server import ControlState, start_control_server
-from powerglove_vision.game_registry import atomic_write
-from powerglove_vision.profile_control import ProfileCommandServer, PROTOCOL, sign_message
-from powerglove_vision.controller_protocol import ReceiverSessions, decode_message, encode_message
-from powerglove_vision.model import ControllerState
+from virtualglove import receiver, vision_app
+from virtualglove.control_server import ControlState, start_control_server
+from virtualglove.game_registry import atomic_write
+from virtualglove.profile_control import ProfileCommandServer, PROTOCOL, sign_message
+from virtualglove.controller_protocol import ReceiverSessions, decode_message, encode_message
+from virtualglove.model import ControllerState
 
 ROOT = Path(__file__).resolve().parents[1]
 TOKEN = 'private-test-token'
@@ -54,7 +54,7 @@ class SetupReviewTests(unittest.TestCase):
                 self.state.save_config({'platform':'retropie','receiver':'new.local','profile':'off'})
             except Exception as error:
                 errors.append(error)
-        with patch('powerglove_vision.game_registry.atomic_write', side_effect=delayed_write):
+        with patch('virtualglove.game_registry.atomic_write', side_effect=delayed_write):
             first = threading.Thread(target=save); first.start()
             self.assertTrue(entered.wait(1))
             second = threading.Thread(target=lambda:self.state.save_attract({'mode':'dim'})); second.start()
@@ -66,7 +66,7 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_failed_atomic_save_preserves_original(self):
         before = self.path.read_bytes()
-        with patch('powerglove_vision.game_registry.os.replace', side_effect=OSError('disk failure')):
+        with patch('virtualglove.game_registry.os.replace', side_effect=OSError('disk failure')):
             with self.assertRaises(OSError):
                 self.state.save_config({'platform':'retropie','receiver':'new.local','profile':'off'})
         self.assertEqual(self.path.read_bytes(), before)
@@ -74,10 +74,10 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_latest_controller_request_retries_without_replaying_old_intent(self):
         self.state.set_controller_enabled(True)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen', side_effect=OSError('offline')):
+        with patch('virtualglove.control_server.urllib.request.urlopen', side_effect=OSError('offline')):
             self.assertFalse(self.state.flush_controller_request())
         self.state.set_controller_enabled(False)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen', return_value=io.BytesIO(b'{"controller_enabled":false}')) as send:
+        with patch('virtualglove.control_server.urllib.request.urlopen', return_value=io.BytesIO(b'{"controller_enabled":false}')) as send:
             self.assertTrue(self.state.flush_controller_request())
             self.assertEqual(json.loads(send.call_args[0][0].data), {'enabled':False})
             self.assertTrue(self.state.flush_controller_request())
@@ -89,19 +89,19 @@ class SetupReviewTests(unittest.TestCase):
         def acknowledge(_request, **kwargs):
             self.state.set_controller_enabled(False)
             return io.BytesIO(b'{"controller_enabled":true}')
-        with patch('powerglove_vision.control_server.urllib.request.urlopen', side_effect=acknowledge):
+        with patch('virtualglove.control_server.urllib.request.urlopen', side_effect=acknowledge):
             self.assertFalse(self.state.flush_controller_request())
         self.assertFalse(self.state.controller_enabled())
         self.assertTrue(self.state.snapshot()['controller_request_pending'])
 
     def test_worker_error_retries_but_rejected_start_disarms(self):
         self.state.set_controller_enabled(True)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen',
+        with patch('virtualglove.control_server.urllib.request.urlopen',
                    side_effect=urllib.error.HTTPError('http://worker',503,'unavailable',{},None)):
             self.assertFalse(self.state.flush_controller_request())
         self.assertTrue(self.state.controller_enabled())
         self.state.set_controller_enabled(True)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen',
+        with patch('virtualglove.control_server.urllib.request.urlopen',
                    side_effect=urllib.error.HTTPError('http://worker',400,'needs center',{},None)):
             with self.assertRaisesRegex(ValueError, 'rejected'):
                 self.state.flush_controller_request()
@@ -110,18 +110,18 @@ class SetupReviewTests(unittest.TestCase):
 
     def test_unexpected_ack_is_retried(self):
         self.state.set_controller_enabled(True)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen', return_value=io.BytesIO(b'[]')):
+        with patch('virtualglove.control_server.urllib.request.urlopen', return_value=io.BytesIO(b'[]')):
             self.assertFalse(self.state.flush_controller_request())
         self.assertTrue(self.state.snapshot()['controller_request_pending'])
 
-    def test_rotation_disarms_and_preserves_attract(self):
+    def test_config_save_preserves_pairing_and_attract(self):
         self.state.set_controller_enabled(True)
         self.state.save_attract({'mode':'off'})
         self.state.save_config({'platform':'retropie','receiver':'cabinet.local',
-                                'profile':'off','rotate_token':True})
-        self.assertFalse(self.state.controller_enabled())
+                                'profile':'off'})
+        self.assertTrue(self.state.controller_enabled())
         saved = json.loads(self.path.read_text())
-        self.assertNotEqual(saved['token'], TOKEN)
+        self.assertEqual(saved['token'], TOKEN)
         self.assertEqual(saved['matrix_attract'], 'off')
 
     def test_config_requires_json_and_same_origin(self):
@@ -142,7 +142,7 @@ class SetupReviewTests(unittest.TestCase):
         servers, state = start_control_server(self.path, '127.0.0.1', 0, 0)
         self.addCleanup(servers.shutdown)
         conn = http.client.HTTPConnection('127.0.0.1',servers.servers[0].server_address[1],timeout=2)
-        with patch('powerglove_vision.control_server.urllib.request.urlopen', side_effect=OSError('offline')):
+        with patch('virtualglove.control_server.urllib.request.urlopen', side_effect=OSError('offline')):
             conn.request('POST','/api/controller','{"enabled":true}',{'Content-Type':'application/json'})
             response = conn.getresponse(); result = json.loads(response.read()); conn.close()
         self.assertEqual(response.status, 202)

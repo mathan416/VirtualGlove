@@ -18,7 +18,7 @@ from unittest.mock import patch
 
 import numpy
 
-from powerglove_vision.process_capture import (
+from virtualglove.process_capture import (
     ProcessDirectV4L2Capture, ProcessOpenCVCapture, _publish,
     _publish_failure, _publish_opencv, _opencv_capture_worker,
 )

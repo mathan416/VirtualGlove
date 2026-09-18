@@ -43,7 +43,7 @@ def percentile(values, fraction):
 
 def control_set(fd, mode, exposure, gain, ioctl=None):
     """Apply a fully capability-checked lane to an active stream descriptor."""
-    from powerglove_vision import camera_controls as controls
+    from virtualglove import camera_controls as controls
     if mode == "manual":
         return controls.configure_manual_on_fd(fd, exposure, gain, ioctl)
     restored = controls.restore_automatic_on_fd(fd, ioctl)
@@ -52,7 +52,7 @@ def control_set(fd, mode, exposure, gain, ioctl=None):
 
 def restore_automatic(fd, ioctl=None):
     """Return the active camera to automatic, fixed-rate exposure."""
-    from powerglove_vision import camera_controls as controls
+    from virtualglove import camera_controls as controls
     return controls.restore_automatic_on_fd(fd, ioctl)
 
 
@@ -157,7 +157,7 @@ def main():
     sys.path.insert(0, str(args.source_root / "src"))
     import cv2
     import numpy as np
-    from powerglove_vision.kiyo_camera import configure_kiyo
+    from virtualglove.kiyo_camera import configure_kiyo
     if not configure_kiyo(args.device):
         raise SystemExit("refusing exposure test: camera is not the enrolled Kiyo Pro")
     stopped = False

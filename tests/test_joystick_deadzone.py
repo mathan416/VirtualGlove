@@ -13,8 +13,8 @@ import copy
 import tempfile
 import unittest
 from pathlib import Path
-from powerglove_vision.tuning import TuningManager
-from powerglove_vision.gesture import GestureConfig
+from virtualglove.tuning import TuningManager
+from virtualglove.gesture import GestureConfig
 
 class JoystickTests(unittest.TestCase):
     def setUp(self):
@@ -87,7 +87,7 @@ class JoystickTests(unittest.TestCase):
             self.command('joystick_deadzone', value=.7)
 
     def test_snapshot_reports_hand_floor_without_changing_saved_number(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         reference=Calibration(.5, .5, .5, 0, noise_x=.61, noise_y=.02)
         self.manager.players.active['calibration']={'version':2,'neutral':vars(reference)}
         state = self.manager.player_snapshot()['joystick']

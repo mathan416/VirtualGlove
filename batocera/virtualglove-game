@@ -20,12 +20,12 @@ case "${1:-}" in
                 *) emulator="lr-${4:-}" ;;
             esac
         fi
-        exec /usr/bin/python3 -m powerglove_vision.retropie_hook start \
+        exec /usr/bin/python3 -m virtualglove.retropie_hook start \
             "${2:-}" "$emulator" "${5:-}" "" \
             --settings "$SETTINGS" --session-file "$SESSION"
         ;;
     gameStop)
-        exec /usr/bin/python3 -m powerglove_vision.retropie_hook end \
+        exec /usr/bin/python3 -m virtualglove.retropie_hook end \
             --settings "$SETTINGS" --session-file "$SESSION"
         ;;
 esac

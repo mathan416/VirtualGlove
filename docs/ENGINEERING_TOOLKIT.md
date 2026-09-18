@@ -88,7 +88,7 @@ complete file inventory, and these categories.
 | Native and accelerator research | Exercise a supplied libretro core, ncnn sidecar, or isolated inference experiment | Does not install a core by itself; may compile local research binaries |
 | Toolkit support | Set up and validate the extracted environment | Creates files only inside the toolkit environment |
 
-Shared `src/powerglove_vision`, `config`, and `native` source is included where
+Shared `src/virtualglove`, `config`, and `native` source is included where
 the tools import or inspect it. The package also contains the project licence,
 third-party notices, and this guide.
 

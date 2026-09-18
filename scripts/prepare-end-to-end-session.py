@@ -14,7 +14,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import subprocess
@@ -95,7 +94,7 @@ result = {
 
 if role == "controller":
     base = Path("/home/arduino/ArduinoApps/virtualglove")
-    build = text(base / "src/powerglove_vision/_build_info.json")
+    build = text(base / "src/virtualglove/_build_info.json")
     try:
         result["build"] = json.loads(build) if build else None
     except ValueError:
@@ -105,8 +104,8 @@ if role == "controller":
         for name in ("virtualglove-camera-recovery.path", "virtualglove-wifi-status.timer")
     }
     result["files"] = {
-        "vision_app_sha256": digest(base / "src/powerglove_vision/vision_app.py"),
-        "v4l2_capture_sha256": digest(base / "src/powerglove_vision/v4l2_capture.py"),
+        "vision_app_sha256": digest(base / "src/virtualglove/vision_app.py"),
+        "v4l2_capture_sha256": digest(base / "src/virtualglove/v4l2_capture.py"),
         "calibration_present": (base / "data/calibration.json").is_file(),
     }
     device = text(base / "data/device.json")
@@ -129,7 +128,7 @@ else:
     }
     result["files"] = {
         "core_path": str(core), "core_sha256": digest(core),
-        "receiver_sha256": digest("/opt/virtualglove-src/src/powerglove_vision/receiver.py"),
+        "receiver_sha256": digest("/opt/virtualglove-src/src/virtualglove/receiver.py"),
         "retroarch_sha256": digest("/opt/retropie/emulators/retroarch/bin/retroarch"),
     }
     try:

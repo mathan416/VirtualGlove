@@ -16,7 +16,7 @@ import time
 import unittest
 from pathlib import Path
 
-from powerglove_vision.native_state import (
+from virtualglove.native_state import (
     BUTTON_CLOSED_HAND, BUTTON_INDEX_POINT, BUTTON_MENU_GUARD, BUTTON_SELECT,
     PROFILE_SUPER_GLOVE_BALL, RECORD_SIZE,
     NativeStateWriter, decode_record, encode_record,

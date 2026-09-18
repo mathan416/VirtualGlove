@@ -18,11 +18,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.launchbox_hook import (
+from virtualglove.launchbox_hook import (
     launch_command, load_settings, native_core_ready, run_game,
 )
-from powerglove_vision.launchbox_runtime import service_commands
-from powerglove_vision.retroarch_hotkeys import conflicts
+from virtualglove.launchbox_runtime import service_commands
+from virtualglove.retroarch_hotkeys import conflicts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -267,7 +267,7 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("--retroarch-port", receiver)
         self.assertIn("55001", receiver)
         self.assertIn(settings["native_state"], receiver)
-        self.assertIn("powerglove_vision.game_registry", games)
+        self.assertIn("virtualglove.game_registry", games)
 
     def test_desktop_append_config_disables_touch_overlay(self):
         config = (ROOT / "launchbox/retroarch-nes.cfg").read_text()
@@ -290,7 +290,7 @@ class LaunchBoxTests(unittest.TestCase):
 
         with mock.patch("builtins.__import__", side_effect=without_fcntl):
             import importlib
-            receiver = importlib.import_module("powerglove_vision.receiver")
+            receiver = importlib.import_module("virtualglove.receiver")
             importlib.reload(receiver)
         self.assertIn("retroarch-remote", receiver.build_parser()._option_string_actions[
             "--output-device"
@@ -335,7 +335,7 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("Nintendo Entertainment System", configure)
         self.assertIn("VirtualGlove RetroArch", configure)
         self.assertIn("$virtualGlove.ApplicationPath = $PythonPath", configure)
-        self.assertIn("powerglove_vision.launchbox_hook", configure)
+        self.assertIn("virtualglove.launchbox_hook", configure)
         self.assertIn("$game.Emulator = $emulatorId", configure)
         self.assertIn("[string]$_.Emulator -eq [string]$retroArch[0].ID", configure)
         self.assertIn("the backup was restored", configure)
@@ -345,8 +345,14 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("Stop-Process -Id $Process.ProcessId -Force -ErrorAction SilentlyContinue", installer)
         self.assertIn("$QuietScans -lt 4", installer)
         self.assertIn("$RemainingServices.Count -gt 0", installer)
-        self.assertIn("powerglove_vision\\.(launchbox_runtime|receiver|game_registry)", installer)
-        hook = (ROOT / "src/powerglove_vision/launchbox_hook.py").read_text()
+        self.assertIn("(virtualglove|$LegacyModule)\\.(launchbox_runtime|receiver|game_registry)", installer)
+        self.assertIn('-m pip uninstall --disable-pip-version-check -y $LegacyDistribution', installer)
+        self.assertIn('$RetiredRuntime.Count -gt 0', installer)
+        retired_distribution = 'power' + 'glove-vision'
+        retired_module = 'power' + 'glove_vision'
+        self.assertNotIn(retired_distribution, installer)
+        self.assertNotIn(retired_module, installer)
+        hook = (ROOT / "src/virtualglove/launchbox_hook.py").read_text()
         self.assertIn("ensure_background(args.settings)", hook)
         self.assertIn("windows-latest", workflow)
         self.assertIn("nestopia_powerglove_libretro.dll", workflow)

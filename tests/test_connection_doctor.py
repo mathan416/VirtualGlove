@@ -14,9 +14,9 @@ import shutil
 import subprocess
 import unittest
 
-from powerglove_vision.connection_doctor_web import DOCTOR_SCRIPT
-from powerglove_vision.control_server import SETUP
-from powerglove_vision.setup_web import SETUP_SCRIPT
+from virtualglove.connection_doctor_web import DOCTOR_SCRIPT
+from virtualglove.control_server import SETUP
+from virtualglove.setup_web import SETUP_SCRIPT
 
 HARNESS = r"""
 const vm=require('node:vm');

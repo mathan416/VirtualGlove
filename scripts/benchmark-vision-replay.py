@@ -36,11 +36,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.tracker import (  # noqa: E402
+from virtualglove.tracker import (  # noqa: E402
     MediaPipeTracker,
     TRACKING_EVIDENCE_OUTPUTS,
 )
-from powerglove_vision.gesture import GestureEngine  # noqa: E402
+from virtualglove.gesture import GestureEngine  # noqa: E402
 
 
 def percentile(values: list[float], fraction: float) -> float | None:

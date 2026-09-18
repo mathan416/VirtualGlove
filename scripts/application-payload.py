@@ -47,7 +47,7 @@ def selected_files(root, include_engineering=False):
                 or name == "docs/cheatsheet.md" or path.suffix == ".pdf"
                 or set(path.parts) & {"data", ".cache", "__pycache__", ".venv", "tmp"}
                 or path.suffix in {".pyc", ".pyo"} or path.name in {".DS_Store", "CODE_REVIEW_MAP.txt"}
-                or name == "src/powerglove_vision/_build_info.json"):
+                or name == "src/virtualglove/_build_info.json"):
             continue
         selected.add(name)
     if not pdfs <= selected:
@@ -82,7 +82,7 @@ def stage(root, destination, include_engineering=False, precompiled_matrix=False
         for name in sorted(required):
             shutil.copy2(str(firmware / name), str(target / name))
     subprocess.run(["python3", str(root / "scripts/stamp-build-version.py"),
-                    str(destination / "src/powerglove_vision/_build_info.json")], check=True)
+                    str(destination / "src/virtualglove/_build_info.json")], check=True)
 
 
 def main():

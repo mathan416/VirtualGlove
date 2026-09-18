@@ -12,8 +12,8 @@ import asyncio
 import base64
 from urllib.parse import urlsplit
 from playwright.async_api import async_playwright, expect
-from powerglove_vision.joystick_web import JOYSTICK_CONTENT, JOYSTICK_SCRIPT
-from powerglove_vision.web_common import _page
+from virtualglove.joystick_web import JOYSTICK_CONTENT, JOYSTICK_SCRIPT
+from virtualglove.web_common import _page
 
 async def main():
     async with async_playwright() as pw:

@@ -15,7 +15,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from powerglove_vision.control_server import LEARN
+from virtualglove.control_server import LEARN
 
 
 class AcademyControlHarnessTests(unittest.TestCase):

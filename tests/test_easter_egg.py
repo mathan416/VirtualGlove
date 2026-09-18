@@ -15,10 +15,10 @@ import shutil
 import subprocess
 import unittest
 
-from powerglove_vision.gesture import GestureEngine, vulcan_salute_pose
-from powerglove_vision.model import Calibration, HandObservation
-from powerglove_vision.tracker import _Point, _finger_spreads
-from powerglove_vision.web_common import EASTER_EGG_SCRIPT, _page
+from virtualglove.gesture import GestureEngine, vulcan_salute_pose
+from virtualglove.model import Calibration, HandObservation
+from virtualglove.tracker import _Point, _finger_spreads
+from virtualglove.web_common import EASTER_EGG_SCRIPT, _page
 
 
 def hand(timestamp, *, salute=True, **changes):
@@ -92,9 +92,9 @@ class EasterEggOverlayTests(unittest.TestCase):
         self.assertIn('prefers-reduced-motion:reduce',page)
 
     def test_every_live_camera_page_forwards_status_to_the_overlay(self):
-        from powerglove_vision.academy_web import LEARN
-        from powerglove_vision.dashboard_web import DASHBOARD
-        from powerglove_vision.joystick_web import JOYSTICK_SCRIPT
-        from powerglove_vision.ready_web import READY
+        from virtualglove.academy_web import LEARN
+        from virtualglove.dashboard_web import DASHBOARD
+        from virtualglove.joystick_web import JOYSTICK_SCRIPT
+        from virtualglove.ready_web import READY
         for page in (DASHBOARD,LEARN,READY,JOYSTICK_SCRIPT.encode()):
             self.assertIn(b'updateEasterEgg',page)

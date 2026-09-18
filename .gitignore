@@ -9,7 +9,7 @@ __pycache__/
 data/
 output/app-lab/*.zip
 output/matrix-firmware/
-src/powerglove_vision/_build_info.json
+src/virtualglove/_build_info.json
 
 # Local photo-crop exports; maintained images live in docs/images/matrix/.
 /assets/matrix/

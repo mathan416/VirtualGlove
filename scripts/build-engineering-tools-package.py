@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = runpy.run_path(str(Path(__file__).with_name("package-inventory.py")))
 ENGINEERING_TOOLKIT_FILES = INVENTORY["ENGINEERING_TOOLKIT_FILES"]
 TOOLKIT_CATEGORIES = INVENTORY["TOOLKIT_CATEGORIES"]
-SUPPORT_ROOTS = ("src/powerglove_vision/", "native/", "config/")
+SUPPORT_ROOTS = ("src/virtualglove/", "native/", "config/")
 SUPPORT_FILES = {
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",

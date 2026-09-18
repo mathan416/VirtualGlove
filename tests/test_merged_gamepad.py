@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from powerglove_vision import merged_gamepad as merged
+from virtualglove import merged_gamepad as merged
 
 
 ES_INPUT = """<inputList><inputConfig type="joystick" deviceName="Test Pad" deviceGUID="abc">

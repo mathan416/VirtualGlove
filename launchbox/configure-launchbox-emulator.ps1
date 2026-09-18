@@ -34,7 +34,7 @@ if ($virtualGlove.Count -eq 0) {
 } else {
     $virtualGlove = $virtualGlove[0]
 }
-$hookCommand = "-m powerglove_vision.launchbox_hook --settings `"$SettingsPath`""
+$hookCommand = "-m virtualglove.launchbox_hook --settings `"$SettingsPath`""
 if ([string]$virtualGlove.ApplicationPath -ne $PythonPath) {
     $virtualGlove.ApplicationPath = $PythonPath
     $changed = $true

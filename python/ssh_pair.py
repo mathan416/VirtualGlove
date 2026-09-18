@@ -25,7 +25,7 @@ from pathlib import Path
 import paramiko
 import socket
 
-from powerglove_vision.resolver import resolve_ipv4
+from virtualglove.resolver import resolve_ipv4
 
 
 REMOTE_PROGRAM = """\

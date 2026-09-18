@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 from playwright.async_api import async_playwright, expect
-from powerglove_vision.control_server import SETUP
+from virtualglove.control_server import SETUP
 
 ROOT = Path(__file__).resolve().parents[1]
 

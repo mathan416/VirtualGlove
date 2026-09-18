@@ -28,7 +28,7 @@ class RecalboxAssetsTests(unittest.TestCase):
     def test_service_uses_persistent_merged_gamepad_and_receiver(self):
         text = (ROOT / "recalbox/virtualglove-service").read_text()
         self.assertIn("/recalbox/share/system/virtualglove", text)
-        self.assertIn("powerglove_vision.$name", text)
+        self.assertIn("virtualglove.$name", text)
         self.assertIn("merged_gamepad serve", text)
         self.assertIn("--output-device merged-gamepad", text)
         self.assertIn("--merged-socket", text)
@@ -42,7 +42,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn('start-stop-daemon -S -b -m -p "$RUN/$name.pid"', text)
         self.assertIn('-x /usr/bin/python3 --', text)
         self.assertIn('</dev/null >> "$LOG/$name.log" 2>&1', text)
-        self.assertIn("powerglove_vision.pairing", text)
+        self.assertIn("virtualglove.pairing", text)
         self.assertIn("--receiver-restart-command", text)
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)

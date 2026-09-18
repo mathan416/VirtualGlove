@@ -17,11 +17,11 @@ from http.server import HTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
-from powerglove_vision.game_registry import (
+from virtualglove.game_registry import (
     PROTOCOL, RegistryStore, RegistryService, validate_document,
     make_registry_handler, registry_request,
 )
-from powerglove_vision.profile_control import sign_message, verify_message
+from virtualglove.profile_control import sign_message, verify_message
 
 ORIGINAL = '{"games":{"Joust (USA).7z":"program_b"}}'
 CHANGED = '{"games":{"Joust (USA).7z":"program_h"}}'
@@ -73,7 +73,7 @@ class RegistryTests(unittest.TestCase):
             if Path(target) == self.path:
                 raise OSError('simulated full disk')
             real_replace(source, target)
-        with patch('powerglove_vision.game_registry.os.replace', side_effect=fail_current):
+        with patch('virtualglove.game_registry.os.replace', side_effect=fail_current):
             with self.assertRaises(OSError):
                 self.store.operate('save', {'document': CHANGED, 'revision': self.store.snapshot()['revision']})
         self.assertEqual(self.path.read_text(), ORIGINAL)
@@ -123,6 +123,6 @@ class RegistryTests(unittest.TestCase):
             server.shutdown(); server.server_close(); thread.join()
 
     def test_offline_client_preserves_actionable_error(self):
-        with patch('powerglove_vision.game_registry.urllib.request.OpenerDirector.open', side_effect=OSError):
+        with patch('virtualglove.game_registry.urllib.request.OpenerDirector.open', side_effect=OSError):
             with self.assertRaisesRegex(ValueError, 'update its VirtualGlove setup'):
                 registry_request({'receiver':'127.0.0.1', 'token':self.token}, 'read')

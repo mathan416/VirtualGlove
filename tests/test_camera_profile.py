@@ -12,7 +12,7 @@
 
 import unittest
 
-from powerglove_vision.camera_profile import candidates, recommend, summarize
+from virtualglove.camera_profile import candidates, recommend, summarize
 
 
 def status(sequence, *, detected=True, age=70, inference=35, fps=30, **changes):

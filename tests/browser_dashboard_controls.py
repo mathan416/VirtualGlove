@@ -13,7 +13,7 @@ Requires Playwright WebKit; never connects to real devices.
 """
 import asyncio
 from playwright.async_api import async_playwright
-from powerglove_vision.dashboard_web import DASHBOARD
+from virtualglove.dashboard_web import DASHBOARD
 async def main():
  """Exercise delayed physical clicks across the polling interval."""
  async with async_playwright() as p:

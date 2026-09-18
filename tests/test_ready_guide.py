@@ -18,11 +18,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision.players import READY_CHECKS, blank_ready_progress
-from powerglove_vision.tuning import TuningManager
-from powerglove_vision.control_server import ControlState
-from powerglove_vision.ready_guide import game_gate
-from powerglove_vision.ready_web import READY, READY_ENGINE, READY_SCRIPT
+from virtualglove.players import READY_CHECKS, blank_ready_progress
+from virtualglove.tuning import TuningManager
+from virtualglove.control_server import ControlState
+from virtualglove.ready_guide import game_gate
+from virtualglove.ready_web import READY, READY_ENGINE, READY_SCRIPT
 
 
 class ReadyPlayersTests(unittest.TestCase):
@@ -105,7 +105,7 @@ class ReadyGuardTests(unittest.TestCase):
         self.state=ControlState(self.path);self.session='ready-session-123456789';self.practice=False;self.calls=[]
         self.player=dict(active='default',generation=0,needs_center=False,ready_progress=dict(course=1,completed=list(READY_CHECKS),completed_at=None))
         self.state.update_worker(game_status())
-        self.mock=patch('powerglove_vision.control_server.urllib.request.urlopen',side_effect=self.urlopen);self.mock.start();self.addCleanup(self.mock.stop)
+        self.mock=patch('virtualglove.control_server.urllib.request.urlopen',side_effect=self.urlopen);self.mock.start();self.addCleanup(self.mock.stop)
         self.state.connection_probe=lambda *a,**k:dict(console_service=True,console_authenticated=True,checked_seconds_ago=0)
 
     def urlopen(self, request, **kwargs):
@@ -234,7 +234,7 @@ const gap=readyMatcher();feed(gap,'left','neutral',3);feed(gap,'left','left',3);
 class ReadyRouteTests(unittest.TestCase):
     def test_page_route_and_action_safeguard(self):
         import http.client
-        from powerglove_vision.control_server import start_control_server
+        from virtualglove.control_server import start_control_server
         with tempfile.TemporaryDirectory() as root:
             path=Path(root)/'device.json';path.write_text(json.dumps(dict(receiver='',profile='off')))
             servers,state=start_control_server(path,'127.0.0.1',0,0)

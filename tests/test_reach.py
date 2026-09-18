@@ -18,10 +18,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from powerglove_vision.model import Calibration, HandObservation
-from powerglove_vision.gesture import GestureEngine, GestureConfig, _field_axis, save_calibration, load_calibration
-from powerglove_vision.players import calibration_value
-from powerglove_vision.tuning import TuningManager
+from virtualglove.model import Calibration, HandObservation
+from virtualglove.gesture import GestureEngine, GestureConfig, _field_axis, save_calibration, load_calibration
+from virtualglove.players import calibration_value
+from virtualglove.tuning import TuningManager
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('calibrate_reach', ROOT/'scripts/calibrate-reach.py')

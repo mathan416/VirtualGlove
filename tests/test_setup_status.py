@@ -15,8 +15,8 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from powerglove_vision.control_server import SETUP
-from powerglove_vision.dashboard_web import DASHBOARD
+from virtualglove.control_server import SETUP
+from virtualglove.dashboard_web import DASHBOARD
 
 
 class SetupStatusHarnessTests(unittest.TestCase):

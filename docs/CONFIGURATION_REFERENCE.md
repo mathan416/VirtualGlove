@@ -222,12 +222,12 @@ page invalidate them. Run the check again after changing the console or game.
 Setup groups **Controller status**, **Players**, **Matrix attract mode**,
 **Connection and startup**, **Pair this Controller**, **Camera**,
 **Trust this Controller**, **Joystick dead zone**, **Games**, and
-**Show statistics**. Receiver port and key replacement are under **Advanced
-connection**. The connection settings appear immediately before the secure pairing wizard. Camera selection, rate, reader, exposure, and diagnostic hand label
+**Show statistics**. Receiver port is under **Advanced connection**. The
+connection settings appear immediately before the secure pairing wizard. Camera selection, rate, reader, exposure, and diagnostic hand label
 are in their own action-first Camera section. The concise
 [Camera guide](CAMERA_GUIDE.md) explains compatibility, lighting, and recovery.
-Key replacement stops output and requires pairing again. A saved destination and
-key are not proof that the selected console has received that key. **Check console address**
+A saved destination and pairing key are not proof that the selected console has
+received that key. **Check console address**
 verifies name resolution only.
 
 A failed initial load offers **Reload saved settings**; connection fields remain
@@ -250,7 +250,6 @@ from camera frames and controller packets, which remain newest-state-only.
 | Camera buffers | `1` | Selects one or two driver capture buffers. One minimizes queue depth; two may improve delivery continuity on some cameras. The latest-frame owner still discards superseded frames. Pixel Pal's camera test compares supported choices. |
 | Camera reader | Recommended — OpenCV | The portable, gameplay-validated capture path. **Engineering comparison — Direct V4L2** is an opt-in Linux 64-bit, 640×480 MJPEG experiment that drains to the newest driver buffer and falls back to OpenCV if its requirements are not met. |
 | Exposure behavior | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
-| Replace the pairing key when saving | Off | Rotates the shared secret. This immediately breaks the existing pairing until the selected console is paired again. |
 
 ![Advanced camera settings showing the discovered-camera dropdown and exposure controls](images/setup-camera.png)
 
@@ -841,8 +840,7 @@ must already have the software installed.
 Manual token copying is an emergency Linux-console recovery path. LaunchBox
 should be repaired with its one-time-code pairing command instead.
 
-If you replace the pairing key in Setup, controller output stops; pair the devices again before selecting Start controller.
-Do not transfer the new token through a command-line argument; process listings
+Do not transfer a pairing token through a command-line argument; process listings
 and shell history can expose it.
 
 ## Console connection settings
@@ -1380,7 +1378,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
 Existing pairing credentials and native emulator files need no format migration.
-VirtualGlove 0.4.1 is the oldest supported in-place upgrade. Update both machines
+VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.0. Update both machines
 together. The Controller package carries
 and flashes the matching checksum-verified Matrix firmware; do not skip that
 installer stage or mix it with an older Controller/receiver build. Native
@@ -1638,7 +1636,7 @@ repository templates by themselves does not migrate active configuration.
 | First activation is slow | Allow background preloading to finish and inspect the startup stage logs before attributing the delay to the camera. |
 | Movement triggers too late | Recalibrate neutral first and verify the hand is steady; then reduce the selected player's **Joystick dead zone** center-box size. |
 | Direction remains stuck | Recalibrate neutral, return inside the Setup center box, and verify tracking-loss release. Adjust **Joystick dead zone** if the resting box is too small. |
-| Pairing suddenly fails after a Setup change | A rotated token invalidates the old pairing; run the pairing flow again. |
+| Pairing suddenly fails | Run the pairing flow again so both devices receive the same current key. |
 | EmulationStation pauses or another USB device behaves unexpectedly at boot | Verify receiver startup is controlled by the 45-second timer and the service is not independently enabled at boot. |
 
 ## Configuration file catalog
@@ -1939,7 +1937,7 @@ smoothing, prediction, or a queue.
 ### Run the paired Games service
 
 The RetroPie installer starts this service automatically. Its installed command
-is `virtualglove-games`; developers can also run `python3 -m powerglove_vision.game_registry`.
+is `virtualglove-games`; developers can also run `python3 -m virtualglove.game_registry`.
 
 | Flag | Default | Purpose |
 | --- | --- | --- |
@@ -2927,6 +2925,15 @@ path. Their old baseline remains recorded so later updates cannot silently adopt
 or delete them. Restore the previous installed version of a locally modified file
 before retrying if you want the installer to replace it with the new release.
 
+The v0.4.2-to-v0.5.0 upgrade has one additional bounded migration because the
+internal Python namespace changed. Before applying any payload writes, the
+installer verifies every file in the retired package against the v0.4.2
+manifest. Only verified managed files and generated `.pyc` cache files may be
+present. Verified source is backed up and retired through the normal transaction;
+generated bytecode is removed, and the empty directory is deleted. Unknown or
+locally modified content aborts the upgrade before mutation. Private data and
+host configuration are outside this package tree and remain untouched.
+
 Updates take an exclusive lock, validate all paths before writing, back up changed
 and removed files, and publish the new manifest last. A failed write rolls back
 the payload. A process interruption leaves `.virtualglove-install-pending.json`;
@@ -2936,7 +2943,8 @@ payload staging (for example, host setup or App Lab startup) does not undo a
 successfully committed payload; use the reported backup or previous release.
 
 The normal installer `--check` reports missing or modified managed files and an
-unfinished transaction without changing anything. For payload-only checks:
+unfinished transaction without changing anything. In 0.5.0 it also reports any
+retired Python package left behind by a v0.4.2 upgrade. For payload-only checks:
 
 ```sh
 python3 scripts/installation-manifest.py /home/arduino/ArduinoApps/virtualglove --check
