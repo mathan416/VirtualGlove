@@ -25,7 +25,7 @@ RETIRED_MODULE="power""glove_vision"
 retired_pid() {
     pid="$1"
     [ -r "/proc/$pid/cmdline" ] || return 1
-    command="$(tr '\000' ' ' < "/proc/$pid/cmdline")"
+    command="$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null)" || return 1
     case " $command " in
         *" -m $RETIRED_MODULE.merged_gamepad "*|*" -m $RETIRED_MODULE.game_registry "*|\
         *" -m $RETIRED_MODULE.console_monitor "*|*" -m $RETIRED_MODULE.receiver "*) return 0 ;;

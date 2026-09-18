@@ -114,7 +114,9 @@ authoritative record for line-level and file-level history.
 - Recalbox and Batocera upgrades now stop exact retired module processes before
   starting the renamed runtime. Linux installation checks also fail when a
   retired Controller or console process remains, preventing an apparently
-  successful upgrade from leaving duplicate input publishers alive.
+  successful upgrade from leaving duplicate input publishers alive. Process
+  inspection also tolerates the normal race where a process exits while `/proc`
+  is being read, without printing a misleading upgrade warning.
 - Setup no longer offers pairing-key replacement as a connection-save option.
   Pairing credentials are established or replaced only through the explicit,
   physically confirmed pairing flow.

@@ -45,6 +45,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("virtualglove.pairing", text)
         self.assertIn('RETIRED_MODULE="power""glove_vision"', text)
         self.assertIn("stop_retired", text)
+        self.assertIn('2>/dev/null)" || return 1', text)
         self.assertIn("--receiver-restart-command", text)
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)
