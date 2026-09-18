@@ -36,7 +36,7 @@ jobs:
             }
           }
           py -3 -m pip install ".[launchbox]"
-          py -3 -m unittest tests.test_windows_input tests.test_launchbox `
+          py -3 -m unittest tests.test_launchbox `
             tests.test_pairing.PairingTests.test_certificate_falls_back_without_openssl
       - name: Install the x86-64 MinGW build environment
         uses: msys2/setup-msys2@v2

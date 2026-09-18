@@ -14,6 +14,7 @@
 import json
 import re
 import runpy
+import signal
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,19 @@ def packet(**extra):
 
 
 class AuditRegressionTests(unittest.TestCase):
+    def test_code_review_map_matches_the_tracked_checkout(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/build-code-review-map.py"), "--check"],
+            cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_sigterm_is_one_shot_before_normal_cleanup(self):
+        with patch.object(vision_app.signal, "signal") as install, \
+             self.assertRaises(KeyboardInterrupt):
+            vision_app._shutdown_on_signal(signal.SIGTERM, None)
+        install.assert_called_once_with(signal.SIGTERM, signal.SIG_IGN)
+
     def test_retired_python_and_product_names_are_absent_from_tracked_files(self):
         tracked = subprocess.check_output(
             ["git", "ls-files", "-z"], cwd=ROOT

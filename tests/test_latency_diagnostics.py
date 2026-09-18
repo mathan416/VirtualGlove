@@ -94,7 +94,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_preflight_selects_only_safe_status_and_applies_fixed_gates(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30.0,
             build={'commit':'a'*40}, token='must-not-survive', active_player='player-id')
         selected = {key: status.get(key) for key in preflight.STATUS_FIELDS if key in status}
@@ -109,7 +109,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_prepare_preflight_rejects_running_emulator_before_receiver_restart(self):
         status = dict(worker_running=True, camera_available=False, calibrated=False,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30,
             build={'commit':'a'*40})
         controller = {'disk_free_bytes':2**30, 'files':{'calibration_present':True}}
@@ -123,7 +123,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_preflight_rejects_wrong_camera_and_missing_native_abi(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=1280, camera_height=720, camera_format='MJPG', camera_fps=60)
         checks = preflight.evaluate(status, {'disk_free_bytes':2**30},
             {'disk_free_bytes':2**30, 'files':{}, 'native_state':{'present':False}},
@@ -136,7 +136,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_record_preflight_requires_live_calibration_not_only_a_saved_file(self):
         status = dict(worker_running=True, camera_available=True, calibrated=False,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30)
         controller = {'disk_free_bytes':2**30, 'files':{'calibration_present':True}}
         retropie = {'disk_free_bytes':2**30, 'files':{'core_sha256':'b'*64},
@@ -149,7 +149,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_record_preflight_warns_for_local_tools_but_rejects_runtime_mismatch(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30,
             build={'commit':'a'*40})
         controller = {'disk_free_bytes':2**30}

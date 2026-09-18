@@ -169,7 +169,7 @@ class ReachHelperTests(unittest.TestCase):
                     manager.apply_calibration_restore()
                     return dict(player=manager.player_snapshot(),controller_enabled=not state['stopped'],
                         practice_mode=state['practice'],vision_state='active',calibrated=True,calibrating=False,
-                        motion_tracking=False,detected=True,confidence=.95,sample_age_ms=100,
+                        detected=True,confidence=.95,sample_age_ms=100,
                         timestamp=now[0],capture_sequence=int(now[0]*10),palm_position=state['position'])
                 def post(endpoint,payload):
                     if endpoint=='api/players': return manager.player_command(payload)

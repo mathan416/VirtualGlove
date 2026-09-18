@@ -186,6 +186,10 @@ authoritative record for line-level and file-level history.
 
 ### Fixed
 
+- Made Controller termination one-shot so a repeated container-stop signal
+  cannot interrupt bounded preview cleanup and emit a misleading
+  `KeyboardInterrupt` traceback during an otherwise clean shutdown.
+
 - LaunchBox FCEUmm input now bypasses unreliable Windows synthetic-key delivery
   and uses RetroArch's built-in Player 1 Network RetroPad. This preserves the
   physical XInput joypad and real keyboard while making Start, Select, D-pad,

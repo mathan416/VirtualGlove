@@ -81,9 +81,11 @@ class RetroArchRemoteDevice:
             self._refresh_thread.start()
 
     def _send(self, control_id: int, pressed: bool) -> None:
+        """Send one encoded control state to the configured loopback port."""
         self._sender(encode_button(control_id, pressed), ("127.0.0.1", self.port))
 
     def _send_neutral(self) -> None:
+        """Clear every supported control before publishing live state."""
         for _group, _name, control_id in CONTROL_IDS:
             self._send(control_id, False)
         self._pressed.clear()

@@ -130,6 +130,10 @@ def _academy_image_quality(frame, diagnostics: dict, cv2) -> dict:
 
 def _shutdown_on_signal(_signum: int, _frame: object) -> None:
     """Convert process termination into the vision loop's normal cleanup path."""
+    # A container stop can repeat SIGTERM while bounded worker cleanup is still
+    # running.  Make termination one-shot so a second signal cannot interrupt
+    # resource release and produce a misleading shutdown traceback.
+    signal.signal(_signum, signal.SIG_IGN)
     raise KeyboardInterrupt
 
 
