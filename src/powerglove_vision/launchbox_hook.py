@@ -190,6 +190,11 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         settings = load_settings(args.settings)
+        # LaunchBox invokes this Python bridge directly. Ensure its per-user
+        # receiver is alive on every launch so reboot and upgrade recovery do
+        # not depend on a batch wrapper or a long-lived installer process.
+        from .launchbox_runtime import ensure_background
+        ensure_background(args.settings)
         return run_game(settings, args.rom)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
         print(f"VirtualGlove LaunchBox setup error: {exc}")

@@ -158,10 +158,13 @@ the cabinet's pre-existing combined-Player-1 merger remains a specialized local
 configuration. Recalbox and Batocera instead ask which configured controller is
 Player 1 and expose one **VirtualGlove Merged Player 1** gamepad to NES RetroArch.
 The original controller remains the only active frontend controller. LaunchBox
-keeps physical XInput plus its audited keyboard bridge.
+keeps physical XInput plus its audited keyboard bridge for FCEUmm games. Native
+Super Glove Ball uses only the guarded Power Glove state channel; it does not
+duplicate native gestures as keyboard events.
 Its installer makes **VirtualGlove RetroArch** the default NES emulator after
-backing up LaunchBox's emulator definitions; new NES imports inherit the wrapper
-unless they have an explicit per-game emulator override.
+backing up LaunchBox's emulator and NES game definitions. Existing NES games
+assigned to standard RetroArch and new NES imports use VirtualGlove automatically;
+games assigned to a genuinely different emulator remain explicit overrides.
 
 ### 5. Pair the devices
 

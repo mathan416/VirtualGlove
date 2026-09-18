@@ -27,7 +27,7 @@ from powerglove_vision.tracker import (
     TRACKER_BACKEND_LABELS, TRACKING_EVIDENCE_OUTPUTS,
     _DirectionalSearchState, _TrackingTelemetry,
     _Point, _camera_curl_points, _configure_tracking_roi, _curl, _finger_bends,
-    _finger_curls, _finger_curls_from_bends, _landmarks_valid,
+    _finger_curls, _finger_curls_from_bends, _start_curls_from_bends, _landmarks_valid,
     _inference_node_threads, _is_cpu_inference_calculator,
     _hand_presence_score_evidence,
     _palm_anchor_candidates, _palm_detector_evidence, _polygon_centroid,
@@ -471,7 +471,9 @@ class TrackerGeometryTests(unittest.TestCase):
         points = pose_points(set())
         points[0] = _Point(0, -1, 0)
         points[5:9] = [_Point(0, 0, -i) for i in range(4)]
-        self.assertAlmostEqual(_finger_curls(points)['index_curl'], .75)
+        bends = _finger_bends(points)
+        self.assertAlmostEqual(_finger_curls_from_bends(bends)['index_curl'], .75)
+        self.assertEqual(_start_curls_from_bends(bends)['index_tip_curl'], 0.0)
 
     def test_single_joint_bend_is_not_diluted(self):
         points = pose_points(set())

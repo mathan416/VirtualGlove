@@ -44,6 +44,12 @@ class HandObservation:
     index_middle_spread: float = 0.0
     middle_ring_spread: float = 0.0
     ring_pinky_spread: float = 0.0
+    # Menu poses need to distinguish a straight, splayed finger from a curl.
+    # The general curl includes the base knuckle because that is useful for
+    # gameplay actions; these two values retain only the distal joints used by
+    # the V-sign's extended index and middle fingers.
+    index_tip_curl: float | None = None
+    middle_tip_curl: float | None = None
 
     @property
     def fingers(self) -> dict[str, float]:
@@ -55,6 +61,16 @@ class HandObservation:
             "ring": self.ring_curl,
             "pinky": self.pinky_curl,
         }
+
+    @property
+    def start_fingers(self) -> dict[str, float]:
+        """Return curl values suited to the V-sign without changing gameplay curls."""
+        values = self.fingers
+        if self.index_tip_curl is not None:
+            values["index"] = self.index_tip_curl
+        if self.middle_tip_curl is not None:
+            values["middle"] = self.middle_tip_curl
+        return values
 
     @property
     def usable(self) -> bool:

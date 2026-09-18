@@ -1143,7 +1143,7 @@ class GestureEngine:
         # Deliberate, held menu poses avoid needing an electronic glove.
         # V sign = Start; thumbs-up with the four fingers closed = Select.
         start_pose = not self._menu_guard_active and all(item["matches"] for item in finger_pose_feedback(
-            cfg, "start", MENU_FINGERS["start"], observation.fingers).values())
+            cfg, "start", MENU_FINGERS["start"], observation.start_fingers).values())
         select_pose = not self._menu_guard_active and all(item["matches"] for item in finger_pose_feedback(
             cfg, "select", MENU_FINGERS["select"], observation.fingers).values())
         if self._menu_guard_active:

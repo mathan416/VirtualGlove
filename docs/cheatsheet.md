@@ -256,7 +256,9 @@ RetroPie's separate virtual controller appears after the first authenticated
 packet. Recalbox and Batocera keep **VirtualGlove Merged Player 1** present from
 service startup; their checks confirm the selected physical pad, merged device,
 and NES joypad index. LaunchBox retains physical XInput and audits its VirtualGlove
-keys for RetroArch command/hotkey conflicts before every launch.
+keys for RetroArch command/hotkey conflicts before every FCEUmm launch. Native
+Super Glove Ball sends recognized hand controls only through the guarded native
+record and does not duplicate them as keyboard input.
 Batocera resolves a packaged native core for its exact architecture and
 load-tests it before exposure; exact registered Super Glove Ball ROMs are
 selected only when they have no explicit core choice. LaunchBox verifies its
@@ -567,9 +569,10 @@ For a ROM copied after installation, refresh the frontend library first.
 RetroPie uses the registered profile immediately but needs a per-ROM runcommand
 choice for native Super Glove Ball. Recalbox and Batocera need a VirtualGlove
 service restart or reboot to create a missing exact-ROM native selection.
-LaunchBox imports the game into **Nintendo Entertainment System** and normally
-inherits the default **VirtualGlove RetroArch** emulator; remove any per-game
-emulator override that bypasses it. Its wrapper checks the registry every time.
+LaunchBox imports the game into **Nintendo Entertainment System** and inherits
+**VirtualGlove RetroArch**. Installation also migrates existing NES games that
+use standard RetroArch while retaining genuinely different emulator overrides.
+Its bridge checks the registry every time.
 
 This example shows the required structure. Replace the example filename with
 your actual filename and merge the entry into your existing file:

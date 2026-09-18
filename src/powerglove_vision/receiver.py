@@ -163,7 +163,8 @@ def main() -> int:
         while True:
             now = time.monotonic()
             if last_valid_at is not None and not released and now - last_valid_at >= timeout:
-                device.release()
+                if device is not None:
+                    device.release()
                 if native is not None:
                     native.release(last_sequence + 1)
                 released = True
@@ -196,19 +197,29 @@ def main() -> int:
                 sequence = state["sequence"]
                 last_sequence = sequence
                 publication_started_ns = time.monotonic_ns() if received_ns else 0
-                native_first = native is not None and state.get("profile") == "super_glove_ball"
+                is_native_profile = state.get("profile") == "super_glove_ball"
+                native_first = native is not None and is_native_profile
                 native_started_ns = native_completed_ns = 0
                 if native_first:
                     native_started_ns = time.monotonic_ns() if received_ns else 0
                     native.write(state)
                     native_completed_ns = time.monotonic_ns() if received_ns else 0
-                if device is None:
-                    if args.output_device == "windows-keyboard":
+                native_only = is_native_profile and args.output_device == "windows-keyboard"
+                if native_only:
+                    # The native Nestopia core consumes Super Glove Ball directly.
+                    # Sending the same state through Windows keyboard injection is
+                    # unnecessary, can collide with RetroArch hotkeys, and may fail
+                    # under Windows input-integrity rules. Keep any prior keyboard
+                    # state neutral without touching the native publication.
+                    if device is not None:
+                        device.release()
+                else:
+                    if device is None and args.output_device == "windows-keyboard":
                         from .windows_input import WindowsKeyboardDevice
                         device = WindowsKeyboardDevice()
-                    else:
+                    elif device is None:
                         device = UInputDevice()
-                device.write_state(state)
+                    device.write_state(state)
                 if native is not None and not native_first:
                     native_started_ns = time.monotonic_ns() if received_ns else 0
                     native.write(state)

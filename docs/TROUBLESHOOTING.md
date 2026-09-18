@@ -140,8 +140,23 @@ adding a runtime setting to `device.json`.
 If the ROM was added after VirtualGlove was installed, refresh the frontend's
 game list before testing it. Recalbox and Batocera also need a VirtualGlove
 service restart or reboot after a newly registered Super Glove Ball ROM so the
-missing exact-ROM native choice can be created. In LaunchBox, confirm the game
-uses **VirtualGlove RetroArch** rather than an individual emulator override.
+missing exact-ROM native choice can be created. In LaunchBox, rerun the current
+installer if an older installation still points **VirtualGlove RetroArch** at a
+batch file or leaves standard RetroArch assigned to an NES game. The current
+installer uses the Python bridge directly and migrates standard RetroArch NES
+assignments while preserving genuinely different emulator overrides.
+The bridge also ensures the managed receiver on every launch. If Dashboard
+shows **Controller connection stopped** while a LaunchBox game is active, close
+the game and LaunchBox, rerun the current installer, and relaunch the game. The
+upgrade stops duplicate receivers left by an older Python environment without
+changing ROMs, saves, pairing, or the game registry.
+
+If native hand movement reaches Super Glove Ball on LaunchBox but the V-sign
+Start gesture or thumbs-up Select gesture does not, close RetroArch and rerun
+the current installer. Current builds keep native gestures on the guarded Power
+Glove channel instead of also sending Enter or Right Shift through the FCEUmm
+keyboard bridge. Dashboard recognition plus a working physical joypad does not
+by itself prove that an older Windows receiver has this correction.
 
 On generic RetroPie, confirm the separate `VirtualGlove` input device and its
 Player 1 mapping. On Recalbox or Batocera, run the installation check and confirm

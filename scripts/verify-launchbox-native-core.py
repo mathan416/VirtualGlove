@@ -31,7 +31,7 @@ def verify(path: Path, load: bool = False) -> None:
     optional = struct.unpack_from("<H", payload, pe + 24)[0]
     if machine != 0x8664 or optional != 0x20B:
         raise ValueError("LaunchBox core must be a PE32+ x86-64 DLL")
-    if b"Nestopia PowerGlove\0" not in payload:
+    if b"Nestopia VirtualGlove\0" not in payload:
         raise ValueError("LaunchBox core does not expose the VirtualGlove core identity")
     if load:
         library = ctypes.CDLL(str(Path(path).resolve()))
@@ -51,8 +51,8 @@ def verify(path: Path, load: bool = False) -> None:
 
         info = SystemInfo()
         library.retro_get_system_info(ctypes.byref(info))
-        if info.library_name != b"Nestopia PowerGlove":
-            raise ValueError("LaunchBox core identity is not Nestopia PowerGlove")
+        if info.library_name != b"Nestopia VirtualGlove":
+            raise ValueError("LaunchBox core identity is not Nestopia VirtualGlove")
 
 
 def main() -> int:

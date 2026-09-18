@@ -29,11 +29,29 @@ if (-not [Environment]::Is64BitOperatingSystem) { throw "LaunchBox support requi
 if (-not (Test-Path $LaunchBoxRoot -PathType Container)) { throw "LaunchBox folder was not found." }
 if (-not (Test-Path $RetroArch -PathType Leaf)) { throw "retroarch.exe was not found." }
 if (-not (Test-Path $Fceumm -PathType Leaf)) { throw "The FCEUmm core was not found." }
+if (Get-Process LaunchBox, BigBox, retroarch -ErrorAction SilentlyContinue) {
+    throw "Close LaunchBox, Big Box, and RetroArch before installing or upgrading VirtualGlove."
+}
 if (-not (Test-Path $Python -PathType Leaf) -and -not (Get-Command py -ErrorAction SilentlyContinue)) {
     throw "Install 64-bit Python 3 for Windows, including the py launcher, then run this installer again."
 }
 
 New-Item -ItemType Directory -Force -Path $InstallRoot, $DataRoot, $LaunchBoxFiles, $NativeRoot, (Split-Path $NativeState) | Out-Null
+
+# An older installation may have started the same services from a system
+# Python. Stop only VirtualGlove's background services before replacing the
+# managed runtime so one receiver owns the input port after the upgrade.
+$InstallPattern = [regex]::Escape($InstallRoot)
+$BackgroundModules = "powerglove_vision\.(launchbox_runtime|receiver|game_registry)"
+$ExistingServices = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+    $_.CommandLine -and $_.CommandLine -match $InstallPattern -and
+    $_.CommandLine -match $BackgroundModules
+})
+foreach ($Process in $ExistingServices) {
+    Stop-Process -Id $Process.ProcessId -Force -ErrorAction Stop
+}
+if ($ExistingServices.Count -gt 0) { Start-Sleep -Milliseconds 500 }
+
 Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-launchbox.cmd") $LaunchBoxFiles
 Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-pair.ps1") $LaunchBoxFiles
 Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-restart-runtime.cmd") $LaunchBoxFiles
@@ -117,7 +135,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 & (Join-Path $LaunchBoxFiles "configure-launchbox-emulator.ps1") `
-    -LaunchBoxRoot $LaunchBoxRoot -WrapperPath (Join-Path $LaunchBoxFiles "virtualglove-launchbox.cmd")
+    -LaunchBoxRoot $LaunchBoxRoot -PythonPath $Python -SettingsPath $Settings
 
 & $Python -m powerglove_vision.launchbox_runtime ensure --settings $Settings
 
@@ -125,4 +143,4 @@ Write-Host "VirtualGlove LaunchBox support installed for this Windows user."
 Write-Host "Windows may ask whether Python can listen on the network; allow Private networks only."
 Write-Host "Pair from Controller Setup using the LaunchBox one-time-code command."
 Write-Host "VirtualGlove RetroArch is the default Nintendo Entertainment System emulator."
-Write-Host "New NES imports inherit it automatically; individual game overrides remain explicit."
+Write-Host "Existing NES games using standard RetroArch and new imports use it automatically; other emulator overrides remain explicit."

@@ -245,6 +245,12 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn(settings["native_state"], receiver)
         self.assertIn("powerglove_vision.game_registry", games)
 
+    def test_desktop_append_config_disables_touch_overlay(self):
+        config = (ROOT / "launchbox/retroarch-nes.cfg").read_text()
+        self.assertIn('input_overlay = ""', config)
+        self.assertIn('input_overlay_enable = "false"', config)
+        self.assertIn('input_overlay_enable_autopreferred = "false"', config)
+
     def test_receiver_import_does_not_require_the_linux_backend(self):
         real_import = builtins.__import__
 
@@ -287,10 +293,20 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertNotIn("--receiver-restart-command $Python -m", pairing)
         self.assertIn("launchbox_runtime restart", restart)
         self.assertIn("LaunchBox-Emulators.xml", configure)
+        self.assertIn("LaunchBox-Nintendo-Entertainment-System.xml", configure)
         self.assertIn("Nintendo Entertainment System", configure)
         self.assertIn("VirtualGlove RetroArch", configure)
+        self.assertIn("$virtualGlove.ApplicationPath = $PythonPath", configure)
+        self.assertIn("powerglove_vision.launchbox_hook", configure)
+        self.assertIn("$game.Emulator = $emulatorId", configure)
+        self.assertIn("[string]$_.Emulator -eq [string]$retroArch[0].ID", configure)
         self.assertIn("the backup was restored", configure)
         self.assertIn("configure-launchbox-emulator.ps1", installer)
+        self.assertIn("-PythonPath $Python -SettingsPath $Settings", installer)
+        self.assertIn("Close LaunchBox, Big Box, and RetroArch", installer)
+        self.assertIn("powerglove_vision\\.(launchbox_runtime|receiver|game_registry)", installer)
+        hook = (ROOT / "src/powerglove_vision/launchbox_hook.py").read_text()
+        self.assertIn("ensure_background(args.settings)", hook)
         self.assertIn("windows-latest", workflow)
         self.assertIn("nestopia_powerglove_libretro.dll", workflow)
         self.assertIn("nestopia-powerglove-source.tar.gz", workflow)
@@ -304,6 +320,11 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("QueryPerformanceCounter", windows_patch)
         self.assertIn("CreateFileW", windows_patch)
         self.assertIn("CreateFileMappingA", windows_patch)
+        self.assertIn("GetEnvironmentVariableW", windows_patch)
+        self.assertIn('library_name     = "Nestopia VirtualGlove"', windows_patch)
+        self.assertIn("Core::Input::Controllers::PowerGlove::START", windows_patch)
+        self.assertIn("RETRO_DEVICE_ID_JOYPAD_START", windows_patch)
+        self.assertIn("RETRO_DEVICE_ID_JOYPAD_SELECT", windows_patch)
         self.assertNotIn("QueryPerformanceCounter", base_patch)
 
 

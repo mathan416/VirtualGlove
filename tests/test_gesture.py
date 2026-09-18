@@ -185,6 +185,20 @@ class GestureTests(unittest.TestCase):
         self.assertFalse(engine.update(hand(1.02, **pose)).buttons["start"])
         self.assertTrue(engine.update(hand(1.521, **pose)).buttons["start"])
 
+    def test_v_sign_uses_distal_extension_when_splaying_bends_base_knuckles(self):
+        engine = calibrated_engine("super_glove_ball")
+        pose = dict(
+            index_curl=.62, middle_curl=.66,
+            index_tip_curl=.12, middle_tip_curl=.14,
+            ring_curl=.78, pinky_curl=.75,
+        )
+        self.assertFalse(engine.update(hand(.10, **pose)).buttons["start"])
+        state = engine.update(hand(.76, **pose))
+        self.assertTrue(state.buttons["start"])
+        # Gameplay curl reporting and native action state remain based on the
+        # existing strongest-joint values rather than the menu-only values.
+        self.assertGreater(state.fingers["index"], 1)
+
     def test_comfortable_thumbs_up_requires_thumb_open_and_all_fingers_closed(self):
         pose = dict(thumb_curl=.21, index_curl=.46, middle_curl=.58,
                     ring_curl=.47, pinky_curl=.46)

@@ -528,6 +528,14 @@ def _finger_curls_from_bends(bends: dict) -> dict:
     return {name + "_curl": max(values) for name, values in bends.items()}
 
 
+def _start_curls_from_bends(bends: dict) -> dict:
+    """Keep distal index/middle bends for a splayed V-sign menu pose."""
+    return {
+        name + "_tip_curl": max(bends[name][1:])
+        for name in ("index", "middle")
+    }
+
+
 def _configure_tracking_roi(options: Any, scale: float,
                             shift_x: float, shift_y: float,
                             scale_x: float | None = None,
@@ -953,6 +961,7 @@ class MediaPipeTracker:
             palm_scale=palm_scale,
             roll=roll,
             **_finger_spreads(curl_points),
+            **_start_curls_from_bends(bends),
             **curls,
         )
         preview_overlay = {}

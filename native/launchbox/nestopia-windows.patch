@@ -17,7 +17,7 @@
  #include <sstream>
  #include <string>
  
-@@ -164,32 +168,88 @@
+@@ -164,32 +168,92 @@
  };
  #pragma pack(pop)
  
@@ -71,9 +71,13 @@
  static void pgv_native_open(void)
  {
 +#ifdef _WIN32
-+   const wchar_t *path = _wgetenv(L"VIRTUALGLOVE_NATIVE_STATE");
-+   if (!path || !*path)
-+      path = L"native-state.bin";
++   wchar_t configured_path[32768];
++   const DWORD path_length = GetEnvironmentVariableW(
++      L"VIRTUALGLOVE_NATIVE_STATE", configured_path,
++      sizeof(configured_path) / sizeof(configured_path[0]));
++   const wchar_t *path = path_length > 0 &&
++      path_length < sizeof(configured_path) / sizeof(configured_path[0])
++      ? configured_path : L"native-state.bin";
 +#else
     const char *path = getenv("VIRTUALGLOVE_NATIVE_STATE");
     if (!path || !*path)
@@ -106,7 +110,7 @@
     pgv_native_fd = open(path, O_RDONLY);
     if (pgv_native_fd < 0)
        return;
-@@ -202,6 +262,7 @@
+@@ -202,6 +266,7 @@
        return;
     }
     pgv_native = (const volatile struct pgv_native_state*)mapped;
@@ -114,7 +118,7 @@
  }
  
  static bool pgv_native_read(struct pgv_native_state *out)
-@@ -211,7 +272,11 @@
+@@ -211,7 +276,11 @@
     if (!pgv_native)
        return false;
     memcpy(out, (const void*)pgv_native, sizeof(*out));
@@ -126,3 +130,26 @@
     if (memcmp(out->magic, "PGV1", 4) || out->version != 1 ||
         out->size != sizeof(*out) || (out->guard_begin & 1) ||
         out->guard_begin != out->guard_end || out->profile != 1 ||
+@@ -712,7 +781,7 @@
+ void retro_get_system_info(struct retro_system_info *info)
+ {
+    memset(info, 0, sizeof(*info));
+-   info->library_name     = "Nestopia PowerGlove";
++   info->library_name     = "Nestopia VirtualGlove";
+ #ifdef GIT_VERSION
+    info->library_version  = NST_VERSION GIT_VERSION;
+ #else
+@@ -1027,5 +1096,13 @@
+    glove.wrist = 0;
+    glove.gesture = Core::Input::Controllers::PowerGlove::GESTURE_OPEN;
+    glove.buttons = 0;
++#ifdef _WIN32
++   /* Keep the physical Player 1 joypad's two confirmed native buttons usable
++    * while the emulated port remains a Power Glove. */
++   if (pad_state[0] & (1 << RETRO_DEVICE_ID_JOYPAD_START))
++      glove.buttons |= Core::Input::Controllers::PowerGlove::START;
++   if (pad_state[0] & (1 << RETRO_DEVICE_ID_JOYPAD_SELECT))
++      glove.buttons |= Core::Input::Controllers::PowerGlove::SELECT;
++#endif
+    if (!valid)
+       return true;

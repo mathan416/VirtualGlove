@@ -188,6 +188,52 @@ class SignedControllerTests(unittest.TestCase):
             self.assertEqual(receiver.main(), 0)
         self.assertEqual(events, ['native', 'gamepad'])
 
+    def test_windows_native_profile_bypasses_keyboard_injection(self):
+        sessions = ReceiverSessions(TOKEN)
+        session = 'a' * 32
+        challenge = handshake(sessions, session)
+        packet = state_packet(
+            session, challenge, buttons={"start": True},
+        )
+        sock, native = Mock(), Mock()
+        sock.recvfrom.side_effect = [(packet, PEER), KeyboardInterrupt()]
+        sock.recvmsg.side_effect = lambda size, space: (
+            lambda pair: (pair[0], [], 0, pair[1])
+        )(sock.recvfrom(size))
+        with patch.object(receiver, 'ReceiverSessions', return_value=sessions), \
+                patch.object(receiver.socket, 'socket', return_value=sock), \
+                patch.object(receiver, 'NativeStateWriter', return_value=native), \
+                patch('powerglove_vision.windows_input.WindowsKeyboardDevice') as keyboard, \
+                patch('sys.argv', [
+                    'receiver', '--token', TOKEN,
+                    '--output-device', 'windows-keyboard',
+                ]):
+            self.assertEqual(receiver.main(), 0)
+        keyboard.assert_not_called()
+        native.write.assert_called_once()
+        self.assertTrue(native.write.call_args.args[0]['buttons']['start'])
+
+    def test_windows_native_profile_stays_out_of_keyboard_when_record_unavailable(self):
+        sessions = ReceiverSessions(TOKEN)
+        session = 'a' * 32
+        challenge = handshake(sessions, session)
+        packet = state_packet(session, challenge, buttons={"start": True})
+        sock = Mock()
+        sock.recvfrom.side_effect = [(packet, PEER), KeyboardInterrupt()]
+        sock.recvmsg.side_effect = lambda size, space: (
+            lambda pair: (pair[0], [], 0, pair[1])
+        )(sock.recvfrom(size))
+        with patch.object(receiver, 'ReceiverSessions', return_value=sessions), \
+                patch.object(receiver.socket, 'socket', return_value=sock), \
+                patch.object(receiver, 'NativeStateWriter', side_effect=OSError('unavailable')), \
+                patch('powerglove_vision.windows_input.WindowsKeyboardDevice') as keyboard, \
+                patch('sys.argv', [
+                    'receiver', '--token', TOKEN,
+                    '--output-device', 'windows-keyboard',
+                ]):
+            self.assertEqual(receiver.main(), 0)
+        keyboard.assert_not_called()
+
     def test_multihomed_reply_requires_port_signature_and_fresh_request(self):
         for mode in ('valid','wrong-port','wrong-request','wrong-key'):
             sock=Mock()

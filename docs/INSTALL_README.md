@@ -248,9 +248,17 @@ existing token, game registry, and Controller address. A fresh installation
 uses `virtualglove.local`; pass `-ControllerHost` when the Controller has a
 different name or fixed address. The installer backs up LaunchBox's emulator
 definitions, creates **VirtualGlove RetroArch**, and makes it the default
-Nintendo Entertainment System emulator with the ROM path as its only argument.
+Nintendo Entertainment System emulator. It invokes the installed Python bridge
+directly rather than relying on Windows batch-file launching. Existing NES games
+assigned to standard RetroArch are migrated to the bridge; games assigned to a
+different emulator remain explicit overrides. The ROM path remains LaunchBox's
+only appended argument. Every bridge launch checks that the single managed
+receiver is running, which restores it after a reboot. During an upgrade, close
+LaunchBox, Big Box, and RetroArch; the installer then stops only older
+VirtualGlove background processes before replacing and restarting the managed
+runtime, preventing two receivers from competing for the input port.
 Installation verifies the DLL manifest and corresponding source, then actually
-loads the DLL and confirms its libretro API and `Nestopia PowerGlove` identity.
+loads the DLL and confirms its libretro API and `Nestopia VirtualGlove` identity.
 
 The wrapper exact-matches the ROM registry. Ordinary games launch with FCEUmm;
 Super Glove Ball launches with the separately named Windows x86-64
@@ -267,8 +275,15 @@ are emitted only while `retroarch.exe` is foreground and are released when
 focus moves elsewhere. The installer and wrapper audit those keys against
 RetroArch commands and Hotkey Enable. Any collision disables VirtualGlove for
 that launch, records the exact setting, and leaves XInput and the game active. Native
-Super Glove Ball instead selects the emulated Power Glove peripheral; its
-physical-joypad behavior is not claimed until it is validated on Windows. The
+Super Glove Ball instead selects the emulated Power Glove peripheral. Its
+confirmed Start and Select packet codes also accept the physical Player 1
+joypad's Start and Select buttons, so either the hand gesture or joypad can
+advance menus without replacing native hand movement. Other native packet
+button meanings remain deliberately unmapped until they are confirmed. During
+this native session, recognized gestures go only through the guarded Power
+Glove state channel; VirtualGlove does not also inject the FCEUmm keyboard
+bindings. This prevents duplicated input, RetroArch hotkey interactions, and a
+Windows input rejection from interrupting the native receiver. The
 receiver runs in the signed-in user's desktop session; it is not installed as
 a Windows service.
 
@@ -281,7 +296,7 @@ bash scripts/build-launchbox-nestopia-powerglove.sh
 
 The build applies the common native-glove patch followed by a Windows-only
 memory-mapping and monotonic-clock portability patch. The verifier requires a
-PE32+ AMD64 DLL carrying the `Nestopia PowerGlove` identity. Import the reviewed
+PE32+ AMD64 DLL carrying the `Nestopia VirtualGlove` identity. Import the reviewed
 DLL and its generated complete corresponding source archive under
 `native/launchbox/x86_64/` before building release packages.
 
@@ -558,10 +573,15 @@ identity, and retains the reviewed manifest and corresponding source archive
 beside the installed core. A missing or changed DLL falls back to FCEUmm for the
 affected launch.
 
-The installer adds **VirtualGlove RetroArch**, points it at
-`%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`, and makes it
-the default Nintendo Entertainment System emulator. Existing definitions are
-backed up first and non-NES associations remain unchanged. FCEUmm keeps
+The installer adds **VirtualGlove RetroArch**, points it directly at the
+isolated VirtualGlove Python runtime and LaunchBox hook, and makes it the default
+Nintendo Entertainment System emulator. Existing emulator and NES game
+definitions are backed up first. Existing NES games assigned to standard
+RetroArch are migrated; other emulator overrides and non-NES associations remain
+unchanged. The hook ensures the managed receiver on every game launch, including
+the first launch after a reboot. Updates require LaunchBox, Big Box, and
+RetroArch to be closed and remove duplicate older VirtualGlove background
+processes before starting the managed runtime. FCEUmm keeps
 RetroArch's physical XInput Player 1 controller while VirtualGlove adds
 keyboard controls to the same player. Installation and every wrapped launch
 audit the effective RetroArch command and Hotkey Enable bindings. If `Up`,
@@ -589,7 +609,7 @@ when a profile should start automatically:
 | RetroPie | Copy into `~/RetroPie/roms/nes`, then restart EmulationStation or refresh its game list. Ordinary registered games use the launch hook immediately. For native Super Glove Ball, select `lr-nestopia-powerglove` for that exact ROM in the runcommand launch menu; FCEUmm remains the safe fallback. |
 | Recalbox | Copy into `/recalbox/share/roms/nes`, then update the game list. Restart the VirtualGlove service or reboot after adding and registering Super Glove Ball. Startup creates its `.recalbox.conf` native-core choice only when that exact ROM has no existing core override. |
 | Batocera | Copy into `/userdata/roms/nes`, then update the game list. Restart the VirtualGlove service or reboot after adding and registering Super Glove Ball. Startup adds the exact-ROM native choice to `batocera.conf` only when no explicit core choice already exists. |
-| LaunchBox | Import the ROM into **Nintendo Entertainment System**. New games inherit the platform's default **VirtualGlove RetroArch** emulator; if a game has an individual emulator override, change it to VirtualGlove RetroArch. The wrapper reads the registry and chooses FCEUmm or Nestopia (VirtualGlove) on every launch, so no sidecar or service restart is needed. |
+| LaunchBox | Import the ROM into **Nintendo Entertainment System**. New games inherit **VirtualGlove RetroArch**, and installation migrates existing NES games assigned to standard RetroArch. A genuinely different per-game emulator remains untouched. The bridge reads the registry and chooses FCEUmm or Nestopia (VirtualGlove) on every launch, so no sidecar or service restart is needed. |
 
 Existing explicit per-ROM emulator/core choices are preserved on every
 platform. Registering a filename changes VirtualGlove's profile selection; it

@@ -48,7 +48,9 @@ uses a separate **VirtualGlove** virtual gamepad. Recalbox and Batocera expose
 **VirtualGlove Merged Player 1**, combining a selected physical controller and
 gestures in one NES gamepad while leaving the original pad in charge of the
 frontend. LaunchBox retains physical XInput plus conflict-audited keyboard
-input. A profile maps
+input for FCEUmm games. Native Super Glove Ball bypasses that keyboard bridge
+and consumes only the guarded native record, while its core additionally
+carries physical Start and Select into the two confirmed native packet codes. A profile maps
 recognized gestures to D-pad directions, A, B, Start, and Select.
 Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated

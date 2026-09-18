@@ -50,10 +50,10 @@ implementation.
 | Shared camera recognition can supply continuous normalized X/Y | Confirmed in application tests | The authenticated receiver publishes the same calibrated axes used by gameplay. |
 | A custom core can consume one coherent latest sample per emulated frame | Confirmed in build and unit tests | Versioned 64-byte read-only record with matching even guards; there is no queue or second smoothing stage. |
 | Missing, uncalibrated, wrong-profile, or older-than-250 ms samples are neutral | Confirmed in implementation tests | The receiver also publishes a neutral record on transport timeout and shutdown. |
-| The native core builds separately from stock Nestopia | Confirmed at pinned revision `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` | Its library name is `Nestopia PowerGlove`; stock source and installed cores are not modified. |
+| The native core builds separately from stock Nestopia | Confirmed at pinned revision `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` | Linux builds identify as `Nestopia PowerGlove`; the Windows build identifies as `Nestopia VirtualGlove`. Stock source and installed cores are not modified. |
 | Candidate X/Y encoding reaches Nestopia's existing Power Glove device | Confirmed for the exact ROM | Minimum, center, and maximum X/Y each produced distinct packets. Cabinet validation corrected the camera-to-Nestopia Y orientation. |
 | Detection signature, packet length, boundaries, and bit order | Confirmed | The ROM assembled inverse `$A0` as `$5F`, strobed once per byte, read ten bytes/80 bits per sample MSB first, and required the final stored byte to be `$3F`. |
-| Start encoding | Confirmed | Native byte 6 value `$82` left the title screen and began play while the controller stayed in native mode. |
+| Start encoding | Confirmed | Native byte 6 value `$82` left the title screen and began play while the controller stayed in native mode. On Windows, exact-ROM traces confirm both the V-sign state and physical Player 1 Start produce that same native code. |
 | Native Z encoding | Confirmed headlessly and in live gameplay | Calibrated camera depth is sign-reversed into the hardware convention. Neutral produced `$00`; maximum forward motion produced `$81`. Fist plus forward motion triggered Power Punch during a completed game. |
 | Native open, fist, and index-point encoding | Confirmed headlessly and in live gameplay | The exact ROM repeatedly received `$00` open, `$FF` fist, and `$0F` index-point samples. Shared five-finger recognition determines compound poses before transmission. Live play confirmed release/throw, grab/catch, and Robo-Bullet behavior. |
 | Native roll byte and unobserved button codes | Neutral; no confirmed game action is missing | Native X/Y, depth, open hand, fist, index point, and Start are mapped. Super Glove Ball has shown no repeatable action for packet byte 4 or for other byte-6 codes. Standard A, B, Select, and wrist-to-button mappings remain available in the FCEUmm joystick mode; sending guessed native codes could create unintended input. |
@@ -109,7 +109,10 @@ Linux; LaunchBox uses its per-user mapped record. It creates the record read-onl
 for consumers. Format version 1 is a fixed 64-byte little-endian record containing:
 
 - magic, format version, record size, and matching begin/end coherence guards;
-- sample sequence and a console monotonic timestamp taken at publication; for Super Glove Ball the native record is written immediately after receiver validation and before the unrelated Player 1 output update;
+- sample sequence and a console monotonic timestamp taken at publication; for
+  Super Glove Ball the native record is written immediately after receiver
+  validation. LaunchBox does not duplicate this native state through its
+  FCEUmm keyboard bridge;
 - signed normalized X, Y, Z, and roll axes;
 - detected and calibrated flags;
 - four compact finger-flex levels;
