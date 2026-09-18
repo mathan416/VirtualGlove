@@ -48,6 +48,11 @@ def load_settings(path: Path) -> dict:
     for key in ("retroarch", "fceumm_core", "native_core", "registry", "token_file"):
         if "\x00" in data[key]:
             raise ValueError("LaunchBox settings contain an invalid path")
+    if data.get("input_route") != "network-retropad":
+        raise ValueError("LaunchBox input route is unsupported; rerun the current installer")
+    port = data.get("retroarch_remote_port")
+    if not isinstance(port, int) or isinstance(port, bool) or not 49152 <= port <= 65535:
+        raise ValueError("LaunchBox RetroPad port is invalid; rerun the current installer")
     return data
 
 
@@ -61,7 +66,9 @@ def launch_command(settings: dict, rom: Path, selection: dict | None,
     core = settings["native_core"] if native else settings["fceumm_core"]
     emulator = "lr-nestopia-powerglove" if native else "lr-fceumm"
     command = [settings["retroarch"], "-L", core]
-    append_config = settings.get("retroarch_config")
+    append_config = settings.get(
+        "retroarch_native_config" if native else "retroarch_config"
+    )
     if append_config:
         command.extend(("--appendconfig", str(append_config)))
     command.append(str(rom))
@@ -110,7 +117,10 @@ def run_game(
         Path(settings["retroarch_config"]),
     ]) if settings.get("retroarch_config") else []
     if conflict:
-        message = "VirtualGlove input disabled for this launch: " + format_conflicts(conflict)
+        message = (
+            "Physical keyboard backup has a RetroArch command conflict; "
+            "VirtualGlove RetroPad input remains available: " + format_conflicts(conflict)
+        )
         print(message, file=sys.stderr)
         warning = settings.get("input_warning")
         if warning:
@@ -118,7 +128,6 @@ def run_game(
                 Path(warning).write_text(message + "\n")
             except OSError:
                 pass
-        selection = None
     elif settings.get("input_warning"):
         try:
             Path(settings["input_warning"]).unlink()

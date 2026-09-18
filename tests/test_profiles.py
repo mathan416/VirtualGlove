@@ -230,7 +230,8 @@ class ProfileTests(unittest.TestCase):
         registry = load_registry(Path(__file__).resolve().parents[1] / "config/games.json")
         for name, expected in (("Joust (USA)", "program_b"),
                                ("Gyruss (USA)", "program_c"),
-                               ("Sesame Street 123 (USA)", "program_f")):
+                               ("Sesame Street 123 (USA)", "program_f"),
+                               ("Super Mario Bros. (Europe) (Rev A)", "program_12")):
             for extension in (".nes", ".zip", ".7z"):
                 self.assertEqual(select_profile(registry, "nes", name + extension), expected)
 

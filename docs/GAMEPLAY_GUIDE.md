@@ -633,7 +633,7 @@ supplies movement or menu combinations. Shared gesture Start, Select, and Menu
 Guard remain available, but camera movement never sends a D-pad direction.
 Recalbox and Batocera provide this combined Player 1 automatically through
 **VirtualGlove Merged Player 1**; LaunchBox combines physical XInput with its
-audited keys. Generic RetroPie exposes VirtualGlove as a separate gamepad, so a
+loopback RetroPad while retaining real keys as a backup. Generic RetroPie exposes VirtualGlove as a separate gamepad, so a
 same-player hybrid requires an explicit local controller merger such as the
 cabinet's specialized configuration.
 

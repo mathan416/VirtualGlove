@@ -114,11 +114,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--native-state", type=Path, default=DEFAULT_NATIVE_STATE_PATH,
                         help="latest validated sample for the custom Nestopia core")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--output-device", choices=("gamepad", "merged-gamepad", "windows-keyboard"),
+    parser.add_argument("--output-device", choices=(
+        "gamepad", "merged-gamepad", "retroarch-remote",
+    ),
                         default="gamepad",
-                        help="publish a gamepad, feed a persistent merger, or inject audited Windows keys")
+                        help="publish a gamepad, feed a merger, or send a loopback RetroPad")
     parser.add_argument("--merged-socket", type=Path,
                         help="local merged-gamepad daemon socket")
+    parser.add_argument("--retroarch-port", type=int,
+                        help="dynamic loopback UDP port for RetroArch Network RetroPad")
     return parser
 
 
@@ -136,6 +140,11 @@ def main() -> int:
             raise ValueError("merged-gamepad requires --merged-socket")
         from .merged_gamepad import MergedGamepadClient
         device = MergedGamepadClient(args.merged_socket)
+    if not args.dry_run and args.output_device == "retroarch-remote":
+        if args.retroarch_port is None:
+            raise ValueError("retroarch-remote requires --retroarch-port")
+        from .retroarch_remote import RetroArchRemoteDevice
+        device = RetroArchRemoteDevice(args.retroarch_port)
     native = None
     try:
         native = NativeStateWriter(args.native_state)
@@ -204,20 +213,15 @@ def main() -> int:
                     native_started_ns = time.monotonic_ns() if received_ns else 0
                     native.write(state)
                     native_completed_ns = time.monotonic_ns() if received_ns else 0
-                native_only = is_native_profile and args.output_device == "windows-keyboard"
+                native_only = is_native_profile and args.output_device == "retroarch-remote"
                 if native_only:
                     # The native Nestopia core consumes Super Glove Ball directly.
-                    # Sending the same state through Windows keyboard injection is
-                    # unnecessary, can collide with RetroArch hotkeys, and may fail
-                    # under Windows input-integrity rules. Keep any prior keyboard
-                    # state neutral without touching the native publication.
+                    # The custom core consumes this state directly. Keep the
+                    # ordinary RetroPad path neutral without duplicating controls.
                     if device is not None:
                         device.release()
                 else:
-                    if device is None and args.output_device == "windows-keyboard":
-                        from .windows_input import WindowsKeyboardDevice
-                        device = WindowsKeyboardDevice()
-                    elif device is None:
+                    if device is None:
                         device = UInputDevice()
                     device.write_state(state)
                 if native is not None and not native_first:

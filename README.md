@@ -21,8 +21,9 @@ Power Glove controller.
 Development toward **v0.5.0** adds installation targets for Recalbox 10.x,
 Batocera 38+, and LaunchBox on Windows x86-64, while retaining RetroPie. Recalbox and
 Batocera create **VirtualGlove Merged Player 1**, a gamepad that combines the
-chosen physical controller with gestures for NES gameplay. LaunchBox safely adds
-audited gesture keys beside its physical XInput controller. All targets keep
+chosen physical controller with gestures for NES gameplay. LaunchBox adds a
+loopback-only RetroPad beside its physical XInput controller while retaining
+real keyboard controls as a manual fallback. All targets keep
 their services, game hooks, pairing, and configuration in each console's
 supported persistent storage. They are under validation and are not part of
 the stable v0.4.2 downloads yet. Batocera packages now carry 15 target-built,
@@ -39,9 +40,9 @@ native Super Glove Ball, physical-joypad coexistence, and reboot-persistence
 checks. Recalbox 10.1 binaries and corresponding source archives are packaged
 for all seven targets; targets other than the tested `rpizero2` image remain
 subject to their own load and hardware validation. An unpackaged or unloadable
-target safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
-its keys conflicts with a RetroArch command, leaving the physical controller and
-game usable. Its installer load-tests the separate Windows Nestopia core and its
+target safely keeps using FCEUmm. LaunchBox reports conflicts affecting its
+manual keyboard fallback without disabling the independent VirtualGlove RetroPad.
+Its installer load-tests the separate Windows Nestopia core and its
 wrapper falls back to FCEUmm joystick mode if that DLL is later missing or changed.
 
 ## Why VirtualGlove?
@@ -158,7 +159,8 @@ the cabinet's pre-existing combined-Player-1 merger remains a specialized local
 configuration. Recalbox and Batocera instead ask which configured controller is
 Player 1 and expose one **VirtualGlove Merged Player 1** gamepad to NES RetroArch.
 The original controller remains the only active frontend controller. LaunchBox
-keeps physical XInput plus its audited keyboard bridge for FCEUmm games. Native
+keeps physical XInput plus a loopback Network RetroPad for FCEUmm games; its
+real keyboard mappings remain available as a manual fallback. Native
 Super Glove Ball uses only the guarded Power Glove state channel; it does not
 duplicate native gestures as keyboard events.
 Its installer makes **VirtualGlove RetroArch** the default NES emulator after
@@ -327,8 +329,8 @@ tuning, Academy progress, and the installed game registry.
 
 The v0.5.0 development line extends the same authenticated design to Recalbox,
 Batocera, and LaunchBox. Recalbox and Batocera use a persistent merged Player 1
-gamepad with a separately selected frontend controller; LaunchBox audits its
-keyboard bridge against RetroArch hotkeys for every launch. Recalbox on the
+gamepad with a separately selected frontend controller; LaunchBox uses a
+LAN-isolated local RetroPad while leaving XInput and real keys available. Recalbox on the
 available Raspberry Pi 3 has passed
 registered FCEUmm play, native Super Glove Ball, simultaneous physical-joypad
 use, and reboot persistence. Batocera's 15 packaged architectures and LaunchBox's

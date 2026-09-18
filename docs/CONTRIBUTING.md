@@ -118,9 +118,15 @@ The [command reference](CONFIGURATION_REFERENCE.md#command-line-reference) expla
 Core tests must remain independent of a physical camera, VirtualGlove Controller, and console:
 
 ```sh
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/run-tests.py --setup
+python3 scripts/run-tests.py
 python3 -m compileall -q python scripts src tests
 ```
+
+The first command creates `.venv-test` with the pinned NumPy and headless
+OpenCV versions used by local image-array tests. Later runs reuse it. The test
+runner checks those imports before discovery and prints one setup instruction
+instead of running a dependency-incomplete suite.
 
 Run the documentation and syntax checks:
 

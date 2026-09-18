@@ -18,7 +18,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.launchbox_hook import launch_command, native_core_ready, run_game
+from powerglove_vision.launchbox_hook import (
+    launch_command, load_settings, native_core_ready, run_game,
+)
 from powerglove_vision.launchbox_runtime import service_commands
 from powerglove_vision.retroarch_hotkeys import conflicts
 
@@ -53,8 +55,25 @@ class LaunchBoxTests(unittest.TestCase):
             "token_file": str(root / "token"),
             "native_state": str(root / "native-state.bin"),
             "retroarch_config": str(root / "retroarch-nes.cfg"),
+            "retroarch_native_config": str(root / "retroarch-native.cfg"),
+            "input_route": "network-retropad",
+            "retroarch_remote_port": 55001,
             "uno_q": "controller.local",
         }
+
+    def test_settings_require_current_input_route_and_dynamic_port(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "launcher.json"
+            current = self.settings(Path(name))
+            path.write_text(json.dumps(current))
+            self.assertEqual(load_settings(path)["retroarch_remote_port"], 55001)
+            for route, port in (("windows-keyboard", 55001),
+                                ("network-retropad", 48000),
+                                ("network-retropad", True)):
+                invalid = dict(current, input_route=route, retroarch_remote_port=port)
+                path.write_text(json.dumps(invalid))
+                with self.assertRaises(ValueError):
+                    load_settings(path)
 
     def test_only_super_glove_ball_selects_the_native_core(self):
         settings = self.settings(Path("C:/VirtualGlove"))
@@ -69,6 +88,8 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("fceumm_libretro.dll", standard[2])
         self.assertEqual(standard_name, "lr-fceumm")
         self.assertEqual(native[-1], "Super Glove Ball (USA).nes")
+        self.assertTrue(any(item.endswith("retroarch-native.cfg") for item in native))
+        self.assertTrue(any(item.endswith("retroarch-nes.cfg") for item in standard))
 
     def test_missing_native_core_falls_back_to_fceumm_but_keeps_joystick_lease(self):
         with tempfile.TemporaryDirectory() as name:
@@ -128,7 +149,7 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertFalse(calls[0][1]["rapid_a"])
         self.assertIsNone(calls[-1][0][3])
 
-    def test_keyboard_hotkey_conflict_disables_virtualglove_but_launches_game(self):
+    def test_keyboard_hotkey_conflict_warns_but_retropad_remains_enabled(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             settings = self.settings(root)
@@ -149,8 +170,9 @@ class LaunchBoxTests(unittest.TestCase):
             )
             warning = (root / "warning.txt").read_text()
         self.assertEqual(code, 0)
-        self.assertEqual(requested, [])
+        self.assertEqual(requested[0][0][3], "program_12")
         self.assertIn("fceumm_libretro.dll", launched[0][2])
+        self.assertIn("Physical keyboard backup", warning)
         self.assertIn("input_exit_emulator uses x", warning)
 
     def test_hotkey_audit_ignores_intentional_player_and_gamepad_binds(self):
@@ -237,11 +259,13 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("fceumm_libretro.dll", launched[0][2])
 
-    def test_runtime_uses_windows_keyboard_and_shared_native_record(self):
+    def test_runtime_uses_loopback_retropad_and_shared_native_record(self):
         settings = self.settings(Path("C:/VirtualGlove"))
         settings["settings_path"] = "C:/VirtualGlove/data/launcher.json"
         receiver, games = service_commands(settings)
-        self.assertIn("windows-keyboard", receiver)
+        self.assertIn("retroarch-remote", receiver)
+        self.assertIn("--retroarch-port", receiver)
+        self.assertIn("55001", receiver)
         self.assertIn(settings["native_state"], receiver)
         self.assertIn("powerglove_vision.game_registry", games)
 
@@ -250,6 +274,11 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn('input_overlay = ""', config)
         self.assertIn('input_overlay_enable = "false"', config)
         self.assertIn('input_overlay_enable_autopreferred = "false"', config)
+        self.assertIn('network_remote_enable = "true"', config)
+        self.assertIn('network_remote_enable_user_p1 = "true"', config)
+        native = (ROOT / "launchbox/retroarch-native.cfg").read_text()
+        self.assertIn('network_remote_enable = "false"', native)
+        self.assertIn('network_remote_enable_user_p1 = "false"', native)
 
     def test_receiver_import_does_not_require_the_linux_backend(self):
         real_import = builtins.__import__
@@ -263,7 +292,7 @@ class LaunchBoxTests(unittest.TestCase):
             import importlib
             receiver = importlib.import_module("powerglove_vision.receiver")
             importlib.reload(receiver)
-        self.assertIn("windows-keyboard", receiver.build_parser()._option_string_actions[
+        self.assertIn("retroarch-remote", receiver.build_parser()._option_string_actions[
             "--output-device"
         ].choices)
 
@@ -281,7 +310,16 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("UTF8Encoding($false)", installer)
         self.assertNotIn("Set-Content -Encoding UTF8 $Settings", installer)
         self.assertNotIn("Register-ScheduledTask", installer)
-        self.assertNotIn("New-NetFirewallRule", installer)
+        self.assertIn("New-NetFirewallRule", installer)
+        self.assertIn("LocalSubnet", installer)
+        self.assertIn("network-retropad", installer)
+        self.assertIn("retroarch_remote_port", installer)
+        self.assertIn("--check-loopback", installer)
+        self.assertIn("Test-RetroPadPortAvailable", installer)
+        self.assertIn("ExclusiveAddressUse", installer)
+        self.assertIn("[Net.IPAddress]::Loopback", installer)
+        self.assertIn("retroarch-native.cfg", installer)
+        self.assertIn("WindowsBuiltInRole]::Administrator", installer)
         self.assertIn("nestopia-powerglove-source.tar.gz", installer)
         self.assertIn("Get-FileHash", installer)
         self.assertIn("--load", installer)
@@ -304,6 +342,9 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("configure-launchbox-emulator.ps1", installer)
         self.assertIn("-PythonPath $Python -SettingsPath $Settings", installer)
         self.assertIn("Close LaunchBox, Big Box, and RetroArch", installer)
+        self.assertIn("Stop-Process -Id $Process.ProcessId -Force -ErrorAction SilentlyContinue", installer)
+        self.assertIn("$QuietScans -lt 4", installer)
+        self.assertIn("$RemainingServices.Count -gt 0", installer)
         self.assertIn("powerglove_vision\\.(launchbox_runtime|receiver|game_registry)", installer)
         hook = (ROOT / "src/powerglove_vision/launchbox_hook.py").read_text()
         self.assertIn("ensure_background(args.settings)", hook)

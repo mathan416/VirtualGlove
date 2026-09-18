@@ -255,10 +255,11 @@ python3 /userdata/system/virtualglove/scripts/verify-batocera-native-core.py \
 RetroPie's separate virtual controller appears after the first authenticated
 packet. Recalbox and Batocera keep **VirtualGlove Merged Player 1** present from
 service startup; their checks confirm the selected physical pad, merged device,
-and NES joypad index. LaunchBox retains physical XInput and audits its VirtualGlove
-keys for RetroArch command/hotkey conflicts before every FCEUmm launch. Native
+and NES joypad index. LaunchBox retains physical XInput and adds VirtualGlove
+through a LAN-isolated loopback RetroPad; real keyboard mappings remain a manual
+fallback and their command/hotkey conflicts are reported. Native
 Super Glove Ball sends recognized hand controls only through the guarded native
-record and does not duplicate them as keyboard input.
+record and does not duplicate them as ordinary RetroPad input.
 Batocera resolves a packaged native core for its exact architecture and
 load-tests it before exposure; exact registered Super Glove Ball ROMs are
 selected only when they have no explicit core choice. LaunchBox verifies its
@@ -273,13 +274,15 @@ This is a developer check. Run it from the **root of the full Git checkout**,
 where the `src/` and `tests/` directories are present:
 
 ```sh
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/run-tests.py --setup  # first run or dependency repair
+python3 scripts/run-tests.py
 ```
 
-The command is correct for macOS and Linux. `PYTHONPATH=src` lets the tests
-import the local source without installing the package. The tests do not
-require a camera, MediaPipe, or either physical device, but some open temporary
-local network listeners. The App Lab ZIP and the installed receiver files do not include the full
+The command is correct for macOS, Linux, and Windows. The runner supplies the
+local source path and refuses to start test discovery when its pinned NumPy or
+OpenCV dependency is missing. The tests do not require a camera, MediaPipe, or
+either physical device, but some open temporary local network listeners. The
+App Lab ZIP and the installed receiver files do not include the full
 test suite. Successful completion ends with `OK`; these tests do not
 replace a check of the controls in a running game.
 
@@ -413,7 +416,8 @@ Wait for the live camera view before calibrating.
 
 **Gestures off — no active profile** closes the camera and stops only
 VirtualGlove-generated input. Recalbox/Batocera's merged physical source and
-LaunchBox's physical XInput controller remain available. Generic RetroPie keeps
+LaunchBox's physical XInput controller remain available. LaunchBox's local
+RetroPad is neutral and its real keyboard fallback remains available. Generic RetroPie keeps
 its separate physical pad only according to that system's controller assignment.
 Glove Academy temporarily opens the camera for practice and suppresses game input.
 Leaving Glove Academy restores the selected profile. **Program 14 — Physical

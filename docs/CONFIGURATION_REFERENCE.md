@@ -509,7 +509,8 @@ restored as **armed** or **stopped**, but an armed worker does not transmit unti
 live registered game session or intentional manual Dashboard profile exists.
 Gestures off affects only VirtualGlove-generated input. Recalbox/Batocera's
 merged physical source and LaunchBox's physical XInput controller remain
-available; generic RetroPie follows its separate gamepad assignments. **Program
+available; LaunchBox's loopback RetroPad becomes neutral and its real keyboard
+fallback remains available. Generic RetroPie follows its separate gamepad assignments. **Program
 14 — Physical controller only** has the same neutral camera/output behavior while deliberately retaining
 the numbered profile and authenticated registered-game session.
 
@@ -936,6 +937,14 @@ Super Glove Ball filenames when their VirtualGlove service starts. LaunchBox's
 wrapper checks the registry on every launch. RetroPie retains its explicit
 per-ROM runcommand core selection. See [Add NES ROMs after VirtualGlove is
 installed](INSTALL_README.md#add-nes-roms-after-virtualglove-is-installed).
+
+LaunchBox stores `input_route: "network-retropad"` and a randomly selected
+`retroarch_remote_port` from `49152` through `65535` in its private
+`launcher.json`. The ordinary-game append configuration enables Network
+RetroPad for Player 1 on that port; the native Super Glove Ball configuration
+explicitly disables it. The sender always targets `127.0.0.1`, and the installer
+maintains a program- and port-scoped inbound firewall block for LocalSubnet.
+These values are installer-owned; rerun the installer rather than editing them.
 
 ```json
 {

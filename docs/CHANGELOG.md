@@ -9,15 +9,20 @@ authoritative record for line-level and file-level history.
 
 ### Added
 
+- Added a repository-owned local test runner with a reusable `.venv-test` and
+  pinned NumPy/OpenCV dependencies. It preflights the environment before test
+  discovery, replacing repeated missing-module failures with one actionable
+  setup command.
 - Added LaunchBox support for 64-bit Windows through RetroArch. A per-user
   wrapper exact-matches registered NES ROMs, keeps authenticated game leases
   alive for the launched process, uses FCEUmm for standard profiles, and selects
   a separately named Nestopia VirtualGlove DLL only for Super Glove Ball.
-- Added dependency-free Windows keyboard injection that merges VirtualGlove's
-  Player 1 controls beside the existing physical XInput joypad. LaunchBox uses
-  one-time-code pairing only and runs input in the signed-in desktop session.
-  Synthetic keys are restricted to foreground `retroarch.exe` and release on
-  focus loss so gestures cannot type into another application.
+- Added a dependency-free LaunchBox Network RetroPad path that merges
+  VirtualGlove's Player 1 controls beside the existing physical XInput joypad.
+  It targets a random loopback port, is enabled only for managed FCEUmm launches,
+  and is isolated from the LAN by a validated Windows Firewall rule. Real
+  keyboard mappings remain available as a manual fallback without synthetic
+  keystrokes or a third-party virtual-controller driver.
 - Added physical Player 1 Start and Select fallback inside the Windows native
   Super Glove Ball core. The physical joypad can advance confirmed native menus
   while VirtualGlove continues supplying native hand movement and gestures.
@@ -95,12 +100,16 @@ authoritative record for line-level and file-level history.
 
 ### Changed
 
+- LaunchBox now refreshes held Network RetroPad controls at RetroArch's input
+  cadence. Directions and buttons remain held for gameplay instead of becoming
+  one-frame taps on affected Windows RetroArch builds, while centering,
+  tracking loss, receiver timeout, game exit, and restart still release them
+  immediately.
 - LaunchBox native Super Glove Ball sessions now publish exclusively through
   the native Power Glove channel. They no longer duplicate Start, Select, or
-  other native gestures through Windows keyboard injection, preventing a
-  rejected synthetic-key transition from restarting the receiver before the
-  core can consume the gesture. Standard FCEUmm profiles retain their audited
-  keyboard input path.
+  other native gestures through the ordinary RetroPad path. Standard FCEUmm
+  profiles use the loopback RetroPad while native Super Glove Ball remains on
+  the guarded Power Glove state channel.
 - LaunchBox now invokes the VirtualGlove Python bridge directly instead of
   treating a batch file as an emulator executable. The bridge now ensures the
   managed receiver on every game launch, so it recovers after a reboot without
@@ -134,10 +143,10 @@ authoritative record for line-level and file-level history.
   the merged NES joypad assignment. Tokens, game registries, custom startup
   scripts, unrelated RetroArch settings, ROMs, saves, and controller mappings
   are preserved.
-- LaunchBox now audits its eight gesture keys against effective RetroArch command
-  and Hotkey Enable bindings during installation and before every wrapped game.
-  A conflict disables VirtualGlove only for that launch, reports the exact
-  setting, and leaves the physical XInput controller and game running.
+- LaunchBox audits the eight retained manual keyboard keys against effective
+  RetroArch command and Hotkey Enable bindings. A conflict reports degradation
+  of that backup without disabling VirtualGlove's independent RetroPad or the
+  physical XInput controller.
 - LaunchBox installation now loads the reviewed Windows DLL and verifies its
   libretro API and `Nestopia VirtualGlove` identity before copying it. The installed
   manifest and complete corresponding source are retained beside the core, and
@@ -152,6 +161,14 @@ authoritative record for line-level and file-level history.
 
 ### Fixed
 
+- LaunchBox FCEUmm input now bypasses unreliable Windows synthetic-key delivery
+  and uses RetroArch's built-in Player 1 Network RetroPad. This preserves the
+  physical XInput joypad and real keyboard while making Start, Select, D-pad,
+  A, B, holds, and rapid-fire transitions visible at RetroArch's input layer.
+- LaunchBox upgrades now tolerate a managed receiver exiting during shutdown
+  and wait for a full quiet interval before replacing the runtime. This also
+  prevents an older system-Python supervisor from respawning duplicate
+  receivers while the per-user VirtualGlove environment is being installed.
 - Recalbox and Batocera now project authenticated controller frames onto the
   merged gamepad's exact input contract. Recognition-only button fields no
   longer cause otherwise valid directions and buttons to be discarded.

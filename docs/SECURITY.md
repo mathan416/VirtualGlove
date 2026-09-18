@@ -128,12 +128,15 @@ physical state. The device emits neutral state outside RetroArch so it cannot
 duplicate navigation in EmulationStation. Its Unix socket and controller record
 must remain inside the platform's private VirtualGlove directories.
 
-LaunchBox intentionally uses keyboard injection because no Windows virtual-pad
-or device-hiding driver is installed. Installation and each wrapped launch audit
-the eight gesture keys against RetroArch command and Hotkey Enable bindings.
-Any collision disables VirtualGlove for that launch, reports the exact setting,
-and leaves the physical XInput controller working. Foreground-process checks and
-release-on-focus-loss remain mandatory defenses against typing into other apps.
+LaunchBox installs no Windows virtual-pad, keyboard-filter, or device-hiding
+driver. Ordinary games receive VirtualGlove through RetroArch's built-in Network
+RetroPad on a random high UDP port. The sender targets `127.0.0.1`, the interface
+is enabled only by the managed FCEUmm append configuration, and a managed Windows
+Firewall rule blocks LocalSubnet access to that RetroArch port. Installation
+fails closed if the rule or loopback transport does not validate. The signed
+VirtualGlove receiver remains the only LAN-facing input endpoint. Physical
+XInput and real keyboard bindings stay independent; keyboard-command conflicts
+are reported only as degradation of that manual fallback.
 
 ## Network exposure
 

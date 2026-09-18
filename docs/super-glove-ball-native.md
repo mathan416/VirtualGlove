@@ -112,7 +112,7 @@ for consumers. Format version 1 is a fixed 64-byte little-endian record containi
 - sample sequence and a console monotonic timestamp taken at publication; for
   Super Glove Ball the native record is written immediately after receiver
   validation. LaunchBox does not duplicate this native state through its
-  FCEUmm keyboard bridge;
+  ordinary-game Network RetroPad path;
 - signed normalized X, Y, Z, and roll axes;
 - detected and calibrated flags;
 - four compact finger-flex levels;

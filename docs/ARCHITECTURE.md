@@ -50,7 +50,7 @@ camera, receiver, or game is working.
 | RetroPie services | Receive controller packets, expose a virtual gamepad, signal game launches, serve paired game-registry edits | Camera processing |
 | Recalbox integration | Run from `/recalbox/share`, observe RetroArch without patching the read-only OS, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Recalbox system-image files and frontend control |
 | Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Batocera system-image files and frontend control |
-| LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, audit command-key collisions, and inject Player 1 keys from the signed-in Windows session beside the physical XInput joypad | LaunchBox database files and global joypad configuration |
+| LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and publish Player 1 through a LAN-isolated loopback RetroPad beside physical XInput and real-keyboard fallback controls | LaunchBox database files and global joypad configuration |
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
 App Lab starts `python/main.py` in the main application container. This
@@ -69,6 +69,15 @@ hotkey has a dedicated output button, and VirtualGlove Select can never assert
 it. The merged gamepad remains neutral outside RetroArch, so EmulationStation
 continues to use only the original controller. Disconnect releases only physical
 state; the saved stable identity reconnects without relying on an event number.
+
+On LaunchBox, the authenticated receiver translates ordinary profiles into
+RetroArch Network RetroPad button transitions sent only to `127.0.0.1`. RetroArch
+combines that Player 1 state with its existing XInput and real-keyboard bindings.
+The installer chooses a random dynamic port, enables it only in the managed
+FCEUmm append configuration, and blocks LocalSubnet access with a program- and
+port-scoped Windows Firewall rule. Super Glove Ball uses a separate append
+configuration with Network RetroPad disabled and consumes only the guarded
+native-state record.
 
 The supervisor passes the private `data/device.json` path to the worker using
 `--device-config`; the token itself is absent from process arguments. Device

@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: src/powerglove_vision/retroarch_hotkeys.py
-# Purpose: Reject LaunchBox keyboard mappings that collide with RetroArch commands.
+# Purpose: Report manual LaunchBox keyboard fallbacks that collide with commands.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -8,7 +8,7 @@
 #   2026-09-16 - Added effective LaunchBox RetroArch hotkey auditing.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Audit RetroArch keyboard commands without treating Player binds as hotkeys."""
+"""Audit real-keyboard fallback controls without treating Player binds as hotkeys."""
 
 from __future__ import annotations
 

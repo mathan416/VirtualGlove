@@ -30,7 +30,8 @@ def service_commands(settings: dict) -> tuple[list[str], list[str]]:
     receiver = [
         sys.executable, "-m", "powerglove_vision.receiver", "--listen", "0.0.0.0",
         "--token-file", token, "--native-state", native,
-        "--output-device", "windows-keyboard",
+        "--output-device", "retroarch-remote", "--retroarch-port",
+        str(settings["retroarch_remote_port"]),
     ]
     games = [
         sys.executable, "-m", "powerglove_vision.game_registry",

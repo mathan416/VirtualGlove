@@ -47,8 +47,8 @@ With FCEUmm, the console exposes VirtualGlove as Player 1 input. Generic RetroPi
 uses a separate **VirtualGlove** virtual gamepad. Recalbox and Batocera expose
 **VirtualGlove Merged Player 1**, combining a selected physical controller and
 gestures in one NES gamepad while leaving the original pad in charge of the
-frontend. LaunchBox retains physical XInput plus conflict-audited keyboard
-input for FCEUmm games. Native Super Glove Ball bypasses that keyboard bridge
+frontend. LaunchBox retains physical XInput plus a loopback Network RetroPad
+for FCEUmm games, with real keyboard bindings as a manual fallback. Native Super Glove Ball bypasses that RetroPad path
 and consumes only the guarded native record, while its core additionally
 carries physical Start and Select into the two confirmed native packet codes. A profile maps
 recognized gestures to D-pad directions, A, B, Start, and Select.
@@ -78,7 +78,7 @@ VirtualGlove controls while keeping the game session visible. The detailed
 gesture and game tables are in the [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14).
 
 That same-player hybrid is automatic on Recalbox/Batocera through their merged
-gamepad and on LaunchBox through physical XInput plus audited keys. Generic
+gamepad and on LaunchBox through physical XInput plus the local RetroPad. Generic
 RetroPie intentionally installs a separate VirtualGlove gamepad; use its normal
 controller assignment or an explicitly configured local merger.
 

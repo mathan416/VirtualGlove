@@ -154,17 +154,19 @@ changing ROMs, saves, pairing, or the game registry.
 If native hand movement reaches Super Glove Ball on LaunchBox but the V-sign
 Start gesture or thumbs-up Select gesture does not, close RetroArch and rerun
 the current installer. Current builds keep native gestures on the guarded Power
-Glove channel instead of also sending Enter or Right Shift through the FCEUmm
-keyboard bridge. Dashboard recognition plus a working physical joypad does not
+Glove channel instead of also sending ordinary RetroPad input. Dashboard recognition plus a working physical joypad does not
 by itself prove that an older Windows receiver has this correction.
 
 On generic RetroPie, confirm the separate `VirtualGlove` input device and its
 Player 1 mapping. On Recalbox or Batocera, run the installation check and confirm
 the selected physical controller is connected, **VirtualGlove Merged Player 1**
 exists, and its current index is assigned to NES Player 1. The merged device is
-intentionally neutral in EmulationStation. On LaunchBox, inspect the reported
-input warning: a VirtualGlove key assigned to a RetroArch command or Hotkey
-Enable disables gestures for that launch but leaves physical XInput working.
+intentionally neutral in EmulationStation. On LaunchBox, the installer must
+report `network-retropad`, a random high loopback port, and a validated isolation
+rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
+and physical XInput remain available. If gestures are recognized but FCEUmm does
+not move, rerun the current installer to restore the managed ordinary-game
+configuration and receiver route rather than changing global RetroArch settings.
 If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
 the matching VirtualGlove Windows installer. The affected game continues in
 FCEUmm joystick mode. On Batocera, an **ACTION** result for the packaged native
@@ -201,11 +203,11 @@ The separate console one-time code remains valid for five minutes. Setup shows
 the correct command after RetroPie, Recalbox, Batocera, or LaunchBox is selected and saved.
 LaunchBox uses one-time-code pairing only. Run the displayed PowerShell command
 as the same Windows user who runs LaunchBox. If Windows asks about network
-access, allow the Python runtime on Private networks only. VirtualGlove must run
-in that signed-in desktop session for its keys to reach RetroArch.
-Standard-profile keys are sent only while `retroarch.exe` is foreground. If
-gestures stop after switching windows, return focus to RetroArch; VirtualGlove
-deliberately releases its keys while another application is active.
+access, allow the Python runtime on Private networks only. VirtualGlove's
+authenticated receiver runs in that signed-in desktop session, but ordinary
+game input reaches RetroArch through the managed loopback RetroPad and is not
+conditioned on window focus. A focus change must not release an active held
+control; tracking loss, controller timeout, game exit, or receiver shutdown does.
 If more than one console is online, run it on the exact console named in Setup;
 a code displayed by a different console cannot open the intended listener. A
 platform-mismatch error means the saved selection does not match the operating
