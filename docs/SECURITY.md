@@ -219,7 +219,7 @@ if remote shutdown or camera recovery is not wanted.
 - The App Lab installation ZIP is generated and verified; it is not maintained as a changing source-controlled binary.
 - The custom MediaPipe wheel's provenance and checksum are recorded in `THIRD_PARTY_NOTICES.md` at the repository root.
 - Google's Hand Landmarker model is installed from the bundled copy, with its pinned download as a fallback only when that copy is absent. Both paths must match the expected SHA-256 digest before atomic installation; the package verifier also checks the bundled model and license text.
-- The optional Nestopia core is built from one pinned upstream commit and one checksum-recorded local patch. Its build rejects changes to Nestopia's original Power Glove license header, and installation keeps the upstream `COPYING` file and the local modification ledger beside the separately named core. Stock Nestopia and FCEUmm are not replaced.
+- The optional Nestopia core is built from one pinned upstream commit and checksum-recorded patches. Recalbox and Batocera manifests bind each binary to its target, release, corresponding source archive, source revisions, size, digest, and executable identity; LaunchBox binds its DLL and source to a Windows manifest. Console installers load-test the core and confirm the libretro identity before activation. Batocera and LaunchBox fail safely to FCEUmm when the native artifact is absent, changed, or unloadable. Stock Nestopia and FCEUmm are not replaced.
 - Arduino library versions are pinned in `sketch/sketch.yaml`.
 - GitHub Actions rebuilds and inspects documentation and the App Lab installation ZIP on every pull request and push to `main` or `dev`.
 

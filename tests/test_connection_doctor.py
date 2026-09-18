@@ -16,6 +16,7 @@ import unittest
 
 from powerglove_vision.connection_doctor_web import DOCTOR_SCRIPT
 from powerglove_vision.control_server import SETUP
+from powerglove_vision.setup_web import SETUP_SCRIPT
 
 HARNESS = r"""
 const vm=require('node:vm');
@@ -136,6 +137,9 @@ class ConnectionDoctorTests(unittest.TestCase):
         self.assertEqual(parser.doctor_parent,'pairing-card')
         self.assertTrue(parser.doctor_after_pairing)
         self.assertEqual(parser.doctor_links,0)
+        self.assertIn("$('connection-fields').disabled=!savedConfig", SETUP_SCRIPT)
+        self.assertIn("'connection-save'])$(id).disabled=lockConnection", SETUP_SCRIPT)
+        self.assertNotIn("$('connection-fields').disabled=!savedConfig||active", SETUP_SCRIPT)
         self.assertNotIn(b'{{DOCTOR_', SETUP)
         for script in parser.scripts:
             parsed=subprocess.run(['node','--check'],input=script,text=True,capture_output=True)

@@ -182,7 +182,10 @@ function renderPairing(){
  $('pair-destination').textContent=(platformNames[savedConfig?.platform]?platformNames[savedConfig.platform]+' · ':'')+(savedConfig?.receiver||'Not configured');
  $('pair-prerequisite').textContent=!savedConfig?'Load your saved settings before pairing.':!savedConfig.platform?'Select your console platform and save the connection before pairing.':!savedConfig.receiver?'Enter the console address and save the connection before pairing.':!savedConfig.pairing_configured?'Save both the platform and console address before pairing.':dirtySettings()?'You have unsaved changes. Save them above before pairing.':'';
  $('pair-change').hidden=active||pairingBusy;
- $('connection-fields').disabled=!savedConfig||active||pairingBusy||settingsBusy;$('camera-fields').disabled=!savedConfig||active||pairingBusy||settingsBusy;
+ const lockConnection=active||pairingBusy||settingsBusy;
+ $('connection-fields').disabled=!savedConfig;
+ for(const id of ['platform','receiver','port','profile','rotate_token','connection-save'])$(id).disabled=lockConnection;
+ $('camera-fields').disabled=!savedConfig||active||pairingBusy||settingsBusy;
  $('pair-methods').disabled=!secure||active||pairingBusy||blocked;
  for(let n=1;n<=3;n++){$('pair-step-'+n).hidden=pairStep!==n||(n===3&&pairingBusy);$('pair-progress-'+n).toggleAttribute('aria-current',pairStep===n);if(pairStep===n)$('pair-progress-'+n).setAttribute('aria-current','step')}
  $('pair-success').hidden=pairStep!==4;

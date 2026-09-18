@@ -1,5 +1,243 @@
 {
   "cores": {
+    "bcm2711": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "bcm2711/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "48fe88d97f61856ba3e1d9787c314fe3d573ed1bf175d2076fd128552a2d416d",
+        "size": 6005896,
+        "source_file": "bcm2711/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53bc7020fee44b29628a84c7d50839889425d3f9a95134a2af3b2da61f756013",
+        "source_size": 1159210
+      }
+    },
+    "bcm2712": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "bcm2712/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "345275e0011059edb4aaf701f8fca96f0208064422b46f390a445ee0585f3110",
+        "size": 6005896,
+        "source_file": "bcm2712/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53bc7020fee44b29628a84c7d50839889425d3f9a95134a2af3b2da61f756013",
+        "source_size": 1159210
+      }
+    },
+    "bcm2835": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 32,
+        "elf_machine": "arm",
+        "file": "bcm2835/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "3cdb39059340434038788dfeee8b21ab3dd515aaa4fb015e13bc991c1db04a33",
+        "size": 4077552,
+        "source_file": "bcm2835/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53bc7020fee44b29628a84c7d50839889425d3f9a95134a2af3b2da61f756013",
+        "source_size": 1159210
+      }
+    },
+    "bcm2836": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 32,
+        "elf_machine": "arm",
+        "file": "bcm2836/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "5711cde4de4ac4ea3b1052f1b0775ccc39abba56aee735243e89c14ce3253b7f",
+        "size": 4072296,
+        "source_file": "bcm2836/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53bc7020fee44b29628a84c7d50839889425d3f9a95134a2af3b2da61f756013",
+        "source_size": 1159210
+      }
+    },
+    "bcm2837": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "bcm2837/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "216fa860bd3b919998b3496f196cfeba1d9b2d07139bc669ae54e8649ac5ef89",
+        "size": 6009888,
+        "source_file": "bcm2837/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53bc7020fee44b29628a84c7d50839889425d3f9a95134a2af3b2da61f756013",
+        "source_size": 1159210
+      }
+    },
+    "rk3326": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rk3326/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "2035e8e64f54b9161551271ff31ea69f529d97f95c2aeb3a84af0ddd8e9b521e",
+        "size": 6005784,
+        "source_file": "rk3326/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "fb15d4dcf0d0b4fbcb2fe4f6e166afe40970cbcc2e500d46426f97c1525e080b",
+        "source_size": 1159892
+      }
+    },
+    "rk3399": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rk3399/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "972dac8fe3239a326c3b28188ecc9e1e71e13bcbb5f4d133bbe3829bd45db019",
+        "size": 6001776,
+        "source_file": "rk3399/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "027cf45010201802e54f1874ce04243f5e87d0f51f1344c95dd88c8120525dd8",
+        "source_size": 1159892
+      }
+    },
+    "rk3568": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rk3568/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "c48a77ed4a2a1e9f68ae2c9c92ee080eec36ceff49ef03c8e049962fadae9c98",
+        "size": 6009880,
+        "source_file": "rk3568/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "0fc51be1b626bb75af32d1313921c6649718721fe5d3ff940998a91c23f21569",
+        "source_size": 1159891
+      }
+    },
+    "rk3588": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rk3588/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "5d22cef3ee768ca43822baac693c8c8d9eb0f5b834eaa0e8c816695fd3074ab6",
+        "size": 6005872,
+        "source_file": "rk3588/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "4888fb0640a5b5f1f6dc018938cdd8a6996c79c02997c376c8cd97b1a795b3e3",
+        "source_size": 1159896
+      }
+    },
+    "s905": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "s905/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "b1063091606fbe49f7af76e89411edd7938f6b6e352a702364c125d1ba9c291c",
+        "size": 6009880,
+        "source_file": "s905/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "bac40fafb5668aac9eb4a2168731bd760565745c8b27c2768a007f4e40207dd7",
+        "source_size": 1159890
+      }
+    },
+    "s905gen2": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "s905gen2/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "b1063091606fbe49f7af76e89411edd7938f6b6e352a702364c125d1ba9c291c",
+        "size": 6009880,
+        "source_file": "s905gen2/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "89bf758be64389168d6fd910c8a3a3afaf7c5866f7f4f5d17f6693fda7bcb935",
+        "source_size": 1159894
+      }
+    },
+    "s905gen3": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "s905gen3/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "c48a77ed4a2a1e9f68ae2c9c92ee080eec36ceff49ef03c8e049962fadae9c98",
+        "size": 6009880,
+        "source_file": "s905gen3/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "8428c9ad178c68e95d28427edd24bb5810ba8a1682c66315f47673a967b89a8d",
+        "source_size": 1159899
+      }
+    },
+    "s922x": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "s922x/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "0364c068eaa1d59e4f3699879b07a110249c727c8cc529a5ae0a1e6ab14c24db",
+        "size": 6005872,
+        "source_file": "s922x/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "d46801812c4d772c32e954c0946efca36bf7a533c8d7f3cf03a9778b80b6ca00",
+        "source_size": 1159894
+      }
+    },
+    "sm8250": {
+      "43.1": {
+        "batocera_revision": "155c2d8d304cbb53db52e9479dcf683392821d5c",
+        "batocera_version": "43.1",
+        "build_image": "virtualglove/batocera-linux-build:43.1@sha256:1530b450420220f401e8279a3d5a4a8e7e18894f17edbe8bc5c22a39aef8a6bf",
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "sm8250/43.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "fc9e631ef6f72f0bf2e089fce35d9679303585a7e39a83e8824674e657035f6f",
+        "sha256": "6a97de3e921a37cc7f961b5b8165f83e95516c067d90bb7b128f1d197a22edc5",
+        "size": 6005872,
+        "source_file": "sm8250/43.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "7d37df4b1bf97fc213f5951b0bd1f91e762aef5486e57e4ca5911569df517f8e",
+        "source_size": 1159890
+      }
+    },
     "x86_64": {
       "43.1": {
         "batocera_revision": "185da2171cdd6eb39e12515a0d052c7360971659",

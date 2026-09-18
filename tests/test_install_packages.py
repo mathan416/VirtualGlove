@@ -282,8 +282,12 @@ class ArchiveTests(unittest.TestCase):
                     'batocera/virtualglove-core-mount',
                     'batocera/retroarch-nes.cfg',
                     'scripts/build-batocera-nestopia-powerglove.sh',
+                    'scripts/build-batocera-native-matrix.sh',
                     'scripts/install-batocera-nestopia-powerglove.sh',
                     'scripts/configure-batocera-super-glove-ball-core.py',
+                    'scripts/verify-batocera-native-core.py',
+                    'native/batocera/bcm2835/43.1/nestopia_powerglove_libretro.so',
+                    'native/batocera/bcm2835/43.1/nestopia-powerglove-source.tar.gz',
                     'python/ssh_pair.py',
                 ),
             }
@@ -295,6 +299,25 @@ class ArchiveTests(unittest.TestCase):
                     'cores': {'rpizero2': {'10.1': {
                         'file': 'rpizero2/10.1/nestopia_powerglove_libretro.so',
                         'source_file': 'rpizero2/10.1/nestopia-powerglove-source.tar.gz',
+                    }}},
+                }))
+            if machine == 'batocera':
+                output.writestr('VirtualGlove/native/batocera/manifest.json', json.dumps({
+                    'format': 2,
+                    'cores': {'bcm2835': {'43.1': {
+                        'file': 'bcm2835/43.1/nestopia_powerglove_libretro.so',
+                        'source_file': 'bcm2835/43.1/nestopia-powerglove-source.tar.gz',
+                        'sha256': '0' * 64,
+                        'source_sha256': '1' * 64,
+                        'patch_sha256': '2' * 64,
+                        'size': 4,
+                        'source_size': 4,
+                        'elf_class': 32,
+                        'elf_machine': 'arm',
+                        'batocera_version': '43.1',
+                        'batocera_revision': '3' * 40,
+                        'nestopia_revision': '4' * 40,
+                        'build_image': 'example@sha256:' + '5' * 64,
                     }}},
                 }))
             if extra:

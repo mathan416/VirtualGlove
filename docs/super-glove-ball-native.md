@@ -145,15 +145,18 @@ a temporary directory, installs the core under its separate name, copies the
 upstream GPLv2 `COPYING` file beside it, and adds the native entry to the launch
 menu. It deliberately leaves that ROM's current FCEUmm selection unchanged.
 
-Batocera cores are target-specific and its `/usr` tree is read-only. Use
-`scripts/build-batocera-nestopia-powerglove.sh` with a matching Batocera source
-checkout and target name. On the console,
-`scripts/install-batocera-nestopia-powerglove.sh` load-checks the shared object
-before placing it atomically in persistent storage. Reversible overlay mounts
-add the separately named core and info entry to Batocera's frontend view without
-replacing stock Nestopia. The optional second installer argument selects only
-the named Super Glove Ball ROM; the companion configuration script can switch
-that ROM back to FCEUmm at any time.
+Batocera cores are target-specific and its `/usr` tree is read-only. Release
+packages carry Batocera 43.1 builds and complete corresponding source for all 15
+supported targets. Startup resolves the exact architecture, verifies the
+manifest and ELF identity, and loads the selected shared object on the console
+before reversible overlays add the separate core and info entry. An exact
+release build is preferred; a newer Batocera release may try the newest packaged
+build for that architecture only because the target-side load check is the final
+gate. Failure leaves FCEUmm available. Exact registered Super Glove Ball ROMs
+are selected automatically only when no explicit Batocera core choice exists.
+Maintainers reproduce or resume the matrix with
+`scripts/build-batocera-native-matrix.sh /path/to/batocera.linux`; the manual
+single-target installer remains available for reviewed development builds.
 
 Recalbox likewise requires an exact target build. Recalbox 10.1 packages include
 separate cores and complete source archives for `rpizero2`, `rpi3`, `rpi4_64`,
@@ -178,7 +181,11 @@ which uses Windows file mapping and the high-resolution performance counter for
 the guarded sample record. The LaunchBox wrapper selects
 `nestopia_powerglove_libretro.dll` only for exact registered Super Glove Ball
 filenames; all other NES games retain FCEUmm. The DLL is separately named and
-does not replace RetroArch's stock Nestopia core.
+does not replace RetroArch's stock Nestopia core. The Windows installer verifies
+the DLL and corresponding source, actually loads it, and confirms the libretro
+identity before installation. The wrapper checks the installed DLL's SHA-256 at
+native launch time and falls back to FCEUmm joystick mode if it is missing or
+changed.
 
 Set `VIRTUALGLOVE_NATIVE_STATE` to use a test record at a different path. Set
 `VIRTUALGLOVE_TRACE=1` when launching the custom core to log controller writes,

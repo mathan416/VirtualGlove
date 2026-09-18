@@ -9,13 +9,29 @@
 set -u
 
 APP=/userdata/system/virtualglove
-CORE="$APP/native/batocera/runtime/nestopia_powerglove_libretro.so"
+RUNTIME_CORE="$APP/native/batocera/runtime/nestopia_powerglove_libretro.so"
+MANIFEST="$APP/native/batocera/manifest.json"
+VERIFY="$APP/scripts/verify-batocera-native-core.py"
 STATE=/run/virtualglove-core
 CORE_TARGET=/usr/lib/libretro
 INFO_TARGET=/usr/share/libretro/info
 
 mounted_at() {
     awk -v target="$1" '$2 == target { found=1 } END { exit !found }' /proc/mounts
+}
+
+resolve_core() {
+    if [ -f "$RUNTIME_CORE" ] && [ ! -L "$RUNTIME_CORE" ]; then
+        printf '%s\n' "$RUNTIME_CORE"
+        return 0
+    fi
+    [ -f "$MANIFEST" ] && [ -x "$VERIFY" ] || return 1
+    [ -f /usr/share/batocera/batocera.arch ] || return 1
+    [ -f /usr/share/batocera/batocera.version ] || return 1
+    arch=$(cat /usr/share/batocera/batocera.arch)
+    version=$(cat /usr/share/batocera/batocera.version)
+    python3 "$VERIFY" --manifest "$MANIFEST" --arch "$arch" \
+        --version "$version" --resolve-core
 }
 
 unmount_one() {
@@ -40,7 +56,20 @@ mount_overlay() {
 }
 
 start_core() {
+    CORE=$(resolve_core) || {
+        echo "ACTION  No packaged Nestopia (VirtualGlove) core for this Batocera target; FCEUmm remains available." >&2
+        return 0
+    }
     [ -f "$CORE" ] && [ ! -L "$CORE" ] || return 0
+    if [ "$CORE" != "$RUNTIME_CORE" ]; then
+        arch=$(cat /usr/share/batocera/batocera.arch)
+        version=$(cat /usr/share/batocera/batocera.version)
+        python3 "$VERIFY" --manifest "$MANIFEST" --core "$CORE" --arch "$arch" \
+            --version "$version" --load || {
+                echo "ACTION  Packaged native core did not load; FCEUmm remains available." >&2
+                return 0
+            }
+    fi
     [ -f "$CORE_TARGET/nestopia_libretro.so" ] || {
         echo "VirtualGlove native core: stock Nestopia is unavailable" >&2
         return 1
@@ -61,6 +90,11 @@ start_core() {
         [ -f "$INFO_TARGET/nestopia_powerglove_libretro.info" ] || {
             stop_core
             return 1
+        }
+    python3 "$APP/scripts/configure-batocera-super-glove-ball-core.py" \
+        --auto-select --mode native --apply || {
+            echo "ACTION  Native core is ready, but automatic Super Glove Ball selection needs review." >&2
+            return 0
         }
 }
 

@@ -172,6 +172,8 @@ REQUIRED_FILES = {
     "VirtualGlove/launchbox/install-launchbox.ps1",
     "VirtualGlove/launchbox/virtualglove-launchbox.cmd",
     "VirtualGlove/launchbox/virtualglove-pair.ps1",
+    "VirtualGlove/launchbox/virtualglove-restart-runtime.cmd",
+    "VirtualGlove/launchbox/configure-launchbox-emulator.ps1",
     "VirtualGlove/launchbox/retroarch-nes.cfg",
     "VirtualGlove/scripts/build-launchbox-nestopia-powerglove.sh",
     "VirtualGlove/scripts/verify-launchbox-native-core.py",

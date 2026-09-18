@@ -74,9 +74,23 @@ def build(version, destination):
                             "scripts", "src", "launchbox", "config", "native", "licenses",
                             "LICENSE", "THIRD_PARTY_NOTICES.md", "pyproject.toml"):
                         continue
+                    if machine == "uno-q" and relative[0] == "native":
+                        continue
+                    if (machine == "retropie" and relative[0] == "native"
+                            and (len(relative) < 2 or relative[1] not in (
+                                "nestopia-powerglove", "powerglove-dot"))):
+                        continue
+                    if (machine == "recalbox" and relative[0] == "native"
+                            and (len(relative) < 2 or relative[1] not in (
+                                "recalbox", "nestopia-powerglove"))):
+                        continue
                     if (machine == "launchbox" and relative[0] == "native"
                             and (len(relative) < 2 or relative[1] not in (
                                 "launchbox", "nestopia-powerglove"))):
+                        continue
+                    if (machine == "batocera" and relative[0] == "native"
+                            and (len(relative) < 2 or relative[1] not in (
+                                "batocera", "nestopia-powerglove"))):
                         continue
                     package.writestr(copy.copy(item), original.read(item.filename))
                 package.writestr("VirtualGlove/install-release.json", json.dumps(
@@ -85,6 +99,8 @@ def build(version, destination):
                 with zipfile.ZipFile(output) as launchbox_package:
                     required = {
                         "VirtualGlove/launchbox/install-launchbox.ps1",
+                        "VirtualGlove/launchbox/virtualglove-restart-runtime.cmd",
+                        "VirtualGlove/launchbox/configure-launchbox-emulator.ps1",
                         "VirtualGlove/native/launchbox/manifest.json",
                         "VirtualGlove/native/launchbox/x86_64/nestopia_powerglove_libretro.dll",
                         "VirtualGlove/native/launchbox/x86_64/nestopia-powerglove-source.tar.gz",

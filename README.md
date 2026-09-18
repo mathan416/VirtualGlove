@@ -25,9 +25,11 @@ chosen physical controller with gestures for NES gameplay. LaunchBox safely adds
 audited gesture keys beside its physical XInput controller. All targets keep
 their services, game hooks, pairing, and configuration in each console's
 supported persistent storage. They are under validation and are not part of
-the stable v0.4.2 downloads yet. Batocera's target-built, separately named
-Nestopia (VirtualGlove) core now provides the native Super Glove Ball path
-without replacing stock Nestopia. Recalbox packages are selected by its exact
+the stable v0.4.2 downloads yet. Batocera packages now carry 15 target-built,
+separately named Nestopia (VirtualGlove) cores for native Super Glove Ball
+without replacing stock Nestopia. The installer resolves the Batocera target,
+verifies the packaged binary and corresponding source, and load-tests the core
+on the console before exposing it. Recalbox packages are selected by its exact
 target (`rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, or
 `x86_64`) and verified against their recorded ELF identity. Within Recalbox
 10.x, an exact release build is preferred and the newest packaged 10.x build is
@@ -36,10 +38,11 @@ Raspberry Pi 3 running Recalbox's `rpizero2` image has passed Super Mario Bros.,
 native Super Glove Ball, physical-joypad coexistence, and reboot-persistence
 checks. Recalbox 10.1 binaries and corresponding source archives are packaged
 for all seven targets; targets other than the tested `rpizero2` image remain
-subject to their own load and hardware validation. An unpackaged target or
-major release safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
+subject to their own load and hardware validation. An unpackaged or unloadable
+target safely keeps using FCEUmm. LaunchBox disables VirtualGlove for an individual launch if one of
 its keys conflicts with a RetroArch command, leaving the physical controller and
-game usable, and selects a separate Windows Nestopia core only for Super Glove Ball.
+game usable. Its installer load-tests the separate Windows Nestopia core and its
+wrapper falls back to FCEUmm joystick mode if that DLL is later missing or changed.
 
 ## Why VirtualGlove?
 
@@ -145,8 +148,10 @@ four platforms.
 
 Each installer uses the platform's persistent storage, preserves ROMs, saves,
 the game registry, pairing, and unrelated controller configuration, and keeps a
-physical Player 1 joypad usable beside VirtualGlove. A target without a validated native core
-still receives the complete FCEUmm joystick path.
+physical Player 1 joypad usable beside VirtualGlove. Batocera automatically
+selects the native core only for exact registered Super Glove Ball filenames
+that do not already have an explicit core choice. A target without a loadable
+native core still receives the complete FCEUmm joystick path.
 
 The generic RetroPie installation exposes a separate **VirtualGlove** gamepad;
 the cabinet's pre-existing combined-Player-1 merger remains a specialized local
@@ -154,6 +159,9 @@ configuration. Recalbox and Batocera instead ask which configured controller is
 Player 1 and expose one **VirtualGlove Merged Player 1** gamepad to NES RetroArch.
 The original controller remains the only active frontend controller. LaunchBox
 keeps physical XInput plus its audited keyboard bridge.
+Its installer makes **VirtualGlove RetroArch** the default NES emulator after
+backing up LaunchBox's emulator definitions; new NES imports inherit the wrapper
+unless they have an explicit per-game emulator override.
 
 ### 5. Pair the devices
 
@@ -182,6 +190,14 @@ needed.
 Select **Start controller**, launch a registered game, and confirm the expected
 profile. FCEUmm uses joystick mode; Super Glove Ball can also use the optional
 native core selected per ROM on RetroPie, Recalbox, Batocera, or LaunchBox.
+
+ROMs added later do not require reinstalling VirtualGlove. Refresh the console
+frontend's game list, then open **Setup → Games** and register the exact ROM
+filename if it is not already one of the supplied aliases. RetroPie uses its
+per-ROM launch choice for native Super Glove Ball; Recalbox and Batocera apply
+their exact-ROM native choice at VirtualGlove service startup; LaunchBox's
+VirtualGlove RetroArch wrapper chooses the core on every launch. The complete
+installation guide lists the platform-specific refresh and restart steps.
 
 The complete [Installation Guide](docs/INSTALL_README.md) has first-install
 checkpoints, illustrated pairing, camera advice, native-core setup, updates,
@@ -312,8 +328,9 @@ gamepad with a separately selected frontend controller; LaunchBox audits its
 keyboard bridge against RetroArch hotkeys for every launch. Recalbox on the
 available Raspberry Pi 3 has passed
 registered FCEUmm play, native Super Glove Ball, simultaneous physical-joypad
-use, and reboot persistence. The remaining Recalbox targets, Batocera hardware,
-and LaunchBox native play still require target-side acceptance before release.
+use, and reboot persistence. Batocera's 15 packaged architectures and LaunchBox's
+Windows x86-64 DLL have reproducible build, package, and runtime checks; live
+Batocera and LaunchBox gameplay acceptance remains required before release.
 Different cameras, rooms, players, controllers, operating-system images, and
 console architectures remain valuable real-world tests.
 

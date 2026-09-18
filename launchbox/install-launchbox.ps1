@@ -15,6 +15,8 @@ $Python = Join-Path $RuntimeRoot "Scripts\python.exe"
 $RetroArch = Join-Path $RetroArchRoot "retroarch.exe"
 $Fceumm = Join-Path $RetroArchRoot "cores\fceumm_libretro.dll"
 $Native = Join-Path $NativeRoot "nestopia_powerglove_libretro.dll"
+$InstalledNativeManifest = Join-Path $NativeRoot "manifest.json"
+$InstalledNativeSource = Join-Path $NativeRoot "nestopia-powerglove-source.tar.gz"
 $Registry = Join-Path $DataRoot "games.json"
 $Token = Join-Path $DataRoot "token"
 $Settings = Join-Path $DataRoot "launcher.json"
@@ -34,6 +36,8 @@ if (-not (Test-Path $Python -PathType Leaf) -and -not (Get-Command py -ErrorActi
 New-Item -ItemType Directory -Force -Path $InstallRoot, $DataRoot, $LaunchBoxFiles, $NativeRoot, (Split-Path $NativeState) | Out-Null
 Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-launchbox.cmd") $LaunchBoxFiles
 Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-pair.ps1") $LaunchBoxFiles
+Copy-Item -Force (Join-Path $PSScriptRoot "virtualglove-restart-runtime.cmd") $LaunchBoxFiles
+Copy-Item -Force (Join-Path $PSScriptRoot "configure-launchbox-emulator.ps1") $LaunchBoxFiles
 Copy-Item -Force (Join-Path $PSScriptRoot "retroarch-nes.cfg") $LaunchBoxFiles
 
 if (-not (Test-Path $Python -PathType Leaf)) {
@@ -80,9 +84,11 @@ if ($Manifest.target -ne "launchbox-x86_64" -or
     $Manifest.source_size -ne (Get-Item $BundledSource).Length) {
     throw "The Windows x86-64 native-core manifest did not match the packaged DLL and source."
 }
-& $Python (Join-Path $SourceRoot "scripts\verify-launchbox-native-core.py") --core $BundledCore
+& $Python (Join-Path $SourceRoot "scripts\verify-launchbox-native-core.py") --core $BundledCore --load
 if (Test-Path $BundledCore -PathType Leaf) {
     Copy-Item -Force $BundledCore $Native
+    Copy-Item -Force $ManifestPath $InstalledNativeManifest
+    Copy-Item -Force $BundledSource $InstalledNativeSource
 }
 
 $Config = [ordered]@{
@@ -94,6 +100,7 @@ $Config = [ordered]@{
     retroarch = $RetroArch
     fceumm_core = $Fceumm
     native_core = $Native
+    native_core_sha256 = $CoreHash
     native_state = $NativeState
     retroarch_config = $RetroConfig
     retroarch_main_config = $RetroMainConfig
@@ -109,11 +116,13 @@ if ($LASTEXITCODE -ne 0) {
     Write-Warning "VirtualGlove keyboard input will stay disabled until the reported RetroArch hotkey conflict is removed. The physical controller remains usable."
 }
 
+& (Join-Path $LaunchBoxFiles "configure-launchbox-emulator.ps1") `
+    -LaunchBoxRoot $LaunchBoxRoot -WrapperPath (Join-Path $LaunchBoxFiles "virtualglove-launchbox.cmd")
+
 & $Python -m powerglove_vision.launchbox_runtime ensure --settings $Settings
 
 Write-Host "VirtualGlove LaunchBox support installed for this Windows user."
 Write-Host "Windows may ask whether Python can listen on the network; allow Private networks only."
 Write-Host "Pair from Controller Setup using the LaunchBox one-time-code command."
-Write-Host "In LaunchBox, add an emulator named VirtualGlove RetroArch."
-Write-Host "Set its application path to: $LaunchBoxFiles\virtualglove-launchbox.cmd"
-Write-Host "Associate Nintendo Entertainment System and use the ROM file as the only parameter."
+Write-Host "VirtualGlove RetroArch is the default Nintendo Entertainment System emulator."
+Write-Host "New NES imports inherit it automatically; individual game overrides remain explicit."

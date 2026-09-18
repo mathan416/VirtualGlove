@@ -1,0 +1,77 @@
+# Project: VirtualGlove
+# File: .github/workflows/batocera-native-cores.yml
+# Purpose: Build isolated Nestopia PowerGlove cores for all Batocera targets.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+name: Build Batocera native cores
+
+on:
+  workflow_dispatch:
+    inputs:
+      batocera_ref:
+        description: Exact reviewed Batocera source ref for release 43.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Batocera 43.1 ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 720
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - bcm2835
+          - bcm2836
+          - bcm2837
+          - bcm2711
+          - bcm2712
+          - x86_64
+          - rk3326
+          - rk3399
+          - rk3568
+          - rk3588
+          - s905
+          - s905gen2
+          - s905gen3
+          - s922x
+          - sm8250
+    steps:
+      - name: Check out VirtualGlove
+        uses: actions/checkout@v5
+      - name: Check out reviewed Batocera source
+        env:
+          BATOCERA_REF: ${{ inputs.batocera_ref }}
+        run: |
+          test -n "$BATOCERA_REF"
+          git clone https://github.com/batocera-linux/batocera.linux.git "$RUNNER_TEMP/batocera"
+          git -C "$RUNNER_TEMP/batocera" checkout --detach "$BATOCERA_REF"
+          test "$(sed -n 's/^BATOCERA_SYSTEM_VERSION = //p' "$RUNNER_TEMP/batocera/package/batocera/core/batocera-system/batocera-system.mk" | head -n 1)" = 43.1
+      - name: Build exact target core and corresponding source
+        env:
+          BATOCERA_TARGET: ${{ matrix.target }}
+        run: |
+          scripts/build-batocera-nestopia-powerglove.sh \
+            "$RUNNER_TEMP/batocera" "$BATOCERA_TARGET" "$RUNNER_TEMP/batocera-native"
+      - name: Verify packaged bytes and architecture metadata
+        env:
+          BATOCERA_TARGET: ${{ matrix.target }}
+        run: |
+          python scripts/verify-batocera-native-core.py \
+            --manifest "$RUNNER_TEMP/batocera-native/manifest.json" \
+            --core "$RUNNER_TEMP/batocera-native/$BATOCERA_TARGET/43.1/nestopia_powerglove_libretro.so" \
+            --arch "$BATOCERA_TARGET" --version 43.1
+      - name: Upload target-specific review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: batocera-43.1-${{ matrix.target }}
+          path: |
+            ${{ runner.temp }}/batocera-native/manifest.json
+            ${{ runner.temp }}/batocera-native/${{ matrix.target }}/43.1/
+          if-no-files-found: error
+          retention-days: 14

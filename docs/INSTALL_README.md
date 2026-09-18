@@ -192,18 +192,25 @@ python3 /recalbox/share/system/virtualglove/scripts/configure-recalbox-super-glo
 ### Batocera native Super Glove Ball
 
 Batocera's operating-system core directories are read-only, and its cores are
-architecture-specific. Build Nestopia (VirtualGlove) from a Batocera source
-checkout matching the target image:
+architecture-specific. Normal release packages include builds for all 15
+supported Batocera 43.1 targets. The installer reads `batocera.arch`, prefers an
+exact release build, verifies the binary and corresponding source archive, and
+load-tests the libretro API and `Nestopia PowerGlove` identity on the console.
+Only then does it expose the core through reversible overlays. If no packaged
+core loads, installation continues with FCEUmm.
+
+Maintainers can reproduce the full matrix with:
 
 ```sh
-scripts/build-batocera-nestopia-powerglove.sh /path/to/batocera.linux TARGET
+scripts/build-batocera-native-matrix.sh /path/to/batocera.linux
 ```
 
-Use Batocera's target name, such as `bcm2711` for Raspberry Pi 4 or `bcm2712`
-for Raspberry Pi 5. The builder initializes only Batocera's stock Nestopia
-package and then compiles VirtualGlove's pinned, patched source with that exact
-cross-compiler and sysroot. Copy the resulting
-`nestopia_powerglove_libretro.so` to the Batocera system, then run as root:
+The supported target names are `bcm2835`, `bcm2836`, `bcm2837`, `bcm2711`,
+`bcm2712`, `x86_64`, `rk3326`, `rk3399`, `rk3568`, `rk3588`, `s905`,
+`s905gen2`, `s905gen3`, `s922x`, and `sm8250`. The resumable matrix skips only
+artifacts that pass manifest verification. The single-target builder remains
+available for development. A manually supplied target build can still be
+installed as root with:
 
 ```sh
 /userdata/system/virtualglove/scripts/install-batocera-nestopia-powerglove.sh \
@@ -211,11 +218,13 @@ cross-compiler and sysroot. Copy the resulting
   "/userdata/roms/nes/Super Glove Ball (USA).nes"
 ```
 
-The installer first loads the core and checks its libretro ABI. It then places
+The development installer first loads the core and checks its libretro ABI. It then places
 it atomically in persistent storage, exposes it under the separate
 `nestopia_powerglove` name through reversible overlay mounts, and changes only
-that exact ROM's Batocera core selection. Stock Nestopia and FCEUmm remain
-unchanged. To return the ROM to joystick mode:
+that exact ROM's Batocera core selection. Normal startup finds exact Super Glove
+Ball filenames in the installed registry and selects native mode only when no
+explicit per-ROM core already exists. Stock Nestopia and FCEUmm remain unchanged.
+To return the ROM to joystick mode:
 
 ```sh
 python3 /userdata/system/virtualglove/scripts/configure-batocera-super-glove-ball-core.py \
@@ -237,16 +246,19 @@ powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
 The installer uses the current user's Local AppData folder and preserves an
 existing token, game registry, and Controller address. A fresh installation
 uses `virtualglove.local`; pass `-ControllerHost` when the Controller has a
-different name or fixed address. Configure a LaunchBox emulator whose
-application path is
-`%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`, associate
-it with Nintendo Entertainment System, and pass only the ROM path.
+different name or fixed address. The installer backs up LaunchBox's emulator
+definitions, creates **VirtualGlove RetroArch**, and makes it the default
+Nintendo Entertainment System emulator with the ROM path as its only argument.
+Installation verifies the DLL manifest and corresponding source, then actually
+loads the DLL and confirms its libretro API and `Nestopia PowerGlove` identity.
 
 The wrapper exact-matches the ROM registry. Ordinary games launch with FCEUmm;
 Super Glove Ball launches with the separately named Windows x86-64
 `nestopia_powerglove_libretro.dll`. It keeps an authenticated game lease alive
 only while that exact RetroArch process runs. Unregistered games still launch
-with FCEUmm but do not enable gestures.
+with FCEUmm but do not enable gestures. If the native DLL is later missing or
+does not match its recorded SHA-256, Super Glove Ball safely launches with
+FCEUmm joystick mode and reports a warning.
 
 For standard FCEUmm games, VirtualGlove injects arrow, X, Z, Enter, and Right
 Shift keys into RetroArch Player 1. RetroArch's normal XInput/autoconfiguration
@@ -520,7 +532,10 @@ batocera-services is-enabled VirtualGlove
 /userdata/system/services/VirtualGlove status
 ```
 
-Batocera hardware and native-core acceptance remain v0.5.0 release gates.
+The installation check reports the resolved packaged target and mounted native
+core separately. Exact-ROM native selection is automatic only when the registry
+matches a ROM and no explicit Batocera core choice already exists. Batocera live
+hardware and gameplay acceptance remain v0.5.0 release gates.
 
 ### LaunchBox on Windows x86-64
 
@@ -538,17 +553,47 @@ Use the real folders and Controller name. The installer writes only to
 `%LOCALAPPDATA%\VirtualGlove`, creates an isolated Python environment, and
 preserves its pairing key, registry, and Controller destination on updates.
 If Windows requests network permission, allow Private networks only.
+The installer verifies hashes, loads the Windows DLL, confirms its libretro
+identity, and retains the reviewed manifest and corresponding source archive
+beside the installed core. A missing or changed DLL falls back to FCEUmm for the
+affected launch.
 
-In LaunchBox, add **VirtualGlove RetroArch** as an emulator. Set its application
-path to `%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`,
-associate Nintendo Entertainment System, and pass only the ROM path. FCEUmm
-keeps RetroArch's physical XInput Player 1 controller while VirtualGlove adds
+The installer adds **VirtualGlove RetroArch**, points it at
+`%LOCALAPPDATA%\VirtualGlove\launchbox\virtualglove-launchbox.cmd`, and makes it
+the default Nintendo Entertainment System emulator. Existing definitions are
+backed up first and non-NES associations remain unchanged. FCEUmm keeps
+RetroArch's physical XInput Player 1 controller while VirtualGlove adds
 keyboard controls to the same player. Installation and every wrapped launch
 audit the effective RetroArch command and Hotkey Enable bindings. If `Up`,
 `Down`, `Left`, `Right`, `X`, `Z`, `Enter`, or Right Shift conflicts,
 VirtualGlove is disabled for that launch and the exact conflict is reported;
 the physical XInput controller and game remain usable. The receiver runs only
 in the signed-in desktop session.
+
+### Add NES ROMs after VirtualGlove is installed
+
+Adding a ROM never requires reinstalling either VirtualGlove machine. The
+frontend must discover the game, and VirtualGlove must know the exact filename
+when a profile should start automatically:
+
+1. Copy the `.nes`, `.zip`, or `.7z` file into the platform's NES library and
+   refresh or restart its frontend so the game appears.
+2. Open **Setup → Games** on the Controller. If the complete filename is not
+   already present, add it with its profile, then select **Validate** and
+   **Save**. Matching is exact and case-insensitive; the extension is part of
+   the filename, so archived and unarchived copies are separate entries.
+3. Follow the platform-specific launch step below.
+
+| Platform | ROM library and post-add behavior |
+| --- | --- |
+| RetroPie | Copy into `~/RetroPie/roms/nes`, then restart EmulationStation or refresh its game list. Ordinary registered games use the launch hook immediately. For native Super Glove Ball, select `lr-nestopia-powerglove` for that exact ROM in the runcommand launch menu; FCEUmm remains the safe fallback. |
+| Recalbox | Copy into `/recalbox/share/roms/nes`, then update the game list. Restart the VirtualGlove service or reboot after adding and registering Super Glove Ball. Startup creates its `.recalbox.conf` native-core choice only when that exact ROM has no existing core override. |
+| Batocera | Copy into `/userdata/roms/nes`, then update the game list. Restart the VirtualGlove service or reboot after adding and registering Super Glove Ball. Startup adds the exact-ROM native choice to `batocera.conf` only when no explicit core choice already exists. |
+| LaunchBox | Import the ROM into **Nintendo Entertainment System**. New games inherit the platform's default **VirtualGlove RetroArch** emulator; if a game has an individual emulator override, change it to VirtualGlove RetroArch. The wrapper reads the registry and chooses FCEUmm or Nestopia (VirtualGlove) on every launch, so no sidecar or service restart is needed. |
+
+Existing explicit per-ROM emulator/core choices are preserved on every
+platform. Registering a filename changes VirtualGlove's profile selection; it
+does not copy, rename, scan inside, or modify the ROM.
 
 ## 4. Pair the devices
 

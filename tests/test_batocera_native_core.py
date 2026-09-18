@@ -11,6 +11,7 @@
 """Verify isolated Batocera native-core selection and build integration."""
 
 import runpy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CONFIGURE = runpy.run_path(
     str(ROOT / "scripts/configure-batocera-super-glove-ball-core.py"))
+VERIFY = runpy.run_path(str(ROOT / "scripts/verify-batocera-native-core.py"))
 
 
 class BatoceraNativeCoreTests(unittest.TestCase):
@@ -54,6 +56,47 @@ class BatoceraNativeCoreTests(unittest.TestCase):
                 CONFIGURE["atomic_write"](link, "changed\n")
             self.assertEqual(target.read_text(), "safe\n")
 
+    def test_auto_selection_preserves_explicit_rom_choice(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            roms = root / "roms"
+            roms.mkdir()
+            first = roms / "Super Glove Ball (USA).nes"
+            second = roms / "Super Glove Ball (USA) (Rev A).nes"
+            first.touch()
+            second.touch()
+            registry = root / "games.json"
+            registry.write_text(json.dumps({"games": {
+                first.name: "super_glove_ball", second.name: "super_glove_ball"
+            }}))
+            config = root / "batocera.conf"
+            config.write_text('nes["Super Glove Ball (USA) (Rev A).nes"].core=fceumm\n')
+            selected, skipped = CONFIGURE["auto_select"](
+                config, registry, roms, "native", True)
+            text = config.read_text()
+        self.assertEqual((selected, skipped), (1, 1))
+        self.assertIn('nes["Super Glove Ball (USA).nes"].core=nestopia_powerglove', text)
+        self.assertIn('nes["Super Glove Ball (USA) (Rev A).nes"].core=fceumm', text)
+
+    def test_matrix_manifest_resolves_newer_batocera_to_verified_target(self):
+        manifest = ROOT / "native/batocera/manifest.json"
+        entry = VERIFY["manifest_entry"](manifest, "x86_64", "44")
+        self.assertEqual(entry["batocera_version"], "43.1")
+        verified = VERIFY["verify"](
+            manifest,
+            ROOT / "native/batocera/x86_64/43.1/nestopia_powerglove_libretro.so",
+            "x86_64", "44")
+        self.assertEqual(verified["elf_machine"], "x86_64")
+
+    def test_every_supported_target_has_a_complete_matrix_entry(self):
+        manifest = ROOT / "native/batocera/manifest.json"
+        for target in VERIFY["TARGET_ELF"]:
+            with self.subTest(target=target):
+                entry = VERIFY["manifest_entry"](manifest, target, "43.1")
+                self.assertIsNotNone(entry)
+                self.assertTrue((manifest.parent / entry["file"]).is_file())
+                self.assertTrue((manifest.parent / entry["source_file"]).is_file())
+
     def test_cross_build_uses_batocera_target_toolchain(self):
         text = (ROOT / "scripts/build-batocera-nestopia-powerglove.sh").read_text()
         self.assertIn("virtualglove/batocera-linux-build:43.1", text)
@@ -65,6 +108,13 @@ class BatoceraNativeCoreTests(unittest.TestCase):
         self.assertIn("BR2_DL_DIR=/downloads", text)
         self.assertIn("Batocera core ELF identity does not match its target", text)
         self.assertIn("nestopia_powerglove_libretro.so", text)
+
+    def test_matrix_builder_resumes_verified_targets(self):
+        text = (ROOT / "scripts/build-batocera-native-matrix.sh").read_text()
+        self.assertIn("verify-batocera-native-core.py", text)
+        self.assertIn("SKIP  Verified Batocera", text)
+        for target in VERIFY["TARGET_ELF"]:
+            self.assertIn(target, text)
 
     def test_target_installer_load_checks_before_atomic_replacement(self):
         text = (ROOT / "scripts/install-batocera-nestopia-powerglove.sh").read_text()

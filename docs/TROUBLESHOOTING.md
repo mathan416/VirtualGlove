@@ -137,6 +137,12 @@ adding a runtime setting to `device.json`.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
 6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
 
+If the ROM was added after VirtualGlove was installed, refresh the frontend's
+game list before testing it. Recalbox and Batocera also need a VirtualGlove
+service restart or reboot after a newly registered Super Glove Ball ROM so the
+missing exact-ROM native choice can be created. In LaunchBox, confirm the game
+uses **VirtualGlove RetroArch** rather than an individual emulator override.
+
 On generic RetroPie, confirm the separate `VirtualGlove` input device and its
 Player 1 mapping. On Recalbox or Batocera, run the installation check and confirm
 the selected physical controller is connected, **VirtualGlove Merged Player 1**
@@ -144,6 +150,11 @@ exists, and its current index is assigned to NES Player 1. The merged device is
 intentionally neutral in EmulationStation. On LaunchBox, inspect the reported
 input warning: a VirtualGlove key assigned to a RetroArch command or Hotkey
 Enable disables gestures for that launch but leaves physical XInput working.
+If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
+the matching VirtualGlove Windows installer. The affected game continues in
+FCEUmm joystick mode. On Batocera, an **ACTION** result for the packaged native
+core means the architecture could not be resolved or the on-console load test
+failed; leave FCEUmm selected and do not copy a core from another target.
 Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
 before editing RetroArch settings.
 

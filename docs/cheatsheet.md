@@ -246,6 +246,10 @@ sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service status
 # Batocera
 batocera-services is-enabled VirtualGlove
 /userdata/system/services/VirtualGlove status
+python3 /userdata/system/virtualglove/scripts/verify-batocera-native-core.py \
+  --manifest /userdata/system/virtualglove/native/batocera/manifest.json \
+  --arch "$(cat /usr/share/batocera/batocera.arch)" \
+  --version "$(cat /usr/share/batocera/batocera.version)" --resolve-core
 ```
 
 RetroPie's separate virtual controller appears after the first authenticated
@@ -253,6 +257,11 @@ packet. Recalbox and Batocera keep **VirtualGlove Merged Player 1** present from
 service startup; their checks confirm the selected physical pad, merged device,
 and NES joypad index. LaunchBox retains physical XInput and audits its VirtualGlove
 keys for RetroArch command/hotkey conflicts before every launch.
+Batocera resolves a packaged native core for its exact architecture and
+load-tests it before exposure; exact registered Super Glove Ball ROMs are
+selected only when they have no explicit core choice. LaunchBox verifies its
+Windows DLL during installation and falls back to FCEUmm joystick mode if that
+DLL is later missing or changed.
 Select **Start controller** on Dashboard when ready, launch a registered game,
 and verify gameplay with both VirtualGlove and the physical joypad.
 
@@ -553,6 +562,14 @@ profile each time the exact game filename starts.
 3. Edit the loaded JSON in the Games section.
 4. Add the filename and your chosen profile inside the existing `games` object. Keep all existing entries, separate entries with commas, and leave no comma after the last entry.
 5. Select **Validate**, then **Save**. Wait for verified save confirmation and restart the game. **Restore previous save** reverses the last saved edit.
+
+For a ROM copied after installation, refresh the frontend library first.
+RetroPie uses the registered profile immediately but needs a per-ROM runcommand
+choice for native Super Glove Ball. Recalbox and Batocera need a VirtualGlove
+service restart or reboot to create a missing exact-ROM native selection.
+LaunchBox imports the game into **Nintendo Entertainment System** and normally
+inherits the default **VirtualGlove RetroArch** emulator; remove any per-game
+emulator override that bypasses it. Its wrapper checks the registry every time.
 
 This example shows the required structure. Replace the example filename with
 your actual filename and merge the entry into your existing file:

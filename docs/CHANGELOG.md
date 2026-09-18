@@ -51,6 +51,15 @@ authoritative record for line-level and file-level history.
   separately named core through Batocera's read-only core paths while leaving
   stock Nestopia and FCEUmm untouched, and exact per-ROM configuration provides
   a one-command native/FCEUmm choice.
+- Packaged a complete Batocera 43.1 native-core matrix for 15 architectures,
+  with per-target binaries, complete corresponding source archives, exact build
+  image and revision metadata, checksums, ELF identities, a resumable matrix
+  builder, and a manually dispatched parallel review workflow.
+- Batocera installation now resolves the console's exact architecture, prefers
+  an exact release build, verifies the binary and source manifest, and performs
+  a target-side libretro load/identity test before exposing the core. Exact
+  registered Super Glove Ball ROMs are selected automatically only when no
+  explicit per-ROM core choice exists; any incompatibility leaves FCEUmm usable.
 - Added the corresponding isolated Recalbox native-core path for `rpizero2`,
   `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`. It uses
   each target's own Recalbox Buildroot recipe, verifies the Recalbox major
@@ -79,6 +88,15 @@ authoritative record for line-level and file-level history.
 
 ### Changed
 
+- Documented how to add NES ROMs after installation on RetroPie, Recalbox,
+  Batocera, and LaunchBox, including exact registry filenames, frontend refresh,
+  native Super Glove Ball rescan behavior, and per-game emulator overrides.
+- Setup keeps **Check console address** available during pairing confirmation
+  and restores it after every result while connection-editing fields remain
+  safely locked.
+- LaunchBox pairing now invokes a dedicated runtime-restart wrapper so its
+  single-use pairing command is parsed correctly on Windows.
+
 - Wi-Fi deployment no longer opens an invisible remote sudo prompt. It deploys
   and verifies the Controller application, runs privileged host maintenance only
   when non-interactive sudo is already authorized, and otherwise prints the
@@ -98,6 +116,11 @@ authoritative record for line-level and file-level history.
   and Hotkey Enable bindings during installation and before every wrapped game.
   A conflict disables VirtualGlove only for that launch, reports the exact
   setting, and leaves the physical XInput controller and game running.
+- LaunchBox installation now loads the reviewed Windows DLL and verifies its
+  libretro API and `Nestopia PowerGlove` identity before copying it. The installed
+  manifest and complete corresponding source are retained beside the core, and
+  each native launch checks the DLL SHA-256 and falls back to FCEUmm joystick
+  mode if the DLL is missing or changed.
 - Required executable metadata on every packaged Batocera runtime entry point.
   Recalbox entry points are invoked explicitly through `sh` because its
   persistent exFAT share intentionally mounts files without execute bits.

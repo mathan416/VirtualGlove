@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -50,11 +51,13 @@ def load_settings(path: Path) -> dict:
     return data
 
 
-def launch_command(settings: dict, rom: Path, selection: dict | None) -> tuple[list[str], str]:
+def launch_command(settings: dict, rom: Path, selection: dict | None,
+                   native_ready: bool = True) -> tuple[list[str], str]:
     """Select the native core only for Super Glove Ball and build a shell-free command."""
     if rom.suffix.casefold() not in SUPPORTED_ROM_EXTENSIONS:
         raise ValueError("LaunchBox supplied an unsupported ROM type")
-    native = selection is not None and selection.get("profile") == "super_glove_ball"
+    native = (native_ready and selection is not None
+              and selection.get("profile") == "super_glove_ball")
     core = settings["native_core"] if native else settings["fceumm_core"]
     emulator = "lr-nestopia-powerglove" if native else "lr-fceumm"
     command = [settings["retroarch"], "-L", core]
@@ -63,6 +66,26 @@ def launch_command(settings: dict, rom: Path, selection: dict | None) -> tuple[l
         command.extend(("--appendconfig", str(append_config)))
     command.append(str(rom))
     return command, emulator
+
+
+def native_core_ready(settings: dict) -> bool:
+    """Reject a missing or changed native DLL before a Super Glove Ball launch."""
+    path = Path(settings["native_core"])
+    if not path.is_file():
+        return False
+    expected = settings.get("native_core_sha256")
+    if expected is None:
+        return True
+    if not isinstance(expected, str) or len(expected) != 64:
+        return False
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    except OSError:
+        return False
+    return digest.hexdigest() == expected.casefold()
 
 
 def run_game(
@@ -103,7 +126,12 @@ def run_game(
             pass
         except OSError:
             pass
-    command, emulator = launch_command(settings, rom, selection)
+    wants_native = selection is not None and selection.get("profile") == "super_glove_ball"
+    native_ready = not wants_native or native_core_ready(settings)
+    if wants_native and not native_ready:
+        print("Nestopia (VirtualGlove) is missing or changed; using FCEUmm joystick mode.",
+              file=sys.stderr)
+    command, emulator = launch_command(settings, rom, selection, native_ready=native_ready)
     environment = os.environ.copy()
     environment["VIRTUALGLOVE_NATIVE_STATE"] = str(settings.get(
         "native_state", default_settings_path().parent.parent / "run" / "native-state.bin"

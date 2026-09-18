@@ -522,14 +522,16 @@ Glove Ball actions are mapped. The raw roll byte and unobserved button codes
 remain neutral because the exact ROM has shown no separate action for them;
 guessing values could create unintended input. Stock Nestopia remains untouched.
 RetroPie registers the custom core in its normal secondary-core directory.
-Batocera keeps the target-built core in persistent `/userdata`, then uses two
+Batocera keeps the architecture-selected core in persistent `/userdata`, then uses two
 reversible overlay mounts to expose only the separately named core and matching
 info record through Batocera's read-only core paths. The core forces its own
 Player 1 to the native Power Glove peripheral; other cores and other Nestopia
 games retain their normal devices. It is enabled only through a Super Glove Ball
-per-ROM emulator choice after it is built with the exact target toolchain and
-load-checked on the console. The ordinary source release carries the patch and
-reproducible build/install tools, not a cross-architecture compiled core. See the
+per-ROM emulator choice after its manifest, corresponding source, ELF identity,
+and libretro identity are verified and it is load-checked on the console. The
+release carries 15 separately targeted Batocera 43.1 cores; it never treats one
+binary as cross-architecture. Exact registered Super Glove Ball filenames are
+selected only when no existing per-ROM core choice is present. See the
 [native compatibility record](super-glove-ball-native.md).
 
 The optional project-owned `lr-powerglove-dot` core reads the same guarded

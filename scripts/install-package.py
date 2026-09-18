@@ -189,8 +189,11 @@ def unpack(archive, destination, machine, version):
                          "batocera/virtualglove-core-mount",
                          "batocera/retroarch-nes.cfg",
                          "scripts/build-batocera-nestopia-powerglove.sh",
+                         "scripts/build-batocera-native-matrix.sh",
                          "scripts/install-batocera-nestopia-powerglove.sh",
                          "scripts/configure-batocera-super-glove-ball-core.py",
+                         "scripts/verify-batocera-native-core.py",
+                         "native/batocera/manifest.json",
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "python/ssh_pair.py",
                      ] if machine == "batocera" else [
@@ -234,6 +237,49 @@ def unpack(archive, destination, machine, version):
                                 or path.parts[:2] != (target, native_version)):
                             raise ValueError("Incomplete package: unsafe Recalbox native-core path")
                         required.append("native/recalbox/" + str(path))
+        if machine == "batocera":
+            native = json.loads(package.read("VirtualGlove/native/batocera/manifest.json"))
+            if native.get("format") != 2 or not isinstance(native.get("cores"), dict):
+                raise ValueError("Incomplete package: malformed Batocera native-core manifest")
+            valid_targets = {"bcm2835", "bcm2836", "bcm2837", "bcm2711", "bcm2712",
+                             "x86_64", "rk3326", "rk3399", "rk3568", "rk3588", "s905",
+                             "s905gen2", "s905gen3", "s922x", "sm8250"}
+            for target, versions in native["cores"].items():
+                if target not in valid_targets or not isinstance(versions, dict):
+                    raise ValueError("Incomplete package: malformed Batocera native-core target")
+                for native_version, entry in versions.items():
+                    if (not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", native_version)
+                            or not isinstance(entry, dict)):
+                        raise ValueError("Incomplete package: malformed Batocera native-core version")
+                    required_fields = {
+                        "file", "sha256", "size", "elf_class", "elf_machine",
+                        "source_file", "source_sha256", "source_size",
+                        "batocera_version", "batocera_revision", "nestopia_revision",
+                        "patch_sha256", "build_image",
+                    }
+                    if (set(entry) != required_fields
+                            or entry.get("batocera_version") != native_version
+                            or not isinstance(entry.get("size"), int) or entry["size"] <= 0
+                            or not isinstance(entry.get("source_size"), int)
+                            or entry["source_size"] <= 0
+                            or entry.get("elf_class") not in (32, 64)
+                            or entry.get("elf_machine") not in ("arm", "aarch64", "x86_64")
+                            or any(not isinstance(entry.get(field), str)
+                                   or not re.fullmatch(r"[0-9a-f]{64}", entry[field])
+                                   for field in ("sha256", "source_sha256", "patch_sha256"))
+                            or any(not isinstance(entry.get(field), str)
+                                   or not re.fullmatch(r"[0-9a-f]{40}", entry[field])
+                                   for field in ("batocera_revision", "nestopia_revision"))
+                            or not isinstance(entry.get("build_image"), str)
+                            or "@sha256:" not in entry["build_image"]):
+                        raise ValueError("Incomplete package: malformed Batocera native-core entry")
+                    for field in ("file", "source_file"):
+                        relative = entry.get(field)
+                        path = PurePosixPath(relative) if isinstance(relative, str) else None
+                        if (path is None or path.is_absolute() or ".." in path.parts
+                                or path.parts[:2] != (target, native_version)):
+                            raise ValueError("Incomplete package: unsafe Batocera native-core path")
+                        required.append("native/batocera/" + str(path))
         for relative in required:
             if "VirtualGlove/" + relative not in seen:
                 raise ValueError("Incomplete package: " + relative)

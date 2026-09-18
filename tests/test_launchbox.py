@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.launchbox_hook import launch_command, run_game
+from powerglove_vision.launchbox_hook import launch_command, native_core_ready, run_game
 from powerglove_vision.launchbox_runtime import service_commands
 from powerglove_vision.retroarch_hotkeys import conflicts
 
@@ -69,6 +69,40 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("fceumm_libretro.dll", standard[2])
         self.assertEqual(standard_name, "lr-fceumm")
         self.assertEqual(native[-1], "Super Glove Ball (USA).nes")
+
+    def test_missing_native_core_falls_back_to_fceumm_but_keeps_joystick_lease(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            settings = self.settings(root)
+            (root / "games.json").write_text(json.dumps({"games": {
+                "Super Glove Ball (USA).nes": "super_glove_ball"
+            }}))
+            (root / "token").write_text("0123456789abcdef")
+            calls, launched = [], []
+            process = FakeProcess()
+            code = run_game(
+                settings, root / "Super Glove Ball (USA).nes",
+                popen=lambda command, env: launched.append(command) or process,
+                request=lambda *args, **kwargs: calls.append((args, kwargs)) or {"accepted": True},
+                sleep=lambda _seconds: None,
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("fceumm_libretro.dll", launched[0][2])
+        self.assertEqual(calls[0][0][3], "super_glove_ball")
+        self.assertEqual(calls[0][1]["emulator"], "lr-fceumm")
+
+    def test_changed_native_core_hash_falls_back(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            settings = self.settings(root)
+            settings["native_core_sha256"] = "0" * 64
+            (root / "nestopia_powerglove_libretro.dll").write_bytes(b"changed")
+            self.assertFalse(native_core_ready(settings))
+            command, emulator = launch_command(
+                settings, root / "Super Glove Ball (USA).nes",
+                {"profile": "super_glove_ball"}, native_ready=False)
+        self.assertIn("fceumm_libretro.dll", command[2])
+        self.assertEqual(emulator, "lr-fceumm")
 
     def test_registered_game_renews_and_clears_authenticated_lease(self):
         with tempfile.TemporaryDirectory() as name:
@@ -230,6 +264,9 @@ class LaunchBoxTests(unittest.TestCase):
     def test_package_contains_non_destructive_per_user_installer_and_build_workflow(self):
         installer = (ROOT / "launchbox/install-launchbox.ps1").read_text()
         wrapper = (ROOT / "launchbox/virtualglove-launchbox.cmd").read_text()
+        pairing = (ROOT / "launchbox/virtualglove-pair.ps1").read_text()
+        restart = (ROOT / "launchbox/virtualglove-restart-runtime.cmd").read_text()
+        configure = (ROOT / "launchbox/configure-launchbox-emulator.ps1").read_text()
         workflow = (ROOT / ".github/workflows/launchbox-native-core.yml").read_text()
         build_script = (ROOT / "scripts/build-launchbox-nestopia-powerglove.sh").read_text()
         self.assertIn("LOCALAPPDATA", installer)
@@ -241,8 +278,19 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertNotIn("New-NetFirewallRule", installer)
         self.assertIn("nestopia-powerglove-source.tar.gz", installer)
         self.assertIn("Get-FileHash", installer)
+        self.assertIn("--load", installer)
+        self.assertIn("native_core_sha256", installer)
         self.assertIn("source_sha256", installer)
         self.assertIn("launchbox_runtime ensure", wrapper)
+        self.assertIn("virtualglove-restart-runtime.cmd", installer)
+        self.assertIn("--receiver-restart-command $Restart", pairing)
+        self.assertNotIn("--receiver-restart-command $Python -m", pairing)
+        self.assertIn("launchbox_runtime restart", restart)
+        self.assertIn("LaunchBox-Emulators.xml", configure)
+        self.assertIn("Nintendo Entertainment System", configure)
+        self.assertIn("VirtualGlove RetroArch", configure)
+        self.assertIn("the backup was restored", configure)
+        self.assertIn("configure-launchbox-emulator.ps1", installer)
         self.assertIn("windows-latest", workflow)
         self.assertIn("nestopia_powerglove_libretro.dll", workflow)
         self.assertIn("nestopia-powerglove-source.tar.gz", workflow)

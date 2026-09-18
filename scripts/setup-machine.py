@@ -683,7 +683,8 @@ def install_batocera(peer, player1_device=None):
 
     destination = Path("/userdata/system/virtualglove")
     names = [str(path.relative_to(SOURCE))
-             for directory in ("src", "recalbox", "batocera", "config", "scripts", "python")
+             for directory in ("src", "recalbox", "batocera", "config", "scripts", "python",
+                               "native/batocera", "native/nestopia-powerglove")
              for path in (SOURCE / directory).rglob("*")
              if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"]
     names += [name for name in ("install-release.json", "LICENSE", "THIRD_PARTY_NOTICES.md")
@@ -712,6 +713,7 @@ def install_batocera(peer, player1_device=None):
         destination / "scripts/build-batocera-nestopia-powerglove.sh",
         destination / "scripts/install-batocera-nestopia-powerglove.sh",
         destination / "scripts/configure-batocera-super-glove-ball-core.py",
+        destination / "scripts/verify-batocera-native-core.py",
     ]
     for executable in executables:
         executable.chmod(0o755)
@@ -748,6 +750,20 @@ def check_batocera(report):
     native_info = Path("/usr/share/libretro/info/nestopia_powerglove_libretro.info")
     report.check("Optional native Super Glove Ball core", native.is_file() and
                  native_info.is_file(), pending=True)
+    manifest = root / "native/batocera/manifest.json"
+    resolved = None
+    if manifest.is_file() and Path("/usr/share/batocera/batocera.arch").is_file():
+        result = subprocess.run(
+            ["python3", str(root / "scripts/verify-batocera-native-core.py"),
+             "--manifest", str(manifest), "--arch",
+             Path("/usr/share/batocera/batocera.arch").read_text().strip(), "--version",
+             Path("/usr/share/batocera/batocera.version").read_text().strip(),
+             "--resolve-core"], check=False, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            resolved = Path(result.stdout.strip())
+    report.check("Packaged native core matches this Batocera target",
+                 bool(resolved and resolved.is_file()), pending=True)
     report.command("Batocera VirtualGlove service enabled",
                    ["batocera-services", "is-enabled", "VirtualGlove"])
     token = root / "data/token"
