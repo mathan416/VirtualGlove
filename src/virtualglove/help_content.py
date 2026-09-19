@@ -43,6 +43,7 @@ HELP_GUIDES = (
     {'slug': 'build-your-own', 'title': 'Build your own: parts, cost, and difficulty', 'file': 'BUILD_YOUR_OWN.md', 'description': 'Parts, planning costs, tested hardware, and a staged first build.', 'group': 'User manuals'},
     {'slug': 'installation', 'title': 'Installation and setup', 'file': 'INSTALL_README.md', 'description': 'Installation, secure pairing, the Play Checklist, updates, and troubleshooting.', 'group': 'User manuals'},
     {'slug': 'camera', 'title': 'Camera setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Camera selection, frame rate, exposure, lighting, reconnection, and troubleshooting.', 'group': 'User manuals'},
+    {'slug': 'enclosure', 'title': 'Controller enclosure guide', 'file': 'ENCLOSURE_GUIDE.md', 'description': 'Print and assemble the compact UNO Q Case or integrated Controller Dock.', 'group': 'User manuals'},
     {'slug': 'troubleshooting', 'title': 'Troubleshooting by symptom', 'file': 'TROUBLESHOOTING.md', 'description': 'Find the first failing stage, from the camera to the displayed game.', 'group': 'User manuals'},
     {'slug': 'overview', 'title': 'Project overview', 'file': None, 'description': 'The complete project at a glance: architecture, controls, security, deployment, and current status.', 'group': 'Technical documentation', 'href': '/help-pdf/overview.pdf'},
     {'slug': 'architecture', 'title': 'Architecture and flows', 'file': 'ARCHITECTURE.md', 'description': 'System boundaries, recognition, tuning, game input, and deployment diagrams.', 'group': 'Technical documentation'},
@@ -69,6 +70,7 @@ HELP_PDFS = {
     "native-emulation": "VirtualGlove-Native-Emulation.pdf",
     "troubleshooting": "VirtualGlove-Troubleshooting.pdf",
     "camera": "VirtualGlove-Camera-Guide.pdf",
+    "enclosure": "VirtualGlove-Enclosure-Guide.pdf",
 
     "matrix": "VirtualGlove-Matrix-Guide.pdf",
     "architecture": "VirtualGlove-Architecture.pdf",

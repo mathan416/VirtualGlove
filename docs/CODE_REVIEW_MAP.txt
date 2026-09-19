@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 594
+Git-visible files: 617
 Python test modules: 75
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-594 tracked or non-ignored files are present in this checkout. Ignored
+617 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -407,6 +407,7 @@ are intentionally omitted.
 |   |-- CONFIGURATION_REFERENCE.md
 |   |-- CONTRIBUTING.md
 |   |-- direction-response-benchmark.md
+|   |-- ENCLOSURE_GUIDE.md
 |   |-- ENGINEERING_JOURNEY.md
 |   |-- ENGINEERING_TOOLKIT.md
 |   |-- extra-digit-hunt.json
@@ -418,6 +419,31 @@ are intentionally omitted.
 |   |-- SECURITY.md
 |   |-- super-glove-ball-native.md
 |   `-- TROUBLESHOOTING.md
+|-- hardware
+|   `-- enclosures
+|       |-- previews
+|       |   |-- virtualglove-controller-dock-exterior.png
+|       |   |-- virtualglove-controller-dock.png
+|       |   |-- virtualglove-printable-branding.png
+|       |   |-- virtualglove-uno-case-exterior.png
+|       |   `-- virtualglove-uno-case.png
+|       |-- stl
+|       |   |-- virtualglove-badge.stl
+|       |   |-- virtualglove-dock-base.stl
+|       |   |-- virtualglove-dock-lid.stl
+|       |   |-- virtualglove-full-logo-backing.stl
+|       |   |-- virtualglove-full-logo-cyan.stl
+|       |   |-- virtualglove-full-logo-red.stl
+|       |   |-- virtualglove-hub-fit-coupon.stl
+|       |   |-- virtualglove-matrix-bezel.stl
+|       |   |-- virtualglove-target-badge-backing.stl
+|       |   |-- virtualglove-target-badge-cyan.stl
+|       |   |-- virtualglove-target-badge-red.stl
+|       |   |-- virtualglove-uno-base.stl
+|       |   |-- virtualglove-uno-lid.stl
+|       |   `-- virtualglove-usb-c-fit-coupon.stl
+|       |-- export-stl.sh
+|       `-- virtualglove-controller.scad
 |-- launchbox
 |   |-- configure-launchbox-emulator.ps1
 |   |-- install-launchbox.ps1
@@ -550,6 +576,7 @@ are intentionally omitted.
 |       |-- VirtualGlove-Configuration-Reference.pdf
 |       |-- VirtualGlove-Contributing.pdf
 |       |-- VirtualGlove-Direction-Response.pdf
+|       |-- VirtualGlove-Enclosure-Guide.pdf
 |       |-- VirtualGlove-Engineering-Journey.pdf
 |       |-- VirtualGlove-Engineering-Toolkit.pdf
 |       |-- VirtualGlove-Gameplay-Guide.pdf

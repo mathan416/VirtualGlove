@@ -47,6 +47,7 @@ PUBLIC_PDF_NAMES = {
     "VirtualGlove-Native-Emulation.pdf",
     "VirtualGlove-Troubleshooting.pdf",
     "VirtualGlove-Camera-Guide.pdf",
+    "VirtualGlove-Enclosure-Guide.pdf",
     "VirtualGlove-Engineering-Journey.pdf",
     "VirtualGlove-Engineering-Toolkit.pdf",
 
@@ -69,6 +70,9 @@ REQUIRED_FILES = {
     "VirtualGlove/docs/NATIVE_EMULATION_EXPLAINED.md",
     "VirtualGlove/docs/TROUBLESHOOTING.md",
     "VirtualGlove/docs/CAMERA_GUIDE.md",
+    "VirtualGlove/docs/ENCLOSURE_GUIDE.md",
+    "VirtualGlove/hardware/enclosures/virtualglove-controller.scad",
+    "VirtualGlove/hardware/enclosures/export-stl.sh",
 
     "VirtualGlove/src/virtualglove/diagnostic_trace.py",
     "VirtualGlove/scripts/measure-dot-input.py",

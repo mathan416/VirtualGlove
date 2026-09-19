@@ -26,6 +26,10 @@ controller available, and let each game use the correct input method.
 
 ### Added
 
+- Added two printable VirtualGlove Controller enclosures: a compact UNO Q case
+  and a combined UNO Q/Arduino hub dock. Parametric OpenSCAD sources, manifold
+  STL files, fit-test coupons, Kobra 3 PLA guidance, and print-safe versions of
+  the full logo and hand/target emblem are included with a dedicated guide.
 - Added first-class installation and pairing for RetroPie, Recalbox, Batocera,
   and LaunchBox. Setup asks for the platform before the address, then shows only
   the pairing instructions that apply to that system.

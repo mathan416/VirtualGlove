@@ -708,11 +708,13 @@ def main():
           "Troubleshooting by symptom", "Find the first failing stage, from the camera to the displayed game.", "Community guide")
     build(docs / "CAMERA_GUIDE.md", OUTPUT / "VirtualGlove-Camera-Guide.pdf",
           "VirtualGlove Camera Guide", "Choose, tune, and troubleshoot a camera without changing gesture recognition.", "User guide")
+    build(docs / "ENCLOSURE_GUIDE.md", OUTPUT / "VirtualGlove-Enclosure-Guide.pdf",
+          "VirtualGlove Controller Enclosure Guide", "Print and assemble the UNO Q Case or integrated Controller Dock.", "Workshop guide")
     build(docs / "ENGINEERING_JOURNEY.md", OUTPUT / "VirtualGlove-Engineering-Journey.pdf",
           "VirtualGlove Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
     build(docs / "ENGINEERING_TOOLKIT.md", OUTPUT / "VirtualGlove-Engineering-Toolkit.pdf",
           "VirtualGlove Engineering Toolkit", "Repeatable analysis, camera, tracing, and native-research workflows.", "Engineering guide")
-    print(f"Built 20 PDF guides on {date.today().isoformat()}")
+    print(f"Built 21 PDF guides on {date.today().isoformat()}")
 
 
 if __name__ == "__main__":
