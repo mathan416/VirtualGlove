@@ -1,13 +1,20 @@
 # VirtualGlove Controller Enclosure Guide
 
-VirtualGlove now includes two printable homes for the Arduino UNO Q Controller.
-Both were designed for an Anycubic Kobra 3, ordinary PLA, a 0.4 mm nozzle, and
-the Arduino USB-C Hub (8 in 1).
+VirtualGlove includes three supported enclosure choices: the compact UNO Q
+Case, the original low-profile Controller Dock V1, and the fully enclosed
+Controller Dock V2. Each design solves a different installation problem; none
+is removed when a newer design is added. All were designed for an Anycubic
+Kobra 3, ordinary PLA, a 0.4 mm nozzle, and the Arduino USB-C Hub (8 in 1).
 
 The files are intentionally parametric. Print the small fit tests first, record
 what changed, and adjust the clearances before committing to a long print.
 
 ## Choose your case
+
+Choose the enclosure around where the hub should live and which ports must be
+reachable. After choosing the structure, choose either the small hand/target
+emblem lid or the larger VirtualGlove wordmark lid. Both lid styles are
+available for all three enclosures.
 
 ### UNO Q Case
 
@@ -22,30 +29,53 @@ Matrix visible, and leaves airflow around the board.
 - The USB-C hub, camera cable, power cable, and optional Ethernet cable remain
   outside the enclosure.
 
-### Controller Dock
+### Controller Dock V2 - enclosed hub and full port access
+
+![Controller Dock V2 exterior](../hardware/enclosures/previews/virtualglove-controller-dock-v2-exterior.png)
+
+Choose V2 when the camera may use either USB-A or USB-C and the hub should be
+hidden. The UNO Q and hub both sit inside the fully closed enclosure. The
+rear-facing USB-C PD and data bank is reached through a generous rear opening.
+The hub's Ethernet socket faces a dedicated right-side opening. USB-A or HDMI
+cables connect inside and leave through rear routing openings without holding
+the lid open.
+
+- Outside size: approximately **160 x 122 x 35 mm** when assembled.
+- Best for: a transferable Controller, changing cameras, or installations that
+  need simultaneous power and peripheral access.
+- The hub remains removable after the lid is opened, but is hidden during use.
+- This is the most flexible Controller Dock for a new print.
+
+![Cutaway of Controller Dock V2 showing direct rear USB-C access and an internally connected USB-A cable](../hardware/enclosures/previews/virtualglove-controller-dock-v2-port-access.png)
+
+### Controller Dock V1 - original low-profile dock
 
 ![Controller Dock exterior](../hardware/enclosures/previews/virtualglove-controller-dock-exterior.png)
 
-Choose the Dock when the UNO Q and Arduino hub should move and mount as one
-unit. The hub sits in an open service bay, so its USB, USB-C power, and Ethernet
-connections remain reachable.
+Choose V1 when the lower profile and open service bay suit a fixed installation.
+Its hub sits low in the rear bay and remains visible and easy to remove. The
+open top works well with a known cable arrangement, but it does not guarantee
+normal plug-body clearance on both opposing long port faces at once.
 
 - Outside size: approximately **148 x 104 x 31 mm** when assembled.
-- Best for: a neat arcade-panel installation or a Controller given as a complete
-  unit.
+- Best for: fixed cable arrangements, pre-connected cables, or adapting an
+  existing V1 print.
 - The hub remains removable; it is not trapped inside a sealed hot box.
 
-| Compare | UNO Q Case | Controller Dock |
-| --- | --- | --- |
-| Hub location | Outside the case | Open rear service bay |
-| Port access | UNO Q USB-C only | Hub USB, USB-C power, and Ethernet |
-| Portability | Smallest enclosure | UNO Q and hub move together |
-| Best fit | Hidden cabinet installation | Complete, transferable Controller |
+| Compare | UNO Q Case | Dock V1 | Dock V2 |
+| --- | --- | --- | --- |
+| Hub location | Outside the case | Open low rear service bay | Hidden inside the closed case |
+| Port access | UNO Q USB-C only | Open top; cable-dependent | Rear USB-C, side Ethernet, plus internal cable routing |
+| Overall height | Approximately 27 mm | Approximately 31 mm | Approximately 35 mm |
+| Printed structure | Base and lid | Base and lid | Base and lid |
+| Lid choices | Small emblem or full wordmark | Small emblem or full wordmark | Small emblem or full wordmark |
+| Best fit | Hidden cabinet installation | Known, fixed cable arrangement | Flexible camera and network connections |
 
 For assembly at the workbench, use the
-[single-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md).
-This guide adds print settings, fit checks, detailed explanations, and
-troubleshooting.
+[eight-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md).
+It provides one uninterrupted, model-accurate procedure for each enclosure.
+This guide adds print settings, fit checks, the reason behind important steps,
+and troubleshooting.
 
 <!-- PAGEBREAK -->
 
@@ -70,20 +100,31 @@ inserts, tools, cables, adhesive, and other physical parts are not included.
 ### UNO Q Case print set
 
 - [UNO Q base](../hardware/enclosures/stl/virtualglove-uno-base.stl)
-- [UNO Q lid](../hardware/enclosures/stl/virtualglove-uno-lid.stl)
+- Choose one lid: [small-emblem inset](../hardware/enclosures/stl/virtualglove-uno-lid.stl)
+  or [full-wordmark inset](../hardware/enclosures/stl/virtualglove-uno-lid-full-logo.stl)
 - [USB-C fit coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl)
 
 The hub is still required, but it remains outside this enclosure and connects
 through the broad USB-C opening.
 
-### Controller Dock print set
+### Controller Dock V2 print set - enclosed hub
 
-- [Dock base](../hardware/enclosures/stl/virtualglove-dock-base.stl)
-- [Dock lid](../hardware/enclosures/stl/virtualglove-dock-lid.stl)
+- [Dock V2 enclosed-hub base](../hardware/enclosures/stl/virtualglove-dock-v2-base.stl)
+- Choose one lid: [small-emblem inset](../hardware/enclosures/stl/virtualglove-dock-v2-lid.stl)
+  or [full-wordmark inset](../hardware/enclosures/stl/virtualglove-dock-v2-lid-full-logo.stl)
 - [USB-C fit coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl)
 - [Hub fit coupon](../hardware/enclosures/stl/virtualglove-hub-fit-coupon.stl)
 
-<!-- PAGEBREAK -->
+V2 uses only two structural printed pieces. Its hub cradle and rear cable paths
+are part of the base. The lid covers both the UNO Q and the hub completely.
+
+### Controller Dock V1 print set - original low-profile dock
+
+- [Dock V1 low-profile base](../hardware/enclosures/stl/virtualglove-dock-base.stl)
+- Choose one lid: [small-emblem inset](../hardware/enclosures/stl/virtualglove-dock-lid.stl)
+  or [full-wordmark inset](../hardware/enclosures/stl/virtualglove-dock-lid-full-logo.stl)
+- [USB-C fit coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl)
+- [Hub fit coupon](../hardware/enclosures/stl/virtualglove-hub-fit-coupon.stl)
 
 ### Shared finishing parts
 
@@ -93,18 +134,61 @@ for a finished edge around the display; choose one emblem only if wanted.
 | Finishing part | Downloads |
 | --- | --- |
 | Matrix bezel | [Cyan bezel](../hardware/enclosures/stl/virtualglove-matrix-bezel.stl) |
-| Small lid emblem | [Dark backing](../hardware/enclosures/stl/virtualglove-lid-logo-backing.stl); [cyan hand and target](../hardware/enclosures/stl/virtualglove-lid-logo-cyan.stl); [red target beam](../hardware/enclosures/stl/virtualglove-lid-logo-red.stl) |
-| Optional full-logo plaque | [Dark backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl); [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl); [red target accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl) |
-| Optional larger emblem | [Dark backing](../hardware/enclosures/stl/virtualglove-target-badge-backing.stl); [cyan hand and target](../hardware/enclosures/stl/virtualglove-target-badge-cyan.stl); [red target beam](../hardware/enclosures/stl/virtualglove-target-badge-red.stl) |
+| Small lid emblem | Separate: [dark backing](../hardware/enclosures/stl/virtualglove-lid-logo-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-lid-logo-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-lid-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-lid-logo-multicolor.3mf) |
+| Full-wordmark lid logo | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-compact-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-compact-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-compact-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-compact-full-logo-multicolor.3mf) |
+| Optional full-size plaque | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-full-logo-multicolor.3mf) |
+| Optional larger emblem | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-target-badge-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-target-badge-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-target-badge-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-target-badge-multicolor.3mf) |
+
+Every backing now has shallow locating pockets for its cyan and red inserts.
+The inserts sit nearly flush instead of relying on eye alignment on a flat
+plate. The small-emblem lids and full-wordmark lids have matching outer
+recesses, so the completed logo locates positively in the lid. On the compact
+case and Dock V1, the full-wordmark lid moves its ventilation slots clear of
+the larger recess; it does not simply cover the original vents.
+
+#### Lid-branding assembly order
+
+Choose exactly one lid style and its matching logo set:
+
+1. Match the **small-emblem backing** to a small-emblem lid, or the
+   **compact full-wordmark backing** to a full-wordmark lid.
+2. Dry-fit the dark backing in the lid recess. It should sit flat without
+   covering the Matrix opening or ventilation slots.
+3. Dry-fit the cyan artwork and red accent in the backing's locating pockets.
+   Each piece should sit nearly flush and must not require force.
+4. Remove the pieces, apply only a small amount of adhesive, and assemble the
+   cyan and red pieces into the backing.
+5. Fit the completed logo set into the lid recess, then fit the separate Matrix
+   bezel around the display opening.
+
+The optional full-size plaque and larger emblem are separate decorative parts.
+They are not substitutes for the compact lid-logo sets and do not fit the lid
+recesses.
+
+The 3MF downloads contain the backing, cyan artwork, and red artwork in one
+file with material colours assigned. In Anycubic Slicer, verify that those
+three colours map to the intended ACE spools before slicing. The separate STL
+sets remain available for single-colour printing and hand assembly.
+
+![Recessed logo backings with cyan and red inserts separated for assembly](../hardware/enclosures/previews/virtualglove-branding-insets.png)
+
+![Small-emblem and full-wordmark lid inset options](../hardware/enclosures/previews/virtualglove-lid-logo-options.png)
 
 ### Optional materials and connections
 
 - Thin double-sided adhesive or plastic-safe glue for the branding layers.
 - Approximately 1 mm foam or TPU strips beneath the Dock's hub if it needs a
   quieter or firmer fit.
-- A camera connected to a USB-A 3.0 port on the hub.
+- A camera connected to USB-A 3.0 or the USB-C data port on the hub.
 - USB-C PD power connected to the hub.
-- Ethernet connected to the hub when a wired network is wanted.
+- Ethernet connected through Dock V2's right-side opening, or directly to the
+  external hub used with the compact case.
+
+The hub's connector shape does not guarantee its speed. USB-A 3.0 provides up
+to 5 Gbps, while this hub's USB-C data port provides 480 Mbps. A camera that
+requires USB 3 bandwidth should use USB-A 3.0, with an appropriate cable or
+adapter when the camera itself has a USB-C socket. Never connect the camera to
+the USB-C PD power input.
 
 The full-logo and hand/target pieces are printable adaptations of the project
 artwork. They preserve the italic wordmark, hand, target, cyan linework, and red
@@ -129,6 +213,14 @@ The USB-C plug should enter without scraping and should not have enough side
 play to pull hard against the UNO Q socket. The hub should sit in its channel
 without bowing the Dock coupon or rattling loosely.
 
+For Dock V2, also place the real hub on the unpowered printed base before
+installing electronics. Confirm that it rests in the low cradle, its USB-C
+connectors align with the broad rear access opening, its Ethernet socket aligns
+with the right-side opening, and the low rails remain below every connector.
+Fit the intended USB-A camera cable internally and make
+sure its cable—not its plug—can turn around the hub end and leave through a rear
+routing opening while the lid closes without pressure.
+
 Record the printer, material, nozzle, slicer profile, and any dimensional change
 you make. In `virtualglove-controller.scad`, `fit` controls ordinary mating
 clearance and `hub_fit` controls the hub cradle. Do not scale the entire model
@@ -145,9 +237,11 @@ to fix one opening; change the relevant clearance instead.
 - brim only if the base corners lift
 - base and lid in the supplied orientation
 
-The lid's visible face lies on the bed for a clean finish. PLA is suitable
-inside a normal arcade cabinet. Do not leave the Controller in a hot car or
-another high-temperature location, and never cover its ventilation slots.
+The lid's visible face lies on the bed for a clean finish. Dock V2's internal
+hub cradle prints as part of the base and does not require support. PLA is
+suitable inside a normal arcade cabinet. Do not leave the Controller in a hot
+car or another high-temperature location, and never cover its ventilation
+slots.
 
 ### Dimensions and reference drawings
 
@@ -168,10 +262,12 @@ closest match to the VirtualGlove artwork, use charcoal or black for the
 backing, cyan for the hand and target corners, and red for the target beam. The
 larger optional plaque combines the same mark with the full wordmark.
 
-The colour layers are separate STL files. With one ACE Pro, assign each layer
-its colour in the slicer and assemble them on the same plate, or print one colour
-at a time and glue the layers to the backing. Separate accents avoid wasting
-material on colour changes through an entire enclosure.
+For an ACE multicolour print, open the matching 3MF and confirm the charcoal,
+cyan, and red material assignments. For separate printing, use the three STL
+files, test each insert in its backing pocket, and glue only after the fit is
+correct. The pockets provide alignment; do not force an insert that has swollen
+from first-layer expansion. Separate accents avoid wasting material on colour
+changes through an entire enclosure.
 
 Use a small amount of thin double-sided adhesive or plastic-safe glue. Dry-fit
 the pieces first; the detailed layers are intentionally shallow and should not
@@ -182,10 +278,40 @@ be forced.
 ### Rear and side views
 
 Left and right are named while looking at the Controller from the front/Matrix
-side. The UNO Q Case views expose the broad USB-C opening. The Dock views show
-how the open hub bay remains reachable from both sides and the rear.
+side. The coloured connector blocks in the V2 illustrations identify the
+hidden hub; they are not additional printed parts. Red marks USB-C PD power,
+cyan marks USB-C data or USB-A 3.0, and silver represents other hub connectors,
+including Ethernet.
 
-| View | UNO Q Case | Controller Dock |
+#### Controller Dock V2
+
+The hub sits inside the rear of the closed case. The rear view shows direct
+access to its outward-facing USB-C bank plus cable-routing openings at the
+corners. The cutaway shows how a cable plugged into the inward-facing USB-A
+bank turns around the hub and exits at the rear. The right view shows the
+separate Ethernet opening.
+
+| View | Controller Dock V2 | What to check |
+| --- | --- | --- |
+| Front | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-v2-exterior.png" alt="Front view of Controller Dock V2" width="320" /> | Lid closes over both the UNO Q and hub. |
+| Rear | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-v2-back.png" alt="Rear view of Controller Dock V2" width="320" /> | USB-C PD and data remain directly pluggable; routed cables leave through the corner openings. |
+| Left | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-v2-left.png" alt="Left-side view of Controller Dock V2" width="320" /> | No hub body or loose connector projects above the lid. |
+| Right | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-v2-right.png" alt="Right-side view of Controller Dock V2" width="320" /> | Ethernet plugs directly into the hidden hub through the side opening. |
+
+The V2 port-access view deliberately makes the lid translucent. It shows
+representative USB-C plugs entering from the rear and a USB-A plug fitted
+inside. It verifies the intended routing concept, not the exact shape or bend
+radius of every third-party cable.
+
+![Controller Dock V2 cutaway with rear and internally routed connections](../hardware/enclosures/previews/virtualglove-controller-dock-v2-port-access.png)
+
+#### UNO Q Case and Controller Dock V1
+
+The UNO Q Case exposes the broad USB-C opening. Dock V1 uses the original open,
+low rear service bay. Both are complete, supported alternatives rather than
+historical diagrams included only for reference.
+
+| View | UNO Q Case | Controller Dock V1 |
 | --- | --- | --- |
 | Rear | <img src="../hardware/enclosures/previews/virtualglove-uno-case-back.png" alt="Rear view of the UNO Q Case" width="240" /> | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-back.png" alt="Rear view of the Controller Dock" width="240" /> |
 | Left | <img src="../hardware/enclosures/previews/virtualglove-uno-case-left.png" alt="Left-side view of the UNO Q Case" width="240" /> | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-left.png" alt="Left-side view of the Controller Dock" width="240" /> |
@@ -194,47 +320,85 @@ how the open hub bay remains reachable from both sides and the rear.
 ### Exploded assembly
 
 These views show the assembly order rather than print orientation. Fasteners
-and heat-set inserts are omitted so the main layers remain easy to see. In the
-Dock view, the hub is pulled to the right to reveal its cradle and accessible
-port face; it slides back into the open rear bay during assembly.
+and heat-set inserts are omitted so the main layers remain easy to see. In V2,
+the UNO Q and hub both seat in the base before the lid closes over them. The
+original V1 hub instead remains visible in its low open rear bay.
 
-| UNO Q Case | Controller Dock |
+![Exploded assembly view of Controller Dock V2](../hardware/enclosures/previews/virtualglove-controller-dock-v2-exploded.png)
+
+| UNO Q Case | Controller Dock V1 |
 | --- | --- |
-| <img src="../hardware/enclosures/previews/virtualglove-uno-case-exploded.png" alt="Exploded assembly view of the UNO Q Case" width="320" /> | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-exploded.png" alt="Exploded assembly view of the Controller Dock" width="320" /> |
+| <img src="../hardware/enclosures/previews/virtualglove-uno-case-exploded.png" alt="Exploded assembly view of the UNO Q Case" width="210" /> | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-exploded.png" alt="Exploded assembly view of the Controller Dock" width="210" /> |
 
 Keep the
-[single-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md)
-beside the workbench for the visual sequence. The detailed steps below explain
-the fit checks that accompany it.
+[eight-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md)
+beside the workbench for the model-accurate sequence. Page 3 covers the UNO Q
+Case, pages 4-5 cover Dock V1, pages 6-7 cover Dock V2, and page 8 is the shared
+inspection. The detailed steps below use the same numbers and explain the fit
+checks that accompany each action.
 
 ### Assemble the UNO Q Case
 
-1. Heat the four inserts into the corner bosses. Keep them square and stop when
+These six steps match page 3 of the Assembly Quick Reference.
+
+1. **Seat the four inserts.** Heat the four inserts into the corner bosses. Keep them square and stop when
    they are flush; excess heat can soften the boss.
-2. Fasten the UNO Q to the four standoffs with the USB-C socket facing the
+2. **Place the UNO Q.** Set it on the four standoffs with the USB-C socket facing the
    broad opening.
-3. Connect the Arduino hub through that opening.
-4. Dry-fit the lid and confirm the plug does not press on the socket.
-5. Add the Matrix bezel and preferred emblem, if used.
-6. Fasten the lid and add the rubber feet.
+3. **Fasten the board.** Use four M3 x 8 mm screws. Tighten only until the board is secure and remains flat.
+4. **Check USB-C clearance.** Connect the Arduino hub through the opening and confirm its plug does not press sideways on the socket.
+5. **Choose and dry-fit the branding.** Match one lid logo set to the printed
+   lid. Dry-fit its backing, cyan artwork, and red accent, and confirm that the
+   Matrix opening, ventilation slots, and separate bezel remain clear.
+6. **Close and add feet.** Fasten the lid and attach four rubber feet, then complete the shared pre-power inspection.
 
 Only the UNO Q USB-C port is intentionally exposed. Do not force a thick plug
 through the opening; adjust and reprint the coupon if necessary.
 
-### Assemble the Controller Dock
+### Assemble Controller Dock V2
 
-1. Heat the four inserts into the corner bosses, keeping them square and flush.
-2. Fasten the UNO Q to its standoffs with the USB-C socket facing the broad
-   opening.
-3. Add thin foam or TPU strips to the hub cradle if desired.
-4. Route the hub's captive cable through the internal channel and connect it to
+These eight steps match pages 6-7 of the Assembly Quick Reference.
+
+1. **Seat the four inserts.** Heat them into the corner bosses, keeping them square and flush.
+2. **Mount the UNO Q.** Place it with the USB-C socket facing the broad opening, then fasten it without bending the board.
+3. **Orient the hidden hub.** Seat it in the rear cradle with its USB-C PD and data bank facing the
+   broad rear opening. Route its captive cable internally to the UNO Q without
+   twisting the socket.
+4. **Connect the captive cable.** Route the hub lead through its internal channel to the UNO Q without pulling or twisting either connector.
+5. **Choose the camera route.** If the camera uses USB-A, connect it to the inward-facing USB-A 3.0 port now.
+   Turn the flexible cable—not the plug—around the left hub end and out a rear
+   routing opening.
+6. **Keep power and Ethernet clear.** If the camera uses USB-C, leave its data port accessible through the rear
+   bank. Keep the neighbouring USB-C PD power input accessible as well. If
+   using Ethernet, confirm the RJ45 socket faces the right-side opening.
+7. **Dry-fit the lid.** Confirm it closes completely without touching the hub,
+   plugs, cables, or board and that no cable is pinched at a routing opening.
+   Remove the lid, connect any remaining internal cable, and repeat the closure
+   check. Plug rear-accessible USB-C cables in only after the lid is fastened.
+8. **Close and finish.** Add the Matrix bezel and the matching assembled lid
+   logo set, fasten the lid, and attach four rubber feet.
+
+The rails locate the hub and are intentionally lower than its connector
+openings. If a rail or rear opening obstructs a plug, or the lid presses on an
+internally connected cable, stop and adjust the model rather than forcing it.
+
+### Assemble Controller Dock V1
+
+These eight steps match pages 4-5 of the Assembly Quick Reference.
+
+1. **Seat the four inserts.** Heat them into the corner bosses, keeping them square and flush.
+2. **Place the UNO Q.** Set it on its standoffs with the USB-C socket facing the broad opening.
+3. **Fasten the board.** Use four M3 x 8 mm screws and keep the board flat.
+4. **Add optional cradle padding.** Fit thin foam or TPU strips to the low hub cradle only if desired.
+5. **Connect the captive cable.** Route it through the internal channel and connect it to
    the UNO Q.
-5. Seat the hub in the open rear bay.
-6. Confirm both long port faces, the Ethernet end, and the captive lead are
-   free.
-7. Connect the camera to a USB-A 3.0 port, power to the hub's USB-C PD input, and
+6. **Seat the hub.** Lower it into the open rear bay without trapping the captive lead.
+7. **Connect the fixed cable set.** Confirm the ports required by this arrangement, the Ethernet
+   end, and the captive lead are free.
+   Connect the camera to a USB-A 3.0 port, power to the hub's USB-C PD input, and
    optional Ethernet.
-8. Fit the lid, Matrix bezel, and preferred emblem, then add the rubber feet.
+8. **Close and finish.** Fit the lid, Matrix bezel, and the matching assembled
+   lid logo set, then add four rubber feet.
 
 ### Second check-in: inspect before power
 

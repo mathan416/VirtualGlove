@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 619
+Git-visible files: 658
 Python test modules: 75
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-619 tracked or non-ignored files are present in this checkout. Ignored
+658 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -408,6 +408,7 @@ are intentionally omitted.
 |   |-- CONTRIBUTING.md
 |   |-- direction-response-benchmark.md
 |   |-- ENCLOSURE_GUIDE.md
+|   |-- ENCLOSURE_QUICK_REFERENCE.md
 |   |-- ENGINEERING_JOURNEY.md
 |   |-- ENGINEERING_TOOLKIT.md
 |   |-- extra-digit-hunt.json
@@ -422,26 +423,62 @@ are intentionally omitted.
 |-- hardware
 |   `-- enclosures
 |       |-- previews
+|       |   |-- virtualglove-branding-insets.png
+|       |   |-- virtualglove-controller-dock-back.png
+|       |   |-- virtualglove-controller-dock-exploded.png
 |       |   |-- virtualglove-controller-dock-exterior.png
+|       |   |-- virtualglove-controller-dock-left.png
+|       |   |-- virtualglove-controller-dock-right.png
+|       |   |-- virtualglove-controller-dock-v2-back.png
+|       |   |-- virtualglove-controller-dock-v2-exploded.png
+|       |   |-- virtualglove-controller-dock-v2-exterior.png
+|       |   |-- virtualglove-controller-dock-v2-left.png
+|       |   |-- virtualglove-controller-dock-v2-port-access.png
+|       |   |-- virtualglove-controller-dock-v2-right.png
 |       |   |-- virtualglove-controller-dock.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v1-finish.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v1.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v2-finish.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v2.png
+|       |   |-- virtualglove-enclosure-quick-reference-finish.png
+|       |   |-- virtualglove-enclosure-quick-reference-parts.png
+|       |   |-- virtualglove-enclosure-quick-reference-uno.png
+|       |   |-- virtualglove-enclosure-quick-reference.png
+|       |   |-- virtualglove-lid-logo-options.png
 |       |   |-- virtualglove-printable-branding.png
+|       |   |-- virtualglove-uno-case-back.png
+|       |   |-- virtualglove-uno-case-exploded.png
 |       |   |-- virtualglove-uno-case-exterior.png
+|       |   |-- virtualglove-uno-case-left.png
+|       |   |-- virtualglove-uno-case-right.png
 |       |   `-- virtualglove-uno-case.png
 |       |-- stl
+|       |   |-- virtualglove-compact-full-logo-backing.stl
+|       |   |-- virtualglove-compact-full-logo-cyan.stl
+|       |   |-- virtualglove-compact-full-logo-multicolor.3mf
+|       |   |-- virtualglove-compact-full-logo-red.stl
 |       |   |-- virtualglove-dock-base.stl
+|       |   |-- virtualglove-dock-lid-full-logo.stl
 |       |   |-- virtualglove-dock-lid.stl
+|       |   |-- virtualglove-dock-v2-base.stl
+|       |   |-- virtualglove-dock-v2-lid-full-logo.stl
+|       |   |-- virtualglove-dock-v2-lid.stl
 |       |   |-- virtualglove-full-logo-backing.stl
 |       |   |-- virtualglove-full-logo-cyan.stl
+|       |   |-- virtualglove-full-logo-multicolor.3mf
 |       |   |-- virtualglove-full-logo-red.stl
 |       |   |-- virtualglove-hub-fit-coupon.stl
 |       |   |-- virtualglove-lid-logo-backing.stl
 |       |   |-- virtualglove-lid-logo-cyan.stl
+|       |   |-- virtualglove-lid-logo-multicolor.3mf
 |       |   |-- virtualglove-lid-logo-red.stl
 |       |   |-- virtualglove-matrix-bezel.stl
 |       |   |-- virtualglove-target-badge-backing.stl
 |       |   |-- virtualglove-target-badge-cyan.stl
+|       |   |-- virtualglove-target-badge-multicolor.3mf
 |       |   |-- virtualglove-target-badge-red.stl
 |       |   |-- virtualglove-uno-base.stl
+|       |   |-- virtualglove-uno-lid-full-logo.stl
 |       |   |-- virtualglove-uno-lid.stl
 |       |   `-- virtualglove-usb-c-fit-coupon.stl
 |       |-- export-stl.sh
@@ -579,6 +616,7 @@ are intentionally omitted.
 |       |-- VirtualGlove-Contributing.pdf
 |       |-- VirtualGlove-Direction-Response.pdf
 |       |-- VirtualGlove-Enclosure-Guide.pdf
+|       |-- VirtualGlove-Enclosure-Quick-Reference.pdf
 |       |-- VirtualGlove-Engineering-Journey.pdf
 |       |-- VirtualGlove-Engineering-Toolkit.pdf
 |       |-- VirtualGlove-Gameplay-Guide.pdf
@@ -685,6 +723,7 @@ are intentionally omitted.
 |   |-- install-uno-q.sh
 |   |-- installation-manifest.py
 |   |-- instrument-native-core.py
+|   |-- make-enclosure-previews-transparent.py
 |   |-- manage-latency-traces.py
 |   |-- measure-dot-input.py
 |   |-- measure-vision-status.py

@@ -44,8 +44,8 @@ HELP_GUIDES = (
     {'slug': 'build-your-own', 'title': 'Build your own: parts, cost, and difficulty', 'file': 'BUILD_YOUR_OWN.md', 'description': 'Parts, planning costs, tested hardware, and a staged first build.', 'group': 'User manuals'},
     {'slug': 'installation', 'title': 'Installation and setup', 'file': 'INSTALL_README.md', 'description': 'Installation, secure pairing, the Play Checklist, updates, and troubleshooting.', 'group': 'User manuals'},
     {'slug': 'camera', 'title': 'Camera setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Camera selection, frame rate, exposure, lighting, reconnection, and troubleshooting.', 'group': 'User manuals'},
-    {'slug': 'enclosure-quick-reference', 'title': 'Enclosure assembly quick reference', 'file': 'ENCLOSURE_QUICK_REFERENCE.md', 'description': 'One pictograph sheet for assembling the UNO Q Case or integrated Controller Dock.', 'group': 'User manuals'},
-    {'slug': 'enclosure', 'title': 'Controller enclosure guide', 'file': 'ENCLOSURE_GUIDE.md', 'description': 'Print and assemble the compact UNO Q Case or integrated Controller Dock.', 'group': 'User manuals'},
+    {'slug': 'enclosure-quick-reference', 'title': 'Enclosure assembly quick reference', 'file': 'ENCLOSURE_QUICK_REFERENCE.md', 'description': 'Eight pictographic workbench pages for assembling the UNO Q Case, Controller Dock V1, or enclosed Controller Dock V2.', 'group': 'User manuals'},
+    {'slug': 'enclosure', 'title': 'Controller enclosure guide', 'file': 'ENCLOSURE_GUIDE.md', 'description': 'Print the compact UNO Q Case, the full-access Dock V2, or the retained low-profile Dock V1.', 'group': 'User manuals'},
     {'slug': 'troubleshooting', 'title': 'Troubleshooting by symptom', 'file': 'TROUBLESHOOTING.md', 'description': 'Find the first failing stage, from the camera to the displayed game.', 'group': 'User manuals'},
     {'slug': 'overview', 'title': 'Project overview', 'file': None, 'description': 'The complete project at a glance: architecture, controls, security, deployment, and current status.', 'group': 'Technical documentation', 'href': '/help-pdf/overview.pdf'},
     {'slug': 'architecture', 'title': 'Architecture and flows', 'file': 'ARCHITECTURE.md', 'description': 'System boundaries, recognition, tuning, game input, and deployment diagrams.', 'group': 'Technical documentation'},
@@ -165,6 +165,7 @@ def enclosure_asset(relative_name: str) -> tuple[bytes, str, str] | None:
     content_types = {
         ".png": "image/png",
         ".stl": "model/stl",
+        ".3mf": "model/3mf",
         ".scad": "text/plain; charset=utf-8",
         ".sh": "text/x-shellscript; charset=utf-8",
     }

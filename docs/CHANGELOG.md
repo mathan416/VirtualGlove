@@ -26,10 +26,16 @@ controller available, and let each game use the correct input method.
 
 ### Added
 
-- Added two printable VirtualGlove Controller enclosures: a compact UNO Q case
-  and a combined UNO Q/Arduino hub dock. Parametric OpenSCAD sources, manifold
-  STL files, fit-test coupons, Kobra 3 PLA guidance, and print-safe versions of
-  the full logo and hand/target emblem are included with a dedicated guide.
+- Added printable VirtualGlove Controller enclosures: a compact UNO Q case, a
+  new full-access Controller Dock V2, and the retained low-profile Dock V1. V2
+  hides the Arduino hub inside a fully closed case while rear USB-C access,
+  internal USB-A cable routes, and a dedicated side Ethernet opening keep the
+  required connections available. Parametric OpenSCAD
+  sources, manifold STL files, fit-test coupons, Kobra 3 PLA guidance, and
+  print-safe versions of the full logo and hand/target emblem are included.
+- Added small-emblem and full-wordmark lid variants. Their logo backings now
+  include locating recesses for the cyan and red inserts, and optional
+  multicolour 3MF files keep all three materials together for an ACE workflow.
 - Added first-class installation and pairing for RetroPie, Recalbox, Batocera,
   and LaunchBox. Setup asks for the platform before the address, then shows only
   the pairing instructions that apply to that system.
@@ -68,6 +74,15 @@ controller available, and let each game use the correct input method.
 
 ### Changed
 
+- Rebuilt the Enclosure Assembly Quick Reference as an eight-page workbench
+  manual. It now begins with a complete parts tray, then gives the UNO Q Case,
+  Dock V1, and Dock V2 uninterrupted, numbered assembly procedures using the
+  actual enclosure models. Pixel Pal appears only for useful warnings and the
+  final check. The detailed Enclosure Guide uses the same step numbers while
+  retaining print settings, downloads, fit guidance, and troubleshooting.
+- Removed the pale OpenSCAD matte from the enclosure renders. Transparent
+  source previews now sit cleanly on the Enclosure Guide, Quick Reference, and
+  Controller Help backgrounds without yellow image boxes.
 - Reworked the Architecture, Native Movement Validation, Third-party Notices,
   and Changelog guides so they explain the practical result before the
   implementation detail. Exact measurements, checksums, platform names, and

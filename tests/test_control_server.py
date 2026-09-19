@@ -29,12 +29,14 @@
 
 import json
 import http.client
+import io
 import os
 import socket
 import ssl
 import tempfile
 import time
 import unittest
+from zipfile import ZipFile
 from pathlib import Path
 from unittest import mock
 
@@ -802,6 +804,28 @@ class ControlStateTests(unittest.TestCase):
         assert asset is not None
         self.assertEqual(asset[1:], ("model/stl", "virtualglove-uno-base.stl"))
         self.assertGreater(len(asset[0]), 1000)
+        for stl_name in (
+            "virtualglove-dock-v2-base.stl",
+            "virtualglove-dock-v2-lid.stl",
+            "virtualglove-dock-v2-lid-full-logo.stl",
+            "virtualglove-uno-lid-full-logo.stl",
+        ):
+            with self.subTest(stl_name=stl_name):
+                stl_asset = enclosure_asset(f"stl/{stl_name}")
+                self.assertIsNotNone(stl_asset)
+                assert stl_asset is not None
+                self.assertEqual(stl_asset[1], "model/stl")
+                self.assertGreater(len(stl_asset[0]), 1000)
+        for model_name in (
+            "virtualglove-lid-logo-multicolor.3mf",
+            "virtualglove-compact-full-logo-multicolor.3mf",
+        ):
+            with self.subTest(model_name=model_name):
+                model_asset = enclosure_asset(f"stl/{model_name}")
+                self.assertIsNotNone(model_asset)
+                assert model_asset is not None
+                self.assertEqual(model_asset[1], "model/3mf")
+                self.assertGreater(len(model_asset[0]), 1000)
         for preview_name in (
             "virtualglove-uno-case-exterior.png",
             "virtualglove-uno-case-back.png",
@@ -812,7 +836,22 @@ class ControlStateTests(unittest.TestCase):
             "virtualglove-controller-dock-left.png",
             "virtualglove-controller-dock-right.png",
             "virtualglove-controller-dock-exploded.png",
+            "virtualglove-controller-dock-v2-exterior.png",
+            "virtualglove-controller-dock-v2-back.png",
+            "virtualglove-controller-dock-v2-left.png",
+            "virtualglove-controller-dock-v2-right.png",
+            "virtualglove-controller-dock-v2-exploded.png",
+            "virtualglove-controller-dock-v2-port-access.png",
             "virtualglove-enclosure-quick-reference.png",
+            "virtualglove-enclosure-quick-reference-parts.png",
+            "virtualglove-enclosure-quick-reference-uno.png",
+            "virtualglove-enclosure-quick-reference-dock-v1.png",
+            "virtualglove-enclosure-quick-reference-dock-v1-finish.png",
+            "virtualglove-enclosure-quick-reference-dock-v2.png",
+            "virtualglove-enclosure-quick-reference-dock-v2-finish.png",
+            "virtualglove-enclosure-quick-reference-finish.png",
+            "virtualglove-lid-logo-options.png",
+            "virtualglove-branding-insets.png",
         ):
             with self.subTest(preview_name=preview_name):
                 self.assertEqual(
@@ -822,7 +861,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIsNone(enclosure_asset("../../data/device.json"))
         self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
 
-    def test_enclosure_quick_reference_help_uses_the_printable_pictograph(self):
+    def test_enclosure_quick_reference_help_uses_all_visual_pages(self):
         document = help_document_content("enclosure-quick-reference")
         self.assertIsNotNone(document)
         assert document is not None
@@ -831,7 +870,29 @@ class ControlStateTests(unittest.TestCase):
             "/help-enclosure/previews/virtualglove-enclosure-quick-reference.png",
             page,
         )
-        self.assertNotIn("Fit the inserts and mount the UNO Q", page)
+        for suffix in (
+            "parts", "uno", "dock-v1", "dock-v1-finish",
+            "dock-v2", "dock-v2-finish", "finish",
+        ):
+            self.assertIn(
+                f"/help-enclosure/previews/virtualglove-enclosure-quick-reference-{suffix}.png",
+                page,
+            )
+        self.assertIn("Seat the four heat-set inserts square and flush", page)
+        self.assertIn("Pixel Pal appears only where a warning", page)
+
+    def test_enclosure_multicolor_3mf_preserves_brand_materials(self):
+        asset = enclosure_asset("stl/virtualglove-lid-logo-multicolor.3mf")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        with ZipFile(io.BytesIO(asset[0])) as archive:
+            model = archive.read("3D/3dmodel.model").decode()
+        self.assertIn("#111722FF", model)
+        self.assertIn("#00D6EFFF", model)
+        self.assertIn("#FF2145FF", model)
+        self.assertIn('p1="1"', model)
+        self.assertIn('p1="2"', model)
+        self.assertIn('p1="3"', model)
 
     def test_help_routes_serve_html_markdown_and_images(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
@@ -867,8 +928,27 @@ class ControlStateTests(unittest.TestCase):
                 ("/help-enclosure/previews/virtualglove-controller-dock-left.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-right.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exterior.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-port-access.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-parts.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-uno.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-lid-logo-options.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-branding-insets.png", "image/png"),
                 ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-base.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-lid.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-lid-full-logo.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-lid-logo-multicolor.3mf", "model/3mf"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 connection.request("GET", path)

@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Included nonignored new files before their first commit.
 #   2026-09-18 - Added deterministic 0.5.0 architecture and source inventory generation.
 # Full history: docs/CHANGELOG.md and Git history.
 
@@ -32,8 +33,8 @@ def git(*arguments: str) -> str:
 
 
 def visible_files() -> list[str]:
-    """Return tracked source files plus this generator before its first commit."""
-    result = git("ls-files", "--cached", "-z")
+    """Return tracked and nonignored new files visible in this checkout."""
+    result = git("ls-files", "--cached", "--others", "--exclude-standard", "-z")
     paths = {path for path in result.split("\0") if path}
     paths.add("scripts/build-code-review-map.py")
     return sorted(paths)
