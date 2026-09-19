@@ -75,6 +75,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("virtualglove-core-mount", service)
         self.assertIn("/userdata/system/virtualglove", service)
         self.assertIn("gameStart", event)
+        self.assertIn("merged_gamepad sync-index", event)
         self.assertIn("gameStop", event)
         self.assertIn('emulator="lr-${4:-}"', event)
         self.assertIn('nestopia_powerglove) emulator="lr-nestopia-powerglove"', event)

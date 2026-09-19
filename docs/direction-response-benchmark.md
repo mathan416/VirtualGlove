@@ -1,5 +1,11 @@
 # Native movement response and validation
 
+> **Archived research source:** The maintained story and conclusions are now
+> part of the [Engineering Journey](ENGINEERING_JOURNEY.md); repeatable tools
+> remain in the [Engineering Toolkit](ENGINEERING_TOOLKIT.md). This original
+> measurement record is retained for research history and is not published as
+> a separate Help card or PDF.
+
 VirtualGlove began with a deceptively simple question: **when the player moves
 their hand, does the Robo-Glove move promptly, accurately, and for the reason we
 think it does?**

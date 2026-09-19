@@ -55,7 +55,7 @@ CONFIGURATION_FILES = (
 PDF_EDITIONS = {
     "THIRD_PARTY_NOTICES.md": "VirtualGlove-Third-Party-Notices.pdf",
     "docs/BUILD_YOUR_OWN.md": "VirtualGlove-Build-Your-Own.pdf",
-    "docs/NATIVE_EMULATION_EXPLAINED.md": "VirtualGlove-Native-Emulation.pdf",
+    "docs/INPUT_MODES.md": "VirtualGlove-Input-Modes.pdf",
     "docs/TROUBLESHOOTING.md": "VirtualGlove-Troubleshooting.pdf",
     "docs/CAMERA_GUIDE.md": "VirtualGlove-Camera-Guide.pdf",
     "docs/ENCLOSURE_QUICK_REFERENCE.md": "VirtualGlove-Enclosure-Quick-Reference.pdf",
@@ -74,8 +74,11 @@ PDF_EDITIONS = {
     "docs/CONTRIBUTING.md": "VirtualGlove-Contributing.pdf",
     "docs/GAMEPLAY_GUIDE.md": "VirtualGlove-Gameplay-Guide.pdf",
     "docs/power-glove-rom-input-audit.md": "VirtualGlove-Input-Audit.pdf",
-    "docs/super-glove-ball-native.md": "VirtualGlove-Super-Glove-Ball-Native.pdf",
-    "docs/direction-response-benchmark.md": "VirtualGlove-Direction-Response.pdf",
+}
+ARCHIVED_DOCUMENTS = {
+    Path("docs/NATIVE_EMULATION_EXPLAINED.md"),
+    Path("docs/super-glove-ball-native.md"),
+    Path("docs/direction-response-benchmark.md"),
 }
 
 
@@ -214,7 +217,8 @@ def check_help_coverage(markdown: list[Path], errors: list[str]) -> None:
     portable_guides = {
         path.name
         for path in markdown
-        if path.parent == Path("docs") and path.name != "cheatsheet.md"
+        if (path.parent == Path("docs") and path.name != "cheatsheet.md"
+            and path not in ARCHIVED_DOCUMENTS)
     }
     for name in sorted(portable_guides - help_files):
         errors.append(f"public guide is missing from the Help library: docs/{name}")
@@ -393,7 +397,9 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             errors.append(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
 
-    markdown_sources = {str(path) for path in markdown}
+    markdown_sources = {
+        str(path) for path in markdown if path not in ARCHIVED_DOCUMENTS
+    }
     missing_sources = sorted(set(PDF_EDITIONS) - markdown_sources)
     for name in missing_sources:
         errors.append(f"PDF source is not available Markdown: {name}")

@@ -1,4 +1,4 @@
-# Play with VirtualGlove
+# Game and Gesture Guide
 
 The **VirtualGlove Controller (Arduino UNO Q)** watches your hand and sends
 the recognized controls to a paired RetroPie, Recalbox, Batocera, or LaunchBox console.
@@ -927,9 +927,8 @@ during continuous tracking and waits one fresh result only for a contradictory
 or unusually distant non-forward reacquisition. Continuous native movement is
 playable and has been
 substantially tightened, although synchronized physical latency measurement is
-still pending. The
-[native compatibility record](super-glove-ball-native.md) contains the test
-evidence and details about additional packet fields.
+still pending. [VirtualGlove Input Modes](INPUT_MODES.md) explains the confirmed
+native behavior, compatibility boundary, fallback, and additional packet fields.
 
 **First round:**
 

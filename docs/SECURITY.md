@@ -1,4 +1,4 @@
-# VirtualGlove security policy
+# Security and Privacy
 
 Use VirtualGlove on a trusted home or workshop network. This policy
 explains how to report a vulnerability and which protections the project

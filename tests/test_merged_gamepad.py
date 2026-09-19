@@ -15,7 +15,7 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from virtualglove import merged_gamepad as merged
 
@@ -56,6 +56,7 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(len(candidates), 1)
         self.assertEqual(candidates[0]["name"], "Test Pad")
         self.assertEqual(candidates[0]["mapping"][0]["code"], 0)
+        self.assertEqual(candidates[0]["mapping"][0]["evdev_code"], 304)
         self.assertEqual(candidates[0]["joystick"], str(root / "dev/js0"))
         self.assertEqual(len(candidates[0]["id"]), 16)
 
@@ -67,6 +68,26 @@ class MergedGamepadTests(unittest.TestCase):
                 merged.choose_controller(one * 2)
         with self.assertRaisesRegex(ValueError, "does not identify"):
             merged.choose_controller(one, requested="missing")
+
+    def test_authoritative_evdev_codes_preserve_keyboard_style_start_select(self):
+        mapping = [
+            {"name": "b", "type": "button", "code": 4,
+             "evdev_code": 304, "value": 1},
+            {"name": "a", "type": "button", "code": 5,
+             "evdev_code": 305, "value": 1},
+            {"name": "select", "type": "button", "code": 0,
+             "evdev_code": 139, "value": 1},
+            {"name": "start", "type": "button", "code": 1,
+             "evdev_code": 158, "value": 1},
+            {"name": "hotkey", "type": "button", "code": 2,
+             "evdev_code": 172, "value": 1},
+        ]
+        with patch.object(merged.fcntl, "ioctl", return_value=0):
+            translated = merged.translate_es_mapping(mapping, 17)
+        self.assertEqual(
+            {item["name"]: item["code"] for item in translated},
+            {"b": 304, "a": 305, "select": 139, "start": 158, "hotkey": 172},
+        )
 
     def test_retroarch_index_uses_udev_joypad_order_not_js_suffix(self):
         """Batocera's js4 can be RetroArch pad 2 when only three pads exist."""
@@ -263,6 +284,70 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(merged.merge_retroarch_config(updated, 1, hotkeys), updated)
         self.assertIn('input_exit_emulator_btn = "11"', updated)
         self.assertIn("# End VirtualGlove merged Player 1", updated)
+
+    def test_batocera_uses_complete_hotkeys_on_the_merged_pad(self):
+        saved = {"platform": "batocera", "mapping": self._mapping()}
+        hotkeys = merged.platform_hotkey_bindings(saved, "")
+        self.assertEqual(hotkeys["input_exit_emulator_btn"], "11")
+        self.assertEqual(hotkeys["input_menu_toggle_btn"], "1")
+        self.assertEqual(hotkeys["input_save_state_btn"], "4")
+        self.assertEqual(hotkeys["input_load_state_btn"], "3")
+        self.assertNotIn("input_reset_btn", hotkeys)
+
+    def test_physical_device_is_grabbed_only_during_gameplay(self):
+        device = merged.MergedGamepadDevice.__new__(merged.MergedGamepadDevice)
+        device.descriptor = 17
+        device.grabbed = False
+        with patch.object(merged.fcntl, "ioctl") as ioctl:
+            device._set_grab(True)
+            device._set_grab(True)
+            device._set_grab(False)
+        self.assertEqual(ioctl.call_args_list, [
+            call(17, merged.EVIOCGRAB, 1),
+            call(17, merged.EVIOCGRAB, 0),
+        ])
+
+    def test_gameplay_transition_neutralizes_before_and_after_exclusive_ownership(self):
+        device = merged.MergedGamepadDevice.__new__(merged.MergedGamepadDevice)
+        device.descriptor = 17
+        device.grabbed = False
+        device.state = merged.MergeState()
+        device.state.physical_buttons = {"a"}
+        device.state.physical_axes["hat_x"] = 1
+        published = []
+        device.sink = type("Sink", (), {
+            "write": lambda _self, buttons, axes: published.append(
+                (set(buttons), dict(axes)))
+        })()
+        with patch.object(merged.fcntl, "ioctl") as ioctl:
+            device._set_active(True)
+            device._set_active(True)
+            device.state.physical_buttons = {"b"}
+            device.state.physical_axes["hat_x"] = -1
+            device._set_active(False)
+            device._set_active(False)
+        self.assertEqual(ioctl.call_args_list, [
+            call(17, merged.EVIOCGRAB, 1),
+            call(17, merged.EVIOCGRAB, 0),
+        ])
+        self.assertFalse(device.state.active)
+        self.assertEqual(device.state.physical_buttons, set())
+        self.assertTrue(all(value == 0 for value in device.state.physical_axes.values()))
+        neutral_axes = {name: 0 for name in merged.AXIS_CODES}
+        self.assertEqual(published, [
+            (set(), neutral_axes),
+            (set(), neutral_axes),
+        ])
+
+    def test_batocera_assignment_clears_original_axis_bindings(self):
+        hotkeys = merged.platform_hotkey_bindings(
+            {"platform": "batocera", "mapping": self._mapping()}, "")
+        updated = merged.merge_retroarch_config(
+            'input_player1_l2_axis = "+5"\ninput_player1_up_axis = "-1"\n',
+            2, hotkeys)
+        self.assertEqual(updated.count('input_player1_l2_axis = "nul"'), 1)
+        self.assertEqual(updated.count('input_player1_up_axis = "nul"'), 1)
+        self.assertIn('input_exit_emulator_btn = "11"', updated)
 
     def test_uinput_device_has_fixed_gamepad_capabilities_and_emits_transitions(self):
         writes, ioctls = [], []

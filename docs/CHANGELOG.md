@@ -22,6 +22,16 @@ controller available, and let each game use the correct input method.
 - Fixed Recalbox and Batocera merged Player 1 assignment when Linux's `jsN`
   number differs from RetroArch's joypad order. Ordinary FCEUmm games now use
   the same merged controller that RetroArch actually sees.
+- Preserved the real button codes supplied by Recalbox and Batocera controller
+  mappings. Controllers that report Start, Select, or Home outside the legacy
+  joystick button range now retain their correct face-button and menu layout.
+- Made the merged controller the sole reader of the selected physical Player 1
+  pad during gameplay. The original pad remains untouched in EmulationStation,
+  while games receive one canonical mapping instead of competing physical,
+  keyboard-hotkey, and merged interpretations of the same press.
+- Added the complete Batocera libretro hotkey layout to the merged pad and
+  refresh its current RetroArch index immediately before each game. USB event
+  numbers and legacy joystick numbers can now change without changing Player 1.
 - Upgrading an UNO Q from 0.4.2 now removes the old background services only
   after their VirtualGlove replacements are running. If another boot component
   is already using the Matrix connection, the optional early-start feature
@@ -77,6 +87,13 @@ controller available, and let each game use the correct input method.
 
 ### Changed
 
+- Reorganized Controller Help into User Manuals, Installation Guides,
+  Technical Documentation, and Project Information. The new VirtualGlove Input
+  Modes guide explains joystick mode, Recalbox/Batocera merged Player 1,
+  platform differences, and native Super Glove Ball operation in one place.
+  Native movement results now live in the Engineering Journey; the three
+  superseded detailed sources remain clearly marked as archival research rather
+  than duplicate Help cards and PDFs.
 - Rebuilt the Enclosure Assembly Quick Reference as an eight-page workbench
   manual. It now begins with a complete parts tray, then gives the UNO Q Case,
   Dock V1, and Dock V2 uninterrupted, numbered assembly procedures using the

@@ -604,7 +604,12 @@ def configure_merged_player1(platform, requested=None):
             raise ValueError(
                 "saved Player 1 controller belongs to " + saved["platform"] +
                 "; select this console's controller with --player1-device")
-        return
+        connected = merged.find_saved_controller(
+            saved, merged.controller_candidates(es_inputs))
+        if connected is not None and connected["mapping"] != saved["mapping"]:
+            saved["mapping"] = connected["mapping"]
+            write_file(config, json.dumps(saved, indent=2) + "\n")
+        return saved
     candidate = merged.choose_controller(
         merged.controller_candidates(es_inputs), requested=requested)
     data = {"format": merged.FORMAT, "platform": platform,
@@ -612,6 +617,7 @@ def configure_merged_player1(platform, requested=None):
                ("id", "name", "guid", "vendor", "product", "version", "uniq", "phys")},
             "mapping": candidate["mapping"]}
     write_file(config, json.dumps(data, indent=2) + "\n")
+    return data
 
 
 def install_recalbox(peer, player1_device=None):

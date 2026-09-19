@@ -636,17 +636,35 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"/help/installation", page)
         self.assertIn(b"/help/cabinet", page)
         self.assertIn(b"This console", page)
-        self.assertIn(b"Rock Paper Scissors instructions", page)
-        self.assertIn(b"Live-confirmed native game actions", page)
+        self.assertIn(b"Illustrated gesture instructions", page)
+        self.assertIn(b"merged physical controls", page)
         self.assertNotIn(b"cheatsheet", page.lower())
         self.assertIn(b"/help-pdf/overview.pdf", page)
+        self.assertIn(b"Installation guides", page)
+        self.assertIn(b"Project information", page)
+        user_manuals = page.index(b"User manuals")
+        installation = page.index(b"Installation guides")
         technical = page.index(b"Technical documentation")
+        project = page.index(b"Project information")
+        self.assertLess(user_manuals, installation)
+        self.assertLess(installation, technical)
+        self.assertLess(technical, project)
+        self.assertLess(page.index(b"/help/gameplay", user_manuals),
+                        page.index(b"/help/input-modes", user_manuals))
+        self.assertLess(page.index(b"/help/input-modes", user_manuals),
+                        page.index(b"/help/matrix", user_manuals))
+        self.assertLess(page.index(b"/help/installation", installation),
+                        page.index(b"/help/build-your-own", installation))
+        self.assertLess(page.index(b"/help/enclosure", installation),
+                        page.index(b"/help/enclosure-quick-reference", installation))
         overview = page.index(b"/help-pdf/overview.pdf", technical)
         architecture = page.index(b"/help/architecture", technical)
+        journey = page.index(b"/help/engineering-journey", technical)
         configuration = page.index(b"/help/configuration", technical)
         input_audit = page.index(b"/help/input-audit", technical)
         self.assertLess(overview, architecture)
-        self.assertLess(architecture, configuration)
+        self.assertLess(architecture, journey)
+        self.assertLess(journey, configuration)
         self.assertLess(configuration, input_audit)
         self.assertIsNone(help_document_page("field-guide"))
 
@@ -672,7 +690,7 @@ class ControlStateTests(unittest.TestCase):
         page = help_document_page("gameplay")
         self.assertIsNotNone(page)
         assert page is not None
-        self.assertIn(b"Play with VirtualGlove", page)
+        self.assertIn(b"Game and Gesture Guide", page)
         self.assertIn(b"On this page", page)
         self.assertIn(b"/help-assets/gestures/actions/whole-hand-movement.png", page)
         self.assertIn(b"/help-assets/gestures/v2/v-sign.png", page)
@@ -788,9 +806,12 @@ class ControlStateTests(unittest.TestCase):
         self.assertTrue(document[0].startswith(b"%PDF-"))
         self.assertEqual(document[1], "VirtualGlove-Gameplay-Guide.pdf")
         self.assertEqual(
-            guide_pdf("native-super-glove-ball")[1],
-            "VirtualGlove-Super-Glove-Ball-Native.pdf",
+            guide_pdf("input-modes")[1],
+            "VirtualGlove-Input-Modes.pdf",
         )
+        self.assertIsNone(guide_pdf("native-emulation"))
+        self.assertIsNone(guide_pdf("native-super-glove-ball"))
+        self.assertIsNone(guide_pdf("direction-response"))
         self.assertEqual(
             guide_pdf("enclosure-quick-reference")[1],
             "VirtualGlove-Enclosure-Quick-Reference.pdf",
@@ -906,11 +927,11 @@ class ControlStateTests(unittest.TestCase):
                 ("/play", "text/html"),
                 ("/help", "text/html"),
                 ("/help/build-your-own", "text/html"),
-                ("/help/native-emulation", "text/html"),
+                ("/help/input-modes", "text/html"),
                 ("/help/troubleshooting", "text/html"),
                 ("/help/enclosure-quick-reference", "text/html"),
                 ("/help-pdf/build-your-own.pdf", "application/pdf"),
-                ("/help-pdf/native-emulation.pdf", "application/pdf"),
+                ("/help-pdf/input-modes.pdf", "application/pdf"),
                 ("/help-pdf/troubleshooting.pdf", "application/pdf"),
                 ("/help-pdf/engineering-toolkit.pdf", "application/pdf"),
                 ("/help-pdf/enclosure-quick-reference.pdf", "application/pdf"),

@@ -12,6 +12,7 @@
 
 """Exercise installation without changing the host OS or invoking apt/systemd."""
 import importlib.util
+import json
 import os
 import tempfile
 import unittest
@@ -169,6 +170,28 @@ class SetupTests(unittest.TestCase):
             (Path(directory) / "player1-controller.json").write_text("{}")
             with self.assertRaisesRegex(ValueError, "belongs to recalbox"):
                 setup.configure_merged_player1("batocera")
+
+    def test_existing_player1_mapping_refreshes_from_connected_frontend(self):
+        module = Mock()
+        saved = {"format": 1, "platform": "batocera", "id": "pad",
+                 "name": "Pad", "mapping": [{"name": "start", "type": "button",
+                                                "code": 1, "value": 1}]}
+        refreshed = {"id": "pad", "name": "Pad",
+                     "mapping": [{"name": "start", "type": "button", "code": 1,
+                                  "evdev_code": 158, "value": 1}]}
+        module.load_controller.return_value = dict(saved)
+        module.controller_candidates.return_value = [refreshed]
+        module.find_saved_controller.return_value = refreshed
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(setup, "merged_controller_module", return_value=module), \
+                patch.object(setup, "BACKUPS", Path(directory).resolve() / "backups"), \
+                patch.object(setup, "merged_controller_paths",
+                             return_value=(Path(directory).resolve() / "es_input.cfg",
+                                           Path(directory).resolve() / "player1-controller.json")):
+            config = Path(directory).resolve() / "player1-controller.json"
+            config.write_text("{}")
+            setup.configure_merged_player1("batocera")
+            self.assertEqual(json.loads(config.read_text())["mapping"], refreshed["mapping"])
 
     def test_check_mode_never_runs_an_installer(self):
         with patch.object(setup.sys, "argv", ["setup-machine.py", "recalbox", "--check"]), \

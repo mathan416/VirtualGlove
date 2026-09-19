@@ -1,5 +1,13 @@
 # How native Power Glove emulation works
 
+> **Archived research source:** Current operating guidance for joystick and
+> native play is consolidated in [VirtualGlove Input Modes](INPUT_MODES.md).
+> Architecture and validation history are maintained in
+> [Architecture and Flows](ARCHITECTURE.md) and the
+> [Engineering Journey](ENGINEERING_JOURNEY.md). This original source remains
+> available for research history and is not published as a separate Help card
+> or PDF.
+
 VirtualGlove offers two ways to turn the same recognized hand into game
 input. Most supported games use ordinary NES-style directions and buttons.
 Super Glove Ball can instead consume a native Power Glove packet through

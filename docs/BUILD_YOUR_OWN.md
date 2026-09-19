@@ -1,4 +1,4 @@
-# Build your own: parts, cost, and difficulty
+# Build Your Own: Parts, Cost, and Difficulty
 
 VirtualGlove lets you use a camera-recognized hand to control games through
 RetroArch on RetroPie, Recalbox, Batocera, or LaunchBox. The **VirtualGlove

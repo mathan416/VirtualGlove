@@ -1,4 +1,4 @@
-# VirtualGlove Camera Guide
+# Camera Setup
 
 Your camera is how VirtualGlove sees your hand. This guide helps you choose
 a camera, get a clear and responsive picture, and recover quickly when the

@@ -1,4 +1,4 @@
-# VirtualGlove architecture
+# Architecture and Flows
 
 A camera-to-controller system for the **VirtualGlove Controller (Arduino
 UNO Q)** and supported RetroArch consoles.
@@ -293,13 +293,51 @@ available for the next vision session.
 ![End-to-end flow from camera and MediaPipe through authenticated delivery to the FCEUmm and Nestopia game paths](images/architecture/end-to-end.png)
 
 The camera, newest-frame capture, MediaPipe model, calibration, and gesture
-recognition are shared. The split occurs on RetroPie after an authenticated
-packet is accepted. FCEUmm receives ordinary directions and buttons through the
-Linux virtual gamepad. Super Glove Ball's custom Nestopia core instead reads the
-newest 64-byte native state and assembles the ten-byte Power Glove packet used
-by the ROM. Both finish in the emulator, game logic, RetroArch video path, and
-physical display. Dashboard preview and optional statistics branch from the
-Controller worker and never sit between recognition and delivery.
+recognition are shared. The split occurs on the paired console after an
+authenticated packet is accepted. FCEUmm receives ordinary directions and
+buttons through a platform-appropriate RetroPad path. Super Glove Ball's custom
+Nestopia core instead reads the newest 64-byte native state and assembles the
+ten-byte Power Glove packet used by the ROM. Both finish in the emulator, game
+logic, video path, and physical display. Dashboard preview and optional
+statistics branch from the Controller worker and never sit between recognition
+and delivery.
+
+#### Joystick-mode ownership by platform
+
+RetroPie exposes VirtualGlove as its own Linux gamepad. LaunchBox keeps the
+physical XInput controller unchanged and adds VirtualGlove through a loopback
+Network RetroPad. Recalbox and Batocera need a different boundary because their
+launchers generate RetroArch Player 1 from the controller selected in
+EmulationStation.
+
+On Recalbox and Batocera, one persistent service creates **VirtualGlove Merged
+Player 1** before gameplay. Installation records the selected physical
+controller's stable identity and complete EmulationStation mapping. The record
+keeps SDL indices for platform hotkey translation and authoritative Linux event
+codes for reading the device; those namespaces are not interchangeable on
+controllers whose Start, Select, or Home buttons use keyboard-class event
+codes.
+
+The service never treats `/dev/input/eventN`, `/dev/input/jsN`, or a RetroArch
+joypad index as identity. It resolves the current event device from the saved
+hardware identity and resolves the merged RetroArch index from the current
+udev joystick order. Batocera repeats the index synchronization in its
+`gameStart` hook; the persistent service also detects later enumeration
+changes.
+
+The original physical controller owns EmulationStation. When RetroArch starts,
+the merger uses `EVIOCGRAB` to take exclusive ownership of that controller's
+event stream, clears any retained physical state, and publishes only the
+canonical merged device. This prevents the same Select or hotkey press from
+reaching RetroArch, the platform hotkey service, and the merger independently.
+At game exit, it publishes neutral state before releasing the grab, allowing
+the original controller to resume frontend navigation.
+
+Physical directions and axes take priority while active; ordinary physical and
+VirtualGlove buttons combine. The physical hotkey is carried on a dedicated
+merged button. VirtualGlove Select can emit only the canonical Select button
+and cannot enable RetroArch hotkeys. A disconnect releases only physical state,
+so VirtualGlove can remain active until the saved controller returns.
 
 ### Measurement boundaries
 
@@ -316,8 +354,8 @@ measures the complete visible response without synchronizing those computers.
 The tests deliberately retain these boundaries. A faster camera dequeue does
 not prove faster recognition, a successful UDP send does not prove receiver or
 game consumption, and a headless ROM response excludes RetroArch presentation
-and display delay. The benchmark guide records which part of this diagram each
-experiment actually covered.
+and display delay. The [Engineering Journey](ENGINEERING_JOURNEY.md) records
+which part of this diagram each experiment actually covered.
 
 The read-only `scripts/measure-vision-status.py` collector deduplicates observed
 inference timestamps and capture sequences. Public status is cached by the
@@ -325,14 +363,16 @@ supervisor, so even frequent polling observes only a subset of results. The
 collector separates changing profiles, preview state, and delivery conditions;
 it does not average overlapping rolling percentiles. Camera exposure, network
 reception, receiver processing, native core pickup, and physical display delay
-require separate evidence. See the [live baseline procedure](direction-response-benchmark.md#collect-a-live-status-baseline).
+require separate evidence. Repeatable diagnostic workflows are retained in the
+[Engineering Toolkit](ENGINEERING_TOOLKIT.md).
 
-The current transport is ordinary gamepad emulation. Bad Street Brawler maps
+The standard transport is joystick-mode gamepad emulation. Bad Street Brawler maps
 Glove Zap to a 180 ms simultaneous Left + Right pulse on each push activation;
 its FCEUmm game-specific options allow that combination. The receiver already
 transports both directions. This action does not require native glove packets. Preserved finger and
 analogue values do not establish native original-Power-Glove support in the
-emulator. That remains a separate integration concern.
+emulator. That remains a separate native-mode integration concern. The
+player-facing distinction is explained in [VirtualGlove Input Modes](INPUT_MODES.md).
 
 ## Runtime modes
 
@@ -590,8 +630,8 @@ and libretro identity are verified and it is load-checked on the console.
 
 The release carries 15 separately targeted Batocera 43.1 cores; it never treats
 one binary as cross-architecture. Exact registered Super Glove Ball filenames
-are selected only when no existing per-ROM core choice is present. See the
-[native compatibility record](super-glove-ball-native.md).
+are selected only when no existing per-ROM core choice is present. See
+[VirtualGlove Input Modes](INPUT_MODES.md).
 
 LaunchBox installs a separately named x86-64 DLL and corresponding source in
 its per-user VirtualGlove directory. The wrapper verifies the installed DLL
@@ -767,7 +807,7 @@ it does not claim every path has been independently security-audited.
 | Public HTTP routing and worker proxy | `src/virtualglove/control_server.py` |
 | Shared page shell and maintained browser modules | `web_common.py`, `dashboard_web.py`, `academy_web.py`, `games_web.py`, `tuning_web.py`, `setup_web.py`, `player_web.py` |
 | Worker requests, status, practice leases | `src/virtualglove/debug_server.py` |
-| Controller packets and virtual gamepad | `src/virtualglove/transport.py`, `controller_protocol.py`, `receiver.py` |
+| Controller packets, console output, and merged Player 1 | `src/virtualglove/transport.py`, `controller_protocol.py`, `receiver.py`, `merged_gamepad.py` |
 | Profile requests, launch hooks, UDP relay | `src/virtualglove/profile_control.py`, `retropie_hook.py`, `scripts/profile-relay.py` |
 | Paired Games editing | `src/virtualglove/game_registry.py` |
 | Pairing and hostname resolution | `src/virtualglove/pairing.py`, `python/ssh_pair.py`, `src/virtualglove/resolver.py` |

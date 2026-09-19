@@ -207,8 +207,9 @@ corrected defaults.
 The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
 numeric Program gesture, compound action, release rule, indexed game, exception,
 objective, and practice challenge. The
-[Native Emulation guide](docs/NATIVE_EMULATION_EXPLAINED.md) explains why the
-two emulator paths feel different.
+[VirtualGlove Input Modes](docs/INPUT_MODES.md) explains why the joystick and
+native emulator paths feel different and how physical Player 1 controls join
+each platform.
 
 The numeric Program section includes gesture-by-gesture controls, compound
 action timing, the complete official game index, and the five automatic
@@ -264,6 +265,7 @@ turning setup into an engineering exercise.
 | --- | --- |
 | Install, pair, and play your first game | [Installation Guide](docs/INSTALL_README.md) |
 | Learn gestures, Programs, and game controls | [Gameplay Guide](docs/GAMEPLAY_GUIDE.md) |
+| Understand joystick, merged-controller, and native modes | [VirtualGlove Input Modes](docs/INPUT_MODES.md) |
 | Choose or troubleshoot a camera | [Camera Guide](docs/CAMERA_GUIDE.md) |
 | Assemble a printed case quickly | [Enclosure Assembly Quick Reference](docs/ENCLOSURE_QUICK_REFERENCE.md) |
 | Print or customize a case | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
@@ -276,10 +278,10 @@ turning setup into an engineering exercise.
 | You want to… | Read… |
 | --- | --- |
 | See the current components and data flow | [Architecture](docs/ARCHITECTURE.md) |
-| Understand joystick and native emulation | [Native Emulation Explained](docs/NATIVE_EMULATION_EXPLAINED.md) |
-| Review proven Super Glove Ball behavior | [Native Compatibility Record](docs/super-glove-ball-native.md) |
 | Look up every setting and command | [Configuration Reference](docs/CONFIGURATION_REFERENCE.md) |
-| Follow the one-week engineering process and experiments | [Engineering Journey](docs/ENGINEERING_JOURNEY.md) |
+| Follow the engineering process, experiments, and movement validation | [Engineering Journey](docs/ENGINEERING_JOURNEY.md) |
+| Repeat camera, latency, trace, or native research | [Engineering Toolkit](docs/ENGINEERING_TOOLKIT.md) |
+| Review ROM-level native and joystick evidence | [Power Glove Game ROM Input Audit](docs/power-glove-rom-input-audit.md) |
 | Review security and pairing boundaries | [Security Policy](docs/SECURITY.md) |
 | Check dependencies and third-party terms | [Third-party Notices](THIRD_PARTY_NOTICES.md) |
 | Contribute code or documentation | [Contributing Guide](docs/CONTRIBUTING.md) |

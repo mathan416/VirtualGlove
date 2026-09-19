@@ -1,4 +1,4 @@
-# Troubleshooting by symptom
+# Troubleshooting by Symptom
 
 Start at the first stage that fails: camera, recognition, Controller delivery,
 console reception, emulator selection, then the displayed game. Keep a normal
@@ -276,9 +276,11 @@ stable, then compare deliberate movements and supported stationary holds. Avoid
 changing several camera, core, and display settings at once.
 
 Software status can locate processing delays but cannot measure the complete
-hand-to-screen delay. Native Super Glove Ball latency remains an active issue;
-follow the [measurement plan](direction-response-benchmark.md) before drawing
-conclusions from screenshots or timestamps on different computers.
+hand-to-screen delay. Follow the layered method in the
+[Engineering Journey](ENGINEERING_JOURNEY.md#validation-story-proving-that-movement-was-real)
+before drawing conclusions from screenshots or timestamps on different
+computers. Use the [Engineering Toolkit](ENGINEERING_TOOLKIT.md) only when the
+ordinary camera and connection checks do not identify the cause.
 
 ## My player or backup looks wrong
 

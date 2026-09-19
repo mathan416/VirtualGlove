@@ -192,8 +192,8 @@ endobj
 endobj
 26 0 obj
 <<
-/Author (Iain Bennett) /CreationDate (D:20260919133138-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260919133138-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
-  /Subject (Source style, testing, documentation, packaging, and pull-request expectations.) /Title (Contributing to VirtualGlove) /Trapped /False
+/Author (Iain Bennett) /CreationDate (D:20260919151903-04'00') /Creator (VirtualGlove documentation builder) /Keywords () /ModDate (D:20260919151903-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (Source style, testing, documentation, packaging, and pull-request expectations.) /Title (Contributing) /Trapped /False
 >>
 endobj
 27 0 obj
@@ -203,10 +203,10 @@ endobj
 endobj
 28 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 637
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 620
 >>
 stream
-Gat$t?#Q2t&:EYBlsgtpkM*V^%j(&(6qF;P,aYO7(nWCh2V8kHp>>V[i&F:AW?@lJ]>Mk</-nAnfKJgX^r4(a)?C#O,p4oDG707cp(??%O@!>[LW]ZbJP*sZXeMPBlMr]FJBGe#,%<8M)BIPdK*?Ed^Z\-tlI:lC^Epct$nTub=;h1[<[,gGJRl>^h$7B@O.^SkCBQC)-@&HC4M4T\9WGP.O2t`(6ru46=k/QTNN^N?qn8LU.2R/qj`>@B?H<Pc2js5/aZMK$q@'64@!KSl3&.17ds!*qYqPK/RPjl$Var)CD29DR`Oe*?)[=<je*\"@l0<0K*n&/o]6f'tVf\AT#585T"^IXAL%P?fPt7P>KY.?CYg\_?JhSdg`0O\5Au-F0bG)/jo;5h1/#Z,9[]\mBgY?Vf?iHk^*:]%'cC_5D\m:P.8MGt;QGlI#/RO>Z%RM/sST`PjntZVa%dlHF9pL&be:0B*"LUJ$3_-D&o4I<H3igkD0nN\ss3+ML,qBb8CGq[*b3thH50SQ*1?,&.XT-!*q%8$_c\<BJK'Z!K8n$W3%Z0>_[mMi,m"]G=_1O?a,fTNiOl/Pn1/2&#2hNi\?d]fcP1_C+iCA[,WIrst.[`GkD9a$3T*(h&lQ#E_~>endstream
+Gat$tgMY_1&:O:Sb[VTSAS:I\/A\;:V*n$9;I>Dd&1uOBN7@iTa#>VB'</EN=e7ErcC$IXi,iK+bdRQc&*&!>']>=.MCJ$*OSEK20eTQU#`K_6/2.d:9aoQ%.b]&59f<b`"^'VL/67SX&A3:.^q/qa1a:Br4SF#t/CuV\fPp0+d*P(Dilig4bk,2u8Jq.:ZluhX+;<hsWa[u:dn2?oS'jJu(?pX`BFT$o[i^UubA-pLS22T1DOKVXi1*rk%!f(F%U.%<[ap-@VBmt0@Fna=X'a>b,o'osg4/1Kk)ZE2,krt16%e06*3okQA(PJi$i"i<3:fr1jMa>I_:P#qRX>>>'Dr<p?D&^[In3S^SFfY7J8a(?a"B[1L0\93DWk>iH4WmgFg[e_lZKHnF'iA4U$)>9%VM6lTJ=ei'Q$mPNAL-j+N6X&:=<i@D'MVeRc?)akOMa:!=ndp9c-/:%ZRb+/B[n#%7Qi<l`qAD0$A`UX1"0+$eQIYS(fFZNs$P0TQEkId2s<Vmm>lR+5#8F<D4h8O\[F]HQ+-UrqAkfVMC^]bq%&3Ma_@"LJS*i#*N]ce&N>b+oRSL@$8`GM5Qsb^82kld^s&`I'G7>mCa$drW5]Xl_j~>endstream
 endobj
 29 0 obj
 <<
@@ -286,19 +286,19 @@ xref
 0000765988 00000 n 
 0000766203 00000 n 
 0000766273 00000 n 
-0000766651 00000 n 
-0000766759 00000 n 
-0000767487 00000 n 
-0000770244 00000 n 
-0000773377 00000 n 
-0000776204 00000 n 
-0000779781 00000 n 
-0000782382 00000 n 
-0000785571 00000 n 
+0000766635 00000 n 
+0000766743 00000 n 
+0000767454 00000 n 
+0000770211 00000 n 
+0000773344 00000 n 
+0000776171 00000 n 
+0000779748 00000 n 
+0000782349 00000 n 
+0000785538 00000 n 
 trailer
 <<
 /ID 
-[<2dc70c5867aa15d70f344036cfe5ac59><2dc70c5867aa15d70f344036cfe5ac59>]
+[<dfbda6e9a2bd270acefafdb5ed76f323><dfbda6e9a2bd270acefafdb5ed76f323>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 26 0 R
@@ -306,5 +306,5 @@ trailer
 /Size 36
 >>
 startxref
-786884
+786851
 %%EOF

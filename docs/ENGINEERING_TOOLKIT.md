@@ -1,4 +1,4 @@
-# VirtualGlove Engineering Toolkit
+# Engineering Toolkit
 
 The VirtualGlove Engineering Toolkit is an optional, version-matched collection
 for people who want to measure, reproduce, or extend the camera-to-game pipeline.

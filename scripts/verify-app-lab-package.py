@@ -44,7 +44,7 @@ ENGINEERING_FILES = runpy.run_path(str(ROOT / "scripts/package-inventory.py"))["
 PUBLIC_PDF_NAMES = {
     "VirtualGlove-Third-Party-Notices.pdf",
     "VirtualGlove-Build-Your-Own.pdf",
-    "VirtualGlove-Native-Emulation.pdf",
+    "VirtualGlove-Input-Modes.pdf",
     "VirtualGlove-Troubleshooting.pdf",
     "VirtualGlove-Camera-Guide.pdf",
     "VirtualGlove-Enclosure-Quick-Reference.pdf",
@@ -62,13 +62,11 @@ PUBLIC_PDF_NAMES = {
     "VirtualGlove-Overview.pdf",
     "VirtualGlove-Security.pdf",
     "VirtualGlove-Input-Audit.pdf",
-    "VirtualGlove-Super-Glove-Ball-Native.pdf",
-    "VirtualGlove-Direction-Response.pdf",
 }
 PUBLIC_PDF_PATHS = {f"output/pdf/{name}" for name in PUBLIC_PDF_NAMES}
 REQUIRED_FILES = {
     "VirtualGlove/docs/BUILD_YOUR_OWN.md",
-    "VirtualGlove/docs/NATIVE_EMULATION_EXPLAINED.md",
+    "VirtualGlove/docs/INPUT_MODES.md",
     "VirtualGlove/docs/TROUBLESHOOTING.md",
     "VirtualGlove/docs/CAMERA_GUIDE.md",
     "VirtualGlove/docs/ENCLOSURE_QUICK_REFERENCE.md",
@@ -186,8 +184,6 @@ REQUIRED_FILES = {
     "VirtualGlove/scripts/install-nestopia-powerglove.sh",
     "VirtualGlove/scripts/configure-super-glove-ball-core.py",
     "VirtualGlove/native/nestopia-powerglove/nestopia-powerglove.patch",
-    "VirtualGlove/docs/super-glove-ball-native.md",
-    "VirtualGlove/docs/direction-response-benchmark.md",
     "VirtualGlove/docs/ENGINEERING_JOURNEY.md",
     "VirtualGlove/docs/power-glove-rom-input-audit.md",
     "VirtualGlove/docs/images/gestures/actions/menu-guard.png",

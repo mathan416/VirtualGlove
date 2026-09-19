@@ -1,4 +1,4 @@
-# Matrix display guide
+# Matrix Display Guide
 
 The blue LED matrix on the **VirtualGlove Controller (Arduino UNO Q)** is
 VirtualGlove's status display. It tells

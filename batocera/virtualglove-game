@@ -13,6 +13,9 @@ SESSION="$APP/run/active-game.json"
 
 case "${1:-}" in
     gameStart)
+        /usr/bin/python3 -m virtualglove.merged_gamepad sync-index \
+            --controller-config "$APP/data/player1-controller.json" \
+            --retroarch-config /userdata/system/configs/retroarch/nes.cfg || exit 1
         emulator="${3:-}"
         if [ "$emulator" = libretro ]; then
             case "${4:-}" in

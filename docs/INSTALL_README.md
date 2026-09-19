@@ -1,4 +1,4 @@
-# VirtualGlove Installation Guide
+# Installation and Setup
 
 This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
@@ -598,5 +598,5 @@ See the [Matrix Guide](MATRIX_GUIDE.md) for every animation and display state.
 
 For gestures and game controls, use the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 Technical details are in [Architecture](ARCHITECTURE.md),
-[Native Emulation](NATIVE_EMULATION_EXPLAINED.md), and the
+[VirtualGlove Input Modes](INPUT_MODES.md), and the
 [Configuration Reference](CONFIGURATION_REFERENCE.md).

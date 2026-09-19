@@ -1,4 +1,4 @@
-# Third-party components and notices
+# Third-Party Notices
 
 VirtualGlove's original source, documentation, and project artwork are licensed
 under the repository's MIT License. That license does not replace the terms
@@ -228,9 +228,9 @@ The patch registers a separate VirtualGlove controller, identifies the core as
 Nestopia PowerGlove where required by the established binary interface, and
 selects the native peripheral for the isolated core. The confirmed ten-byte
 packet carries X, Y, Z, open hand, fist, index point, and Start behavior. Fields
-that the exact ROM does not use remain neutral. The compatibility record in
-[Super Glove Ball native compatibility](docs/super-glove-ball-native.md)
-separates confirmed behavior from deliberately unmapped fields.
+that the exact ROM does not use remain neutral. The compatibility boundary in
+[VirtualGlove Input Modes](docs/INPUT_MODES.md) separates confirmed behavior
+from deliberately unmapped fields.
 
 The local patch changes only `libretro/libretro.cpp` and
 `source/core/input/NstInpPowerGlove.cpp`. SHA-256 values for both pristine
@@ -265,9 +265,9 @@ private CSV. The diagnostic path does not alter upstream headers, the native
 state ABI, or normal production selection.
 
 Signed controller protocol changes do not alter this libretro patch or require
-a core rebuild unless the native-state ABI itself changes. The confirmed packet
-is documented in
-[Super Glove Ball native compatibility](docs/super-glove-ball-native.md#confirmed-exact-rom-packet).
+a core rebuild unless the native-state ABI itself changes. The confirmed
+behavior is documented in
+[VirtualGlove Input Modes](docs/INPUT_MODES.md#confirmed-compatibility-boundary).
 Bytes 7-8 retain Nestopia's fixed `$00` initialization because their gameplay
 role has not been established.
 

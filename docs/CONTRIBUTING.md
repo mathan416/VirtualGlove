@@ -1,4 +1,4 @@
-# Contributing to VirtualGlove
+# Contributing
 
 Use the [Engineering Toolkit](ENGINEERING_TOOLKIT.md) for supported trace,
 replay, camera, and latency workflows from a release archive. Use a complete

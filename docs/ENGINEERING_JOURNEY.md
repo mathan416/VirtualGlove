@@ -1,4 +1,4 @@
-# Engineering journey: one week from camera to playable glove
+# Engineering Journey
 
 This document records how VirtualGlove was developed and validated from the
 first camera prototype through the current playable system. It is deliberately
@@ -6,10 +6,10 @@ chronological: each milestone describes the problem at that point, the decision
 made, the evidence gathered, and what changed next.
 
 For the system as it exists today, read [Architecture and flows](ARCHITECTURE.md).
-For exact production performance evidence, read
-[Native movement response and validation](direction-response-benchmark.md). To
-reproduce supported measurements, use the version-matched
-[Engineering Toolkit](ENGINEERING_TOOLKIT.md).
+The validation results are consolidated into this journey. To reproduce
+supported measurements, use the version-matched
+[Engineering Toolkit](ENGINEERING_TOOLKIT.md); for everyday operation, use
+[VirtualGlove Input Modes](INPUT_MODES.md).
 
 ## Skip to a milestone
 
@@ -371,6 +371,61 @@ evidence, and this historical journey.
 The project was then renamed VirtualGlove to distinguish the new camera-based
 system while retaining historically accurate references to the original Power
 Glove and Super Glove Ball.
+
+## Validation story — proving that movement was real
+
+The most important question was never whether a debug counter changed. It was
+whether the Robo-Glove moved promptly, accurately, and because the newest hand
+measurement reached the game.
+
+A delay could begin in exposure, camera delivery, MediaPipe, network transport,
+receiver publication, emulator input, video presentation, or the display. A
+smooth-looking trace could hide old frames; a fast software timestamp could
+exclude the delay a player actually felt. The investigation therefore used four
+separate layers of evidence:
+
+| Layer | What it isolated | What it could not prove |
+| --- | --- | --- |
+| Same-ROM headless benchmark | Emulator and input response from an identical saved state | Camera, network, display, or human-perceived delay |
+| Calibration dot core | Native centre, reach, clamping, loss, and recovery without game logic | A commercial game's interpretation of the packet |
+| Controller and receiver telemetry | Capture, inference, sending, validation, and publication | Physical display response by itself |
+| High-frame-rate hand-and-screen video | The complete visible experience | Which internal stage caused a delay without matching telemetry |
+
+The headless comparison booted the exact Super Glove Ball ROM into play, saved
+one emulator state, and restored that state for every candidate. One run stayed
+neutral while the other changed only the input. The first video frame whose
+checksum differed was the visible response. Release was measured the same way.
+
+Three complete executions produced byte-identical reports:
+
+| Input path | First visible activation | First visible release | Meaning |
+| --- | ---: | ---: | --- |
+| Super Glove Ball / Nestopia (VirtualGlove) | Frame 3, about 50 ms at 60 Hz | Frame 3, about 50 ms | Native coordinate consumed by the game's packet path |
+| The same ROM / FCEUmm | Frame 3, about 50 ms | Frame 3, about 50 ms | Standard joypad callback; no native packet |
+| Gun.Smoke / FCEUmm reference | Frame 2, about 33 ms | Frame 2, about 33 ms | Standard joypad callback in a different game |
+
+Small positive-X native steps from 3.1% of the signed range through full travel
+also changed the image on frame 3. That established that native input preserved
+continuous position rather than disguising a D-pad behind native terminology.
+
+The comparison caught a real Y-axis endpoint error. Packet transport and
+checksums had looked healthy, but the visible glove wrapped incorrectly. After
+correction, minimum, centre, and maximum produced `$80`, `$00`, and `$7F`, and
+the game placed the Robo-Glove at bottom, centre, and top. This was the reason
+for keeping packet evidence and visible game meaning as separate checks.
+
+Live testing then supplied the judgement the benchmark could not. Optical flow,
+additional smoothing, prediction, larger images, and several accelerated
+inference paths were rejected because they added age, weakened continuity, or
+made the control feel detached. The production result sends the newest valid,
+reach-clamped MediaPipe position without a replay queue or smoothing tail.
+
+The remaining long tail came mainly from palm-detector reacquisition rather
+than transport. Good lighting, a suitable exposure, and keeping the hand in
+view improved the actual experience more reliably than another movement filter.
+The repeatable tools remain in the [Engineering Toolkit](ENGINEERING_TOOLKIT.md),
+while the operating consequences belong in
+[VirtualGlove Input Modes](INPUT_MODES.md).
 
 ## The resulting engineering method
 

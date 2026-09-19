@@ -1,5 +1,11 @@
 # Super Glove Ball native-input compatibility record
 
+> **Archived research source:** The maintained compatibility boundary and
+> operating procedure are consolidated in
+> [VirtualGlove Input Modes](INPUT_MODES.md). This detailed evidence record is
+> retained for research history and is not published as a separate Help card or
+> PDF.
+
 This document records compatibility evidence for the VirtualGlove system's
 `lr-nestopia-powerglove` native core. It intentionally separates observations
 from hypotheses. Native detection,

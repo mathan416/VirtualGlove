@@ -1569,6 +1569,9 @@ def main():
         "VirtualGlove-Setup-Code-Review.pdf",
         "VirtualGlove-Third-Party-Components.pdf",
         "VirtualGlove-Web-Illustrations.pdf",
+        "VirtualGlove-Native-Emulation.pdf",
+        "VirtualGlove-Super-Glove-Ball-Native.pdf",
+        "VirtualGlove-Direction-Response.pdf",
     }
     for name in obsolete:
         path = OUTPUT / name
@@ -1585,17 +1588,15 @@ def main():
     contributing = docs / "CONTRIBUTING.md"
     gameplay = docs / "GAMEPLAY_GUIDE.md"
     input_audit = docs / "power-glove-rom-input-audit.md"
-    native_sgb = docs / "super-glove-ball-native.md"
-    direction_response = docs / "direction-response-benchmark.md"
     build(
         overview, OUTPUT / "VirtualGlove-Overview.pdf",
-        "VirtualGlove Project Overview",
+        "Project Overview",
         "Architecture, controls, security, deployment, and project status.",
         "Project overview",
     )
     build(
         install, OUTPUT / "VirtualGlove-Guide.pdf",
-        "VirtualGlove Installation Guide",
+        "Installation and Setup",
         "Install, pair, and play with the VirtualGlove Controller and supported consoles.",
         "Installation instructions",
     )
@@ -1607,76 +1608,68 @@ def main():
     )
     build(
         third_party, OUTPUT / "VirtualGlove-Third-Party-Notices.pdf",
-        "Third-party Components and Notices",
+        "Third-Party Notices",
         "Licenses, provenance, redistribution obligations, and verified component identities.",
         "Technical notice",
     )
     build(
         changelog, OUTPUT / "VirtualGlove-Changelog.pdf",
-        "VirtualGlove Changelog",
+        "Changelog",
         "Versioned features, fixes, security changes, and documentation updates.",
         "Release history",
     )
     build(
         configuration, OUTPUT / "VirtualGlove-Configuration-Reference.pdf",
-        "VirtualGlove Configuration Reference",
+        "Configuration Reference",
         "Active files, installed copies, fields, secrets, and generated state.",
         "Technical reference",
     )
     build(
         security, OUTPUT / "VirtualGlove-Security.pdf",
-        "VirtualGlove Security Policy",
+        "Security and Privacy",
         "Reporting, trust boundaries, network exposure, shutdown, and release integrity.",
         "Security policy",
     )
     build(
         contributing, OUTPUT / "VirtualGlove-Contributing.pdf",
-        "Contributing to VirtualGlove",
+        "Contributing",
         "Source style, testing, documentation, packaging, and pull-request expectations.",
         "Contributor guide",
     )
     build(
         gameplay, OUTPUT / "VirtualGlove-Gameplay-Guide.pdf",
-        "Play with VirtualGlove",
+        "Game and Gesture Guide",
         "Programs 1-14, nine cartridge programs, and a whole library to rediscover.",
         "Illustrated game handbook",
     )
     build(docs / "ARCHITECTURE.md", OUTPUT / "VirtualGlove-Architecture.pdf",
-          "VirtualGlove Architecture",
+          "Architecture and Flows",
           "System boundaries, recognition, tuning, game input, and deployment.",
           "Architecture and flows")
     build(docs / "MATRIX_GUIDE.md", OUTPUT / "VirtualGlove-Matrix-Guide.pdf",
-          "VirtualGlove Matrix Display Guide",
+          "Matrix Display Guide",
           "Recognize animations, mode letters, pairing, and startup feedback.",
           "Display reference")
     build(input_audit, OUTPUT / "VirtualGlove-Input-Audit.pdf",
-          "Power Glove Game Input Audit",
+          "Power Glove Game ROM Input Audit",
           "ROM evidence for native packets and conventional controller mappings.",
           "Compatibility evidence")
-    build(native_sgb, OUTPUT / "VirtualGlove-Super-Glove-Ball-Native.pdf",
-          "Super Glove Ball Native Compatibility",
-          "Confirmed behavior, open questions, tracing, and safe fallback operation.",
-          "Native compatibility record")
-    build(direction_response, OUTPUT / "VirtualGlove-Direction-Response.pdf",
-          "Native Movement Response and Validation",
-          "Matched-state response, dot-core isolation, and camera-to-display evidence.",
-          "Benchmark report")
     build(docs / "BUILD_YOUR_OWN.md", OUTPUT / "VirtualGlove-Build-Your-Own.pdf",
-          "Build your own: parts, cost, and difficulty", "Parts, planning costs, tested hardware, and a staged first build.", "Community guide")
-    build(docs / "NATIVE_EMULATION_EXPLAINED.md", OUTPUT / "VirtualGlove-Native-Emulation.pdf",
-          "How native Power Glove emulation works", "Follow hand recognition through joystick and native game input.", "Community guide")
+          "Build Your Own: Parts, Cost, and Difficulty", "Parts, planning costs, tested hardware, and a staged first build.", "Community guide")
+    build(docs / "INPUT_MODES.md", OUTPUT / "VirtualGlove-Input-Modes.pdf",
+          "VirtualGlove Input Modes", "Joystick mode, merged physical controls, and native Super Glove Ball input.", "User guide")
     build(docs / "TROUBLESHOOTING.md", OUTPUT / "VirtualGlove-Troubleshooting.pdf",
-          "Troubleshooting by symptom", "Find the first failing stage, from the camera to the displayed game.", "Community guide")
+          "Troubleshooting by Symptom", "Find the first failing stage, from the camera to the displayed game.", "Community guide")
     build(docs / "CAMERA_GUIDE.md", OUTPUT / "VirtualGlove-Camera-Guide.pdf",
-          "VirtualGlove Camera Guide", "Choose, tune, and troubleshoot a camera without changing gesture recognition.", "User guide")
+          "Camera Setup", "Choose, tune, and troubleshoot a camera without changing gesture recognition.", "User guide")
     build(docs / "ENCLOSURE_GUIDE.md", OUTPUT / "VirtualGlove-Enclosure-Guide.pdf",
           "VirtualGlove Controller Enclosure Guide", "Print the UNO Q Case, full-access Dock V2, or retained Dock V1.", "Workshop guide")
     build_enclosure_quick_reference(OUTPUT / "VirtualGlove-Enclosure-Quick-Reference.pdf")
     build(docs / "ENGINEERING_JOURNEY.md", OUTPUT / "VirtualGlove-Engineering-Journey.pdf",
-          "VirtualGlove Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
+          "Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
     build(docs / "ENGINEERING_TOOLKIT.md", OUTPUT / "VirtualGlove-Engineering-Toolkit.pdf",
-          "VirtualGlove Engineering Toolkit", "Repeatable analysis, camera, tracing, and native-research workflows.", "Engineering guide")
-    print(f"Built 22 PDF guides on {date.today().isoformat()}")
+          "Engineering Toolkit", "Repeatable analysis, camera, tracing, and native-research workflows.", "Engineering guide")
+    print(f"Built 20 PDF guides on {date.today().isoformat()}")
 
 
 if __name__ == "__main__":

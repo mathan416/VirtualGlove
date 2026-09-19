@@ -392,9 +392,14 @@ Scroll down Setup to edit mappings. Saving affects the next game launch.
 
 ### Help
 
-![Help user manuals in their current reading order.](images/help-page.png)
+The Controller keeps its maintained manuals offline in four sections:
 
-![Help technical documentation, with the native-emulation guides together.](images/help-technical.png)
+| Section | Use it for |
+| --- | --- |
+| User manuals | Playing, gestures, input modes, the Matrix, and camera setup |
+| Installation guides | Installation, hardware, enclosures, and troubleshooting |
+| Technical documentation | Architecture, engineering history and tools, configuration, and ROM evidence |
+| Project information | Security, third-party notices, contributing, and release history |
 
 ## Choose a profile
 

@@ -38,28 +38,26 @@ HELP_ASSETS_ROOT = DOCS_ROOT / "images"
 HELP_PDFS_ROOT = DOCS_ROOT.parent / "output" / "pdf"
 ENCLOSURE_ROOT = DOCS_ROOT.parent / "hardware" / "enclosures"
 HELP_GUIDES = (
-    {'slug': 'cabinet', 'title': 'This console', 'file': None, 'description': 'Live VirtualGlove Controller links and the active RetroPie connection, generated for this cabinet.', 'group': 'User manuals'},
-    {'slug': 'gameplay', 'title': 'Game and gesture guide', 'file': 'GAMEPLAY_GUIDE.md', 'description': 'Illustrated Rock Paper Scissors instructions, configured-game controls, and play tips.', 'group': 'User manuals'},
-    {'slug': 'matrix', 'title': 'Matrix display guide', 'file': 'MATRIX_GUIDE.md', 'description': 'Recognize startup, glove animations, Academy letters, game profiles, pairing, and errors.', 'group': 'User manuals'},
-    {'slug': 'build-your-own', 'title': 'Build your own: parts, cost, and difficulty', 'file': 'BUILD_YOUR_OWN.md', 'description': 'Parts, planning costs, tested hardware, and a staged first build.', 'group': 'User manuals'},
-    {'slug': 'installation', 'title': 'Installation and setup', 'file': 'INSTALL_README.md', 'description': 'Installation, secure pairing, the Play Checklist, updates, and troubleshooting.', 'group': 'User manuals'},
-    {'slug': 'camera', 'title': 'Camera setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Camera selection, frame rate, exposure, lighting, reconnection, and troubleshooting.', 'group': 'User manuals'},
-    {'slug': 'enclosure-quick-reference', 'title': 'Enclosure assembly quick reference', 'file': 'ENCLOSURE_QUICK_REFERENCE.md', 'description': 'Eight pictographic workbench pages for assembling the UNO Q Case, Controller Dock V1, or enclosed Controller Dock V2.', 'group': 'User manuals'},
-    {'slug': 'enclosure', 'title': 'Controller enclosure guide', 'file': 'ENCLOSURE_GUIDE.md', 'description': 'Print the compact UNO Q Case, the full-access Dock V2, or the retained low-profile Dock V1.', 'group': 'User manuals'},
-    {'slug': 'troubleshooting', 'title': 'Troubleshooting by symptom', 'file': 'TROUBLESHOOTING.md', 'description': 'Find the first failing stage, from the camera to the displayed game.', 'group': 'User manuals'},
-    {'slug': 'overview', 'title': 'Project overview', 'file': None, 'description': 'The complete project at a glance: architecture, controls, security, deployment, and current status.', 'group': 'Technical documentation', 'href': '/help-pdf/overview.pdf'},
-    {'slug': 'architecture', 'title': 'Architecture and flows', 'file': 'ARCHITECTURE.md', 'description': 'System boundaries, recognition, tuning, game input, and deployment diagrams.', 'group': 'Technical documentation'},
-    {'slug': 'native-emulation', 'title': 'How native Power Glove emulation works', 'file': 'NATIVE_EMULATION_EXPLAINED.md', 'description': 'Follow hand recognition through joystick and native game input.', 'group': 'Technical documentation'},
-    {'slug': 'native-super-glove-ball', 'title': 'Super Glove Ball native compatibility', 'file': 'super-glove-ball-native.md', 'description': 'Live-confirmed native game actions, packet evidence, and deliberately unused fields for the custom Nestopia path.', 'group': 'Technical documentation'},
-    {'slug': 'configuration', 'title': 'Configuration reference', 'file': 'CONFIGURATION_REFERENCE.md', 'description': 'Every public setting, template, generated file, and installed location.', 'group': 'Technical documentation'},
-    {'slug': 'input-audit', 'title': 'Power Glove game input audit', 'file': 'power-glove-rom-input-audit.md', 'description': 'ROM-level evidence separating native Power Glove input from standard controller mappings.', 'group': 'Technical documentation'},
-    {'slug': 'direction-response', 'title': 'Native movement validation', 'file': 'direction-response-benchmark.md', 'description': 'Native latency, jitter, dot-core isolation, software traces, video evidence, and headless measurements.', 'group': 'Technical documentation'},
-    {'slug': 'engineering-journey', 'title': 'Engineering journey', 'file': 'ENGINEERING_JOURNEY.md', 'description': 'How one week of hypotheses, measurements, experiments, and play tests produced the current system.', 'group': 'Technical documentation'},
-    {'slug': 'engineering-toolkit', 'title': 'Engineering Toolkit', 'file': 'ENGINEERING_TOOLKIT.md', 'description': 'Install and safely use the version-matched trace, replay, camera, latency, and native-research tools.', 'group': 'Technical documentation'},
-    {'slug': 'security', 'title': 'Security and privacy', 'file': 'SECURITY.md', 'description': 'Pairing boundaries, safe network use, shutdown permissions, and reporting.', 'group': 'Technical documentation'},
-    {'slug': 'components', 'title': 'Third-party notices', 'file': '../THIRD_PARTY_NOTICES.md', 'description': 'MediaPipe, model, emulator, license, checksum, modification, and runtime provenance.', 'group': 'Technical documentation'},
-    {'slug': 'contributing', 'title': 'Contributing', 'file': 'CONTRIBUTING.md', 'description': 'Source formatting, tests, documentation, packaging, and review expectations.', 'group': 'Technical documentation'},
-    {'slug': 'changelog', 'title': 'Changelog', 'file': 'CHANGELOG.md', 'description': 'User-visible additions, fixes, security changes, and documentation updates.', 'group': 'Technical documentation'},
+    {'slug': 'cabinet', 'title': 'This console', 'file': None, 'description': 'Live VirtualGlove Controller links and the active console connection, generated for this cabinet.', 'group': 'User manuals'},
+    {'slug': 'gameplay', 'title': 'Game and Gesture Guide', 'file': 'GAMEPLAY_GUIDE.md', 'description': 'Illustrated gesture instructions, program profiles, configured-game controls, and play tips.', 'group': 'User manuals'},
+    {'slug': 'input-modes', 'title': 'VirtualGlove Input Modes', 'file': 'INPUT_MODES.md', 'description': 'Use joystick mode, merged physical controls, and native Super Glove Ball input.', 'group': 'User manuals'},
+    {'slug': 'matrix', 'title': 'Matrix Display Guide', 'file': 'MATRIX_GUIDE.md', 'description': 'Recognize startup, glove animations, Academy letters, game profiles, pairing, and errors.', 'group': 'User manuals'},
+    {'slug': 'camera', 'title': 'Camera Setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Select, position, tune, and troubleshoot the camera used for gesture controls.', 'group': 'User manuals'},
+    {'slug': 'installation', 'title': 'Installation and Setup', 'file': 'INSTALL_README.md', 'description': 'Install the Controller and console, pair them, centre a hand, and test a game.', 'group': 'Installation guides'},
+    {'slug': 'build-your-own', 'title': 'Build Your Own: Parts, Cost, and Difficulty', 'file': 'BUILD_YOUR_OWN.md', 'description': 'Plan the hardware, cost, tested parts, and staged first build.', 'group': 'Installation guides'},
+    {'slug': 'enclosure', 'title': 'VirtualGlove Controller Enclosure Guide', 'file': 'ENCLOSURE_GUIDE.md', 'description': 'Print and assemble the compact UNO Q Case or either Controller Dock.', 'group': 'Installation guides'},
+    {'slug': 'enclosure-quick-reference', 'title': 'VirtualGlove Enclosure Assembly Quick Reference', 'file': 'ENCLOSURE_QUICK_REFERENCE.md', 'description': 'Pictographic workbench instructions for all three enclosure designs.', 'group': 'Installation guides'},
+    {'slug': 'troubleshooting', 'title': 'Troubleshooting by Symptom', 'file': 'TROUBLESHOOTING.md', 'description': 'Find the first failing stage, from the camera to the displayed game.', 'group': 'Installation guides'},
+    {'slug': 'overview', 'title': 'Project Overview', 'file': None, 'description': 'The complete project at a glance: controls, supported platforms, security, and current status.', 'group': 'Technical documentation', 'href': '/help-pdf/overview.pdf'},
+    {'slug': 'architecture', 'title': 'Architecture and Flows', 'file': 'ARCHITECTURE.md', 'description': 'System boundaries, recognition, merged-controller ownership, native input, and deployment.', 'group': 'Technical documentation'},
+    {'slug': 'engineering-journey', 'title': 'Engineering Journey', 'file': 'ENGINEERING_JOURNEY.md', 'description': 'The hypotheses, measurements, rejected experiments, movement validation, and play tests behind the system.', 'group': 'Technical documentation'},
+    {'slug': 'engineering-toolkit', 'title': 'Engineering Toolkit', 'file': 'ENGINEERING_TOOLKIT.md', 'description': 'Install and safely use version-matched camera, latency, trace, replay, and native-research tools.', 'group': 'Technical documentation'},
+    {'slug': 'configuration', 'title': 'Configuration Reference', 'file': 'CONFIGURATION_REFERENCE.md', 'description': 'Every public setting, template, generated file, and installed location.', 'group': 'Technical documentation'},
+    {'slug': 'input-audit', 'title': 'Power Glove Game ROM Input Audit', 'file': 'power-glove-rom-input-audit.md', 'description': 'ROM-level evidence separating native Power Glove input from standard controller mappings.', 'group': 'Technical documentation'},
+    {'slug': 'security', 'title': 'Security and Privacy', 'file': 'SECURITY.md', 'description': 'Pairing boundaries, safe network use, shutdown permissions, and reporting.', 'group': 'Project information'},
+    {'slug': 'components', 'title': 'Third-Party Notices', 'file': '../THIRD_PARTY_NOTICES.md', 'description': 'MediaPipe, models, emulators, licenses, checksums, modifications, and runtime provenance.', 'group': 'Project information'},
+    {'slug': 'contributing', 'title': 'Contributing', 'file': 'CONTRIBUTING.md', 'description': 'Source formatting, tests, documentation, packaging, and review expectations.', 'group': 'Project information'},
+    {'slug': 'changelog', 'title': 'Changelog', 'file': 'CHANGELOG.md', 'description': 'User-visible additions, fixes, security changes, and documentation updates.', 'group': 'Project information'},
 )
 GUIDES_BY_SLUG = {str(guide["slug"]): guide for guide in HELP_GUIDES}
 SLUG_BY_FILE = {
@@ -69,7 +67,7 @@ SLUG_BY_FILE = {
 }
 HELP_PDFS = {
     "build-your-own": "VirtualGlove-Build-Your-Own.pdf",
-    "native-emulation": "VirtualGlove-Native-Emulation.pdf",
+    "input-modes": "VirtualGlove-Input-Modes.pdf",
     "troubleshooting": "VirtualGlove-Troubleshooting.pdf",
     "camera": "VirtualGlove-Camera-Guide.pdf",
     "enclosure-quick-reference": "VirtualGlove-Enclosure-Quick-Reference.pdf",
@@ -78,8 +76,6 @@ HELP_PDFS = {
     "matrix": "VirtualGlove-Matrix-Guide.pdf",
     "architecture": "VirtualGlove-Architecture.pdf",
     "input-audit": "VirtualGlove-Input-Audit.pdf",
-    "native-super-glove-ball": "VirtualGlove-Super-Glove-Ball-Native.pdf",
-    "direction-response": "VirtualGlove-Direction-Response.pdf",
     "engineering-journey": "VirtualGlove-Engineering-Journey.pdf",
     "engineering-toolkit": "VirtualGlove-Engineering-Toolkit.pdf",
     "overview": "VirtualGlove-Overview.pdf",
@@ -181,7 +177,9 @@ def enclosure_asset(relative_name: str) -> tuple[bytes, str, str] | None:
 def help_index_content() -> str:
     """Build the Help landing-page body from the public guide registry."""
     sections = []
-    for group in ("User manuals", "Technical documentation"):
+    for group in (
+            "User manuals", "Installation guides", "Technical documentation",
+            "Project information"):
         cards = []
         for guide in HELP_GUIDES:
             if guide["group"] != group:

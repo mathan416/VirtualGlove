@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 658
+Git-visible files: 673
 Python test modules: 75
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-658 tracked or non-ignored files are present in this checkout. Ignored
+673 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -413,6 +413,7 @@ are intentionally omitted.
 |   |-- ENGINEERING_TOOLKIT.md
 |   |-- extra-digit-hunt.json
 |   |-- GAMEPLAY_GUIDE.md
+|   |-- INPUT_MODES.md
 |   |-- INSTALL_README.md
 |   |-- MATRIX_GUIDE.md
 |   |-- NATIVE_EMULATION_EXPLAINED.md
@@ -607,6 +608,20 @@ are intentionally omitted.
 |-- output
 |   |-- app-lab
 |   |   `-- VirtualGlove-Uno-Q.zip.sha256
+|   |-- install-merged-player1
+|   |   |-- install-batocera.sh
+|   |   |-- install-package.py
+|   |   |-- install-recalbox.sh
+|   |   |-- install-retropie.sh
+|   |   |-- install-uno-q.sh
+|   |   |-- SHA256SUMS
+|   |   |-- VirtualGlove-Batocera.zip
+|   |   |-- VirtualGlove-Engineering-Tools.zip
+|   |   |-- VirtualGlove-Engineering-Tools.zip.sha256
+|   |   |-- VirtualGlove-LaunchBox.zip
+|   |   |-- VirtualGlove-Recalbox.zip
+|   |   |-- VirtualGlove-RetroPie.zip
+|   |   `-- VirtualGlove-Uno-Q.zip
 |   `-- pdf
 |       |-- VirtualGlove-Architecture.pdf
 |       |-- VirtualGlove-Build-Your-Own.pdf
@@ -622,6 +637,7 @@ are intentionally omitted.
 |       |-- VirtualGlove-Gameplay-Guide.pdf
 |       |-- VirtualGlove-Guide.pdf
 |       |-- VirtualGlove-Input-Audit.pdf
+|       |-- VirtualGlove-Input-Modes.pdf
 |       |-- VirtualGlove-Matrix-Guide.pdf
 |       |-- VirtualGlove-Native-Emulation.pdf
 |       |-- VirtualGlove-Overview.pdf

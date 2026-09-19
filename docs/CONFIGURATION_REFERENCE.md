@@ -1,4 +1,4 @@
-# VirtualGlove Configuration Reference
+# Configuration Reference
 
 Use this reference to find a setting, change a game mapping, tune a gesture,
 or look up a command. Each section identifies the active file and explains
@@ -445,7 +445,8 @@ checking the reported supported range and live hand image.
 
 The earlier Kiyo Pro capture experiment used two buffers and a volatile HDR-off
 command while requesting 60 fps. It remains useful historical evidence, but it
-is not the 0.4.0 general default. See the [capture comparison](direction-response-benchmark.md#uno-q-kiyo-pro-capture-comparison--september-6-2026).
+is not the general default. See the camera-delivery work in the
+[Engineering Journey](ENGINEERING_JOURNEY.md#milestone-8-refine-camera-delivery-and-resilience-9-10-september-2026).
 
 The general default remains one buffer and no vendor control command. The HDR option
 checks USB identity `1532:0e05`, sends only the volatile HDR-off command, and sets
@@ -2030,7 +2031,8 @@ before using it. Normal VirtualGlove Controller use should start through App Lab
 Run `python3 scripts/measure-vision-status.py` from the development checkout.
 The command performs GET requests only. It does not open the camera, arm the
 controller, change profiles, or record images. Set the intended state through
-Dashboard before starting. See the [baseline procedure](direction-response-benchmark.md#collect-a-live-status-baseline)
+Dashboard before starting. See
+[Read-only live observation](ENGINEERING_TOOLKIT.md#read-only-live-observation)
 for interpretation and the separate receiver, core, and display measurements.
 
 | Flag | Default | Meaning |
@@ -2971,8 +2973,9 @@ script; normal users should use the two standard installers.
 ## Optional native latency diagnostics
 
 These developer tools do not change recognition settings or production packet
-and native-state formats. See the [complete session procedure](direction-response-benchmark.md#native-latency-and-stationary-jitter-session)
-for camera placement, interpretation, process activation, and rollback.
+and native-state formats. See
+[Tracing a running two-device system](ENGINEERING_TOOLKIT.md#tracing-a-running-two-device-system)
+for activation, interpretation, and cleanup.
 
 | Interface | Default | Meaning |
 | --- | --- | --- |

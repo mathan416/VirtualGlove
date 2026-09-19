@@ -80,6 +80,26 @@ MERGED_RETROARCH_BINDINGS = {
     "input_player1_l_y_minus_axis": "-1", "input_player1_l_y_plus_axis": "+1",
     "input_player1_r_x_minus_axis": "-2", "input_player1_r_x_plus_axis": "+2",
     "input_player1_r_y_minus_axis": "-3", "input_player1_r_y_plus_axis": "+3",
+    # The platform generates these for the original controller before it
+    # appends VirtualGlove's per-system file. Clear incompatible source types
+    # so an axis trigger or axis D-pad cannot leak into the merged layout.
+    "input_player1_l2_axis": "nul", "input_player1_r2_axis": "nul",
+    "input_player1_left_axis": "nul", "input_player1_right_axis": "nul",
+    "input_player1_up_axis": "nul", "input_player1_down_axis": "nul",
+    "input_player1_analog_dpad_mode": "1",
+}
+BATOCERA_HOTKEY_BINDINGS = {
+    # Batocera's documented libretro combinations on the canonical merged pad.
+    "input_exit_emulator_btn": "11",
+    "input_menu_toggle_btn": "1",
+    "input_save_state_btn": "4",
+    "input_load_state_btn": "3",
+    "input_state_slot_increase_btn": "h0up",
+    "input_state_slot_decrease_btn": "h0down",
+    "input_rewind_btn": "h0left",
+    "input_hold_fast_forward_btn": "h0right",
+    "input_screenshot_btn": "6",
+    "input_ai_service_btn": "7",
 }
 OLD_KEYBOARD_BINDINGS = {
     "input_player1_a": "x", "input_player1_b": "z",
@@ -109,6 +129,7 @@ UI_SET_KEYBIT = _iow(ord("U"), 101)
 UI_SET_ABSBIT = _iow(ord("U"), 103)
 UI_DEV_CREATE = _ioc(0, ord("U"), 1, 0)
 UI_DEV_DESTROY = _ioc(0, ord("U"), 2, 0)
+EVIOCGRAB = _iow(ord("E"), 0x90)
 ABS_INFO = struct.Struct("iiiiii")
 JS_AXIS_MAP_SIZE = 0x40
 JS_BUTTON_MAP_SIZE = 0x200
@@ -190,10 +211,12 @@ def parse_es_inputs(path: Path) -> list[dict]:
         for item in node.findall("input"):
             logical = item.get("name", "").strip().casefold()
             kind = item.get("type", "").strip().casefold()
-            # Current Batocera/Recalbox files persist SDL's device-local
-            # index as ``id``. Some generated catalogs also include the Linux
-            # event ``code``; the SDL index remains the stable mapping input.
+            # Keep SDL's device-local index for frontend hotkey translation,
+            # and retain the authoritative evdev code when the frontend
+            # provides it. They are not interchangeable on controllers whose
+            # Start, Select, or Home buttons use keyboard-class key codes.
             code = item.get("id", item.get("code"))
+            evdev_code = item.get("code")
             value = item.get("value", "1")
             if logical not in BUTTON_NAMES and logical not in DIRECTION_NAMES and logical not in ANALOG_NAMES:
                 continue
@@ -203,8 +226,13 @@ def parse_es_inputs(path: Path) -> list[dict]:
                 parsed_code, parsed_value = int(code), int(value)
                 if not _valid_input_code(kind, parsed_code):
                     continue
-                mappings.append({"name": logical, "type": kind,
-                                 "code": parsed_code, "value": parsed_value})
+                mapping = {"name": logical, "type": kind,
+                           "code": parsed_code, "value": parsed_value}
+                if evdev_code is not None and kind != "hat":
+                    parsed_evdev = int(evdev_code)
+                    if _valid_input_code(kind, parsed_evdev):
+                        mapping["evdev_code"] = parsed_evdev
+                mappings.append(mapping)
             except ValueError:
                 continue
         if mappings:
@@ -243,7 +271,9 @@ def load_controller(path: Path) -> dict:
     if not 1 <= len(data["mapping"]) <= 64:
         raise ValueError("invalid merged Player 1 mapping")
     for item in data["mapping"]:
-        if (not isinstance(item, dict) or set(item) != {"name", "type", "code", "value"} or
+        if (not isinstance(item, dict) or
+                not {"name", "type", "code", "value"}.issubset(item) or
+                set(item) - {"name", "type", "code", "value", "evdev_code"} or
                 (item.get("name") not in BUTTON_NAMES and
                  item.get("name") not in DIRECTION_NAMES and
                  item.get("name") not in ANALOG_NAMES) or
@@ -251,7 +281,11 @@ def load_controller(path: Path) -> dict:
                 isinstance(item.get("code"), bool) or not isinstance(item.get("code"), int) or
                 not _valid_input_code(item.get("type"), item["code"]) or
                 isinstance(item.get("value"), bool) or not isinstance(item.get("value"), int) or
-                not -0x8000 <= item["value"] <= 0x7FFF):
+                not -0x8000 <= item["value"] <= 0x7FFF or
+                ("evdev_code" in item and
+                 (isinstance(item["evdev_code"], bool) or
+                  not isinstance(item["evdev_code"], int) or
+                  not _valid_input_code(item["type"], item["evdev_code"])))):
             raise ValueError("invalid merged Player 1 mapping")
     return data
 
@@ -322,7 +356,10 @@ def translate_es_mapping(mapping: list[dict], joystick_descriptor: int) -> list[
     translated = []
     for item in mapping:
         output = dict(item)
-        if item["type"] == "button":
+        if "evdev_code" in item:
+            output["code"] = item["evdev_code"]
+            output.pop("evdev_code", None)
+        elif item["type"] == "button":
             if item["code"] >= button_count[0] or not button_codes[item["code"]]:
                 continue
             output["code"] = button_codes[item["code"]]
@@ -436,6 +473,13 @@ def translated_hotkey_bindings(text: str, mapping: list[dict]) -> dict[str, str]
             translated[setting[:-5] + "_btn"] = str(
                 CANONICAL_BUTTON_INDEX[BUTTON_NAMES[item["name"]]])
     return translated
+
+
+def platform_hotkey_bindings(saved: dict, global_config: str) -> dict[str, str]:
+    """Return complete platform-native hotkeys for the canonical merged pad."""
+    if saved.get("platform") == "batocera":
+        return dict(BATOCERA_HOTKEY_BINDINGS)
+    return translated_hotkey_bindings(global_config, saved["mapping"])
 
 
 def merge_retroarch_config(text: str, index: int,
@@ -676,6 +720,26 @@ def merged_joypad_index(sys_root: Path = Path("/sys/class/input"),
     return None
 
 
+def install_retroarch_assignment(saved: dict, retroarch_config: Path,
+                                 sys_root: Path = Path("/sys/class/input"),
+                                 udev_root: Path = Path("/run/udev/data")) -> bool:
+    """Atomically point NES Player 1 at the merged pad's current udev index."""
+    index = merged_joypad_index(sys_root, udev_root)
+    if index is None:
+        return False
+    current = retroarch_config.read_text() if retroarch_config.exists() else ""
+    global_config = retroarch_config.with_name("retroarchcustom.cfg")
+    hotkeys = platform_hotkey_bindings(
+        saved, global_config.read_text() if global_config.exists() else "")
+    updated = merge_retroarch_config(current, index, hotkeys)
+    if updated != current:
+        retroarch_config.parent.mkdir(parents=True, exist_ok=True)
+        temporary = retroarch_config.with_name("." + retroarch_config.name + ".tmp")
+        temporary.write_text(updated)
+        os.replace(str(temporary), str(retroarch_config))
+    return True
+
+
 class MergedGamepadDevice:
     """Persistent daemon owning the merged device and physical-controller source."""
 
@@ -697,7 +761,10 @@ class MergedGamepadDevice:
         self.socket_path = socket_path
         self.socket = None
         self.descriptor = None
+        self.grabbed = False
         self.virtual_updated_at = 0.0
+        self.index_checked_at = 0.0
+        self.assigned_index = None
         self.stop = threading.Event()
         self.lock = threading.Lock()
         self.thread = threading.Thread(target=self._run, name="virtualglove-player1", daemon=True)
@@ -729,22 +796,34 @@ class MergedGamepadDevice:
     def _install_index(self) -> None:
         """Wait for uinput enumeration and atomically manage the NES assignment."""
         for _attempt in range(40):
-            index = merged_joypad_index(self.sys_root, self.udev_root)
-            if index is not None:
-                current = self.retroarch_config.read_text() if self.retroarch_config.exists() else ""
-                global_config = self.retroarch_config.with_name("retroarchcustom.cfg")
-                hotkeys = translated_hotkey_bindings(
-                    global_config.read_text() if global_config.exists() else "",
-                    self.saved["mapping"])
-                updated = merge_retroarch_config(current, index, hotkeys)
-                if updated != current:
-                    self.retroarch_config.parent.mkdir(parents=True, exist_ok=True)
-                    temporary = self.retroarch_config.with_name("." + self.retroarch_config.name + ".tmp")
-                    temporary.write_text(updated)
-                    os.replace(str(temporary), str(self.retroarch_config))
+            if install_retroarch_assignment(
+                    self.saved, self.retroarch_config, self.sys_root, self.udev_root):
+                self.assigned_index = merged_joypad_index(self.sys_root, self.udev_root)
                 return
             time.sleep(0.05)
         raise RuntimeError("merged gamepad did not appear in /sys/class/input")
+
+    def _set_grab(self, enabled: bool) -> None:
+        """Give the merger sole ownership of the physical pad during gameplay."""
+        if self.descriptor is None or enabled == self.grabbed:
+            return
+        fcntl.ioctl(self.descriptor, EVIOCGRAB, int(enabled))
+        self.grabbed = enabled
+
+    def _set_active(self, active: bool) -> None:
+        """Enter or leave gameplay with one neutral ownership transition."""
+        if active == self.state.active:
+            return
+        if active:
+            self._set_grab(True)
+            self.state.release_physical()
+            self.state.active = True
+            self._publish()
+            return
+        self.state.active = False
+        self.state.release_physical()
+        self._publish()
+        self._set_grab(False)
 
     def _discover(self) -> dict | None:
         """Find the saved physical controller without relying on an event number."""
@@ -760,33 +839,48 @@ class MergedGamepadDevice:
         while not self.stop.is_set():
             with self.lock:
                 active = retroarch_running(self.proc_root)
-                if active != self.state.active:
-                    self.state.active = active
-                    self._publish()
+                self._set_active(active)
                 if (self.state.virtual and self.virtual_updated_at and
                         time.monotonic() - self.virtual_updated_at >= VIRTUAL_TIMEOUT_SECONDS):
                     self.state.virtual = {}
                     self.virtual_updated_at = 0.0
                     self._publish()
+                if time.monotonic() - self.index_checked_at >= 1.0:
+                    current_index = merged_joypad_index(self.sys_root, self.udev_root)
+                    if current_index is not None and current_index != self.assigned_index:
+                        if install_retroarch_assignment(
+                                self.saved, self.retroarch_config,
+                                self.sys_root, self.udev_root):
+                            self.assigned_index = current_index
+                    self.index_checked_at = time.monotonic()
             if self.descriptor is None:
                 candidate = self._discover()
                 if candidate:
                     joystick_descriptor = None
+                    event_descriptor = None
                     try:
                         joystick_descriptor = os.open(
                             candidate["joystick"], os.O_RDONLY | os.O_NONBLOCK)
                         mapping = translate_es_mapping(
                             self.saved["mapping"], joystick_descriptor)
-                        self.descriptor = os.open(
+                        event_descriptor = os.open(
                             candidate["event"], os.O_RDONLY | os.O_NONBLOCK)
+                        if self.state.active:
+                            fcntl.ioctl(event_descriptor, EVIOCGRAB, 1)
+                            self.grabbed = True
+                        self.descriptor = event_descriptor
+                        event_descriptor = None
                         self.mapper = PhysicalMapper(mapping, self.state)
                         self.mapper.axis_ranges = input_axis_ranges(
                             self.descriptor, mapping)
                     except (OSError, ValueError):
                         self.descriptor = None
+                        self.grabbed = False
                     finally:
                         if joystick_descriptor is not None:
                             os.close(joystick_descriptor)
+                        if event_descriptor is not None:
+                            os.close(event_descriptor)
             try:
                 sources = [] if self.descriptor is None else [self.descriptor]
                 if self.socket is not None:
@@ -820,10 +914,12 @@ class MergedGamepadDevice:
             except OSError:
                 if self.descriptor is not None:
                     try:
-                        os.close(self.descriptor)
+                        self._set_grab(False)
                     except OSError:
                         pass
+                    os.close(self.descriptor)
                     self.descriptor = None
+                    self.grabbed = False
                 with self.lock:
                     self.state.release_physical()
                     self._publish()
@@ -850,6 +946,10 @@ class MergedGamepadDevice:
         self.stop.set()
         self.thread.join(timeout=2)
         if self.descriptor is not None:
+            try:
+                self._set_grab(False)
+            except OSError:
+                pass
             os.close(self.descriptor)
         if self.socket is not None:
             self.socket.close()
@@ -904,11 +1004,20 @@ def main() -> int:
     """Run the persistent merged-gamepad service."""
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("serve",))
+    parser.add_argument("command", choices=("serve", "sync-index"))
     parser.add_argument("--controller-config", type=Path, required=True)
     parser.add_argument("--retroarch-config", type=Path, required=True)
-    parser.add_argument("--socket", type=Path, required=True)
+    parser.add_argument("--socket", type=Path)
     args = parser.parse_args()
+    if args.command == "sync-index":
+        saved = load_controller(args.controller_config)
+        for _attempt in range(40):
+            if install_retroarch_assignment(saved, args.retroarch_config):
+                return 0
+            time.sleep(0.05)
+        raise SystemExit("merged gamepad is not available")
+    if args.socket is None:
+        parser.error("serve requires --socket")
     device = MergedGamepadDevice(args.controller_config, args.retroarch_config,
                                  socket_path=args.socket)
     try:
