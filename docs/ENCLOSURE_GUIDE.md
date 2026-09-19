@@ -43,7 +43,7 @@ connections remain reachable.
 | Best fit | Hidden cabinet installation | Complete, transferable Controller |
 
 For assembly at the workbench, use the
-[two-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md).
+[single-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md).
 This guide adds print settings, fit checks, detailed explanations, and
 troubleshooting.
 
@@ -203,7 +203,7 @@ port face; it slides back into the open rear bay during assembly.
 | <img src="../hardware/enclosures/previews/virtualglove-uno-case-exploded.png" alt="Exploded assembly view of the UNO Q Case" width="320" /> | <img src="../hardware/enclosures/previews/virtualglove-controller-dock-exploded.png" alt="Exploded assembly view of the Controller Dock" width="320" /> |
 
 Keep the
-[two-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md)
+[single-page Enclosure Assembly Quick Reference](ENCLOSURE_QUICK_REFERENCE.md)
 beside the workbench for the visual sequence. The detailed steps below explain
 the fit checks that accompany it.
 
