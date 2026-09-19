@@ -154,9 +154,9 @@ module matrix_window(board_origin, z_height) {
         cube([29.5, 19.5, z_height + 0.4]);
 }
 
-module badge_recess(size, y, z_height) {
-    translate([(size[0] - 55) / 2, y, -0.1])
-        rounded_prism([55, 13, min(0.85, z_height) + 0.1], 2.0);
+module lid_logo_recess(size, y, z_height) {
+    translate([(size[0] - 18.5) / 2, y, -0.1])
+        rounded_prism([18.5, 18.5, min(0.85, z_height) + 0.1], 2.2);
 }
 
 module uno_base() {
@@ -176,7 +176,7 @@ module uno_lid() {
         lid_shell([uno_case_w, uno_case_d], 6.0, uno_corner);
         print_face_transform(uno_case_d) {
             matrix_window([uno_x, uno_y], top_t + 0.2);
-            badge_recess([uno_case_w, uno_case_d], 57.5, top_t);
+            lid_logo_recess([uno_case_w, uno_case_d], 54.0, top_t);
             vent_field([uno_x + 8, uno_y + 32, -0.2, top_t + 0.4],
                        7, 2, 7, 6, 5, 2);
         }
@@ -218,7 +218,7 @@ module dock_lid() {
         lid_shell([dock_w, dock_d], 6.0, dock_corner);
         print_face_transform(dock_d) {
             matrix_window([dock_uno_x, dock_uno_y], top_t + 0.2);
-            badge_recess([dock_w, dock_d], 48.0, top_t);
+            lid_logo_recess([dock_w, dock_d], 44.0, top_t);
             vent_field([dock_uno_x + 6, dock_uno_y + 31, -0.2, top_t + 0.4],
                        8, 2, 7, 6, 5, 2);
             // Open bay around all hub faces, including Ethernet and cable ends.
@@ -232,22 +232,6 @@ module matrix_bezel() {
     difference() {
         rounded_prism([33.0, 23.0, 1.2], 2.2);
         translate([1.75, 1.75, -0.1]) cube([29.5, 19.5, 1.4]);
-    }
-}
-
-module wordmark_badge(width = 54.5) {
-    union() {
-        rounded_prism([width, 12.5, 0.8], 1.8);
-        // A print-safe adaptation of the italic pixel wordmark.  The underline
-        // and terminal bars echo the full logo without reproducing screen-only
-        // glow, shadows, or sub-nozzle pixels.
-        translate([width / 2 - 0.8, 7.0, 0.75])
-            linear_extrude(height = 0.9)
-                text("VirtualGlove", size = 5.7, halign = "center", valign = "center",
-                     font = "Liberation Sans:style=Bold Italic");
-        translate([5.0, 2.1, 0.75]) cube([42.5, 1.0, 0.9]);
-        for (x = [49.0, 51.1])
-            translate([x, 2.1, 0.75]) cube([1.3, 1.0, 0.9]);
     }
 }
 
@@ -306,6 +290,18 @@ module target_badge_red() {
     translate([2.8, 11.55, 0]) cube([22.4, 0.9, 0.9]);
     for (x = [22.0, 24.0, 26.0])
         translate([x, 10.9, 0]) cube([1.0, 2.2, 0.9]);
+}
+
+module lid_logo_backing() {
+    scale([18 / 28, 18 / 28, 1]) target_badge_backing();
+}
+
+module lid_logo_cyan() {
+    scale([18 / 28, 18 / 28, 1]) target_badge_cyan();
+}
+
+module lid_logo_red() {
+    scale([18 / 28, 18 / 28, 1]) target_badge_red();
 }
 
 module full_logo_backing() {
@@ -395,9 +391,11 @@ module uno_exterior_preview() {
     color("#00b9d8")
         translate([uno_x + 25.75, uno_y + 4.75, uno_base_h + top_t + 0.05])
             matrix_bezel();
-    color("#f26a21")
-        translate([(uno_case_w - 54.5) / 2, 57.75, uno_base_h + top_t - 0.8])
-            wordmark_badge();
+    translate([(uno_case_w - 18) / 2, 54.25, uno_base_h + top_t - 0.8]) {
+        color("#111722") lid_logo_backing();
+        color("#00d6ef") translate([0, 0, 0.8]) lid_logo_cyan();
+        color("#ff2145") translate([0, 0, 0.8]) lid_logo_red();
+    }
 }
 
 module dock_exterior_preview() {
@@ -409,9 +407,11 @@ module dock_exterior_preview() {
     color("#00b9d8")
         translate([dock_uno_x + 25.75, dock_uno_y + 4.75, dock_base_h + top_t + 0.05])
             matrix_bezel();
-    color("#f26a21")
-        translate([(dock_w - 54.5) / 2, 48.25, dock_base_h + top_t - 0.8])
-            wordmark_badge();
+    translate([(dock_w - 18) / 2, 44.25, dock_base_h + top_t - 0.8]) {
+        color("#111722") lid_logo_backing();
+        color("#00d6ef") translate([0, 0, 0.8]) lid_logo_cyan();
+        color("#ff2145") translate([0, 0, 0.8]) lid_logo_red();
+    }
 }
 
 if (part == "uno_base") uno_base();
@@ -419,7 +419,9 @@ else if (part == "uno_lid") uno_lid();
 else if (part == "dock_base") dock_base();
 else if (part == "dock_lid") dock_lid();
 else if (part == "matrix_bezel") matrix_bezel();
-else if (part == "badge") wordmark_badge();
+else if (part == "lid_logo_backing") lid_logo_backing();
+else if (part == "lid_logo_cyan") lid_logo_cyan();
+else if (part == "lid_logo_red") lid_logo_red();
 else if (part == "target_badge_backing") target_badge_backing();
 else if (part == "target_badge_cyan") target_badge_cyan();
 else if (part == "target_badge_red") target_badge_red();

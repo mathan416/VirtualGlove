@@ -44,7 +44,7 @@ The source and ready-to-print files are in `hardware/enclosures/`.
 | UNO base and lid | Compact UNO Q enclosure |
 | Dock base and lid | Combined UNO Q and hub enclosure |
 | Matrix bezel | Cyan frame around the visible Matrix |
-| Wordmark badge | Small lid badge for either enclosure |
+| Hand/target lid emblem | Small three-colour project mark for either enclosure |
 | Full-logo layers | Optional dark, cyan, and red display plaque |
 | Hand/target layers | Optional dark, cyan, and red emblem |
 | USB-C coupon | Checks the UNO Q plug opening before a long print |
@@ -56,6 +56,49 @@ accents while removing screen-only glow and details smaller than a dependable
 0.4 mm nozzle can reproduce.
 
 ![Print-safe full logo and hand-target emblem](../hardware/enclosures/previews/virtualglove-printable-branding.png)
+
+### Download the print files
+
+From the Controller's local Help page, select any file below to download it.
+The same files are kept in `hardware/enclosures/stl/` in the source tree.
+
+**UNO Q Case**
+
+- [UNO Q base](../hardware/enclosures/stl/virtualglove-uno-base.stl)
+- [UNO Q lid](../hardware/enclosures/stl/virtualglove-uno-lid.stl)
+
+**Controller Dock**
+
+- [Dock base](../hardware/enclosures/stl/virtualglove-dock-base.stl)
+- [Dock lid](../hardware/enclosures/stl/virtualglove-dock-lid.stl)
+
+**Shared details and fit checks**
+
+- [Matrix bezel](../hardware/enclosures/stl/virtualglove-matrix-bezel.stl)
+- [USB-C fit coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl)
+- [Hub fit coupon](../hardware/enclosures/stl/virtualglove-hub-fit-coupon.stl)
+
+**Small hand/target lid emblem**
+
+- [Dark backing](../hardware/enclosures/stl/virtualglove-lid-logo-backing.stl)
+- [Cyan hand and target](../hardware/enclosures/stl/virtualglove-lid-logo-cyan.stl)
+- [Red target beam](../hardware/enclosures/stl/virtualglove-lid-logo-red.stl)
+
+**Optional full-logo plaque**
+
+- [Dark backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl)
+- [Cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl)
+- [Red target accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl)
+
+**Optional larger hand/target emblem**
+
+- [Dark backing](../hardware/enclosures/stl/virtualglove-target-badge-backing.stl)
+- [Cyan hand and target](../hardware/enclosures/stl/virtualglove-target-badge-cyan.stl)
+- [Red target beam](../hardware/enclosures/stl/virtualglove-target-badge-red.stl)
+
+To change a dimension, download the
+[parametric OpenSCAD source](../hardware/enclosures/virtualglove-controller.scad)
+and the [STL export script](../hardware/enclosures/export-stl.sh).
 
 ## Before printing
 
@@ -113,10 +156,10 @@ another high-temperature location, and never cover its ventilation slots.
 
 ## Printing the branding
 
-The smallest lid badge is a one-piece relief and can be printed in one colour.
-For the closest match to the VirtualGlove artwork, use charcoal or black for the
-backing, cyan for the hand and wordmark, and red for the target beam and terminal
-accents.
+The lid emblem is a compact version of the hand/target project mark. For the
+closest match to the VirtualGlove artwork, use charcoal or black for the
+backing, cyan for the hand and target corners, and red for the target beam. The
+larger optional plaque combines the same mark with the full wordmark.
 
 The colour layers are separate STL files. With one ACE Pro, assign each layer
 its colour in the slicer and assemble them on the same plate, or print one colour

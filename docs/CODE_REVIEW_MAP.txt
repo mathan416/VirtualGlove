@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 617
+Git-visible files: 619
 Python test modules: 75
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-617 tracked or non-ignored files are present in this checkout. Ignored
+619 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -428,13 +428,15 @@ are intentionally omitted.
 |       |   |-- virtualglove-uno-case-exterior.png
 |       |   `-- virtualglove-uno-case.png
 |       |-- stl
-|       |   |-- virtualglove-badge.stl
 |       |   |-- virtualglove-dock-base.stl
 |       |   |-- virtualglove-dock-lid.stl
 |       |   |-- virtualglove-full-logo-backing.stl
 |       |   |-- virtualglove-full-logo-cyan.stl
 |       |   |-- virtualglove-full-logo-red.stl
 |       |   |-- virtualglove-hub-fit-coupon.stl
+|       |   |-- virtualglove-lid-logo-backing.stl
+|       |   |-- virtualglove-lid-logo-cyan.stl
+|       |   |-- virtualglove-lid-logo-red.stl
 |       |   |-- virtualglove-matrix-bezel.stl
 |       |   |-- virtualglove-target-badge-backing.stl
 |       |   |-- virtualglove-target-badge-cyan.stl

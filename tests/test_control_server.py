@@ -44,7 +44,7 @@ from virtualglove.control_server import (
     ControlState, help_document_page, help_index_page, start_control_server,
 )
 from virtualglove.debug_server import SharedDebugState
-from virtualglove.help_content import guide_pdf, help_asset, render_markdown
+from virtualglove.help_content import enclosure_asset, guide_pdf, help_asset, render_markdown
 from virtualglove.help_content import cabinet_reference_content, request_browser_address
 from virtualglove.vision_app import (
     _base_status, _effective_profile, _requested_rapid_fire,
@@ -790,6 +790,19 @@ class ControlStateTests(unittest.TestCase):
         self.assertIsNone(guide_pdf("quick-reference"))
         self.assertIsNone(guide_pdf("../../data/device"))
 
+    def test_enclosure_downloads_are_bounded_to_public_print_files(self):
+        asset = enclosure_asset("stl/virtualglove-uno-base.stl")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        self.assertEqual(asset[1:], ("model/stl", "virtualglove-uno-base.stl"))
+        self.assertGreater(len(asset[0]), 1000)
+        self.assertEqual(
+            enclosure_asset("previews/virtualglove-uno-case-exterior.png")[1],
+            "image/png",
+        )
+        self.assertIsNone(enclosure_asset("../../data/device.json"))
+        self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
+
     def test_help_routes_serve_html_markdown_and_images(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
         try:
@@ -813,6 +826,8 @@ class ControlStateTests(unittest.TestCase):
                 ("/help/gameplay.md", "text/markdown"),
                 ("/help-pdf/gameplay.pdf", "application/pdf"),
                 ("/help-assets/gestures/directional-movement.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-exterior.png", "image/png"),
+                ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 connection.request("GET", path)

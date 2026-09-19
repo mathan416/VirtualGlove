@@ -36,6 +36,7 @@ from urllib.parse import urlsplit
 DOCS_ROOT = Path(__file__).resolve().parents[2] / "docs"
 HELP_ASSETS_ROOT = DOCS_ROOT / "images"
 HELP_PDFS_ROOT = DOCS_ROOT.parent / "output" / "pdf"
+ENCLOSURE_ROOT = DOCS_ROOT.parent / "hardware" / "enclosures"
 HELP_GUIDES = (
     {'slug': 'cabinet', 'title': 'This console', 'file': None, 'description': 'Live VirtualGlove Controller links and the active RetroPie connection, generated for this cabinet.', 'group': 'User manuals'},
     {'slug': 'gameplay', 'title': 'Game and gesture guide', 'file': 'GAMEPLAY_GUIDE.md', 'description': 'Illustrated Rock Paper Scissors instructions, configured-game controls, and play tips.', 'group': 'User manuals'},
@@ -147,6 +148,29 @@ def help_asset(relative_name: str) -> tuple[bytes, str] | None:
         return None
     try:
         return requested.read_bytes(), content_type
+    except OSError:
+        return None
+
+
+def enclosure_asset(relative_name: str) -> tuple[bytes, str, str] | None:
+    """Read one public enclosure source, print file, or preview from its fixed tree."""
+    root = ENCLOSURE_ROOT.resolve()
+    try:
+        requested = (root / relative_name).resolve()
+        requested.relative_to(root)
+    except (OSError, ValueError):
+        return None
+    content_types = {
+        ".png": "image/png",
+        ".stl": "model/stl",
+        ".scad": "text/plain; charset=utf-8",
+        ".sh": "text/x-shellscript; charset=utf-8",
+    }
+    content_type = content_types.get(requested.suffix.lower())
+    if content_type is None or not requested.is_file():
+        return None
+    try:
+        return requested.read_bytes(), content_type, requested.name
     except OSError:
         return None
 
@@ -335,6 +359,8 @@ def _safe_target(target: str, image: bool = False) -> str:
         return "/assets/virtualglove-logo.png"
     if image and target.startswith("images/"):
         return "/help-assets/" + target[len("images/"):]
+    if target.startswith("../hardware/enclosures/"):
+        return "/help-enclosure/" + target[len("../hardware/enclosures/"):]
     filename = target.split("#", 1)[0].rsplit("/", 1)[-1]
     if filename in SLUG_BY_FILE:
         anchor = "#" + target.split("#", 1)[1] if "#" in target else ""

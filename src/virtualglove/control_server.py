@@ -78,7 +78,7 @@ from .camera_profile import (
 )
 
 from .help_content import (
-    cabinet_reference_content, help_asset, help_document_content,
+    cabinet_reference_content, enclosure_asset, help_asset, help_document_content,
     help_index_content, guide_markdown, guide_pdf,
 )
 from .pairing import (
@@ -1333,6 +1333,16 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                 else:
                     body, content_type = asset
                     _send(self, 200, body, content_type)
+            elif path.startswith("/help-enclosure/"):
+                asset = enclosure_asset(path[len("/help-enclosure/"):])
+                if asset is None:
+                    self.send_error(404)
+                else:
+                    body, content_type, filename = asset
+                    headers = None if content_type == "image/png" else {
+                        "Content-Disposition": f'attachment; filename="{filename}"',
+                    }
+                    _send(self, 200, body, content_type, headers)
             elif path == "/favicon.ico":
                 try:
                     _send(self, 200, (LOGO_PATH.parent / "favicon.ico").read_bytes(), "image/vnd.microsoft.icon")

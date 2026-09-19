@@ -22,7 +22,9 @@ export_part uno_lid virtualglove-uno-lid
 export_part dock_base virtualglove-dock-base
 export_part dock_lid virtualglove-dock-lid
 export_part matrix_bezel virtualglove-matrix-bezel
-export_part badge virtualglove-badge
+export_part lid_logo_backing virtualglove-lid-logo-backing
+export_part lid_logo_cyan virtualglove-lid-logo-cyan
+export_part lid_logo_red virtualglove-lid-logo-red
 export_part target_badge_backing virtualglove-target-badge-backing
 export_part target_badge_cyan virtualglove-target-badge-cyan
 export_part target_badge_red virtualglove-target-badge-red
