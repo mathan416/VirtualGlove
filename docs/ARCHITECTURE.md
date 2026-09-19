@@ -3,7 +3,7 @@
 A camera-to-controller system for the **VirtualGlove Controller (Arduino
 UNO Q)** and supported RetroArch consoles.
 
-This guide describes the current implementation reviewed on September 10, 2026.
+This guide describes the current implementation reviewed on September 18, 2026.
 It is a map of production responsibilities, data flows, interfaces, and failure
 behavior—not a chronology of experiments. The decisions and discarded paths
 that led here are recorded in the [Engineering Journey](ENGINEERING_JOURNEY.md).
@@ -21,10 +21,11 @@ Linux performs hand tracking and gesture recognition.
 
 There are four independent questions: which game profile is selected, whether
 the camera is running, whether the player has armed controller delivery, and whether
-a valid registered-game or manual context currently permits packets. Glove Academy can
-open the camera while the selected profile is **Gestures off**. Glove Academy and Tune
-both pause game input. A healthy web page does not by itself establish that the
-camera, receiver, or game is working.
+a valid registered-game or manual context currently permits packets.
+
+Glove Academy can open the camera while the selected profile is **Gestures off**.
+Glove Academy and Tune both pause game input. A healthy web page does not by
+itself establish that the camera, receiver, or game is working.
 
 | Read about | Section |
 | --- | --- |
@@ -56,17 +57,22 @@ camera, receiver, or game is working.
 App Lab starts `python/main.py` in the main application container. This
 supervisor runs the website and starts an isolated Python 3.12 vision worker
 with the sole packaged MediaPipe 0.10.35 ARM64 wheel. There is no installed
-0.10.18 fallback or runtime selector. It polls worker status, updates the matrix,
-and retries a worker that stops. The worker's internal HTTP interface is on
-loopback port 8089; the public website is on 8088, with secure Setup on 8443.
+0.10.18 fallback or runtime selector.
+
+The supervisor polls worker status, updates the matrix, and retries a worker
+that stops. The worker's internal HTTP interface is on loopback port 8089. The
+public website is on 8088, with secure Setup on 8443.
 
 On Recalbox and Batocera, a persistent merger creates its uinput gamepad before
 RetroArch starts. It translates the chosen controller's saved EmulationStation
 mapping into a canonical RetroPad, then combines that state with authenticated
-VirtualGlove state over a private local socket. Physical directions and axes
-win on the axis they actively occupy; ordinary buttons combine. The physical
-hotkey has a dedicated output button, and VirtualGlove Select can never assert
-it. The merged gamepad remains neutral outside RetroArch, so EmulationStation
+VirtualGlove state over a private local socket.
+
+Physical directions and axes win on the axis they actively occupy; ordinary
+buttons combine. The physical hotkey has a dedicated output button, and
+VirtualGlove Select can never assert it.
+
+The merged gamepad remains neutral outside RetroArch, so EmulationStation
 continues to use only the original controller. Disconnect releases only physical
 state; the saved stable identity reconnects without relying on an event number.
 
@@ -83,12 +89,15 @@ The supervisor passes the private `data/device.json` path to the worker using
 `--device-config`; the token itself is absent from process arguments. Device
 configuration mutations are serialized and atomically replace private files.
 Setup content and browser actions live in `setup_web.py`, separate from HTTP routes.
+
 Start/Stop intent has a single pending slot and serialized delivery attempts;
 the supervisor retries transient failures until the worker handler acknowledges
 acceptance. A newer explicit request supersedes pending intent. This mechanism
 does not buffer camera frames or controller state, and acknowledgement does not
-prove emulator consumption. Receiver socket timeout and last-valid-packet
-expiry both publish neutral native state and release the virtual gamepad.
+prove emulator consumption.
+
+Receiver socket timeout and last-valid-packet expiry both publish neutral
+native state and release the virtual gamepad.
 
 Two app-owned support containers provide the profile-control UDP relay and
 local-hostname resolution. The profile relay publishes port 55356 and forwards
@@ -114,7 +123,10 @@ sockets. These functions are kept separate from camera inference.
    `HandObservation` using the selected frame's capture timestamp. MediaPipe's
    score is labelled as handedness certainty rather than position confidence.
 
-3. The gesture engine compares that observation with the saved neutral calibration and effective thresholds. Directions are relative to the calibrated palm; apparent hand-size change supplies forward/backward movement.
+3. The gesture engine compares that observation with the saved neutral
+   calibration and effective thresholds. Directions are relative to the
+   calibrated palm; apparent hand-size change supplies forward/backward
+   movement.
 
 4. Shared activation/release states and held menu poses feed the selected
    Programs 1–14, Programs A–I, or game-specific profile mapping. Numeric
@@ -124,26 +136,30 @@ sockets. These functions are kept separate from camera inference.
    `ControllerState`, including buttons, D-pad, axes, finger values, events,
    sequence, and tracking/calibration metadata.
 
-   Program 2 also derives transient centering feedback, Program 13 leaves the
-   camera D-pad neutral for the merged physical controller, and Program 14
-   closes vision and neutralizes all VirtualGlove output. These are mapping and
-   lifecycle decisions; none rewrites player calibration or recognition tuning.
-   The [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14) documents every
-   numeric Program's gesture priority, compound-action release rule, and indexed
-   game assignment.
-
 5. The worker sends the state only if controller delivery is armed, a live
    registered-game lease or intentional manual Dashboard context exists, and neither
    practice nor tuning is active.
 
-6. The sender establishes a receiver-issued challenge, then sends bounded HMAC-SHA256 controller datagrams over UDP 55355. Packets contain session and sequence identifiers, never the shared token.
+6. The sender establishes a receiver-issued challenge, then sends bounded
+   HMAC-SHA256 controller datagrams over UDP 55355. Packets contain session and
+   sequence identifiers, never the shared token.
 
 7. The receiver checks the message HMAC, live challenge, peer, and increasing
    sequence. For Super Glove Ball it publishes native state before updating the
    unrelated virtual gamepad; other profiles preserve virtual-gamepad behavior.
    It creates the real virtual controller when the first accepted packet arrives.
 
-8. Linux `uinput` exposes the virtual gamepad to RetroArch, which applies its configured input mapping before the game consumes it.
+8. Linux `uinput` exposes the virtual gamepad to RetroArch, which applies its
+   configured input mapping before the game consumes it.
+
+Program 2 also derives transient centering feedback, Program 13 leaves the
+camera D-pad neutral for the merged physical controller, and Program 14 closes
+vision and neutralizes all VirtualGlove output. These are mapping and lifecycle
+decisions; none rewrites player calibration or recognition tuning.
+
+The [Gameplay Guide](GAMEPLAY_GUIDE.md#program-cards-1-14) documents every
+numeric Program's gesture priority, compound-action release rule, and indexed
+game assignment.
 
 One-second maintenance challenges provide receiver liveness. After three seconds
 without an authenticated reply—or immediately when the saved hostname has no
@@ -198,53 +214,64 @@ comfortable-reach spans. A missed observation shorter than
 buttons, fingers, depth, roll, and digital directions release on the first
 missed native observation without inheriting the X/Y hold.
 
-Final sustained attribution measured ordinary landmark continuation near 37 ms
-median and palm detection/reacquisition near 105 ms median. Two-buffer direct
-V4L2 diagnostics sustained approximately 30 camera dequeues per second, with
-MJPEG decode near 5.4 ms median and post-graph work near 2.9 ms median. Inference
-run-queue wait was negligible. These figures establish the palm detector as the
-remaining CPU latency tail; they do not justify another smoothing layer, frame
-queue, or speculative parallel tracker. OpenCV with thread isolation remains
-the live-tested production reader, and its saved one-buffer request remains
-independent of the direct-reader diagnostic.
 After that brief gap, Latest immediately accepts a strongly aligned forward
 measurement. One contradictory or unusually distant non-forward result instead
 holds the last reliable point until the next fresh measurement confirms the
 location. The guard never invents a forward coordinate or smooths normal motion.
 Longer tracking loss or stale input neutralizes the native sample and clears the
-coordinate history. Digital FCEUmm directions instead classify every fresh hand
-position in a 3×3 grid anchored to the saved calibrated neutral palm position. The center square releases
-all positional directions, its four side regions produce cardinals, and its four
-corner regions produce diagonals. Setup's **Joystick dead zone** saves the square's
-chosen full-frame width and height per player. Its effective size is at least
-1.5 times the saved calibrated palm size. The full square translates inward at
-camera edges rather than clipping; live hand size and neutral jitter do not change it.
-It does not alter native reach, finger gestures, or game mappings. Re-centering clears
-saved reach spans because they belong to the old center.
+coordinate history.
+
+Final sustained attribution measured ordinary landmark continuation near 37 ms
+median and palm detection/reacquisition near 105 ms median. Two-buffer direct
+V4L2 diagnostics sustained approximately 30 camera dequeues per second, with
+MJPEG decode near 5.4 ms median and post-graph work near 2.9 ms median. Inference
+run-queue wait was negligible.
+
+These figures establish the palm detector as the remaining CPU latency tail;
+they do not justify another smoothing layer, frame queue, or speculative
+parallel tracker. OpenCV with thread isolation remains the live-tested
+production reader. Its saved one-buffer request remains independent of the
+direct-reader diagnostic.
+
+Digital FCEUmm directions instead classify every fresh hand position in a 3×3
+grid anchored to the saved calibrated neutral palm position. The center square
+releases all positional directions, its four side regions produce cardinals,
+and its four corner regions produce diagonals.
+
+Setup's **Joystick dead zone** saves the square's chosen full-frame width and
+height per player. Its effective size is at least 1.5 times the saved calibrated
+palm size. The full square translates inward at camera edges rather than
+clipping; live hand size and neutral jitter do not change it.
+
+The dead zone does not alter native reach, finger gestures, or game mappings.
+Re-centering clears saved reach spans because they belong to the old center.
 
 The worker sends authenticated controller state immediately after recognition.
 Its tuning configuration and pause gates are captured before inference, so no
 tuning or Dashboard lock sits between completed inference and UDP transmission.
 For established sessions, the gameplay state precedes periodic handshake
 maintenance; reply decoding is bounded per frame. UI-visible control transitions
-are then submitted immediately to a separate latest-only publisher. When the
-browser's **Show statistics** preference is enabled, routine derived gesture and
-controller detail refreshes at about 10 Hz and rolling percentile summaries at
-2 Hz; hidden statistics do not incur that work. Browser video is
-submitted at most five times per second and only while a stream consumer is
-connected. MediaPipe always uses the same fused frame preparation whether the
-preview is open or closed. A separate single-slot worker mirrors the display
-copy, draws normalized landmarks, downsizes
-the gameplay preview to 320×240, performs JPEG encoding, and discards a
-superseded preview instead of delaying gameplay. Detailed joint and landmark
-diagnostics follow that preview cadence; finger geometry itself is calculated
-once for recognition. Controller sending occurs before optional preview work,
-so the browser refresh rate is not the controller state update rate. Optional
-Dashboard statistics are off by default and browser-local; when disabled, the
-page does not read, render, retain, or request detailed controller and event
-fields. Capture
-age, inference cadence, skipped frames, preview cost, and send time expose the
-local stages; none alone is an end-to-end camera-to-game latency measurement.
+are then submitted immediately to a separate latest-only publisher.
+
+When the browser's **Show statistics** preference is enabled, routine derived
+gesture and controller detail refreshes at about 10 Hz and rolling percentile
+summaries at 2 Hz; hidden statistics do not incur that work. Optional Dashboard
+statistics are off by default and browser-local. When disabled, the page does
+not read, render, retain, or request detailed controller and event fields.
+
+Browser video is submitted at most five times per second and only while a stream
+consumer is connected. MediaPipe always uses the same fused frame preparation
+whether the preview is open or closed. A separate single-slot worker mirrors the
+display copy, draws normalized landmarks, downsizes the gameplay preview to
+320×240, performs JPEG encoding, and discards a superseded preview instead of
+delaying gameplay.
+
+Detailed joint and landmark diagnostics follow that preview cadence; finger
+geometry itself is calculated once for recognition. Controller sending occurs
+before optional preview work, so the browser refresh rate is not the controller
+state update rate. Capture age, inference cadence, skipped frames, preview cost,
+and send time expose the local stages; none alone is an end-to-end
+camera-to-game latency measurement.
 
 The shipped graph runs on the UNO Q CPU. OpenGL/OpenCL, MediaPipe Tasks GPU,
 MNN/Vulkan, and ncnn comparisons did not beat this complete CPU graph while
@@ -330,10 +357,13 @@ Glove Academy preserves the selected game profile while using a mapping-independ
 practice profile for its sixteen lessons, including **Glove Zap**, **Pull Back**,
 both wrist rolls, close hand, and menu guard. Progress is saved for each player;
 completing all sixteen lessons earns the Glove Master award.
+
 Browser leases support multiple Glove Academy tabs; the last lease ending restores the
 selected vision mode. Leases expire after six seconds without refresh. Dashboard
-also clears abandoned practice sessions. Glove Academy learning restores its prior
-controller intent; Tune requires an explicit start from Dashboard when finished.
+also clears abandoned practice sessions.
+
+Glove Academy learning restores its prior controller intent. Tune requires an
+explicit start from Dashboard when finished.
 
 The browser downloads a backup for only the selected player, usually to its
 Downloads folder. Restore reads that chosen file and updates the selected
@@ -412,22 +442,26 @@ Hand setup observes both states for all five fingers. Individual gesture tuning
 can run without it. Fingers extended throughout retain their existing settings;
 extended-only samples cannot establish a curled boundary. Automatic suggestions
 now check all required fingers against the candidate configuration using the
-same pose checks as recognition. At least 90% of accepted samples must match the
-complete pose simultaneously. The opening and release phases must also show all
-selected fingers extended in at least 90% of samples. A failure names the finger
-and phase; no suggestion is retained. Strong curls cannot compensate for fingers
-that should be extended. Thumbs-up checks a straight thumb and four curled
-fingers; it does not impose an upward screen direction. Manual threshold edits
-validate range and scope, not recorded pose quality. Live testing is still needed.
+same pose checks as recognition.
+
+At least 90% of accepted samples must match the complete pose simultaneously.
+The opening and release phases must also show all selected fingers extended in
+at least 90% of samples. A failure names the finger and phase; no suggestion is
+retained. Strong curls cannot compensate for fingers that should be extended.
+
+Thumbs-up checks a straight thumb and four curled fingers; it does not impose an
+upward screen direction. Manual threshold edits validate range and scope, not
+recorded pose quality. Live testing is still needed.
 
 The candidate is temporary until the same recognition path observes two complete
 activation/release cycles and three neutral seconds. Only then can the wizard
 atomically merge selected pairs into the active player’s version-6 record. Positional
 movement is not a gesture-tuning channel: one per-player center-box scalar drives a
 stateless 3×3 classification, and calibration jitter may enlarge its effective size.
-Raw gesture controls remain
-inside Advanced. Normal personalization retains no camera recording. The separate
-diagnostic path deletes its temporary AVI after producing an aggregate-only report.
+
+Raw gesture controls remain inside Advanced. Normal personalization retains no
+camera recording. The separate diagnostic path deletes its temporary AVI after
+producing an aggregate-only report.
 
 ## Profile and configuration flows
 
@@ -453,8 +487,10 @@ that use that finger; it does not change the button assignments in a game profil
 Neutral calibration is distinct from hand setup. It accepts 24 detected hand
 observations with finite, non-collapsed landmark geometry, centers position, depth, and roll,
 records 95th-percentile X/Y jitter, and lets movement thresholds rise only
-when needed to remain safely above that noise; hand setup establishes finger thresholds. The app reuses valid neutral
-calibration across Glove Academy, profile changes, camera reconnects, and worker restarts.
+when needed to remain safely above that noise; hand setup establishes finger thresholds.
+
+The app reuses valid neutral calibration across Glove Academy, profile changes,
+camera reconnects, and worker restarts.
 Recalibrate after moving the camera or changing playing position. Ordinary
 updates preserve `data/` rather than replacing it with example configuration.
 The portable release baseline is `config/profiles.json`; raw neutral coordinates
@@ -469,8 +505,9 @@ LaunchBox uses its RetroArch wrapper. For a registered game, the integration
 sends a signed profile renewal every two seconds to Controller UDP 55356 while
 the platform-specific game lease remains valid. It derives the active core from
 the platform's authoritative launch or process context and includes it in each
-renewal. Each
-renewal carries a bounded six-second lease. The app-owned relay forwards
+renewal.
+
+Each renewal carries a bounded six-second lease. The app-owned relay forwards
 the bytes to the worker; the worker authenticates them and treats repeated renewals
 as lease refreshes rather than profile transitions. The acknowledgement travels back
 through the relay. The relay has no shared token and cannot declare a profile applied.
@@ -487,9 +524,13 @@ the Controller's authenticated discovery of its paired console on UDP 55355.
 The first live renewal changes profile once and starts a one-second initialization
 guard. A VirtualGlove Controller application restart can therefore rediscover an already-running
 registered game from the next renewal without exposing the runcommand menu to hand
-input. Game-end hooks, RetroArch termination, marker replacement, unknown games, and
-lease expiry request or produce neutral/off state. The player's armed/stopped choice
-is stored separately: Stop remains sticky, while armed alone never authorizes output.
+input.
+
+Game-end hooks, RetroArch termination, marker replacement, unknown games, and
+lease expiry request or produce neutral/off state. The player's armed/stopped
+choice is stored separately: Stop remains sticky, while armed alone never
+authorizes output.
+
 Manual Dashboard profile selection provides an explicit testing context without
 pretending that a registered game is running. Unsupported or unregistered games do
 not gain a mapping merely because their filenames resemble a registered title.
@@ -521,30 +562,35 @@ the emulated glove neutral.
 Exact-ROM traces now confirm the ten-byte packet boundary, MSB-first reads,
 native Start, continuous X/Y, signed Z, and open/fist/index packet response. Live
 full-game play confirms the resulting grab/throw, index-fire, and
-fist-plus-forward Power Punch actions. A matched same-ROM test confirms
-that FCEUmm requests only ordinary joypad input while both cores visibly respond
-to all four directions by frame 3. Stale, uncalibrated, lost, and
-wrong-profile samples produce a neutral packet. The shared layer publishes its
-five-finger closed-hand and index-point decisions explicitly so the core does
-not reconstruct compound poses from partial finger data. All confirmed Super
-Glove Ball actions are mapped. The raw roll byte and unobserved button codes
-remain neutral because the exact ROM has shown no separate action for them;
-guessing values could create unintended input. Stock Nestopia remains untouched.
+fist-plus-forward Power Punch actions. A matched same-ROM test confirms that
+FCEUmm requests only ordinary joypad input while both cores visibly respond to
+all four directions by frame 3. Stale, uncalibrated, lost, and wrong-profile
+samples produce a neutral packet.
+
+The shared layer publishes its five-finger closed-hand and index-point decisions
+explicitly so the core does not reconstruct compound poses from partial finger
+data. All confirmed Super Glove Ball actions are mapped. The raw roll byte and
+unobserved button codes remain neutral because the exact ROM has shown no
+separate action for them; guessing values could create unintended input. Stock
+Nestopia remains untouched.
+
 RetroPie registers the custom core in its normal secondary-core directory.
 Recalbox keeps a target-specific core in its persistent share and exposes the
 separate core plus a current system-list entry through reversible runtime
 mounts. Its bounded RetroArch process monitor recognizes the actual core command
 line and authenticates the same native profile identity used by RetroPie.
+
 Batocera keeps the architecture-selected core in persistent `/userdata`, then uses two
 reversible overlay mounts to expose only the separately named core and matching
 info record through Batocera's read-only core paths. The core forces its own
 Player 1 to the native Power Glove peripheral; other cores and other Nestopia
 games retain their normal devices. It is enabled only through a Super Glove Ball
 per-ROM emulator choice after its manifest, corresponding source, ELF identity,
-and libretro identity are verified and it is load-checked on the console. The
-release carries 15 separately targeted Batocera 43.1 cores; it never treats one
-binary as cross-architecture. Exact registered Super Glove Ball filenames are
-selected only when no existing per-ROM core choice is present. See the
+and libretro identity are verified and it is load-checked on the console.
+
+The release carries 15 separately targeted Batocera 43.1 cores; it never treats
+one binary as cross-architecture. Exact registered Super Glove Ball filenames
+are selected only when no existing per-ROM core choice is present. See the
 [native compatibility record](super-glove-ball-native.md).
 
 LaunchBox installs a separately named x86-64 DLL and corresponding source in
@@ -572,23 +618,32 @@ emulator consumption. See [Setup status](CONFIGURATION_REFERENCE.md#independent-
 
 Player operations pass through the bounded same-origin `/api/players` endpoint
 into the worker. Its tuning lock owns one atomic player/settings/progress file.
-Generations reject stale writes. Each player retains a saved calibration;
-selection automatically applies the selected player’s saved center through the durable restore path, with output paused; players without a saved center require centering. Version-4
-portable backups include the center-box size, personal and effective gesture sensitivity,
-source software identity, name, and the player's neutral reference. They exclude credentials and
-Academy progress. Older portable formats are rejected without mutation. A
-version-6 player store journals confirmed calibration
-reuse; the worker writes `calibration.json` before clearing the pending reference
-and centering gate. Output remains paused until Start controller. The journal
-resumes after crashes. Older internal stores are reported as unsupported and are
-not overwritten. Progress writes occur on lesson transitions, not frames.
+Generations reject stale writes.
+
+Each player retains a saved calibration. Selection automatically applies the
+selected player’s saved center through the durable restore path, with output
+paused; players without a saved center require centering.
+
+Version-4 portable backups include the center-box size, personal and effective
+gesture sensitivity, source software identity, name, and the player's neutral
+reference. They exclude credentials and Academy progress. Older portable formats
+are rejected without mutation.
+
+A version-6 player store journals confirmed calibration reuse. The worker writes
+`calibration.json` before clearing the pending reference and centering gate.
+Output remains paused until Start controller. The journal resumes after crashes.
+Older internal stores are reported as unsupported and are not overwritten.
+Progress writes occur on lesson transitions, not frames.
 
 Hostname resolution for controller sends runs in one background thread with a
 single cached address. No controller states are retained by that thread. Missing
 or expired addresses cause the current send to be skipped; later calls use their
-own newest state. Host physical Wi-Fi/Ethernet link health is sampled independently by an unprivileged
-systemd timer, which publishes a small expiring JSON record for the supervisor
-and fourth Off-mode matrix pixel. Console reachability remains a separate probe.
+own newest state.
+
+Host physical Wi-Fi/Ethernet link health is sampled independently by an
+unprivileged systemd timer, which publishes a small expiring JSON record for the
+supervisor and fourth Off-mode matrix pixel. Console reachability remains a
+separate probe.
 
 Build metadata records the source commit and candidate. A generated sketch
 fingerprint is compiled into firmware and read through Router Bridge in the
@@ -608,9 +663,15 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | Private Unix sockets | App resolver to host Avahi; Recalbox/Batocera receiver to Player 1 merger | Local hostname resolution and bounded local VirtualGlove state delivery |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
 
-The LAN remains a trust boundary. Controller version 2 uses its own domain-separated HMAC-SHA256 and receiver-issued challenges. It does not encrypt input. Version 1 is neither accepted nor emitted. Do not describe all links as equivalent secure channels. Pairing and registry exchange have their
-own protections; browser mutations use the existing request-header and Origin
-checks. See the [Security policy](SECURITY.md) for the full trust model.
+The LAN remains a trust boundary. Controller version 2 uses its own
+domain-separated HMAC-SHA256 and receiver-issued challenges. It does not encrypt
+input. Version 1 is neither accepted nor emitted.
+
+Do not describe all links as equivalent secure channels. Pairing and registry
+exchange have their own protections.
+
+Browser mutations use the existing request-header and Origin checks. See the
+[Security policy](SECURITY.md) for the full trust model.
 
 | Failure or transition | Implemented response | Interpretation |
 | --- | --- | --- |
@@ -642,16 +703,19 @@ network addresses.
 The versioned `install-uno-q.sh`, `install-retropie.sh`,
 `install-recalbox.sh`, and `install-batocera.sh` entry points download matching
 packages and call the shared host installer. LaunchBox uses its extracted
-per-user PowerShell installer. The UNO route uses App
-Lab CLI to build/upload the sketch and start the app; it installs both startup
-and fixed-purpose shutdown/camera-recovery helpers. Each console route installs
-its receiver and platform-specific game-session integration in the platform's
-supported persistent location, then checks emulator and registered-game configuration.
+per-user PowerShell installer.
+
+The UNO route uses App Lab CLI to build/upload the sketch and start the app; it
+installs both startup and fixed-purpose shutdown/camera-recovery helpers. Each
+console route installs its receiver and platform-specific game-session
+integration in the platform's supported persistent location, then checks
+emulator and registered-game configuration.
 
 There are two deployable parts. Python, website, documentation, assets, and
 service support run on Linux. The **Arduino sketch** is the microcontroller source
 code; its compiled and installed version is the **matrix firmware**. That firmware
 drives the LED matrix and handles Router Bridge commands.
+
 The Wi-Fi deployment script synchronizes Linux application files and recreates
 containers; it does not upload matrix firmware. A documentation-only sync can serve new
 Markdown and PDFs without restarting the application, provided Python route
@@ -673,10 +737,12 @@ The verified platform supplies Arduino_LED_Matrix **0.1.3**. Retain the complete
 
 Installing that platform makes build tools available. Compile-only validation
 builds against it but does not flash hardware. App Lab **Run**, or its supported
-app-restart command, compiles the Arduino sketch and uploads the matrix firmware. Back up the installed source
-and firmware cache, verify compilation, upload, then check application health,
-bridge response, physical matrix appearance, and actual controls. Keep private
-settings intact. Detailed commands are in the [Installation Guide](CONFIGURATION_REFERENCE.md#build-and-install-matrix-firmware).
+app-restart command, compiles the Arduino sketch and uploads the matrix firmware.
+
+Back up the installed source and firmware cache, verify compilation, upload,
+then check application health, bridge response, physical matrix appearance, and
+actual controls. Keep private settings intact. Detailed commands are in the
+[Installation Guide](CONFIGURATION_REFERENCE.md#build-and-install-matrix-firmware).
 
 Documentation has an editable Markdown source, generated diagrams, built-in Help
 rendering, and a PDF edition. `scripts/build-architecture-diagrams.py` regenerates
@@ -730,21 +796,24 @@ recording count as validated for other users.
 
 The Arduino sketch shows an hourglass before its blocking Router Bridge setup.
 A dedicated display task owns subsequent framebuffer writes and keeps startup
-feedback moving independently of Linux and Python initialization. The main
-sketch task registers the bridge endpoints; those endpoints update requested
-status/profile values, and the display task renders them. If the display-task
-stack allocation fails, the first hourglass stays visible during setup and the
-normal sketch loop takes over rendering afterward. This task currently uses the
-Zephyr API supplied by the Arduino sketch platform.
+feedback moving independently of Linux and Python initialization.
+
+The main sketch task registers the bridge endpoints; those endpoints update
+requested status/profile values, and the display task renders them. If the
+display-task stack allocation fails, the first hourglass stays visible during
+setup and the normal sketch loop takes over rendering afterward. This task
+currently uses the Zephyr API supplied by the Arduino sketch platform.
 
 Python requests loading before importing the web controls, then forwards normal
 worker status. The hourglass indicates activity, not measured completion. It
-does not replace the protected system boot display. The optional host user
-service `virtualglove-early-start.service` releases the installed sketch earlier
-using the loader release flag, after checking the selected app and sketch
-samples. It never resets, halts, or flashes the sketch. This brings the existing
-hourglass forward while App Lab continues starting. Failure falls back to normal
-App Lab startup; the cold-boot trial was confirmed on the physical board.
+does not replace the protected system boot display.
+
+The optional host user service `virtualglove-early-start.service` releases the
+installed sketch earlier using the loader release flag, after checking the
+selected app and sketch samples. It never resets, halts, or flashes the sketch.
+This brings the existing hourglass forward while App Lab continues starting.
+Failure falls back to normal App Lab startup; the cold-boot trial was confirmed
+on the physical board.
 
 ### Idle display preferences
 
@@ -763,9 +832,31 @@ before reporting success. This verifies that RetroPie is running the receiver
 and accepts the token just written. It does not arm controller delivery or prove
 that RetroArch, an emulator, or a game consumed input.
 
-The nonblocking sender emits a signed hello with random session and request identifiers. RetroPie replies with a fresh random 128-bit challenge; only a signed reply matching the sender's current request, session, and configured receiver port is accepted. On Linux, receiver replies preserve the destination address and receiving interface using IP_PKTINFO, so Ethernet/Wi-Fi multihoming works through container NAT. The sender also permits a different source address when HMAC, request, session, and port match. A valid state activates that challenge. Activation invalidates every older active and pending challenge; subsequent states require increasing sequence numbers. A replayed hello can obtain a new challenge but cannot supply an authenticated state for it. Receiver restarts discard all challenges, so recorded traffic from a previous process cannot activate input.
+The nonblocking sender emits a signed hello with random session and request
+identifiers. RetroPie replies with a fresh random 128-bit challenge; only a
+signed reply matching the sender's current request, session, and configured
+receiver port is accepted.
 
-At most eight pending handshakes are retained, for three seconds each. No input state is retained while negotiating. Hellos repeat every 250 milliseconds before the first challenge, then once per second to recover a receiver restart. The sender reads at most eight replies per update without blocking and sends only that update's state. Periodic handshake traffic does not reset the receiver's input-release deadline. Both native-state publication and uinput remain behind the same accepted-state check; the core and recognition paths are unchanged.
+On Linux, receiver replies preserve the destination address and receiving
+interface using `IP_PKTINFO`, so Ethernet/Wi-Fi multihoming works through
+container NAT. The sender also permits a different source address when HMAC,
+request, session, and port match.
+
+A valid state activates that challenge. Activation invalidates every older
+active and pending challenge; subsequent states require increasing sequence
+numbers. A replayed hello can obtain a new challenge but cannot supply an
+authenticated state for it. Receiver restarts discard all challenges, so
+recorded traffic from a previous process cannot activate input.
+
+At most eight pending handshakes are retained, for three seconds each. No input
+state is retained while negotiating. Hellos repeat every 250 milliseconds before
+the first challenge, then once per second to recover a receiver restart.
+
+The sender reads at most eight replies per update without blocking and sends
+only that update's state. Periodic handshake traffic does not reset the
+receiver's input-release deadline. Both native-state publication and `uinput`
+remain behind the same accepted-state check; the core and recognition paths are
+unchanged.
 
 Dashboard, Academy, Games, personalization, Play, and Setup each import their
 maintained page from the owning module. The unused compatibility re-export and

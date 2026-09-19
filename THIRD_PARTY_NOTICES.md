@@ -1,36 +1,42 @@
-# Third-party notices and runtime components
+# Third-party components and notices
 
-The **VirtualGlove Controller (Arduino UNO Q)** hosts the camera and
-recognition runtime described below.
+VirtualGlove's original source, documentation, and project artwork are licensed
+under the repository's MIT License. That license does not replace the terms
+that apply to third-party software, models, firmware components, or tools.
 
-VirtualGlove's original source code and associated documentation are
-licensed under the repository's MIT License. That license does not replace the
-licenses or terms that apply to third-party software and model files.
+This document records what a release includes, what an installer obtains from
+the host system, and the source and license obligations for the modified
+Nestopia core. VirtualGlove does not distribute ROM images, Nintendo software,
+scanned game artwork, or publisher assets.
 
-## What an ordinary release distributes
+## Release contents at a glance
 
-| Item | Included in release | Licence and notice |
+| Component | How VirtualGlove uses it | Distribution and license |
 | --- | --- | --- |
-| VirtualGlove source, documentation, and original artwork | Yes | MIT; see `LICENSE` |
-| MediaPipe 0.10.35 ARM64/Python 3.12 wheel | Yes | Apache 2.0; the wheel retains its own licence and the release includes `licenses/Apache-2.0.txt` |
-| Google Hand Landmarker model | Yes | Apache 2.0; see `licenses/Apache-2.0.txt` and the model record below |
-| VirtualGlove Nestopia patch and reproducible build recipe | Yes | GNU GPL version 2; see `licenses/GPL-2.0.txt` |
-| Compiled `lr-nestopia-powerglove` core | Recalbox 10.1 packages include seven target builds; Batocera 43.1 packages include 15 target builds; LaunchBox includes one Windows x86-64 build; RetroPie builds locally | GNU GPL version 2; each bundled binary is accompanied by its exact complete corresponding source, GPL text, notices, patch, and build recipe |
-| Python Cryptography | Downloaded into the isolated LaunchBox runtime; not bundled | Apache License 2.0 or BSD License, under its upstream package notices |
-| `uhubctl` | Installed from Debian only when the camera-recovery option is used; not bundled | GNU GPL version 2 or later, under the Debian package's own notices |
-| RetroArch, FCEUmm, stock Nestopia, RetroPie, Recalbox, Batocera, and LaunchBox | Already supplied by or installed on the selected console; not bundled | Their respective upstream licences |
-| Arduino platform and libraries listed below | Downloaded by the Arduino toolchain; not bundled in the Controller archive | Their respective upstream licences |
+| MediaPipe 0.10.35 | Hand landmark recognition on the Controller | Modified ARM64/Python 3.12 wheel included; Apache License 2.0 |
+| Google Hand Landmarker | Model used by MediaPipe | Unmodified model included; Apache License 2.0 |
+| Arduino Zephyr loader and flash configuration | Loads Matrix firmware on Arduino UNO Q | Two unmodified platform files included; Apache License 2.0 |
+| Modified Nestopia libretro core | Native Super Glove Ball input | GPLv2 binary and exact corresponding source included for Recalbox, Batocera, and LaunchBox; RetroPie builds locally |
+| NumPy and headless OpenCV | Numerical and camera support | Installed as Python dependencies; BSD-3-Clause and Apache License 2.0 respectively |
+| evdev | Linux console input support | Installed where required; BSD-3-Clause |
+| Python Cryptography | Authenticated LaunchBox communication | Installed in the isolated LaunchBox runtime; Apache License 2.0 or BSD-3-Clause |
+| `uhubctl` | Optional USB camera power recovery | Installed from Debian when supported; GPLv2 or later |
+| RetroArch, FCEUmm, stock Nestopia, RetroPie, Recalbox, Batocera, and LaunchBox | Console and emulator environment | Supplied separately by the selected platform; their upstream licenses apply |
 
 Keep `LICENSE`, this notice, `licenses/Apache-2.0.txt`, and
-`licenses/GPL-2.0.txt` with redistributed copies. The application does not
-distribute ROM images, original game artwork, or Nintendo software.
+`licenses/GPL-2.0.txt` with redistributed VirtualGlove packages. Components
+installed by a platform or package manager retain their own notices and license
+files.
 
-## MediaPipe 0.10.35 ARM64 wheel
+## Controller recognition components
 
-A wheel (`.whl`) is an installable Python package. VirtualGlove ships one
-compiled Linux ARM64 MediaPipe runtime, so the VirtualGlove Controller does
-not build MediaPipe during installation. The `cp312-cp312` tags identify
-CPython 3.12 and its binary interface; `linux_aarch64` identifies ARM64 Linux.
+### MediaPipe 0.10.35 ARM64 wheel
+
+The Controller package includes one compiled MediaPipe wheel, avoiding a
+MediaPipe build on the UNO Q during installation. The filename retains its
+historical `powerglove.cpu1` build tag because that tag is part of the published
+Python package identity; it is not a service, application, or user-facing
+product name.
 
 ```text
 python/worker-wheels/mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl
@@ -44,32 +50,27 @@ python/worker-wheels/mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64
 | License | Apache License 2.0 |
 | VirtualGlove packaged-wheel SHA-256 | `6d29bfc33daebd8e47ff9a75d09ae8c032cdcc74445ba365c5aa78a85a6a2d2e` |
 
-### Modification notice
+#### VirtualGlove modifications
 
-The ARM64/Python 3.12 wheel was built from the identified upstream source for
-the UNO Q environment. It retains upstream source headers and MediaPipe's full
-Apache 2.0 license at
-`mediapipe-0.10.35+powerglove.cpu1.dist-info/licenses/LICENSE`. The build keeps
-the established MediaPipe Hands graph used by VirtualGlove and includes
-the narrow Linux compatibility and GPU-research support recorded in the
-[Engineering Journey](docs/ENGINEERING_JOURNEY.md).
-Production selects the four-thread XNNPACK CPU graph; the slower GPU lanes are
-not selected during gameplay.
+The wheel was built from the identified upstream source for the UNO Q. It
+retains upstream source headers and MediaPipe's Apache 2.0 license at
+`mediapipe-0.10.35+powerglove.cpu1.dist-info/licenses/LICENSE`.
 
-The release wheel was then repackaged for the headless Controller. Its `RECORD`
-integrity list was rebuilt after these metadata changes:
+VirtualGlove repackaged it for a headless Controller and rebuilt its `RECORD`
+integrity list after these metadata changes:
 
 - The unused `jax` dependency declaration was removed.
 - The unused `jaxlib` dependency declaration was removed.
 - Headless OpenCV was pinned to `opencv-contrib-python-headless==4.11.0.86`.
 
-Removing unused JAX dependencies avoids a large first-start download and
-reduces pressure on the Controller's storage. The rebuilt wheel was imported on
-the ARM64 Controller, reported MediaPipe `0.10.35+powerglove.cpu1` and OpenCV
-`4.11.0`, and confirmed that JAX was absent. Do not substitute another wheel
-without repeating dependency, camera, recognition, replay, and thermal tests.
+The packaged runtime was verified on ARM64 with MediaPipe
+`0.10.35+powerglove.cpu1`, OpenCV 4.11.0, and no JAX installation. Production
+uses the four-thread XNNPACK CPU graph. Experimental GPU paths described in the
+[Engineering Journey](docs/ENGINEERING_JOURNEY.md) are not selected during
+gameplay. Do not replace this wheel without repeating dependency, camera,
+recognition, replay, and thermal validation.
 
-## Google Hand Landmarker model
+### Google Hand Landmarker model
 
 VirtualGlove uses Google's float16 Hand Landmarker task bundle.
 
@@ -77,38 +78,42 @@ VirtualGlove uses Google's float16 Hand Landmarker task bundle.
 | --- | --- |
 | VirtualGlove Controller runtime path | `data/models/hand_landmarker.task` |
 | Official download | <https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task> |
+| License | Apache License 2.0 |
 | SHA-256 | `fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1` |
 | Size | 7,819,105 bytes |
 
-The unmodified model is preserved in `models/hand_landmarker.task` and included
-in the App Lab installation ZIP. Its Apache 2.0 license is in
-`licenses/Apache-2.0.txt`; this guide records its source, checksum, and licensing
-evidence. Google's official Hand Landmarker
+The unmodified recovery copy is `models/hand_landmarker.task`, and its digest is
+recorded in `models/SHA256SUMS`. Its Apache 2.0 license is in
+`licenses/Apache-2.0.txt`. Google's official Hand Landmarker
 [documentation](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker)
 links a [model card](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Hand%20Tracking%20%28Lite_Full%29%20with%20Fairness%20Oct%202021.pdf)
-that explicitly states Apache License, Version 2.0 on page 2. The project's MIT
-license does not replace that license. No model modifications were made.
+that identifies the Apache License 2.0. No model modifications were made.
 
-When vision is first activated, the application verifies and copies the bundled
-model into private, persistent `data/models/`. A verified cached copy is reused.
-A damaged cache is replaced from the bundle; a damaged bundle is rejected.
-Google's pinned download is used only when no bundled model is available.
-**Gestures off** does not open or install the model. Wi-Fi deployments preserve
-`data/` and include the bundled recovery copy. The model therefore does not
-require internet access in a complete installation package; Python and other
-first-install dependencies may still require downloads.
+When vision first starts, VirtualGlove verifies the bundled model and copies it
+into private persistent storage. A damaged cache is replaced from the bundle;
+a damaged bundle is rejected. The pinned official download is used only when
+no bundled model is available. **Gestures off** does not open or install the
+model.
 
-`scripts/fetch-runtime-assets.sh` follows the same bundled-first policy and
-verifies the pinned checksum before installing the private cached copy.
-`models/SHA256SUMS` records the preserved model's digest. Keep the model, license,
-notices, and checksum together in backups. Store a copy of the recovery archive
-on another drive or in your regular off-machine backup; copies on the same Mac
-do not protect against loss of that Mac.
+### Python runtime dependencies
 
-## Verified VirtualGlove Controller sketch toolchain
+VirtualGlove's package metadata is the authoritative dependency list. These
+packages are installed from the configured Python package source rather than
+copied into the repository.
 
-The September 4, 2026 sketch build and firmware deployment used these pins from
-`sketch/sketch.yaml`:
+| Package | Purpose | Upstream license |
+| --- | --- | --- |
+| NumPy | Numerical arrays used by camera and recognition code | BSD-3-Clause |
+| OpenCV headless | Camera capture and image processing without a desktop GUI | Apache License 2.0 |
+| evdev | Linux input-device access used by console receivers | BSD-3-Clause |
+| Cryptography | Authenticated LaunchBox runtime communication | Apache License 2.0 or BSD-3-Clause |
+
+Installed package metadata and license files remain authoritative for the exact
+versions selected by the installer.
+
+## Matrix firmware toolchain
+
+The verified Matrix firmware toolchain is pinned in `sketch/sketch.yaml`:
 
 - Arduino Zephyr platform **1.0.0**
 - Arduino_RouterBridge **0.4.3**
@@ -160,40 +165,40 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Modified upstream files | `libretro/libretro.cpp`; `source/core/input/NstInpPowerGlove.cpp` |
 | Modification ledger | This guide, under **Nestopia modification ledger** |
 | Build recipe | `scripts/build-nestopia-powerglove.sh`; Recalbox target/matrix wrappers; Batocera target/matrix wrappers; Windows target wrapper `scripts/build-launchbox-nestopia-powerglove.sh` |
-| Built core name | `nestopia_powerglove_libretro.so` or `nestopia_powerglove_libretro.dll` |
-| Recalbox 10.1 `rpizero2` core SHA-256 | `4814b043926547bb7ab306a3d65b8044a9cb8c28a9181d59376ccb9a4a82c876` |
-| Recalbox 10.1 `rpi3` core SHA-256 | `5aa74d1e2f41b0cb2f85125feeb1b3551d828566fb3401fa0a97e72be994f829` |
-| Recalbox 10.1 `rpi4_64` core SHA-256 | `a8c0913eefabf41a2fa3dae18ed160eb0e22ecdb6de461659c9961607fb5266d` |
-| Recalbox 10.1 `rpi5_64` core SHA-256 | `1c6f3898caf6a0d561492292fd9dd7a95025720d2b91e28d87efe6d7eab67679` |
-| Recalbox 10.1 `rg353x` core SHA-256 | `b5f55883027f35a87f7f4d2885ef082f72940ed7c81b93f67743d3bae849da68` |
-| Recalbox 10.1 `odroidgo2` core SHA-256 | `7f8b23f179b38f511d060ed73de757732100ec42a073ca4b7802a6e0bd7a25b4` |
-| Recalbox 10.1 `x86_64` core SHA-256 | `8c28daedbe401e4d022a3c7210258107c736a74595c462dc60659ff8b69c76f3` |
-| Recalbox corresponding source archives | One `native/recalbox/TARGET/10.1/nestopia-powerglove-source.tar.gz` archive is supplied beside each of the seven target binaries |
-| Recalbox source checksums | `native/recalbox/manifest.json` records the exact size and SHA-256 of each target's corresponding source archive; all use the current patch SHA-256 listed above |
-| Batocera 43.1 targets | `bcm2835`, `bcm2836`, `bcm2837`, `bcm2711`, `bcm2712`, `x86_64`, `rk3326`, `rk3399`, `rk3568`, `rk3588`, `s905`, `s905gen2`, `s905gen3`, `s922x`, and `sm8250` |
-| Batocera binary/source ledger | `native/batocera/manifest.json` records the exact build image, Batocera and Nestopia revisions, ELF identity, sizes, and SHA-256 values for each binary and corresponding source archive |
-| LaunchBox Windows x86-64 core SHA-256 | `d94283c6b95bf381c3652aba95de368b72e53bb2efb7485074200c2f8f888638` |
-| LaunchBox corresponding source archive | `native/launchbox/x86_64/nestopia-powerglove-source.tar.gz` |
-| LaunchBox source archive SHA-256 | `a1c3e574b8b65195dab63d3865bf70d3371a44a059ea7d08ef67b3c6595f5033` |
-| Installed core directory | `/opt/retropie/libretrocores/lr-nestopia-powerglove/` on RetroPie; persistent `/recalbox/share/system/virtualglove/native/recalbox/TARGET/VERSION/` on Recalbox; persistent `/userdata/system/virtualglove/native/batocera/TARGET/VERSION/` on Batocera (the `runtime` subdirectory is reserved for a manually reviewed override); `%LOCALAPPDATA%\VirtualGlove\native\` on LaunchBox |
+| Built filename | `nestopia_powerglove_libretro.so` or `nestopia_powerglove_libretro.dll` |
 
-There is no compiled core that can run everywhere. Recalbox and Batocera builds
-are target-specific. The Recalbox package carries separate Recalbox 10.1 builds
-for `rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and
-`x86_64`, with the exact complete patched source archive beside every binary.
-The Batocera package carries separate Batocera 43.1 builds and corresponding
-source archives for all 15 listed targets. Installation resolves only the
-reported architecture, verifies the manifest, and performs a target-side
-libretro load and identity check; failure leaves FCEUmm available. If the user accepts the
-RetroPie installer's optional native-core step,
-the target machine downloads the pinned upstream source, including its author
-notices and `COPYING` file, applies the patch, and builds for its own processor.
-The core installer places `COPYING` and this consolidated VirtualGlove
-notice and modification ledger beside the installed binary. The original
-Nestopia copyright/GPL header in
-`NstInpPowerGlove.cpp` remains byte-for-byte intact, and the build stops if a
-future patch changes it. Stock Nestopia remains untouched and FCEUmm remains
-available.
+### Binary and source distribution
+
+For redistribution, each bundled binary is accompanied by its exact complete corresponding source,
+the local patch, build instructions, upstream notices, and the GPLv2 license.
+The manifests are the authoritative checksum ledger.
+
+| Platform | Packaged targets | Authoritative manifest or recipe |
+| --- | --- | --- |
+| RetroPie | Built locally for the host processor from pinned source | `scripts/build-nestopia-powerglove.sh` |
+| Recalbox 10.1 | `rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, `x86_64` | `native/recalbox/manifest.json` |
+| Batocera 43.1 | `bcm2835`, `bcm2836`, `bcm2837`, `bcm2711`, `bcm2712`, `x86_64`, `rk3326`, `rk3399`, `rk3568`, `rk3588`, `s905`, `s905gen2`, `s905gen3`, `s922x`, `sm8250` | `native/batocera/manifest.json` |
+| LaunchBox | Windows `x86_64` | `native/launchbox/manifest.json` |
+
+Recalbox 10.1 `rpizero2` and every other listed target has a separate binary
+and corresponding source record in the manifest.
+
+The verified LaunchBox core has SHA-256
+`5828d3885a79dba494dcb772a6693093a069a9ac76e758df5392c3da05834299`.
+Its corresponding source archive has SHA-256
+`a1c3e574b8b65195dab63d3865bf70d3371a44a059ea7d08ef67b3c6595f5033`.
+
+Recalbox and Batocera packages select a build for the detected architecture,
+verify it against the manifest, and perform a target-side libretro load and
+identity check. Compatible later platform releases may reuse the newest
+packaged build for the same architecture, but the load check remains the final
+gate. Failure leaves FCEUmm available.
+
+The optional RetroPie installation downloads the pinned upstream source,
+including its author notices and `COPYING` file, applies the patch, and builds
+for the host processor. The installer places `COPYING`, this notice, and the
+modification ledger beside the installed binary. Stock Nestopia is never
+replaced.
 
 For every additional prebuilt core, produce a separately identified artifact
 for the exact tested operating-system target and architecture. Accompany each binary with
@@ -202,17 +207,30 @@ patch and build instructions, all upstream notices, and the GPLv2 license. A
 Git commit or patch URL alone is not the project's binary-distribution plan.
 ROM images are never part of a source or binary core artifact.
 
-At runtime, RetroArch loads the custom core only for an explicitly selected ROM.
-The launch entry passes the read-only latest-sample file through
-`VIRTUALGLOVE_NATIVE_STATE`; the default path is `/run/virtualglove/native-state`.
-The patch registers a separately named **VirtualGlove** controller, identifies
-the library as **Nestopia PowerGlove**, and forces port 1 of this isolated core
-to the native peripheral even when a frontend initially requests Auto or a
-gamepad. Invalid, stale, uncalibrated,
-lost-tracking, or wrong-profile samples are neutralized. The compatibility
-record in [Super Glove Ball native compatibility](docs/super-glove-ball-native.md)
-separates exact-ROM-confirmed X/Y/Z and hand-pose packet behavior from wrist and
-button fields that remain unmapped.
+<!-- PAGEBREAK -->
+
+Installed locations are platform-specific:
+
+- RetroPie: `/opt/retropie/libretrocores/lr-nestopia-powerglove/`
+- Recalbox: `/recalbox/share/system/virtualglove/native/recalbox/TARGET/VERSION/`
+- Batocera: `/userdata/system/virtualglove/native/batocera/TARGET/VERSION/`
+- LaunchBox: `%LOCALAPPDATA%\VirtualGlove\native\`
+
+### Runtime scope
+
+RetroArch loads the custom core only for a game explicitly assigned to the
+native route. The launch entry supplies a read-only latest-sample file through
+`VIRTUALGLOVE_NATIVE_STATE`; the default is
+`/run/virtualglove/native-state`. Invalid, stale, uncalibrated, lost-tracking,
+or wrong-profile samples are neutralized.
+
+The patch registers a separate VirtualGlove controller, identifies the core as
+Nestopia PowerGlove where required by the established binary interface, and
+selects the native peripheral for the isolated core. The confirmed ten-byte
+packet carries X, Y, Z, open hand, fist, index point, and Start behavior. Fields
+that the exact ROM does not use remain neutral. The compatibility record in
+[Super Glove Ball native compatibility](docs/super-glove-ball-native.md)
+separates confirmed behavior from deliberately unmapped fields.
 
 The local patch changes only `libretro/libretro.cpp` and
 `source/core/input/NstInpPowerGlove.cpp`. SHA-256 values for both pristine
@@ -234,45 +252,35 @@ byte-for-byte unchanged. The protected pristine files have these SHA-256 values:
 - `source/core/input/NstInpPowerGlove.cpp`:
   `7328ab1cc9cc902ac129d217c4d47faa247d2d6e7d41b8d8ac7eb634c097e7cd`
 
-The September 4 `libretro.cpp` changes added the versioned latest-sample
-structure; coherence, profile, calibration, detection, and freshness checks;
-neutral invalid-input behavior; a separately selectable controller; calibrated
-X/Y plus Start and Select delivery; the `Nestopia PowerGlove` identity; and
-callback cleanup. The matching `NstInpPowerGlove.cpp` changes provide the
-exact-ROM ten-byte native stream intrinsically for this separately named core;
-`VIRTUALGLOVE_NATIVE_STATE` may still override the default state-file path.
-Opt-in trace hooks do not alter normal latch processing. Cabinet testing
-corrected camera-to-Nestopia Y orientation; unknown fields remained neutral and
-FCEUmm remained available.
+The patch adds the versioned latest-sample record, coherence and freshness
+checks, safe-neutral handling, a separately selectable controller, native
+packet generation, core identity, and callback cleanup. Cabinet validation
+corrected camera-to-Nestopia Y orientation. It also added open-hand, fist,
+index-point, and calibrated depth delivery without changing the version-1
+record size.
 
-The September 5 changes added closed-hand and index-point flags without changing
-the version-1 record size. A five-finger fist maps to packet byte 5 `$FF`, index
-point to `$0F`, and open or ambiguous poses to `$00`. Calibrated depth maps to
-absolute signed packet byte 3 with the camera-facing sign reversed. The exact
-ROM repeatedly received `$00` open, `$FF` fist, `$0F` index point, and fist plus
-forward-Z (`$81`) Power Punch candidates; lost or stale tracking remained fully
-neutral.
+An optional diagnostic build inserts checked trace hooks after the production
+patch. It records callback, sequence, publication, and consumption timing in a
+private CSV. The diagnostic path does not alter upstream headers, the native
+state ABI, or normal production selection.
 
-A September 6 diagnostic option inserts checked hooks after the normal patch.
-Project-owned `diagnostic_trace.h` records callback validity, sequence and
-publication identities, and local consumption time, then exports a private CSV
-on game unload. It does not modify the production patch, upstream headers,
-native-state ABI, or normal selection and is active only for an explicitly
-diagnostic build and trace environment.
-
-VirtualGlove 0.4.0 requires matching signed-controller software on both
-computers, but its coordinate-efficiency work does not change this patch or
-require a rebuild. The confirmed ten-byte packet is documented in
+Signed controller protocol changes do not alter this libretro patch or require
+a core rebuild unless the native-state ABI itself changes. The confirmed packet
+is documented in
 [Super Glove Ball native compatibility](docs/super-glove-ball-native.md#confirmed-exact-rom-packet).
-Bytes 7-8 retain Nestopia's fixed `$00` initialization; their gameplay role is
-not established.
+Bytes 7-8 retain Nestopia's fixed `$00` initialization because their gameplay
+role has not been established.
+
+<!-- PAGEBREAK -->
 
 Future changes must remain in the local patch and be appended here. Do not
 replace or prepend project ownership over an upstream header. Keep upstream
 notices and licenses with source and binary distributions. The guarded build
 stops if the protected Nestopia Power Glove header changes.
 
-## uhubctl
+## System-supplied tools and emulators
+
+### uhubctl
 
 The VirtualGlove Controller host installer uses the distribution-provided
 `uhubctl` command to detect and operate genuine USB per-port power switching.
@@ -283,7 +291,7 @@ operate on a hub that it does not report as supported.
 | --- | --- |
 | Component | `uhubctl` USB hub per-port power control utility |
 | Upstream project | <https://github.com/mvp/uhubctl> |
-| License | GNU General Public License, version 2 |
+| License | GNU General Public License, version 2 or later |
 | Installed by | Debian package manager on the VirtualGlove Controller host |
 | Tested repository candidate | Debian 13 ARM64 `uhubctl` 2.6.0-1 |
 | Distribution boundary | Not copied into VirtualGlove source or release archives |
@@ -294,108 +302,77 @@ result permits a port cycle. Unsupported hardware retains the project's
 identity-checked whole-hub driver fallback. Debian remains responsible for the
 installed binary and accompanying copyright and license files.
 
-## External console and emulator dependencies
+### Console and emulator dependencies
 
-VirtualGlove uses console-provided emulator and frontend software but does not include
-those binaries in its installation archives. When either dependency is absent,
-the RetroPie installer can ask the user's existing RetroPie Setup installation
-to install it. That operation remains governed by RetroPie and the upstream
-licenses.
+VirtualGlove uses console-provided emulator and frontend software but does not
+include those binaries in its installation archives. Installation and updates
+remain governed by the platform and upstream licenses.
 
 | Component | VirtualGlove use | Upstream and license | Distribution boundary |
 | --- | --- | --- | --- |
 | RetroArch | Libretro frontend used to load FCEUmm and Nestopia (VirtualGlove) | [RetroArch](https://github.com/libretro/RetroArch), GPLv3 | Installed on the console; not modified or redistributed by VirtualGlove |
 | FCEUmm | Default NES core for standard D-pad/button mappings and the complete Super Glove Ball fallback | [FCEUmm](https://github.com/libretro/libretro-fceumm), GPLv2 | Stock console core; not modified or redistributed by VirtualGlove |
 
+<!-- PAGEBREAK -->
+
 The deterministic direction benchmark separately builds stock FCEUmm revision
 `236ccdfc911e84c60fea6b9d0699c2d440a8de14` in an isolated working directory.
 That pin makes the benchmark reproducible; it does not replace the user's
-installed console core, install FCEUmm, or make the benchmark binary a release artifact.
+installed core, install FCEUmm, or make the benchmark binary a release artifact.
 
-<!-- PAGEBREAK -->
+## Updating third-party components
 
-## Updating runtime components
+Before publishing a third-party update:
 
-### MediaPipe wheel or Hand Landmarker model
+1. Pin an official source revision or URL and record its license, size, and
+   SHA-256 here or in the platform manifest.
+2. Preserve upstream headers, notices, and complete applicable license texts.
+3. Record every local modification and rebuild package integrity metadata.
+4. Verify that every binary has its exact corresponding source where the
+   license requires it.
+5. Run package, installer, runtime, security, and hardware acceptance checks.
+6. Update this document and rebuild the published Third-party Notices PDF.
 
-Before publishing a wheel or model update, complete these steps. The
-[command reference](docs/CONFIGURATION_REFERENCE.md#build-inspect-or-maintain-project-files)
-explains the build and verification scripts.
-
-1. Record the official source URL, version, license, size, and SHA-256 here.
-2. Update the pinned values in `src/virtualglove/runtime_assets.py`, `scripts/fetch-runtime-assets.sh`, `scripts/verify-app-lab-package.py`, and `models/SHA256SUMS` when changing the model.
-3. If repackaging another wheel, record every difference from upstream and retain its license files.
-4. Build the App Lab installation ZIP and confirm it contains one wheel, the verified model, its license and notices, and only the root `sketch/` application sketch.
-5. Test first-launch offline model installation, download fallback, and checksum verification, background preloading with capture off, first activation after reboot, camera initialization, tracking, the Glove Academy and Dashboard pages, and controller output on the VirtualGlove Controller before publishing the package.
-
-### Modified Nestopia core
-
-Before changing the Nestopia revision or native patch:
-
-1. Select an exact upstream commit from the official libretro Nestopia repository. Record the commit, upstream license, affected pristine-file SHA-256 values, and new patch SHA-256 in this document.
-2. Update the identical revision pin in `scripts/build-nestopia-powerglove.sh`, this modification ledger, tests, and compatibility/benchmark documents. Do not use a moving branch or tag as the build identity.
-3. Rebase `native/nestopia-powerglove/nestopia-powerglove.patch` onto a clean checkout. Preserve all upstream headers and notices. The guarded build must still reject changes to the original `NstInpPowerGlove.cpp` header.
-4. Run the native-core, state-bridge, installer, selection, exact-ROM trace, safe-neutral, and direction-response tests. Reconfirm packet length, detection, bit order, boundaries, timing, X/Y/Z orientation, open/fist/index values, Start behavior, tracking-loss release, and the explicit FCEUmm rollback on the cabinet.
-5. Build the RetroPie, Recalbox, and Batocera installation archives. Verify that every packaged binary is restricted to its exact architecture, matches its manifest, and is accompanied by the exact complete corresponding source and GPL materials described above. No ROM may appear in any archive.
-
-When the benchmark FCEUmm pin changes, record the new official revision in the
-benchmark document and rerun both the native and standard-joypad lanes. Normal
-RetroPie FCEUmm and RetroArch upgrades remain the responsibility of RetroPie;
-retest controller selection and fallback gameplay before claiming compatibility.
-
-<!-- PAGEBREAK -->
+For a MediaPipe wheel or model update, also test offline installation, checksum
+failure, camera start, recognition, tracking loss, and thermal behavior. For a
+Nestopia update, recheck the protected upstream header, native-state ABI, packet
+behavior, exact-ROM controls, architecture manifests, target-side load checks,
+and FCEUmm fallback. Detailed commands are in the
+[Configuration Reference](docs/CONFIGURATION_REFERENCE.md#build-inspect-or-maintain-project-files).
 
 ## Documentation and website assets
 
-The following assets support the guides and browser interface. Their origins
-are recorded separately from the software, model, and firmware dependencies above.
+This section records provenance for project assets. These files are not runtime
+dependencies.
 
-### Documentation illustration provenance
+### Gesture illustrations and Pixel Pal
 
-The gesture sheets under `docs/images/gestures/` were generated on September 3,
-2026 with OpenAI's image-generation tool from project-authored prompts, then
-selected and arranged for the VirtualGlove gameplay guide. They are
-documentation assets, not runtime dependencies. No game screenshots, scans,
-box art, characters, publisher logos, or other source images were supplied to
-the generator.
-
-The individual gestures and original Pixel Pal mascot under
-`docs/images/gestures/v2/` were generated on September 4, 2026 with the same
-built-in tool, using the project's generated contact sheet as a style reference.
-Their prompts are preserved in `docs/images/gestures/v2/prompts.json`. The
-earlier illustrations remain available in their original locations.
+The gesture sheets under `docs/images/gestures/` and the individual gesture
+illustrations and original Pixel Pal mascot under
+`docs/images/gestures/v2/` were generated with OpenAI's image-generation tool
+from project-authored prompts. The v2 prompts are preserved in
+`docs/images/gestures/v2/prompts.json`, and the original generated contact sheet
+was used as the style reference.
 
 The index-curl illustration was subsequently redrawn using a user-supplied
 hand photograph as its pose reference. Only the illustrated glove is included;
 the reference photograph is not distributed with the project.
 
+Intentional extra-digit variants are retained for Pixel Pal's Extra-Digit Hunt.
+No game screenshots, scans, box art, characters, publisher logos, or other
+third-party source images were supplied to the generator.
+
 The repository applies its MIT License to these curated project assets to the
 extent the project owner has rights in them. Game names and other third-party
 marks remain the property of their respective owners.
 
-### Application screenshots
-
-All application screenshots in `docs/images/` were refreshed from the current
-VirtualGlove source on September 6, 2026. They cover Dashboard, local Rock Paper Scissors, Glove Academy,
-personalization, players and hand-setup restoration, Setup and guided pairing,
-Games, and the Help library. `scripts/capture-guide-screenshots.py` renders the
-real page templates in an isolated browser with temporary player state and
-sample telemetry. Camera areas use an explicit “Camera preview omitted”
-placeholder; no live camera, cabinet, or personal settings are accessed.
-The script also invokes `tests/browser_setup_pairing.py --screenshots` for
-pairing states using non-secret fixtures. These captures document the interface,
-not live delivery or hardware verification. Gesture illustrations and physical
-matrix photographs remain unchanged. No runtime dependencies are added.
-
-### Website icon
-
-The website icon in `assets/virtualglove-icon.png` was derived from the
-project's `assets/virtualglove-logo.png` on September 6, 2026 using OpenAI's
-image-generation tool. It isolates the hand-and-target emblem without the
-wordmark. Browser-tab and Apple touch icon variants were resized from that
-square artwork. `assets/favicon.ico` contains 16, 32, and 48 pixel variants and
-is the single browser-tab icon declared by the shared page template. The Apple
-touch icon is separate. Setup and Help use the same root-relative icon URL;
-there is no Setup-specific asset directory. Setup is served directly at `/setup`,
-without a query revision or redirect. Older query-string bookmarks still work.
-The original logo remains unchanged.
+**Application screenshots and website icon.** Screenshots in `docs/images/`
+are generated from VirtualGlove's real page
+templates with temporary player state and sample telemetry. Camera regions use
+an explicit **Camera preview omitted** placeholder; the capture process does
+not access a live camera, cabinet, pairing secret, or personal settings. These
+images document the interface rather than proving hardware delivery.
+The website icon in `assets/virtualglove-icon.png` was derived from
+`assets/virtualglove-logo.png` with the same image-generation tool. Favicon and
+Apple touch icon variants were resized from that artwork; the original logo is
+unchanged.

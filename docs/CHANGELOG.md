@@ -5,221 +5,142 @@ This file records user-visible VirtualGlove changes. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Git remains the
 authoritative record for line-level and file-level history.
 
+Stable-version entries focus on what a player, installer, or cabinet owner will
+notice. Release-candidate entries keep a little more workshop detail for readers
+who enjoy seeing how the machine was tuned, but they explain the practical
+result before naming the underlying mechanism.
+
 ## [Unreleased]
+
+VirtualGlove 0.5.0 expands beyond RetroPie, adds Windows support, and completes
+the move from the old development name to VirtualGlove. The emphasis is on a
+predictable installation: choose the platform, pair once, keep the physical
+controller available, and let each game use the correct input method.
 
 ### Fixed
 
-- The supported 0.4.2 UNO Q upgrade now disables and removes the obsolete
-  `powerglove-*` host and user services, helper executables, and tmpfiles rules
-  after their `virtualglove-*` replacements are active. The optional early-start
-  optimization also falls back cleanly when another boot component owns the SWD
-  GPIO lines instead of leaving a failed user service behind.
+- Upgrading an UNO Q from 0.4.2 now removes the old background services only
+  after their VirtualGlove replacements are running. If another boot component
+  is already using the Matrix connection, the optional early-start feature
+  steps aside cleanly instead of leaving a failed service warning.
 
 ### Added
 
-- Added a repository-owned local test runner with a reusable `.venv-test` and
-  pinned NumPy/OpenCV dependencies. It preflights the environment before test
-  discovery, replacing repeated missing-module failures with one actionable
-  setup command.
-- Added LaunchBox support for 64-bit Windows through RetroArch. A per-user
-  wrapper exact-matches registered NES ROMs, keeps authenticated game leases
-  alive for the launched process, uses FCEUmm for standard profiles, and selects
-  a separately named Nestopia VirtualGlove DLL only for Super Glove Ball.
-- Added a dependency-free LaunchBox Network RetroPad path that merges
-  VirtualGlove's Player 1 controls beside the existing physical XInput joypad.
-  It targets a random loopback port, is enabled only for managed FCEUmm launches,
-  and is isolated from the LAN by a validated Windows Firewall rule. Real
-  keyboard mappings remain available as a manual fallback without synthetic
-  keystrokes or a third-party virtual-controller driver.
-- Added physical Player 1 Start and Select fallback inside the Windows native
-  Super Glove Ball core. The physical joypad can advance confirmed native menus
-  while VirtualGlove continues supplying native hand movement and gestures.
-- Corrected V-sign Start recognition for naturally splayed fingers. Start now
-  judges index and middle extension from their outer joints, avoiding false
-  curls caused by bent base knuckles while leaving gameplay curls, fist poses,
-  Menu Guard, the deliberate hold, and one-pulse release behavior unchanged.
-- Added an isolated Windows portability patch, PE32+ AMD64 verifier, MinGW64
-  build script, and manually dispatched Windows build workflow. Release package
-  creation refuses an incomplete LaunchBox package without its reviewed DLL.
-
-- Setup now requires an explicit RetroPie, Recalbox, Batocera, or LaunchBox platform before
-  the console address can be saved and pairing can begin. The pairing wizard
-  shows only that platform's one-time-code command and supplies the normal SSH
-  username for it.
-- Pairing requests bind the saved platform and address to the Controller's
-  physical approval window. Both one-time-code and SSH pairing detect the
-  remote platform before changing its token, preventing an accidental install
-  through instructions meant for a different console family.
-- Recalbox now selects the verified Nestopia (VirtualGlove) core automatically
-  for exact Super Glove Ball ROM filenames in the installed game registry. An
-  existing per-ROM core selection is always preserved.
-- Began VirtualGlove 0.5.0 console portability with first-class Recalbox 10.x
-  and Batocera 38+ installation targets. Recalbox uses its persistent share and
-  supported boot hook; Batocera uses its supported user-service and
-  `gameStart`/`gameStop` script interfaces.
-- Added a dependency-free Recalbox/Batocera Player 1 merger. It translates one
-  selected physical controller's EmulationStation mapping, combines it with
-  VirtualGlove in a persistent **VirtualGlove Merged Player 1** gamepad, keeps
-  the physical hotkey isolated from VirtualGlove Select, and remains neutral in
-  the frontend. The generic RetroPie gamepad publisher remains unchanged.
-- Added a hook-free RetroArch game monitor for Recalbox, plus authenticated
-  SSH pairing paths that recognize RetroPie, Recalbox, and Batocera persistent
-  token and service locations.
-- Added native Super Glove Ball support for Batocera. A reproducible builder uses
-  Batocera's exact target sysroot and compiler; the target installer load-checks
-  the core before atomic placement. Reversible overlay mounts expose the
-  separately named core through Batocera's read-only core paths while leaving
-  stock Nestopia and FCEUmm untouched, and exact per-ROM configuration provides
-  a one-command native/FCEUmm choice.
-- Packaged a complete Batocera 43.1 native-core matrix for 15 architectures,
-  with per-target binaries, complete corresponding source archives, exact build
-  image and revision metadata, checksums, ELF identities, a resumable matrix
-  builder, and a manually dispatched parallel review workflow.
-- Batocera installation now resolves the console's exact architecture, prefers
-  an exact release build, verifies the binary and source manifest, and performs
-  a target-side libretro load/identity test before exposing the core. Exact
-  registered Super Glove Ball ROMs are selected automatically only when no
-  explicit per-ROM core choice exists; any incompatibility leaves FCEUmm usable.
-- Added the corresponding isolated Recalbox native-core path for `rpizero2`,
-  `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`. It uses
-  each target's own Recalbox Buildroot recipe, verifies the Recalbox major
-  series and resulting ELF architecture on the target, exposes the core
-  through reversible runtime mounts, and adds only `nestopia_powerglove` to a
-  temporary NES system list. An exact ROM sidecar selects the core for Super
-  Glove Ball while stock Nestopia, FCEUmm, ROMs, saves, and other per-game
-  settings remain unchanged.
-- Added a reproducible Recalbox build-matrix command and a versioned native-core
-  manifest. ARM32, ARM64, and x86-64 artifacts are isolated by target and build
-  release so an installer cannot apply a compatible-looking binary to the wrong
-  architecture or Recalbox major series.
-- Added a manually dispatched seven-job build workflow so all Recalbox targets
-  can be compiled in parallel from an exact release tag. It retains
-  target-specific review artifacts and never publishes or deploys them.
-- Packaged independently built Recalbox 10.1 native cores and complete source
-  archives for all seven supported targets, with target, version, architecture,
-  size, and SHA-256 metadata. The `rpizero2` and `rpi3` cores load on the
-  available Raspberry Pi 3; exact-image hardware validation remains outstanding
-  for `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, and `x86_64`.
-  Recalbox verifies a packaged binary and its `Nestopia
-  PowerGlove` libretro identity before exposing it through the reversible
-  overlay. Installation prefers an exact release build and otherwise uses the
-  newest packaged build from the same Recalbox major series after the on-device
-  load test; unpackaged targets and major releases retain FCEUmm.
+- Added first-class installation and pairing for RetroPie, Recalbox, Batocera,
+  and LaunchBox. Setup asks for the platform before the address, then shows only
+  the pairing instructions that apply to that system.
+- Added Recalbox and Batocera support for a combined **VirtualGlove Merged
+  Player 1** controller. Hand gestures and the chosen physical joypad appear as
+  one game controller, while the physical hotkey still handles exit, menus,
+  save states, and other frontend commands. EmulationStation continues using
+  the original physical controller, avoiding doubled menu input.
+- Added LaunchBox support for 64-bit Windows through RetroArch. Ordinary NES
+  games use FCEUmm and RetroArch's built-in Network RetroPad; Super Glove Ball
+  uses the separately named Nestopia (VirtualGlove) core. The physical XInput
+  joypad and real keyboard remain available alongside VirtualGlove.
+- Added physical Start and Select fallback for native Super Glove Ball on
+  Windows. The joypad can handle menus while the camera supplies native hand
+  movement and glove actions.
+- Added native Super Glove Ball packages for Recalbox, Batocera, and LaunchBox.
+  The installer chooses the correct processor build, checks that RetroArch can
+  load it, and leaves FCEUmm available if the native core is unsuitable.
+- Packaged Recalbox builds for seven supported targets and Batocera builds for
+  fifteen. ARM32, ARM64, and x86-64 files are kept separate, and every binary
+  includes matching source and checksum records.
+- Added automatic native-core selection for registered Super Glove Ball ROMs on
+  Recalbox and Batocera. A choice already made by the user is preserved.
+- Strengthened pairing so the Controller confirms both the saved platform and
+  address during the physical approval window. This prevents instructions for
+  one console family from accidentally changing another.
+- Improved the V-sign Start gesture for naturally spread fingers. It now looks
+  at the straighter outer finger joints, reducing missed Start commands without
+  changing the intentional hold, release, or Menu Guard behavior.
+- Added a reusable local test environment. Instead of reporting the same
+  missing NumPy or OpenCV module many times, the test runner checks once and
+  gives one clear setup command.
+- Added reproducible build and verification tools for the Windows and Linux
+  native cores. These are maintainer safeguards: an incomplete or mismatched
+  core cannot enter a release package.
 
 ### Changed
 
+- Reworked the Architecture, Native Movement Validation, Third-party Notices,
+  and Changelog guides so they explain the practical result before the
+  implementation detail. Exact measurements, checksums, platform names, and
+  licensing obligations remain available for readers who want them.
 - Rewrote the Installation Guide as a concise 0.5.0 walkthrough. RetroPie,
   Recalbox, Batocera, and LaunchBox now follow the same install, checkpoint,
   first-game, and update structure; low-level build and integration details
-  remain in the technical references instead of blocking the setup steps. The
-  architecture, native-emulation, configuration, and compatibility guides now
-  use the same platform terminology and distinguish completed physical tests
-  from packaged-but-not-yet-played hardware targets.
-- Renamed the internal Python package and command entry points to the
-  `virtualglove` namespace. Source imports, installers, console launchers,
-  tests, engineering tools, and package metadata now use the current product
-  identity; the retired development namespace is no longer shipped or kept as
-  a compatibility alias.
-- Added an explicit, transactional v0.4.2-to-v0.5.0 namespace migration for
-  Controller and RetroPie upgrades. It verifies retired source against the
-  released installation manifest, backs up and removes only managed files and
-  generated bytecode, preserves all private player/device/console data, rejects
-  local or unknown runtime files before writing, and exposes any incomplete
-  cleanup through installer checks.
-- Recalbox and Batocera upgrades now stop exact retired module processes before
-  starting the renamed runtime. Linux installation checks also fail when a
-  retired Controller or console process remains, preventing an apparently
-  successful upgrade from leaving duplicate input publishers alive. Process
-  inspection also tolerates the normal race where a process exits while `/proc`
-  is being read, without printing a misleading upgrade warning.
-- Linux console installers now stop all managed input publishers before replacing
-  application files and refuse to continue while an exact managed process remains.
-  A failed upgrade makes a best-effort restart of the previous runtime. Managed
-  files are backed up and overwritten from the coherent release; obsolete managed
-  files are backed up and removed. Private data and unknown files remain preserved.
+  remain in the technical references instead of blocking the setup steps.
+- Completed the internal rename to VirtualGlove. New installations no longer
+  ship the retired development package or command names.
+- Added a guarded upgrade from 0.4.2 to 0.5.0. It backs up files VirtualGlove
+  owns, removes obsolete copies, and preserves players, calibration, tuning,
+  pairing, game lists, device settings, ROMs, saves, and unrelated files.
+- Linux installers now stop the running VirtualGlove input service before
+  replacing files, preventing old and new copies from sending controls at the
+  same time. If an upgrade fails, the installer tries to restore the previous
+  working service and reports anything that needs attention.
 - Setup no longer offers pairing-key replacement as a connection-save option.
-  Pairing credentials are established or replaced only through the explicit,
-  physically confirmed pairing flow.
-- LaunchBox now refreshes held Network RetroPad controls at RetroArch's input
-  cadence. Directions and buttons remain held for gameplay instead of becoming
-  one-frame taps on affected Windows RetroArch builds, while centering,
-  tracking loss, receiver timeout, game exit, and restart still release them
-  immediately.
-- LaunchBox native Super Glove Ball sessions now publish exclusively through
-  the native Power Glove channel. They no longer duplicate Start, Select, or
-  other native gestures through the ordinary RetroPad path. Standard FCEUmm
-  profiles use the loopback RetroPad while native Super Glove Ball remains on
-  the guarded Power Glove state channel.
-- LaunchBox now invokes the VirtualGlove Python bridge directly instead of
-  treating a batch file as an emulator executable. The bridge now ensures the
-  managed receiver on every game launch, so it recovers after a reboot without
-  depending on the installer process. Upgrades stop duplicate VirtualGlove
-  background services from older Python environments before starting the
-  managed runtime. Installation also migrates existing NES games assigned to
-  standard RetroArch while preserving games assigned to any different
-  emulator, and backs up both affected XML files.
+  Pairing credentials change only through the clearly labelled pairing flow and
+  still require physical confirmation on the Controller.
+- LaunchBox now keeps held directions and buttons held for as long as the hand
+  pose remains active. Returning to centre, losing tracking, closing the game,
+  or restarting the receiver still releases every control immediately.
+- LaunchBox uses one input route at a time: FCEUmm games use Network RetroPad,
+  while native Super Glove Ball uses its Power Glove data channel. This avoids
+  duplicate Start, Select, or action presses.
+- LaunchBox starts and repairs its small background bridge whenever a managed
+  game launches, including after a Windows reboot. Existing games assigned to
+  another emulator are left alone, and changed LaunchBox configuration files
+  are backed up before migration.
 
 - Documented how to add NES ROMs after installation on RetroPie, Recalbox,
-  Batocera, and LaunchBox, including exact registry filenames, frontend refresh,
-  native Super Glove Ball rescan behavior, and per-game emulator overrides.
+  Batocera, and LaunchBox, including refreshing the frontend and choosing a
+  different emulator for an individual game.
 - Setup keeps **Check console address** available during pairing confirmation
   and restores it after every result while connection-editing fields remain
   safely locked.
 - LaunchBox pairing now invokes a dedicated runtime-restart wrapper so its
-  single-use pairing command is parsed correctly on Windows.
+  single-use pairing command works reliably on Windows.
 
 - Wi-Fi deployment no longer opens an invisible remote sudo prompt. It deploys
-  and verifies the Controller application, runs privileged host maintenance only
-  when non-interactive sudo is already authorized, and otherwise prints the
-  exact commands for the user to run directly on the UNO Q.
+  and verifies the Controller application. When administrator access is needed,
+  it prints the exact UNO Q commands for the user instead of waiting for a
+  password in a terminal window they cannot see.
 - Updated the README and every maintained installation-facing guide for the
   v0.5.0 platform model. Added dedicated Recalbox, Batocera, and LaunchBox
-  setup sections; documented exact install, pairing, persistence, verification,
-  update, Player 1 coexistence, native-core fallback, and acceptance boundaries;
-  and replaced RetroPie-only language where the behavior is shared.
-- Extended release-package generation and validation with separate Recalbox
-  and Batocera installers. Fresh installs select a stable physical Player 1
-  identity; updates replace the former eight managed keyboard values with only
-  the merged NES joypad assignment. Tokens, game registries, custom startup
-  scripts, unrelated RetroArch settings, ROMs, saves, and controller mappings
-  are preserved.
-- LaunchBox audits the eight retained manual keyboard keys against effective
-  RetroArch command and Hotkey Enable bindings. A conflict reports degradation
-  of that backup without disabling VirtualGlove's independent RetroPad or the
-  physical XInput controller.
-- LaunchBox installation now loads the reviewed Windows DLL and verifies its
-  libretro API and `Nestopia VirtualGlove` identity before copying it. The installed
-  manifest and complete corresponding source are retained beside the core, and
-  each native launch checks the DLL SHA-256 and falls back to FCEUmm joystick
-  mode if the DLL is missing or changed.
-- Required executable metadata on every packaged Batocera runtime entry point.
-  Recalbox entry points are invoked explicitly through `sh` because its
-  persistent exFAT share intentionally mounts files without execute bits.
-- Made the isolated Nestopia core select its native Power Glove peripheral
-  internally. This keeps Batocera startup independent of frontend timing or
-  inherited service environment while changing no other emulator core.
+  setup sections, reboot checks, update instructions, Player 1 coexistence, and
+  the safe fallback from native Super Glove Ball to FCEUmm.
+- Added separate Recalbox and Batocera release packages. Installation chooses
+  the physical Player 1 controller and preserves pairing, game registrations,
+  ROMs, saves, controller mappings, and unrelated RetroArch settings.
+- LaunchBox checks whether its optional keyboard fallback would collide with a
+  RetroArch hotkey. A conflict disables only that fallback; Network RetroPad
+  and the physical XInput controller continue to work.
+- LaunchBox verifies the native Windows core before installation and again when
+  Super Glove Ball starts. If the file is missing or changed, the game safely
+  falls back to FCEUmm instead of loading an unknown DLL.
+- Batocera and Recalbox now start their packaged helpers in the way each system
+  expects, including Recalbox storage that does not retain executable file bits.
+- The isolated Nestopia core selects the native Power Glove device itself,
+  making Super Glove Ball startup less dependent on frontend timing.
 
 ### Fixed
 
-- Made Controller termination one-shot so a repeated container-stop signal
-  cannot interrupt bounded preview cleanup and emit a misleading
-  `KeyboardInterrupt` traceback during an otherwise clean shutdown.
-
-- LaunchBox FCEUmm input now bypasses unreliable Windows synthetic-key delivery
-  and uses RetroArch's built-in Player 1 Network RetroPad. This preserves the
-  physical XInput joypad and real keyboard while making Start, Select, D-pad,
-  A, B, holds, and rapid-fire transitions visible at RetroArch's input layer.
-- LaunchBox upgrades now tolerate a managed receiver exiting during shutdown
-  and wait for a full quiet interval before replacing the runtime. This also
-  prevents an older system-Python supervisor from respawning duplicate
-  receivers while the per-user VirtualGlove environment is being installed.
-- Recalbox and Batocera now project authenticated controller frames onto the
-  merged gamepad's exact input contract. Recognition-only button fields no
-  longer cause otherwise valid directions and buttons to be discarded.
-- Merged Player 1 now translates the selected physical controller's RetroArch
-  hotkey actions onto its canonical buttons. The physical Hotkey Enable button
-  remains isolated from VirtualGlove Select, while normal exit, menu, state,
-  screenshot, recording, and axis-based hotkey combinations keep working.
+- Controller shutdown now ignores repeated stop requests while it finishes
+  cleaning up the camera preview, avoiding a harmless but alarming traceback.
+- LaunchBox FCEUmm games now use RetroArch's reliable Network RetroPad instead
+  of simulated Windows key presses. D-pad, A, B, Start, Select, held controls,
+  and rapid fire work while the physical joypad and keyboard remain available.
+- LaunchBox upgrades now wait until the old receiver has fully stopped before
+  replacing it, preventing duplicate background copies after an update.
+- Recalbox and Batocera no longer discard valid movement or button input when a
+  status message also contains recognition-only information.
+- Merged Player 1 now carries the physical controller's RetroArch hotkeys
+  correctly. VirtualGlove Select can never become Hotkey Enable, while the
+  physical controller can still exit, open menus, save or load states, take
+  screenshots, and start recordings.
 - The shared Controller Dashboard now replaces an unavailable camera stream
   with clear USB-camera guidance instead of repeatedly retrying a broken image,
   consistently for RetroPie, Recalbox, Batocera, and LaunchBox consoles.
@@ -246,23 +167,21 @@ authoritative record for line-level and file-level history.
 ### Added
 
 - Added per-game **Rapid A** and **Rapid B** controls to Dashboard. Changes use
-  the existing authenticated, revision-checked RetroPie registry and hot-swap
-  during the running authenticated game session. The live override is bound to
-  that session and disappears when the game exits or a new session starts.
+  the paired game list and take effect immediately during play. The temporary
+  choice ends when the game exits or a new game session begins.
 
 ### Changed
 
-- Cached validated device settings in the Controller supervisor and made every
-  save publish atomically through one path. Ordinary Dashboard status polling no
-  longer rereads the settings file or enumerates cameras; camera inventory is
-  refreshed briefly for Setup and Wi-Fi reports use a short cache.
+- Kept frequently used device, camera, and Wi-Fi information in memory for a
+  short time. The Dashboard no longer rereads files or rescans USB cameras on
+  every refresh, while Setup still notices camera changes promptly.
 - Compressed development deployment archives before transfer. Documentation PDF
   builds now downsample embedded copies to print resolution while leaving all
   source artwork, including Pixel Pal's intentional extra digits, unchanged.
 - VirtualGlove 0.4.1 is now the oldest supported in-place upgrade. Current
   player data, calibration, tuning, registries, pairing, and device settings are
-  preserved; older player stores and portable backup formats fail explicitly
-  without overwriting their source.
+  preserved. Older formats are left untouched and receive a clear unsupported
+  version message.
 - Rapid A/B now defaults on only where an individual Mattel program description
   explicitly identifies a rapid or pulsed button action: Program 7 A, Program B
   A, Program H A/B, and Bad Street Brawler B. Every other profile defaults off;
@@ -281,18 +200,30 @@ authoritative record for line-level and file-level history.
 
 ### Removed
 
-- Removed the abandoned optical-flow implementation and comparison benchmark,
-  unused motion compatibility branches and settings, the ignored directional
-  search device switch, an unused web re-export, duplicate worker homepage,
-  obsolete camera action aliases, and other unreachable helpers.
-- Removed unsigned controller protocol version 1 and its temporary receiver
-  flag. Signed `virtualglove-vision/2` messages are the only accepted controller
-  transport, and public status is now separate from wire serialization.
-- Removed pre-0.4.1 application, service, Compose, manifest, configuration,
-  and player-backup migrations. Active native Power Glove emulation names
-  remain unchanged.
+- Removed abandoned motion experiments, duplicate web code, obsolete camera
+  commands, and settings that no longer affected gameplay.
+- Removed the old unsigned Controller network format. VirtualGlove now accepts
+  only the authenticated version used by current releases.
+- Removed upgrade code for versions older than 0.4.1. Current player data and
+  native Power Glove emulation names remain unchanged.
 
 ## [0.4.1] - 2026-09-13
+
+This release added the original numbered Power Glove programs, rebuilt the
+Gameplay Guide around them, and made hand centring and joystick dead-zone setup
+much easier to see and test. It also completed the visible VirtualGlove rename
+on the UNO Q and RetroPie while preserving existing player data.
+
+At a glance:
+
+- Programs 1-14 joined Programs A-I and the game-specific profiles.
+- The camera test gained a live joystick grid, hand centring, and immediate
+  dead-zone previews.
+- The optional Ready-to-Play guide walks a player from connection to a running
+  registered game without sending controls during practice.
+- Fresh installations start with **Gestures off**.
+- Service and application names changed to VirtualGlove while existing pairing,
+  players, calibration, tuning, and games were preserved.
 
 ### Added
 
@@ -306,10 +237,10 @@ authoritative record for line-level and file-level history.
   exact case-insensitive `.nes`, `.zip`, and `.7z` aliases, and per-game rapid
   A/B exceptions without changing Programs A–I or the dedicated game profiles.
 - Added validated structured game-registry entries with optional `rapid_a` and
-  `rapid_b` switches. Overrides travel with the authenticated game lease and
-  are reported read-only in live status; existing string entries remain valid.
-- Added numeric Program 1–14 displays to the matrix protocol without renumbering
-  existing Program A–I, Bad Street Brawler, or Super Glove Ball codes.
+  `rapid_b` switches. Older simple game entries still work, and the selected
+  rapid-fire choices follow the active game session.
+- Added Program 1–14 numbers to the Controller's Matrix display without
+  changing the existing letters or game-specific symbols.
 - Expanded the Game and Gesture Guide with gesture-by-gesture Programs 1–14
   cards, compound-action timing and release rules, the complete official game
   index, rapid-fire exceptions, physical-controller use, and Program 14's
@@ -341,9 +272,8 @@ authoritative record for line-level and file-level history.
   screen readers.
 
 - Added **Center hand** directly to the Joystick dead-zone camera test. It is
-  available only while that panel owns an active safe-practice camera session,
-  keeps controller output paused, and redraws the grid from the newly saved
-  player center and hand size when centering finishes.
+  available only while the safe camera test is running. Game output stays
+  paused, and the grid redraws around the newly saved hand centre and hand size.
 
 - Added a 3×3 camera grid to the dead-zone test, using the saved calibrated hand
   center and the same translated, full-size bounds as gameplay. A subtle live direction region highlight clears on
@@ -351,14 +281,15 @@ authoritative record for line-level and file-level history.
   Moved the camera toggle beside **Use standard size**.
 
 - Added an off-by-default camera test to **Setup → Joystick dead zone**, with its
-  own practice lease, mirrored preview, live direction feedback,
-  heartbeat/retry handling, and isolated cleanup on stop or page exit.
+  mirrored preview and live direction feedback. It safely releases the camera
+  when stopped or when the page closes.
 
 - Added an optional, resumable **Get ready to play** guide at `/ready`, linked
   from Setup and Dashboard. It rechecks live readiness and uses safe practice
   for essential gestures before an explicit transition to registered-game controls.
 - Added separate versioned per-player guide progress, lossless version-5 store
-  migration, and a persistent output inhibit that survives interrupted visits.
+  migration, and a safety pause that remains in place if the guide is
+  interrupted.
 
 - Added a read-only Connection Doctor to **Connect to RetroPie**, with progress,
   separate address/service/authentication and runtime checks, plain-language next
@@ -368,12 +299,10 @@ authoritative record for line-level and file-level history.
 ### Changed
 
 - Renamed installed RetroPie and UNO Q services, executables, runtime paths,
-  configuration directories, bridge methods, protocol identifiers, and managed
-  installation metadata from `powerglove-*` to `virtualglove-*`. Upgrades move
-  pairing tokens, game registries, launcher settings, and camera enrollment
-  forward before retiring the old units and paths into rollback backups. Names
-  that specifically identify Mattel's Power Glove or the separate native
-  emulation cores remain unchanged.
+  configuration directories, and managed installation records from
+  `powerglove-*` to `virtualglove-*`. Upgrades preserve pairing, games, launch
+  settings, camera recovery, and rollback backups. Names that genuinely refer
+  to Mattel's Power Glove or native emulation remain unchanged.
 
 - Changed the fresh-install startup profile to **Gestures off**. Existing saved
   startup profiles remain unchanged during upgrades.
@@ -408,26 +337,29 @@ authoritative record for line-level and file-level history.
   physical Player 1 joypad available.
 
 - Made fresh installations emit only `virtualglove-*` service, executable,
-  runtime, and managed-metadata names. Coordinated upgrades migrate existing
-  pairing, launcher, game-registry, player, calibration, tuning, Academy, and
-  camera-enrollment data before retiring legacy paths into recovery backups.
+  runtime, and installation names. Upgrades move existing pairing, games,
+  players, calibration, tuning, Academy progress, and camera recovery forward
+  before placing obsolete files in a recovery backup.
 - Fixed RetroPie upgrades from pre-0.4.1 installations so the bootstrap
   recognizes the existing legacy launcher before asking for a Controller
   address. Package-source preflight now completes before the installer creates
   or migrates VirtualGlove configuration, and existing cabinet hooks are
   validated before that migration begins.
-- Stopped legacy systemd path and timer triggers before their services during
-  migration, preventing trigger warnings and overlapping old/new helpers.
-  Obsolete early-start trial units are retired with the other legacy helpers.
-- Refused UNO Q helper migration while a shutdown request is pending. This
-  prevents enabling the renamed `PathExists` watcher from halting the board
-  halfway through an update.
+- Stopped old timers and background helpers in the correct order during an
+  upgrade, preventing warnings and overlapping old and new services.
+- Delayed UNO Q service migration when a shutdown is already pending, preventing
+  the board from stopping halfway through an update.
 - Changed engineering Wi-Fi deployment to include and checksum-verify the
   compiled Matrix image, flash it before application restart, require a matched
   firmware handshake, and use administrator access when retiring a root-owned
   legacy application directory.
-- Strengthened release-package validation to require every renamed UNO Q and
-  RetroPie runtime file and reject legacy service, hook, or executable names.
+- Strengthened release checks so a package cannot mix old and new service or
+  executable names.
+
+The entries below are the development workshop log leading to earlier stable
+releases. They retain more measurements and implementation names because they
+show why an experiment was accepted or rejected. A player can safely skip to
+the next stable-version heading; a tinkerer can follow the trail.
 
 ## [0.4.0-rc.7] - 2026-09-11
 
@@ -1385,21 +1317,19 @@ the completed illustrated documentation set.
 
 ### Native Super Glove Ball and emulator support
 
-- Confirmed the exact Super Glove Ball ROM's ten-byte native packet, MSB-first
-  reads, `$A0`/`$5F` detection, `$3F` terminator, native `$82` Start, and
-  continuous X/Y behavior in a deterministic headless trace.
-- Corrected the custom Nestopia core to wrap the exact ROM's stream at ten
-  bytes, center zero precisely, and neutralize stale, lost, uncalibrated, and
-  wrong-profile samples instead of retaining a prior coordinate.
+- Confirmed how Super Glove Ball reads the original glove's ten-byte message,
+  including detection, Start, and continuous horizontal and vertical movement.
+  The byte values remain documented in the native compatibility guide.
+- Corrected the custom Nestopia core so centre is exact and old movement is
+  released when tracking, calibration, or the selected profile is invalid.
 - Added reversible per-ROM native Nestopia/FCEUmm selection plus a RetroPie-only
   isolated core installer; stock Nestopia remains untouched.
 - Audited all eight listed US ROMs: only Super Glove Ball consumes native
   multi-byte glove packets; the other games use standard controller-bit
   mappings through FCEUmm.
-- Added a reproducible matched-savestate direction benchmark. Native Super
-  Glove Ball visibly activates and releases every axis by frame 3, including a
-  3.1% X step; FCEUmm Gun Smoke polls input on frame 1 and visibly activates
-  and releases every direction by frame 2.
+- Added a repeatable emulator comparison from the same saved game state. Native
+  Super Glove Ball responded to movement within three displayed frames, while
+  the FCEUmm Gun Smoke test responded within two.
 - Compared the exact Super Glove Ball ROM in both cores, confirmed that FCEUmm
   remains standard-joypad-only, and corrected native Y wrapping so its packet
   and screen position span bottom, center, and top.
@@ -1435,19 +1365,18 @@ the completed illustrated documentation set.
 
 ### Recognition, performance, and safety
 
-- Made explicit and automatic neutral calibration accept only complete hand
-  observations at 70% confidence or better. Documented its 24-frame averaging,
-  circular wrist mean, 95th-percentile jitter measurement, repeatability limits,
-  atomic replacement, and separation from portable recognition defaults.
+- Made hand centring accept only a complete, clearly detected hand. It averages
+  several observations, measures natural resting movement, and replaces the
+  previous centre only after the new sample is complete.
 - Removed avoidable gameplay diagnostics: finger geometry is measured once,
   detailed landmarks are prepared only at the 5 fps preview cadence, and idle
   tuning skips measurement work while unchanged configurations are reused.
 - Made Menu Guard and the V-sign mutually exclusive with a clear pinky deadband.
   Menu Guard now has priority, cancels pending Start pulses, and suppresses every
   ordinary controller button while the safety pose is active.
-- Made recognition settings global across game mappings, reduced movement travel
-  with `0.28` activation and `0.14` release baselines, and recorded neutral X/Y
-  jitter so only noisy setups automatically receive higher safe thresholds.
+- Shared recognition settings across game profiles, reduced the hand travel
+  needed for movement, and used measured resting jitter only when a player
+  needs extra neutral space.
 - Expanded Glove Academy from twelve to sixteen mapping-independent lessons with
   roll left/right, close hand, and a shared menu-guard pose. Practice polls every
   75 ms and controller delivery remains paused.
@@ -1556,12 +1485,14 @@ profile selection, and refreshed illustrated manuals.
 - Added a dedicated T on the UNO Q matrix while gesture tuning is active.
 - Added a Games JSON editor with paired RetroPie access, duplicate-name validation, conflict detection, verified saves, backup download, and restoration.
 - Added guided Learn tuning with camera measurements, independent gesture thresholds, temporary previews, and persistent personal adjustments shared across profiles.
-- Added a confined RetroPie Games service on TCP 55358 and included it in installation and health checks.
+- Added a paired-console Games service so Setup can safely read and update the
+  RetroPie game list. Installation and health checks verify it automatically.
 
 ### Fixed
 
 - Moved game mapping editing into Setup and compacted Learn tuning, placing threshold values beneath the camera.
-- Published UDP profile control through a persistent App Lab brick, acknowledged queued requests independently of camera startup, and corrected launch-hook rejection reporting and configuration-error handling.
+- Kept game-profile commands available even while the camera is starting, and
+  improved error messages when a launch request or configuration is rejected.
 - Kept profile changes responsive during blocked camera startup or reads, and reused the camera and tracker when switching between active profiles.
 - Added exact compressed ROM filenames to the default registry so supported `.zip` and `.7z` games can select their profiles.
 
@@ -1583,7 +1514,8 @@ profile selection, and refreshed illustrated manuals.
 
 ### Added
 
-- Added an app-owned Avahi resolver brick that survives App Lab Compose regeneration, replacing the temporary direct socket mount.
+- Added reliable `.local` hostname lookup that survives App Lab rebuilding the
+  application containers.
 - Added one-command host setup for RetroPie and UNO Q, with managed-file backups, preserved private configuration, delayed startup, and read-only PASS/FAIL/ACTION checks. Empty pairing tokens no longer cause restart loops.
 - Added explicit A, B, and GLOVE ZAP practice lessons and live indicators. Learn consistently uses the general profile without changing the selected game.
 - Added a Glove Master completion achievement to Learn after all eleven lessons are recognized, with Start again and Dashboard actions. Skips do not count.
@@ -1592,7 +1524,8 @@ profile selection, and refreshed illustrated manuals.
 - Added temporary Learn sessions that start vision while preserving the selected profile and desired controller state, including multi-tab leases and automatic recovery when a page disappears unexpectedly.
 - Added a dedicated matrix gestures-idle state with a pinball-style animated glove, separate from both true shutdown and the flashing error X.
 - Added a dedicated Learn-mode matrix state with a bright `L` and moving grayscale scan highlight.
-- Added a root-owned tmpfiles rule that restores shutdown-helper readiness after reboot or App Lab application replacement.
+- Restored safe-shutdown readiness automatically after a reboot or App Lab
+  application replacement.
 
 ### Changed
 
@@ -1600,7 +1533,8 @@ profile selection, and refreshed illustrated manuals.
 - New installations leave the RetroPie destination blank, show generic hostname examples, and keep local practice available before pairing. Controller start requires a destination; saved destinations survive updates.
 
 
-- Added persistent host Avahi resolution for `.local` gameplay and pairing destinations, with five-second address refresh and deployment mount setup.
+- Added persistent `.local` hostname lookup for gameplay and pairing, with a
+  short address refresh when a device moves on the network.
 - Standardized Dashboard/Learn Calibrate actions with red busy and blue completed feedback, consistent navigation buttons, and shorter Connection/Shutdown labels.
 - Prioritized controller transmission before matrix updates and limited browser JPEG encoding to 15 fps; added inference_ms and send_ms diagnostics.
 - Prepared SSH pairing dependencies separately in the persistent runtime cache so dependency downloads do not consume the SSH connection deadline.
@@ -1659,7 +1593,8 @@ profile selection, and refreshed illustrated manuals.
 
 - Changed Wi-Fi deployment to use SFTP staging and terminal-backed remote commands for UNO Q systems that stall non-terminal SSH sessions.
 - Allowed the UNO Q deployment health check to use the board's current IP when its `.local` name pauses during a container restart.
-- Published the host shutdown request atomically so a filesystem observer cannot consume the request between file creation and the final content write.
+- Made shutdown requests appear as one complete action, preventing the host
+  helper from seeing a half-written request.
 - Updated the GitHub Actions workflow to use the current Node 24 action releases and run the Python 3.7 compatibility job on Ubuntu 22.04.
 - Corrected Program I so index curl accelerates in Knight Rider, a forward push accelerates with turbo, and thumb curl fires the weapons.
 
@@ -1669,7 +1604,8 @@ profile selection, and refreshed illustrated manuals.
 
 - Camera-only Power Glove tracking on Arduino UNO Q with MediaPipe.
 - Gesture profiles for Bad Street Brawler, Super Glove Ball, and cartridge-free Programs A-I.
-- Authenticated UDP profile selection and virtual Linux gamepad output for RetroPie, including per-game runcommand hooks.
+- Added authenticated game-profile selection and a virtual Linux gamepad for
+  RetroPie, selected automatically when a registered game launches.
 - Dashboard, live diagnostics, offline gesture lessons, configuration controls, camera recovery, controller start/stop controls, and UNO Q matrix feedback.
 - Wi-Fi deployment, App Lab packaging, runtime-asset retrieval, branded PDF generation, and a fixed-purpose host shutdown helper.
 - Project overview, installation guide, quick reference, profile handbook, third-party component notice, screenshots, and reproducible build instructions.
@@ -1684,13 +1620,15 @@ profile selection, and refreshed illustrated manuals.
 ### Fixed
 
 - Recovered cleanly from USB camera disconnects and slow UVC camera wake-up.
-- Kept the vision loop responsive through receiver, DNS, Wi-Fi, and mDNS loss.
+- Kept hand tracking responsive when the console, Wi-Fi, or local hostname
+  lookup temporarily disappears.
 - Corrected password pairing so credentials never appear in command arguments and the shared token is transferred and installed reliably.
 - Corrected UNO Q dependency isolation, secure token upload, PDF builder file mode, landscape diagnostics layout, and cabinet launch integration.
 
 ### Security
 
-- Added short-lived TLS pairing with certificate comparison, a physical single-use PIN, bounded handshakes, and restricted token-file permissions.
+- Added encrypted pairing with certificate comparison, a short-lived physical
+  PIN, time-limited connection attempts, and private pairing files.
 - Required confirmation and a fixed host-side request path for system shutdown.
 - Added a third-party component notice covering licenses, provenance, pinned versions, checksums, and update procedure.
 
@@ -1704,10 +1642,10 @@ When you recalibrate, the app replaces the saved reference atomically.
 
 ### RetroPie mDNS installation
 
-The RetroPie setup command now installs `avahi-daemon` and `libnss-mdns`, enables Avahi at boot, and checks both the service and dependency. Existing hostname configuration and pairing settings are preserved. Fresh-machine installation has not yet been tested.
-
-
-The UNO Q installer also installs and checks `libnss-mdns` alongside Avahi for host-level resolution, while retaining the separate app-container resolver.
+The RetroPie and UNO Q installers now provide the system components needed for
+`.local` addresses such as `virtualglove.local`. Existing hostnames and pairing
+settings are preserved. At the time of this entry, a completely fresh RetroPie
+installation had not yet been tested.
 
 
 ### Documentation and shutdown wording consistency

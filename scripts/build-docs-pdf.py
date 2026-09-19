@@ -646,8 +646,8 @@ def main():
     )
     build(
         third_party, OUTPUT / "VirtualGlove-Third-Party-Notices.pdf",
-        "Third-party Notices and Runtime Components",
-        "MediaPipe provenance, modifications, checksums, licensing, and update procedure.",
+        "Third-party Components and Notices",
+        "Licenses, provenance, redistribution obligations, and verified component identities.",
         "Technical notice",
     )
     build(
