@@ -652,11 +652,27 @@ def retroarch_running(proc_root: Path = Path("/proc")) -> bool:
     return False
 
 
-def merged_joypad_index(sys_root: Path = Path("/sys/class/input")) -> int | None:
-    """Return the current Linux joystick index for the merged device."""
-    for item in sorted(sys_root.glob("js*"), key=lambda path: int(path.name[2:])):
+def merged_joypad_index(sys_root: Path = Path("/sys/class/input"),
+                        udev_root: Path = Path("/run/udev/data")) -> int | None:
+    """Return the merged device's RetroArch udev joypad index.
+
+    RetroArch numbers only event devices tagged ``ID_INPUT_JOYSTICK=1`` and
+    does so in numeric event order. Linux's legacy ``jsN`` suffix is a
+    different namespace: a device exposed as ``js4`` can legitimately be
+    RetroArch joypad 2 when keyboard-only event devices occupy the gaps.
+    """
+    joypads = []
+    for item in sorted(sys_root.glob("event*"),
+                       key=lambda path: int(path.name[5:])):
+        device_number = _text(item / "dev")
+        if not device_number:
+            continue
+        properties = _text(udev_root / ("c" + device_number)).splitlines()
+        if "E:ID_INPUT_JOYSTICK=1" in properties:
+            joypads.append(item)
+    for index, item in enumerate(joypads):
         if _text(item / "device/name") == DEVICE_NAME:
-            return int(item.name[2:])
+            return index
     return None
 
 
@@ -669,10 +685,12 @@ class MergedGamepadDevice:
                  socket_path: Path | None = None,
                  sink=None, proc_root: Path = Path("/proc"),
                  sys_root: Path = Path("/sys/class/input"),
+                 udev_root: Path = Path("/run/udev/data"),
                  dev_root: Path = Path("/dev/input")) -> None:
         self.saved = load_controller(controller_config)
         self.retroarch_config = retroarch_config
-        self.proc_root, self.sys_root, self.dev_root = proc_root, sys_root, dev_root
+        self.proc_root, self.sys_root = proc_root, sys_root
+        self.udev_root, self.dev_root = udev_root, dev_root
         self.state = MergeState()
         self.mapper = PhysicalMapper(self.saved["mapping"], self.state)
         self.sink = sink or UInputMergedGamepad()
@@ -711,7 +729,7 @@ class MergedGamepadDevice:
     def _install_index(self) -> None:
         """Wait for uinput enumeration and atomically manage the NES assignment."""
         for _attempt in range(40):
-            index = merged_joypad_index(self.sys_root)
+            index = merged_joypad_index(self.sys_root, self.udev_root)
             if index is not None:
                 current = self.retroarch_config.read_text() if self.retroarch_config.exists() else ""
                 global_config = self.retroarch_config.with_name("retroarchcustom.cfg")

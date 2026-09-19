@@ -68,6 +68,41 @@ class MergedGamepadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not identify"):
             merged.choose_controller(one, requested="missing")
 
+    def test_retroarch_index_uses_udev_joypad_order_not_js_suffix(self):
+        """Batocera's js4 can be RetroArch pad 2 when only three pads exist."""
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            sys_root, udev_root = root / "sys", root / "udev"
+            udev_root.mkdir()
+            devices = (
+                (3, "Keyboard-only controller node", "13:67", False),
+                (4, "Physical Player 1", "13:68", True),
+                (10, "Virtual spinner", "13:74", True),
+                (13, merged.DEVICE_NAME, "13:77", True),
+            )
+            for number, device_name, device_number, is_joypad in devices:
+                event = sys_root / ("event%d" % number)
+                (event / "device").mkdir(parents=True)
+                (event / "device/name").write_text(device_name + "\n")
+                (event / "dev").write_text(device_number + "\n")
+                (udev_root / ("c" + device_number)).write_text(
+                    "E:ID_INPUT_JOYSTICK=%d\n" % int(is_joypad))
+            # The kernel joystick node is deliberately js4; RetroArch sees
+            # the same merged event device as the third joypad, index 2.
+            (sys_root / "js4/device").mkdir(parents=True)
+            (sys_root / "js4/device/name").write_text(merged.DEVICE_NAME + "\n")
+            self.assertEqual(merged.merged_joypad_index(sys_root, udev_root), 2)
+
+    def test_retroarch_index_waits_until_udev_marks_merged_device(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            event = root / "sys/event7"
+            (event / "device").mkdir(parents=True)
+            (event / "device/name").write_text(merged.DEVICE_NAME + "\n")
+            (event / "dev").write_text("13:71\n")
+            (root / "udev").mkdir()
+            self.assertIsNone(merged.merged_joypad_index(root / "sys", root / "udev"))
+
     def test_saved_identity_handles_port_moves_without_guessing_identical_pads(self):
         serial = {"name": "Pad", "vendor": "1", "product": "2", "version": "3",
                   "uniq": "serial", "phys": "usb-1", "event": "/dev/input/event1"}

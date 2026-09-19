@@ -19,6 +19,9 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Fixed Recalbox and Batocera merged Player 1 assignment when Linux's `jsN`
+  number differs from RetroArch's joypad order. Ordinary FCEUmm games now use
+  the same merged controller that RetroArch actually sees.
 - Upgrading an UNO Q from 0.4.2 now removes the old background services only
   after their VirtualGlove replacements are running. If another boot component
   is already using the Matrix connection, the optional early-start feature
