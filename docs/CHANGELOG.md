@@ -7,6 +7,14 @@ authoritative record for line-level and file-level history.
 
 ## [Unreleased]
 
+### Fixed
+
+- The supported 0.4.2 UNO Q upgrade now disables and removes the obsolete
+  `powerglove-*` host and user services, helper executables, and tmpfiles rules
+  after their `virtualglove-*` replacements are active. The optional early-start
+  optimization also falls back cleanly when another boot component owns the SWD
+  GPIO lines instead of leaving a failed user service behind.
+
 ### Added
 
 - Added a repository-owned local test runner with a reusable `.venv-test` and

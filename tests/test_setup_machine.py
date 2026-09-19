@@ -241,13 +241,85 @@ class SetupTests(unittest.TestCase):
                     patch.object(setup, "BACKUPS", root / "backups"), \
                     patch.object(setup, "run") as command, \
                     patch.object(setup, "install_early_start"), \
-                    patch.object(setup, "install_wifi_status"):
+                    patch.object(setup, "install_wifi_status"), \
+                    patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(
+                        pw_uid=os.getuid(), pw_gid=os.getgid(),
+                        pw_dir=str(root / "home/arduino"),
+                    )):
                 setup.install_unoq_runtime_names()
             calls = [item.args for item in command.call_args_list]
-            self.assertFalse(any("powerglove-" in str(part)
-                                 for call in calls for part in call))
             self.assertTrue((mapped("/etc/systemd/system") /
                              "virtualglove-system-shutdown.service").is_file())
+
+    def test_runtime_name_upgrade_retires_exact_legacy_helpers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            app = root / "app"
+            (app / "data").mkdir(parents=True)
+            (app / "uno-q").mkdir()
+            for original in (ROOT / "uno-q").glob("virtualglove-*"):
+                (app / "uno-q" / original.name).write_bytes(original.read_bytes())
+            home = root / "home/arduino"
+            old_user_unit = home / ".config/systemd/user/powerglove-early-start.service"
+            old_user_unit.parent.mkdir(parents=True)
+            old_user_unit.write_text("legacy unit")
+            old_user_helper = home / ".local/lib/powerglove/uno-q-early-start.py"
+            old_user_helper.parent.mkdir(parents=True)
+            old_user_helper.write_text("legacy helper")
+
+            class AppPath:
+                def __str__(self):
+                    return "/home/arduino/ArduinoApps/virtualglove"
+
+                def __truediv__(self, relative):
+                    return app / relative
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith(("/etc/", "/usr/local/")):
+                    return root / str(path).lstrip("/")
+                return path
+
+            legacy = [
+                "/etc/systemd/system/powerglove-system-shutdown.path",
+                "/etc/systemd/system/powerglove-camera-recovery.path",
+                "/etc/systemd/system/powerglove-wifi-status.timer",
+                "/etc/systemd/system/powerglove-system-shutdown.service",
+                "/etc/systemd/system/powerglove-camera-recovery.service",
+                "/etc/systemd/system/powerglove-wifi-status.service",
+                "/etc/tmpfiles.d/powerglove-system-shutdown.conf",
+                "/etc/tmpfiles.d/powerglove-camera-recovery.conf",
+                "/usr/local/libexec/powerglove-camera-recovery",
+                "/usr/local/libexec/powerglove-wifi-status",
+            ]
+            for name in legacy:
+                path = mapped(name)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("legacy")
+            account = SimpleNamespace(
+                pw_uid=os.getuid(), pw_gid=os.getgid(), pw_dir=str(home)
+            )
+            with patch.object(setup, "SOURCE", AppPath()), \
+                    patch.object(setup, "Path", side_effect=mapped), \
+                    patch.object(setup, "BACKUPS", root / "backups"), \
+                    patch.object(setup, "run") as command, \
+                    patch.object(setup, "install_early_start"), \
+                    patch.object(setup, "install_wifi_status"), \
+                    patch.object(setup.pwd, "getpwnam", return_value=account):
+                setup.install_unoq_runtime_names()
+                expected_user_disable = tuple(setup.user_systemctl(
+                    "disable", "--now", "powerglove-early-start.service"
+                ))
+
+            for name in legacy:
+                self.assertFalse(mapped(name).exists(), name)
+            self.assertFalse(old_user_unit.exists())
+            self.assertFalse(old_user_helper.exists())
+            command.assert_any_call(
+                "systemctl", "disable", "--now",
+                "powerglove-system-shutdown.path",
+            )
+            command.assert_any_call(*expected_user_disable)
 
     def test_early_start_installs_current_unit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -265,9 +337,13 @@ class SetupTests(unittest.TestCase):
                 expected_enable = tuple(setup.user_systemctl(
                     "enable", "virtualglove-early-start.service"
                 ))
+                expected_reset = tuple(setup.user_systemctl(
+                    "reset-failed", "virtualglove-early-start.service"
+                ))
             self.assertTrue((home / ".config/systemd/user" /
                              "virtualglove-early-start.service").is_file())
             command.assert_any_call(*expected_enable)
+            command.assert_any_call(*expected_reset)
 
     def test_retropie_install_twice_preserves_existing_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -322,7 +398,7 @@ class SetupTests(unittest.TestCase):
             def mapped(value):
                 path = Path(value)
                 return root / str(path).lstrip("/") if str(path).startswith(("/etc/", "/usr/local/")) else path
-            with patch.object(setup, "SOURCE", AppPath()), patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup, "install_early_start") as early, patch.object(setup.os, "chown"), patch.object(setup.socket, "gethostname", return_value="VirtualGlove"), patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000)):
+            with patch.object(setup, "SOURCE", AppPath()), patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup, "install_early_start") as early, patch.object(setup.os, "chown"), patch.object(setup.socket, "gethostname", return_value="VirtualGlove"), patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000, pw_dir=str(root / "home/arduino"))):
                 setup.install_unoq(None)
                 first = compose.read_text()
                 setup.install_unoq(None)

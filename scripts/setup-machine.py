@@ -270,6 +270,54 @@ def install_wifi_status():
     run("systemctl", "start", "virtualglove-wifi-status.service")
 
 
+def retire_unoq_legacy_runtime_names():
+    """Disable and remove the exact host helpers shipped before VirtualGlove 0.5."""
+    system_units = (
+        "powerglove-system-shutdown.path",
+        "powerglove-camera-recovery.path",
+        "powerglove-wifi-status.timer",
+    )
+    service_units = (
+        "powerglove-system-shutdown.service",
+        "powerglove-camera-recovery.service",
+        "powerglove-wifi-status.service",
+    )
+    unit_directory = Path("/etc/systemd/system")
+    for name in system_units:
+        path = unit_directory / name
+        if path.exists() or path.is_symlink():
+            run("systemctl", "disable", "--now", name)
+    for name in service_units:
+        path = unit_directory / name
+        if path.exists() or path.is_symlink():
+            run("systemctl", "stop", name)
+
+    for path in [unit_directory / name for name in system_units + service_units] + [
+        Path("/etc/tmpfiles.d/powerglove-system-shutdown.conf"),
+        Path("/etc/tmpfiles.d/powerglove-camera-recovery.conf"),
+        Path("/usr/local/libexec/powerglove-camera-recovery"),
+        Path("/usr/local/libexec/powerglove-wifi-status"),
+    ]:
+        if path.exists() or path.is_symlink():
+            path.unlink()
+
+    user = pwd.getpwnam("arduino")
+    home = Path(user.pw_dir)
+    old_user_unit = home / ".config/systemd/user/powerglove-early-start.service"
+    if old_user_unit.exists() or old_user_unit.is_symlink():
+        run(*user_systemctl("disable", "--now", "powerglove-early-start.service"))
+        old_user_unit.unlink()
+    old_user_helper = home / ".local/lib/powerglove/uno-q-early-start.py"
+    if old_user_helper.exists() or old_user_helper.is_symlink():
+        old_user_helper.unlink()
+    old_user_directory = old_user_helper.parent
+    if old_user_directory.is_dir() and not any(old_user_directory.iterdir()):
+        old_user_directory.rmdir()
+
+    run("systemctl", "daemon-reload")
+    run(*user_systemctl("daemon-reload"))
+
+
 def install_unoq_runtime_names():
     """Install the current UNO Q host helpers."""
     app = SOURCE
@@ -302,6 +350,7 @@ def install_unoq_runtime_names():
     run("systemctl", "enable", "--now", "virtualglove-camera-recovery.path")
     install_early_start()
     install_wifi_status()
+    retire_unoq_legacy_runtime_names()
 
 
 def install_unoq(peer):
@@ -384,6 +433,7 @@ def install_early_start():
     if trial.exists():
         run(*user_systemctl("disable", "virtualglove-early-start-trial.service"))
     run(*user_systemctl("enable", "virtualglove-early-start.service"))
+    run(*user_systemctl("reset-failed", "virtualglove-early-start.service"))
     print("PASS  Early-start helper installed for the next boot; existing sketch animation preserved.")
 
 
