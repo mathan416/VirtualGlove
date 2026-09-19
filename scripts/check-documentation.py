@@ -58,6 +58,7 @@ PDF_EDITIONS = {
     "docs/NATIVE_EMULATION_EXPLAINED.md": "VirtualGlove-Native-Emulation.pdf",
     "docs/TROUBLESHOOTING.md": "VirtualGlove-Troubleshooting.pdf",
     "docs/CAMERA_GUIDE.md": "VirtualGlove-Camera-Guide.pdf",
+    "docs/ENCLOSURE_QUICK_REFERENCE.md": "VirtualGlove-Enclosure-Quick-Reference.pdf",
     "docs/ENCLOSURE_GUIDE.md": "VirtualGlove-Enclosure-Guide.pdf",
     "docs/ENGINEERING_JOURNEY.md": "VirtualGlove-Engineering-Journey.pdf",
     "docs/ENGINEERING_TOOLKIT.md": "VirtualGlove-Engineering-Toolkit.pdf",

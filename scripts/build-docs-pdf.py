@@ -36,9 +36,11 @@ from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen.canvas import Canvas
 from PIL import Image as PillowImage
 from reportlab.platypus import (
     Image,
@@ -167,6 +169,8 @@ def table_cell(
     if image_match:
         image_path = (source.parent / image_match.group(1)).resolve()
         if image_path.exists():
+            if source.name == "ENCLOSURE_GUIDE.md" and int(image_match.group(3) or 0) >= 200:
+                return image_flowable(image_path, 2.7 * inch, 1.75 * inch)
             if "images/matrix/" in cell and int(image_match.group(3) or 104) > 104:
                 requested = int(image_match.group(3) or 104)
                 return image_flowable(
@@ -248,6 +252,8 @@ def parse_table(
         widths = [6.6 * inch / columns] * columns
     if source.name == "MATRIX_GUIDE.md" and columns == 3:
         widths = [1.8 * inch, 2.3 * inch, 2.5 * inch]
+    elif source.name == "ENCLOSURE_GUIDE.md" and rows[0] == ["View", "UNO Q Case", "Controller Dock"]:
+        widths = [0.55 * inch, 3.025 * inch, 3.025 * inch]
     elif source.name == "ARCHITECTURE.md" and columns == 3:
         widths = [1.4 * inch, 2.6 * inch, 2.6 * inch]
     elif source.name == "ARCHITECTURE.md" and columns == 4:
@@ -595,6 +601,305 @@ def build(source: Path, destination: Path, title: str, subtitle: str, kind: str)
     document.build(story, onFirstPage=cover_page, onLaterPages=page_decor)
 
 
+def _quick_arrow(canvas: Canvas, x1: float, y1: float, x2: float, y2: float) -> None:
+    """Draw one bold assembly arrow."""
+    angle = math.atan2(y2 - y1, x2 - x1)
+    canvas.setStrokeColor(RED)
+    canvas.setLineWidth(2.2)
+    canvas.line(x1, y1, x2, y2)
+    size = 7
+    canvas.line(x2, y2, x2 - size * math.cos(angle - 0.55), y2 - size * math.sin(angle - 0.55))
+    canvas.line(x2, y2, x2 - size * math.cos(angle + 0.55), y2 - size * math.sin(angle + 0.55))
+
+
+def _quick_base(canvas: Canvas, x: float, y: float, width: float = 112, depth: float = 62) -> None:
+    canvas.setFillColor(colors.HexColor("#232A34"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.5)
+    canvas.roundRect(x, y, width, depth, 7, fill=1, stroke=1)
+    canvas.setFillColor(PAPER)
+    canvas.roundRect(x + 7, y + 7, width - 14, depth - 14, 4, fill=1, stroke=0)
+    canvas.setFillColor(colors.HexColor("#232A34"))
+    for px, py in ((x + 12, y + 12), (x + width - 12, y + 12),
+                   (x + 12, y + depth - 12), (x + width - 12, y + depth - 12)):
+        canvas.circle(px, py, 4, fill=1, stroke=0)
+
+
+def _quick_board(canvas: Canvas, x: float, y: float, width: float = 84, depth: float = 47) -> None:
+    canvas.setFillColor(colors.HexColor("#079498"))
+    canvas.setStrokeColor(colors.HexColor("#056A72"))
+    canvas.roundRect(x, y, width, depth, 2, fill=1, stroke=1)
+    canvas.setFillColor(colors.white)
+    for px, py in ((x + 8, y + 7), (x + width - 8, y + 7),
+                   (x + 8, y + depth - 7), (x + width - 8, y + depth - 7)):
+        canvas.circle(px, py, 2.3, fill=1, stroke=0)
+    canvas.setFillColor(colors.HexColor("#CBD5E1"))
+    canvas.rect(x + width - 12, y + 14, 13, 18, fill=1, stroke=0)
+
+
+def _quick_lid(canvas: Canvas, x: float, y: float, width: float = 112, depth: float = 62,
+               dock: bool = False) -> None:
+    canvas.setFillColor(colors.HexColor("#2D333D"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.4)
+    canvas.roundRect(x, y, width, depth, 7, fill=1, stroke=1)
+    canvas.setFillColor(PAPER)
+    window_width = 31
+    canvas.rect(x + (width - window_width) / 2, y + 13, window_width, 21, fill=1, stroke=0)
+    canvas.setStrokeColor(CYAN)
+    canvas.setLineWidth(3)
+    canvas.rect(x + (width - window_width) / 2 - 2, y + 11, window_width + 4, 25, fill=0, stroke=1)
+    if dock:
+        canvas.setFillColor(PAPER)
+        canvas.rect(x + 12, y + depth - 17, width - 24, 12, fill=1, stroke=0)
+
+
+def _quick_hub(canvas: Canvas, x: float, y: float, width: float = 112) -> None:
+    canvas.setFillColor(colors.HexColor("#626B76"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.roundRect(x, y, width, 28, 3, fill=1, stroke=1)
+    canvas.setFillColor(colors.HexColor("#E5E7EB"))
+    port_width = width * 0.13
+    for fraction in (0.10, 0.33, 0.56, 0.79):
+        canvas.rect(x + width * fraction, y - 1, port_width, 7, fill=1, stroke=0)
+
+
+def _quick_insert_diagram(canvas: Canvas, x: float, y: float) -> None:
+    _quick_base(canvas, x + 18, y + 16)
+    starts = ((x + 17, y + 109), (x + 56, y + 109),
+              (x + 95, y + 109), (x + 134, y + 109))
+    targets = ((x + 30, y + 66), (x + 30, y + 28),
+               (x + 118, y + 28), (x + 118, y + 66))
+    for (px, py), (tx, ty) in zip(starts, targets):
+        canvas.setFillColor(colors.HexColor("#D7A83D"))
+        canvas.circle(px, py, 5, fill=1, stroke=0)
+        _quick_arrow(canvas, px, py - 7, tx, ty + 6)
+
+
+def _quick_board_diagram(canvas: Canvas, x: float, y: float, dock: bool) -> None:
+    width = 142 if dock else 112
+    base_x = x + (4 if dock else 18)
+    board_x = base_x + (width - 84) / 2
+    _quick_base(canvas, base_x, y + 12, width, 68 if dock else 62)
+    _quick_board(canvas, board_x, y + 86)
+    _quick_arrow(canvas, board_x + 23, y + 82, board_x + 23, y + 68)
+    _quick_arrow(canvas, board_x + 68, y + 82, board_x + 68, y + 68)
+
+
+def _quick_hub_diagram(canvas: Canvas, x: float, y: float) -> None:
+    _quick_base(canvas, x + 4, y + 9, 142, 72)
+    _quick_board(canvas, x + 15, y + 23, 63, 36)
+    _quick_hub(canvas, x + 62, y + 93, 104)
+    _quick_arrow(canvas, x + 110, y + 89, x + 110, y + 66)
+    canvas.setStrokeColor(CYAN)
+    canvas.setLineWidth(2)
+    canvas.bezier(x + 70, y + 93, x + 48, y + 88, x + 82, y + 72, x + 78, y + 55)
+
+
+def _quick_close_diagram(canvas: Canvas, x: float, y: float, dock: bool) -> None:
+    width = 142 if dock else 112
+    base_x = x + (4 if dock else 18)
+    _quick_base(canvas, base_x, y + 8, width, 66 if dock else 62)
+    _quick_lid(canvas, base_x, y + 91, width, 62, dock=dock)
+    _quick_arrow(canvas, base_x + 25, y + 86, base_x + 25, y + 70)
+    _quick_arrow(canvas, base_x + width - 25, y + 86, base_x + width - 25, y + 70)
+
+
+def _quick_finish_diagram(canvas: Canvas, x: float, y: float, dock: bool) -> None:
+    width = 142 if dock else 112
+    base_x = x + (4 if dock else 18)
+    _quick_base(canvas, base_x, y + 27, width, 66 if dock else 62)
+    _quick_lid(canvas, base_x, y + 40, width, 62, dock=dock)
+    canvas.setFillColor(NIGHT)
+    canvas.roundRect(base_x + width / 2 - 10, y + 82, 20, 20, 3, fill=1, stroke=0)
+    canvas.setStrokeColor(CYAN)
+    canvas.setLineWidth(1.5)
+    canvas.circle(base_x + width / 2, y + 92, 5, fill=0, stroke=1)
+    canvas.setStrokeColor(colors.HexColor("#20A45A"))
+    canvas.setLineWidth(4)
+    canvas.line(base_x + width - 8, y + 108, base_x + width, y + 99)
+    canvas.line(base_x + width, y + 99, base_x + width + 15, y + 118)
+
+
+def _quick_part_icon(canvas: Canvas, kind: str, x: float, y: float) -> None:
+    """Draw a compact parts-strip symbol."""
+    if kind == "board":
+        _quick_board(canvas, x - 19, y - 8, 38, 22)
+    elif kind == "hub":
+        _quick_hub(canvas, x - 25, y - 6, 50)
+    elif kind == "base":
+        _quick_base(canvas, x - 24, y - 10, 48, 27)
+    elif kind == "lid":
+        _quick_lid(canvas, x - 24, y - 10, 48, 27)
+    elif kind == "finish":
+        canvas.setStrokeColor(CYAN)
+        canvas.setLineWidth(3)
+        canvas.rect(x - 17, y - 8, 22, 15, fill=0, stroke=1)
+        canvas.setFillColor(NIGHT)
+        canvas.roundRect(x + 9, y - 7, 15, 15, 2, fill=1, stroke=0)
+    elif kind == "hardware":
+        canvas.setFillColor(colors.HexColor("#D7A83D"))
+        for offset in (-14, -5, 4, 13):
+            canvas.circle(x + offset, y + 4, 3.2, fill=1, stroke=0)
+        canvas.setStrokeColor(colors.HexColor("#667085"))
+        canvas.setLineWidth(2)
+        for offset in (-14, -5, 4, 13):
+            canvas.line(x + offset, y - 2, x + offset, y - 13)
+    else:
+        canvas.setStrokeColor(NIGHT)
+        canvas.setLineWidth(3)
+        canvas.line(x - 18, y - 10, x + 18, y + 12)
+        canvas.circle(x - 20, y - 12, 4, fill=0, stroke=1)
+
+
+def _quick_parts_strip(canvas: Canvas, items: list[tuple[str, str]]) -> None:
+    page_width, _ = landscape(letter)
+    x0, y0, height = 24, 462, 66
+    canvas.setFillColor(PALE_BLUE)
+    canvas.roundRect(x0, y0, page_width - 48, height, 7, fill=1, stroke=0)
+    canvas.setFillColor(NIGHT)
+    canvas.setFont("Helvetica-Bold", 9)
+    canvas.drawString(x0 + 10, y0 + height - 14, "YOU NEED")
+    item_width = (page_width - 136) / len(items)
+    for index, (kind, label) in enumerate(items):
+        left = x0 + 82 + index * item_width
+        _quick_part_icon(canvas, kind, left + item_width / 2, y0 + 38)
+        canvas.setFillColor(INK)
+        canvas.setFont("Helvetica-Bold", 6.8)
+        canvas.drawCentredString(left + item_width / 2, y0 + 8, label)
+
+
+def _quick_step_panel(canvas: Canvas, x: float, number: int, title: str,
+                      note: str, diagram: str, dock: bool) -> None:
+    y, width, height = 145, 180, 305
+    canvas.setFillColor(colors.white)
+    canvas.setStrokeColor(GRID)
+    canvas.setLineWidth(1)
+    canvas.roundRect(x, y, width, height, 7, fill=1, stroke=1)
+    canvas.setFillColor(NIGHT)
+    canvas.circle(x + 20, y + height - 22, 13, fill=1, stroke=0)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 13)
+    canvas.drawCentredString(x + 20, y + height - 27, str(number))
+    canvas.setFillColor(INK)
+    canvas.setFont("Helvetica-Bold", 10)
+    canvas.drawString(x + 40, y + height - 26, title)
+    diagram_y = y + 100
+    if diagram == "inserts":
+        _quick_insert_diagram(canvas, x + 10, diagram_y)
+    elif diagram == "board":
+        _quick_board_diagram(canvas, x + 10, diagram_y, dock)
+    elif diagram == "hub":
+        _quick_hub_diagram(canvas, x + 7, diagram_y)
+    elif diagram == "close":
+        _quick_close_diagram(canvas, x + 8, diagram_y, dock)
+    else:
+        _quick_finish_diagram(canvas, x + 8, diagram_y, dock)
+    canvas.setFillColor(MUTED)
+    canvas.setFont("Helvetica", 8.2)
+    words = note.split()
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if canvas.stringWidth(candidate, "Helvetica", 8.2) <= width - 20:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    for offset, line in enumerate(lines[:3]):
+        canvas.drawCentredString(x + width / 2, y + 69 - offset * 12, line)
+
+
+def _quick_warning(canvas: Canvas, x: float, title: str, detail: str) -> None:
+    canvas.setStrokeColor(RED)
+    canvas.setFillColor(colors.HexColor("#FFF4F6"))
+    canvas.setLineWidth(2)
+    path = canvas.beginPath()
+    path.moveTo(x, 115)
+    path.lineTo(x + 13, 91)
+    path.lineTo(x - 13, 91)
+    path.close()
+    canvas.drawPath(path, fill=1, stroke=1)
+    canvas.setFillColor(RED)
+    canvas.setFont("Helvetica-Bold", 14)
+    canvas.drawCentredString(x, 96, "!")
+    canvas.setFillColor(INK)
+    canvas.setFont("Helvetica-Bold", 8.5)
+    canvas.drawString(x + 22, 105, title)
+    canvas.setFillColor(MUTED)
+    canvas.setFont("Helvetica", 7.5)
+    canvas.drawString(x + 22, 92, detail)
+
+
+def _quick_page(canvas: Canvas, title: str, subtitle: str, page_number: int,
+                items: list[tuple[str, str]], steps: list[tuple[str, str, str]],
+                dock: bool) -> None:
+    page_width, page_height = landscape(letter)
+    canvas.setFillColor(colors.white)
+    canvas.rect(0, 0, page_width, page_height, fill=1, stroke=0)
+    canvas.setFillColor(NIGHT)
+    canvas.rect(0, page_height - 72, page_width, 72, fill=1, stroke=0)
+    canvas.drawImage(ImageReader(str(LOGO)), 24, page_height - 62, width=150, height=42,
+                     preserveAspectRatio=True, anchor="w", mask="auto")
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 19)
+    canvas.drawString(202, page_height - 33, title)
+    canvas.setFillColor(CYAN)
+    canvas.setFont("Helvetica-Bold", 8)
+    canvas.drawString(202, page_height - 49, subtitle)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 9)
+    canvas.drawRightString(page_width - 24, page_height - 37, f"{page_number} / 2")
+    _quick_parts_strip(canvas, items)
+    for index, (title_text, note, diagram) in enumerate(steps, 1):
+        _quick_step_panel(canvas, 24 + (index - 1) * 188, index, title_text, note, diagram, dock)
+    canvas.setFillColor(PAPER)
+    canvas.roundRect(24, 24, page_width - 48, 100, 7, fill=1, stroke=0)
+    _quick_warning(canvas, 56, "POWER OFF", "Disconnect power before opening.")
+    _quick_warning(canvas, 315, "CHECK THE CABLE", "Nothing pinched under the lid.")
+    _quick_warning(canvas, 574, "KEEP IT COOL", "Vents and hub ports stay clear.")
+    canvas.setFillColor(MUTED)
+    canvas.setFont("Helvetica", 7.5)
+    canvas.drawRightString(page_width - 34, 34,
+                           "Full dimensions and print settings: Controller Enclosure Guide")
+
+
+def build_enclosure_quick_reference(output: Path) -> None:
+    """Build the two-page, mostly visual enclosure assembly sheet."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    canvas = Canvas(str(output), pagesize=landscape(letter), pageCompression=1)
+    canvas.setTitle("VirtualGlove Enclosure Assembly Quick Reference")
+    canvas.setAuthor("Iain Bennett")
+    _quick_page(
+        canvas, "UNO Q CASE", "ASSEMBLY QUICK REFERENCE", 1,
+        [("board", "UNO Q"), ("base", "PRINTED BASE"), ("lid", "PRINTED LID"),
+         ("finish", "BEZEL + EMBLEM"), ("hardware", "4 INSERTS + 4 SCREWS"),
+         ("tools", "HEAT TOOL + M3 DRIVER")],
+        [("Fit the inserts", "Heat each insert square and stop flush.", "inserts"),
+         ("Mount the UNO Q", "USB-C faces the broad side opening.", "board"),
+         ("Close the case", "Lower the lid; install four M3 screws.", "close"),
+         ("Finish and check", "Fit bezel and emblem; verify Matrix and USB-C.", "finish")],
+        False,
+    )
+    canvas.showPage()
+    _quick_page(
+        canvas, "CONTROLLER DOCK", "UNO Q + ARDUINO USB-C HUB", 2,
+        [("board", "UNO Q"), ("hub", "USB-C HUB"), ("base", "DOCK BASE"),
+         ("lid", "DOCK LID"), ("finish", "BEZEL + EMBLEM"),
+         ("hardware", "4 INSERTS + 4 SCREWS"), ("tools", "HEAT TOOL + M3 DRIVER")],
+        [("Mount the UNO Q", "Fit inserts first; USB-C faces the opening.", "board"),
+         ("Seat and connect", "Ports face out; route the captive lead to UNO Q.", "hub"),
+         ("Close the Dock", "No pinched cable; install four M3 screws.", "close"),
+         ("Finish and check", "Matrix, USB-C, hub ports, and vents stay clear.", "finish")],
+        True,
+    )
+    canvas.showPage()
+    canvas.save()
+
+
 def main():
     """Build every maintained PDF edition and report the generation date."""
     obsolete = {
@@ -710,11 +1015,12 @@ def main():
           "VirtualGlove Camera Guide", "Choose, tune, and troubleshoot a camera without changing gesture recognition.", "User guide")
     build(docs / "ENCLOSURE_GUIDE.md", OUTPUT / "VirtualGlove-Enclosure-Guide.pdf",
           "VirtualGlove Controller Enclosure Guide", "Print and assemble the UNO Q Case or integrated Controller Dock.", "Workshop guide")
+    build_enclosure_quick_reference(OUTPUT / "VirtualGlove-Enclosure-Quick-Reference.pdf")
     build(docs / "ENGINEERING_JOURNEY.md", OUTPUT / "VirtualGlove-Engineering-Journey.pdf",
           "VirtualGlove Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
     build(docs / "ENGINEERING_TOOLKIT.md", OUTPUT / "VirtualGlove-Engineering-Toolkit.pdf",
           "VirtualGlove Engineering Toolkit", "Repeatable analysis, camera, tracing, and native-research workflows.", "Engineering guide")
-    print(f"Built 21 PDF guides on {date.today().isoformat()}")
+    print(f"Built 22 PDF guides on {date.today().isoformat()}")
 
 
 if __name__ == "__main__":

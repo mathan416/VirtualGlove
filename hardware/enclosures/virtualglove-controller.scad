@@ -414,6 +414,85 @@ module dock_exterior_preview() {
     }
 }
 
+module uno_back_preview() {
+    // Keep the same presentation angle while exposing the connector side.
+    translate([uno_case_w, uno_case_d, 0]) rotate([0, 0, 180])
+        uno_exterior_preview();
+}
+
+module dock_back_preview() {
+    // Rotate the assembled Dock so the hub service bay and rear access face
+    // the viewer without changing any production geometry.
+    translate([dock_w, dock_d, 0]) rotate([0, 0, 180])
+        dock_exterior_preview();
+}
+
+module uno_left_preview() {
+    translate([uno_case_d, 0, 0]) rotate([0, 0, 90])
+        uno_exterior_preview();
+}
+
+module uno_right_preview() {
+    translate([0, uno_case_w, 0]) rotate([0, 0, -90])
+        uno_exterior_preview();
+}
+
+module dock_left_preview() {
+    translate([dock_d, 0, 0]) rotate([0, 0, 90])
+        dock_exterior_preview();
+}
+
+module dock_right_preview() {
+    translate([0, dock_w, 0]) rotate([0, 0, -90])
+        dock_exterior_preview();
+}
+
+module uno_exploded_preview() {
+    // Separate every user-installed layer while keeping its assembled X/Y
+    // position obvious: base, UNO Q, lid, Matrix bezel, then the three-colour
+    // hand/target emblem.
+    lid_top_z = 60;
+    color("#20242a") uno_base();
+    translate([0, 0, 17]) board_proxy([uno_x, uno_y]);
+    color([0.16, 0.18, 0.20, 0.92])
+        translate([0, uno_case_d, lid_top_z]) rotate([180, 0, 0]) uno_lid();
+    color("#00b9d8")
+        translate([uno_x + 25.75, uno_y + 4.75, lid_top_z + 7])
+            matrix_bezel();
+    translate([(uno_case_w - 18) / 2, 54.25, 0]) {
+        color("#111722") translate([0, 0, lid_top_z + 11]) lid_logo_backing();
+        color("#00d6ef") translate([0, 0, lid_top_z + 15]) lid_logo_cyan();
+        color("#ff2145") translate([0, 0, lid_top_z + 19]) lid_logo_red();
+    }
+}
+
+module dock_exploded_preview() {
+    // The hub and UNO Q float independently above their cradles so the Dock's
+    // two-device layout and open service bay remain easy to understand.
+    lid_top_z = 94;
+    hub_explode_x = 38;
+    color("#20242a") dock_base();
+    translate([0, 0, 18]) board_proxy([dock_uno_x, dock_uno_y]);
+    color("#59616b") translate([hub_x + hub_explode_x, hub_y, hub_bottom + 30])
+        cube([hub_l, hub_w, hub_h]);
+    // Suggest the accessible connector bank without tying the printable model
+    // to one cosmetic revision of the Arduino hub.
+    color("#c8ccd1")
+        for (x = [hub_x + hub_explode_x + 13, hub_x + hub_explode_x + 39,
+                  hub_x + hub_explode_x + 65, hub_x + hub_explode_x + 91])
+            translate([x, hub_y - 0.8, hub_bottom + 34]) cube([15, 1.0, 6]);
+    color([0.16, 0.18, 0.20, 0.92])
+        translate([0, dock_d, lid_top_z]) rotate([180, 0, 0]) dock_lid();
+    color("#00b9d8")
+        translate([dock_uno_x + 25.75, dock_uno_y + 4.75, lid_top_z + 7])
+            matrix_bezel();
+    translate([(dock_w - 18) / 2, 44.25, 0]) {
+        color("#111722") translate([0, 0, lid_top_z + 11]) lid_logo_backing();
+        color("#00d6ef") translate([0, 0, lid_top_z + 15]) lid_logo_cyan();
+        color("#ff2145") translate([0, 0, lid_top_z + 19]) lid_logo_red();
+    }
+}
+
 if (part == "uno_base") uno_base();
 else if (part == "uno_lid") uno_lid();
 else if (part == "dock_base") dock_base();
@@ -434,4 +513,12 @@ else if (part == "hub_coupon") hub_fit_coupon();
 else if (part == "dock_preview") dock_preview();
 else if (part == "uno_exterior_preview") uno_exterior_preview();
 else if (part == "dock_exterior_preview") dock_exterior_preview();
+else if (part == "uno_back_preview") uno_back_preview();
+else if (part == "dock_back_preview") dock_back_preview();
+else if (part == "uno_left_preview") uno_left_preview();
+else if (part == "uno_right_preview") uno_right_preview();
+else if (part == "dock_left_preview") dock_left_preview();
+else if (part == "dock_right_preview") dock_right_preview();
+else if (part == "uno_exploded_preview") uno_exploded_preview();
+else if (part == "dock_exploded_preview") dock_exploded_preview();
 else assembly_preview();

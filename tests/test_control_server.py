@@ -787,6 +787,10 @@ class ControlStateTests(unittest.TestCase):
             guide_pdf("native-super-glove-ball")[1],
             "VirtualGlove-Super-Glove-Ball-Native.pdf",
         )
+        self.assertEqual(
+            guide_pdf("enclosure-quick-reference")[1],
+            "VirtualGlove-Enclosure-Quick-Reference.pdf",
+        )
         self.assertIsNone(guide_pdf("quick-reference"))
         self.assertIsNone(guide_pdf("../../data/device"))
 
@@ -796,10 +800,22 @@ class ControlStateTests(unittest.TestCase):
         assert asset is not None
         self.assertEqual(asset[1:], ("model/stl", "virtualglove-uno-base.stl"))
         self.assertGreater(len(asset[0]), 1000)
-        self.assertEqual(
-            enclosure_asset("previews/virtualglove-uno-case-exterior.png")[1],
-            "image/png",
-        )
+        for preview_name in (
+            "virtualglove-uno-case-exterior.png",
+            "virtualglove-uno-case-back.png",
+            "virtualglove-uno-case-left.png",
+            "virtualglove-uno-case-right.png",
+            "virtualglove-uno-case-exploded.png",
+            "virtualglove-controller-dock-back.png",
+            "virtualglove-controller-dock-left.png",
+            "virtualglove-controller-dock-right.png",
+            "virtualglove-controller-dock-exploded.png",
+        ):
+            with self.subTest(preview_name=preview_name):
+                self.assertEqual(
+                    enclosure_asset(f"previews/{preview_name}")[1],
+                    "image/png",
+                )
         self.assertIsNone(enclosure_asset("../../data/device.json"))
         self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
 
@@ -817,16 +833,26 @@ class ControlStateTests(unittest.TestCase):
                 ("/help/build-your-own", "text/html"),
                 ("/help/native-emulation", "text/html"),
                 ("/help/troubleshooting", "text/html"),
+                ("/help/enclosure-quick-reference", "text/html"),
                 ("/help-pdf/build-your-own.pdf", "application/pdf"),
                 ("/help-pdf/native-emulation.pdf", "application/pdf"),
                 ("/help-pdf/troubleshooting.pdf", "application/pdf"),
                 ("/help-pdf/engineering-toolkit.pdf", "application/pdf"),
+                ("/help-pdf/enclosure-quick-reference.pdf", "application/pdf"),
                 ("/help/cabinet", "text/html"),
                 ("/help/gameplay", "text/html"),
                 ("/help/gameplay.md", "text/markdown"),
                 ("/help-pdf/gameplay.pdf", "application/pdf"),
                 ("/help-assets/gestures/directional-movement.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-uno-case-exterior.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-exploded.png", "image/png"),
                 ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)

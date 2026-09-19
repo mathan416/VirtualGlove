@@ -265,7 +265,8 @@ turning setup into an engineering exercise.
 | Install, pair, and play your first game | [Installation Guide](docs/INSTALL_README.md) |
 | Learn gestures, Programs, and game controls | [Gameplay Guide](docs/GAMEPLAY_GUIDE.md) |
 | Choose or troubleshoot a camera | [Camera Guide](docs/CAMERA_GUIDE.md) |
-| Print a case for the Controller | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
+| Assemble a printed case quickly | [Enclosure Assembly Quick Reference](docs/ENCLOSURE_QUICK_REFERENCE.md) |
+| Print or customize a case | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
 | Recognize matrix animations and messages | [Matrix Display Guide](docs/MATRIX_GUIDE.md) |
 | Find a quick command or status reminder | [Quick Reference](docs/cheatsheet.md) |
 | Solve a problem by symptom | [Troubleshooting](docs/TROUBLESHOOTING.md) |
