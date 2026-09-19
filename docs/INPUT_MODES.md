@@ -43,12 +43,45 @@ console and can be changed from the Dashboard while the game is running.
 
 | Platform | How joystick-mode Player 1 works |
 | --- | --- |
-| RetroPie | VirtualGlove appears as a separate **VirtualGlove** gamepad. A physical controller remains a separate device unless the cabinet has an explicitly configured local merger. |
-| Recalbox | **VirtualGlove Merged Player 1** combines the selected physical controller and VirtualGlove for NES gameplay. The original controller continues to operate EmulationStation. |
-| Batocera | **VirtualGlove Merged Player 1** uses the same model as Recalbox. The original controller continues to operate EmulationStation. |
+| RetroPie — standard installation | VirtualGlove appears as a separate **VirtualGlove** gamepad. Existing physical controllers remain separate and continue to work. |
+| RetroPie — routed cabinet | Optional **Controller Router** can combine configured I-PACs, joypads, and VirtualGlove into **VirtualGlove Merged Player 1–4**. The standard installation remains unchanged until Router is explicitly saved and applied. |
+| Recalbox | **Controller Router** creates enabled merged Players 1–4. The released Player 1 selection migrates automatically, while the original controllers continue to operate EmulationStation. |
+| Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes at every FCEUmm launch. |
 | LaunchBox | The physical XInput controller remains Player 1. VirtualGlove joins it through RetroArch's loopback Network RetroPad. The real keyboard remains available. |
 
-### Why Recalbox and Batocera use a merged controller
+### Standard RetroPie and the VirtualGlove arcade cabinet
+
+A fresh RetroPie installation does not need a merger. The standard installer
+creates one `VirtualGlove` gamepad, installs its RetroArch mapping, and leaves
+the console's existing joypads untouched. This is the arrangement that worked
+on a clean RetroPie installation and remains the supported default.
+
+The VirtualGlove development cabinet has a second, optional project component
+because it has several ways to control the same players. Its
+`arcade-gamepad-merger` combines the two I-PAC gamepad interfaces, supported
+8BitDo controllers, and VirtualGlove into two canonical outputs:
+
+- **Arcade Merged Player 1:** I-PAC Player 1 + 8BitDo Player 1 + VirtualGlove.
+- **Arcade Merged Player 2:** I-PAC Player 2 + 8BitDo Player 2.
+
+The merger rediscovers sources after connection changes instead of saving an
+`eventN` path. A button stays pressed while any source holds it, and removing a
+source releases only that source's controls. VirtualGlove contributes NES
+Select but cannot produce the merged device's dedicated hotkey-enable button.
+
+This cabinet component was authored as part of the VirtualGlove work and is now
+preserved under `retropie/arcade-cabinet-merger/`. It was previously deployed
+directly to `/usr/local/sbin/arcade-gamepad-merger`, which is why its source was
+missing from the repository even though it belonged to the project.
+
+The checked-in version intentionally retains the proven cabinet mappings as a
+reference and one-command rollback source. New configurable installations use
+Controller Router. The cabinet is migrated only after its proposed I-PAC,
+8BitDo, and VirtualGlove assignments pass live validation. The cabinet helper
+requires a fresh preflight receipt before `apply`; `rollback` restores the old
+service state, Router file, FCEUmm override, and receiver route.
+
+### Controller Router
 
 Those platforms normally discover a physical controller, read its
 EmulationStation mapping, and generate a RetroArch assignment at game launch.
@@ -56,41 +89,75 @@ Trying to add a second Player 1 after that process can change button meanings,
 move a controller to another index, or let one press reach both RetroArch and a
 platform hotkey handler.
 
-VirtualGlove therefore creates one canonical gameplay device named
-**VirtualGlove Merged Player 1**:
+VirtualGlove therefore creates up to four canonical gameplay devices named
+**VirtualGlove Merged Player 1–4**:
 
-1. Installation records the selected physical controller's stable identity and
-   EmulationStation mapping. It does not save `/dev/input/eventN`, `/dev/input/jsN`,
-   or a RetroArch index as identity.
-2. At boot, the service finds the same controller by its available hardware
-   identity and creates the merged device before gameplay.
-3. At game launch, the current Linux event device and current RetroArch joypad
+1. Setup inventories only controllers already configured by EmulationStation.
+   The user reviews suggested frontend-order assignments before anything is saved.
+2. The versioned `controller-router.json` records stable identities, authoritative
+   EmulationStation mappings, enabled players, and at most one VirtualGlove player.
+   It never stores `/dev/input/eventN`, `/dev/input/jsN`, or a RetroArch index.
+3. At boot, Router finds each saved source and creates only the enabled outputs.
+4. At game launch, the current Linux event device and current RetroArch joypad
    index are resolved again. USB enumeration may change without changing the
    selected controller.
-4. During RetroArch gameplay, the merger takes exclusive ownership of the
+5. During FCEUmm gameplay only, Router takes exclusive ownership of assigned
    physical event device. This prevents the original device, the platform
    hotkey service, and the merged device from interpreting the same press.
-5. Physical input and VirtualGlove input are published through the merged
-   device. Physical directions and axes take priority while actively held;
-   ordinary buttons combine safely.
-6. At game exit, the merged state is neutralized before exclusive ownership is
+6. Buttons remain held while any assigned source holds them. For each physical
+   axis, the latest active source owns it until neutral; another still-active
+   source then resumes. Any non-neutral physical source outranks VirtualGlove.
+7. At game exit, every merged state is neutralized before exclusive ownership is
    released. EmulationStation then continues using the original controller.
+
+The managed Player assignments live in FCEUmm's core-specific RetroArch
+override. Nestopia (VirtualGlove) does not load that file, keeping native Super
+Glove Ball outside Router and preserving its physical-controller path.
 
 The physical controller's own hotkey is mapped to a dedicated merged button.
 VirtualGlove Select can emit only NES Select; it cannot enable RetroArch
 hotkeys. This is why Select no longer opens the RetroArch menu while still
 working in a game.
 
-If the physical controller disconnects during play, only its held inputs are
+If a physical controller disconnects during play, only its held inputs are
 released. VirtualGlove can remain active, and the saved controller reconnects
 when the same device returns. If several indistinguishable controllers are
 present, the installer requires an explicit Player 1 choice rather than
 guessing.
 
+One physical source can belong to only one player, but several physical sources
+may share a player. The one paired VirtualGlove can be unassigned or assigned to
+exactly one player. Physical-only configurations are valid and need no pairing.
+Only Player 1 carries a physical hotkey. Player 2–4 hotkeys are ordinary or
+ignored controls, and VirtualGlove can never emit the hotkey-enable button.
+
+### Local assignment screen
+
+Run `sudo /opt/virtualglove/bin/virtualglove-controller-router setup` on
+RetroPie. On Recalbox and Batocera, use `sh` with the persistent
+`scripts/virtualglove-controller-router setup` launcher inside the VirtualGlove
+installation because their persistent shares are mounted without direct program
+execution. The dependency-free screen detects the
+platform, shows stable controller identities and connection state, and lets the
+operator assign each source or VirtualGlove to Players 1–4. **Test controls**
+reports live buttons and directions without launching a game. Nothing changes
+until **Save and verify** is confirmed, and the prior assignment can be restored
+from the same screen.
+
+The local screen does not create or replace a pairing credential. Pairing
+authorizes the VirtualGlove Controller and its web Setup page to reach the
+console; routing decides which FCEUmm player receives each already configured
+input source.
+
+FCEUmm recognizes known Four Score games by CRC. Four merged outputs do not make
+an ordinary game four-player. For a compatible altered ROM that FCEUmm does not
+recognize, the advanced registry setting `"four_score": "force"` selects its
+User 5 four-player adaptor; leaving the field out keeps automatic detection.
+
 ### What the merger does not change
 
 - It does not rewrite the controller's EmulationStation mapping.
-- It does not reconfigure Player 2.
+- It changes only enabled NES/FCEUmm Player 1–4 assignments.
 - It does not depend on the order in which USB devices appeared after boot.
 - It does not make the merged device navigate the frontend.
 - It does not let VirtualGlove gestures activate the physical hotkey.
@@ -105,7 +172,7 @@ Use a registered FCEUmm game such as Super Mario Bros.:
 4. Start the VirtualGlove Controller and test the corresponding gestures.
 5. Hold a physical direction while making a different VirtualGlove movement.
    The physical direction should remain authoritative until released.
-6. On Recalbox or Batocera, press physical Select by itself. It must behave as
+6. On a routed console, press physical Select by itself. It must behave as
    Select and must not open the RetroArch menu.
 7. Test the platform's physical hotkey combinations, including menu and exit.
 

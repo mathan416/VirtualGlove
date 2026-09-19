@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Covered a two-gamepad I-PAC with one shared USB identity.
 #   2026-09-16 - Added merged Player 1 selection and arbitration coverage.
 # Full history: docs/CHANGELOG.md and Git history.
 
@@ -59,6 +60,34 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(candidates[0]["mapping"][0]["evdev_code"], 304)
         self.assertEqual(candidates[0]["joystick"], str(root / "dev/js0"))
         self.assertEqual(len(candidates[0]["id"]), 16)
+
+    def test_one_ipac_board_exposes_two_distinct_logical_gamepads(self):
+        """A shared USB serial must not collapse separate HID collections."""
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            es = root / "es_input.cfg"
+            es.write_text(ES_INPUT.replace("Test Pad", "Ultimarc I-PAC Ultimate I/O"))
+            sys_root = root / "sys"
+            for event_number, js_number, interface in ((0, 0, "input0"), (4, 1, "input2")):
+                base = sys_root / f"event{event_number}/device"
+                (base / "id").mkdir(parents=True)
+                (base / "capabilities").mkdir()
+                (base / "name").write_text("Ultimarc I-PAC Ultimate I/O\n")
+                (base / "capabilities/key").write_text("1 0\n")
+                (base / "id/vendor").write_text("d209\n")
+                (base / "id/product").write_text("0412\n")
+                (base / "id/version").write_text("0111\n")
+                (base / "uniq").write_text("5\n")
+                (base / "phys").write_text(
+                    f"usb-0000:01:00.0-1.1.1/{interface}\n")
+                (sys_root / f"js{js_number}").mkdir()
+                (sys_root / f"js{js_number}/device").symlink_to(
+                    base.resolve(), target_is_directory=True)
+            candidates = merged.controller_candidates(es, sys_root, root / "dev")
+        self.assertEqual(len(candidates), 2)
+        self.assertEqual({item["phys"].rsplit("/", 1)[-1] for item in candidates},
+                         {"input0", "input2"})
+        self.assertEqual(len({item["id"] for item in candidates}), 2)
 
     def test_selection_is_automatic_only_for_one_controller(self):
         one = [{"id": "one", "name": "Only Pad"}]
@@ -126,9 +155,11 @@ class MergedGamepadTests(unittest.TestCase):
 
     def test_saved_identity_handles_port_moves_without_guessing_identical_pads(self):
         serial = {"name": "Pad", "vendor": "1", "product": "2", "version": "3",
-                  "uniq": "serial", "phys": "usb-1", "event": "/dev/input/event1"}
-        moved = dict(serial, phys="usb-4", event="/dev/input/event9")
+                  "uniq": "serial", "phys": "usb-1/input0", "event": "/dev/input/event1"}
+        moved = dict(serial, phys="usb-4/input0", event="/dev/input/event9")
         self.assertIs(merged.find_saved_controller(serial, [moved]), moved)
+        other_interface = dict(moved, phys="usb-4/input2", event="/dev/input/event10")
+        self.assertIs(merged.find_saved_controller(serial, [moved, other_interface]), moved)
         no_serial = dict(serial, uniq="", phys="usb-1")
         only = dict(no_serial, phys="usb-4")
         self.assertIs(merged.find_saved_controller(no_serial, [only]), only)

@@ -63,8 +63,11 @@ async def main():
             await expect(page.locator('[data-direction=left]')).to_have_text('Left: off')
             await expect(page.locator('#joystick-camera')).to_be_hidden()
             await expect(page.locator('#joystick-camera-toggle')).to_have_text('Turn on camera')
+            await expect(page.locator('#joystick-directions')).to_be_hidden()
+            await expect(page.locator('#joystick-camera-help')).to_be_hidden()
             await page.locator('#joystick-camera-toggle').click()
             await expect(page.locator('#joystick-camera-toggle')).to_have_text('Turn off camera')
+            await expect(page.locator('#joystick-camera-help')).to_be_visible()
             await expect(page.locator('#joystick-camera')).to_be_visible()
             await expect(page.locator('#joystick-grid')).to_be_visible()
             await expect(page.locator('#joystick-center')).to_be_enabled()
@@ -106,7 +109,8 @@ async def main():
             await expect(page.locator('#joystick-camera')).to_be_hidden()
             assert await page.locator('#joystick-camera').get_attribute('src') is None
             await expect(page.locator('#joystick-grid')).to_be_hidden()
-            await expect(page.locator('#joystick-live')).to_have_text('Camera test is off.')
+            await expect(page.locator('#joystick-live')).to_be_empty()
+            await expect(page.locator('#joystick-camera-help')).to_be_hidden()
             assert not flags['practice']
             assert not errors,errors
             await browser.close()

@@ -12,5 +12,10 @@
 
 # Call this from the cabinet's existing runcommand-onstart.sh, preserving its
 # controller, RGB, and trackball setup. RetroPie supplies these four arguments.
+if [ -s /etc/virtualglove/controller-router.json ]; then
+    /opt/virtualglove/bin/virtualglove-controller-router apply --platform retropie \
+        --config /etc/virtualglove/controller-router.json || \
+        echo "ACTION  Controller Router could not refresh; VirtualGlove input remains neutral." >&2
+fi
 /opt/virtualglove/bin/virtualglove-retropie-hook start "$1" "$2" "$3" "$4"
 exit 0

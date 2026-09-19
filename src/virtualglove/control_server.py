@@ -57,6 +57,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .game_registry import registry_request, validate_document, MAX_REQUEST
+from .controller_router import router_request
 from .play_game import PLAY_CONTENT, PLAY_SCRIPT
 from .setup_web import SETUP_CONTENT, SETUP_SCRIPT
 from .games_web import GAMES_CONTENT, GAMES_SCRIPT
@@ -1276,7 +1277,7 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
             if require_json and self.headers.get_content_type() != "application/json":
                 raise ValueError("Content-Type must be application/json")
             length = int(self.headers.get("Content-Length", "0"))
-            limit = MAX_REQUEST if self.path == "/api/games" else 8192
+            limit = MAX_REQUEST if self.path in ("/api/games", "/api/controller-router") else 8192
             if not 0 <= length <= limit:
                 raise ValueError("Request is too large.")
             data = json.loads(self.rfile.read(length) or b"{}")
@@ -1393,7 +1394,7 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                 if (self.headers.get("Sec-Fetch-Site", "").lower() == "cross-site" or
                         (origin and origin not in ("http://"+self.headers.get("Host", ""), "https://"+self.headers.get("Host", "")))):
                     raise ForbiddenActionError("Open this control from the Controller website.")
-                if path in ("/api/games", "/api/tuning", "/api/players", "/api/attract", "/api/camera-profile"):
+                if path in ("/api/games", "/api/controller-router", "/api/tuning", "/api/players", "/api/attract", "/api/camera-profile"):
                     expected = path.rsplit("/", 1)[-1]
                     origin = self.headers.get("Origin")
                     if (self.headers.get("X-VirtualGlove-Action") != expected
@@ -1423,6 +1424,15 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                                 {"document": incoming.get("document"), "revision": incoming.get("revision")})
                         else:
                             raise ValueError("Unknown Games action.")
+                    elif path == "/api/controller-router":
+                        action = incoming.get("action")
+                        if action not in ("inventory", "read", "save", "check", "rollback"):
+                            raise ValueError("Unknown Controller Router action.")
+                        result = router_request(state.load_config(), action, {
+                            "config": incoming.get("config"),
+                            "revision": incoming.get("revision"),
+                            "watch_ms": incoming.get("watch_ms", 0),
+                        })
                     else:
                         if path == "/api/players" and incoming.get("action") in ("create", "select", "delete", "restore", "reuse_calibration"):
                             # Persist stop before changing players, including across a supervisor restart.

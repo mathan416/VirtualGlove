@@ -71,6 +71,19 @@ class ProfileTests(unittest.TestCase):
             {"profile": "program_1", "rapid_a": False},
         )
 
+    def test_structured_registry_accepts_only_explicit_four_score_force(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "games.json"
+            path.write_text(json.dumps({"games": {"Nintendo World Cup (USA).nes": {
+                "profile": "program_1", "four_score": "force"}}}))
+            registry = load_registry(path)
+            self.assertEqual(select_profile_settings(
+                registry, "nes", "Nintendo World Cup (USA).nes")["four_score"], "force")
+            path.write_text(json.dumps({"games": {"Example.nes": {
+                "profile": "program_1", "four_score": "auto"}}}))
+            with self.assertRaises(ValueError):
+                load_registry(path)
+
     def test_structured_registry_rejects_unknown_or_non_boolean_settings(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "games.json"

@@ -48,9 +48,11 @@ itself establish that the camera, receiver, or game is working.
 | Browser | Dashboard, Play, Glove Academy, Tune, Setup, Games, Help; live feedback and user commands | Authoritative per-frame recognition or gamepad output |
 | VirtualGlove Controller Linux application | Web server, vision-worker supervision, camera tracking, calibration, thresholds, profile mapping, network sender | RetroArch button consumption |
 | VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
-| RetroPie services | Receive controller packets, expose a virtual gamepad, signal game launches, serve paired game-registry edits | Camera processing |
-| Recalbox integration | Run from `/recalbox/share`, observe RetroArch without patching the read-only OS, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Recalbox system-image files and frontend control |
-| Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and merge one selected physical controller with gestures in **VirtualGlove Merged Player 1** | Batocera system-image files and frontend control |
+| RetroPie services | Receive controller packets, expose the standard `VirtualGlove` gamepad, signal game launches, serve paired game-registry edits | Camera processing or physical-controller remapping |
+| Controller Router | Optionally combine EmulationStation-configured physical sources and one VirtualGlove into stable Players 1–4 for FCEUmm | Raw keyboards, mice, frontend navigation, native Super Glove Ball, or LaunchBox |
+| Recovered RetroPie cabinet merger | Preserve the proven I-PAC/8BitDo implementation as migration reference and rollback | New generic routing after the cabinet accepts Controller Router |
+| Recalbox integration | Run from `/recalbox/share`, migrate the released Player 1 record, and operate Controller Router without patching the read-only OS | Recalbox system-image files and frontend control |
+| Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and operate Controller Router | Batocera system-image files and frontend control |
 | LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and publish Player 1 through a LAN-isolated loopback RetroPad beside physical XInput and real-keyboard fallback controls | LaunchBox database files and global joypad configuration |
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
@@ -63,16 +65,23 @@ The supervisor polls worker status, updates the matrix, and retries a worker
 that stops. The worker's internal HTTP interface is on loopback port 8089. The
 public website is on 8088, with secure Setup on 8443.
 
-On Recalbox and Batocera, a persistent merger creates its uinput gamepad before
-RetroArch starts. It translates the chosen controller's saved EmulationStation
-mapping into a canonical RetroPad, then combines that state with authenticated
-VirtualGlove state over a private local socket.
+On Recalbox and Batocera, Controller Router creates each enabled uinput gamepad
+before RetroArch starts. RetroPie installs the same subsystem disabled and keeps
+its ordinary separate `VirtualGlove` gamepad until the user explicitly saves and
+applies a Router configuration.
 
-Physical directions and axes win on the axis they actively occupy; ordinary
-buttons combine. The physical hotkey has a dedicated output button, and
-VirtualGlove Select can never assert it.
+Router translates authoritative EmulationStation mappings into canonical
+RetroPads. A versioned document assigns several physical sources to a player,
+prohibits one physical source from appearing in two players, and assigns the
+single paired VirtualGlove to zero or one player. It resolves current event,
+joystick, and RetroArch indexes at boot and before FCEUmm launch.
 
-The merged gamepad remains neutral outside RetroArch, so EmulationStation
+Buttons use source-aware hold sets. The most recently activated physical source
+owns an axis until neutral, then another still-held physical source resumes.
+Physical axes outrank VirtualGlove. Only Player 1 carries the physical hotkey;
+VirtualGlove Select and Players 2–4 cannot assert the hotkey-enabler.
+
+The merged gamepads remain neutral outside FCEUmm, so EmulationStation
 continues to use only the original controller. Disconnect releases only physical
 state; the saved stable identity reconnects without relying on an event number.
 
@@ -98,6 +107,41 @@ prove emulator consumption.
 
 Receiver socket timeout and last-valid-packet expiry both publish neutral
 native state and release the virtual gamepad.
+
+### RetroPie input topologies
+
+The standard RetroPie topology deliberately ends at a separate Linux gamepad
+named `VirtualGlove`. RetroArch can accept that device beside an already
+configured physical joypad, which is sufficient for an ordinary new install and
+does not rewrite the console's existing controller layout.
+
+The VirtualGlove development cabinet currently retains the optional
+`retropie/arcade-cabinet-merger` reference and rollback implementation. It
+consumes the standard `VirtualGlove` device alongside two I-PAC gamepad
+interfaces and supported 8BitDo controllers, publishing `Arcade Merged Player
+1` and `Arcade Merged Player 2`. The proposed migration imports those known
+assignments into Controller Router and changes nothing until they pass live
+validation.
+
+This component was originally installed directly at
+`/usr/local/sbin/arcade-gamepad-merger`. The source is project-authored rather
+than third-party, but it was absent from Git until the proven cabinet version
+was recovered and checked into the optional integration directory. It remains
+separate from the default installer because its exact device names, I-PAC raw
+codes, two-player assumptions, and cabinet hotkeys are installation-specific.
+
+Controller Router is the shared successor for RetroPie, Recalbox, and Batocera.
+It generalizes the cabinet's multi-source idea to four independently enabled
+players, stable identities, EmulationStation mapping translation, launch-time
+index synchronization, exclusive FCEUmm ownership, and physical-axis priority.
+The older cabinet program remains available only as a tested reference and
+one-command rollback until the cabinet migration is accepted.
+
+Router writes enabled Player indexes and canonical controls to FCEUmm's
+core-specific RetroArch override rather than the console-wide NES file. That
+scope is part of the native-input boundary: Nestopia (VirtualGlove) never loads
+the Router assignment, while the ordinary physical-controller configuration
+remains available to the native core.
 
 Two app-owned support containers provide the profile-control UDP relay and
 local-hostname resolution. The profile relay publishes port 55356 and forwards
@@ -149,8 +193,11 @@ sockets. These functions are kept separate from camera inference.
    unrelated virtual gamepad; other profiles preserve virtual-gamepad behavior.
    It creates the real virtual controller when the first accepted packet arrives.
 
-8. Linux `uinput` exposes the virtual gamepad to RetroArch, which applies its
-   configured input mapping before the game consumes it.
+8. Linux `uinput` exposes the virtual gamepad. Standard RetroPie consumes it as
+   a separate controller; the optional RetroPie arcade-cabinet merger can first
+   combine it with I-PAC and 8BitDo sources. Recalbox and Batocera publish their
+   separately implemented merged Player 1. RetroArch then applies its configured
+   input mapping before the game consumes the state.
 
 Program 2 also derives transient centering feedback, Program 13 leaves the
 camera D-pad neutral for the merged physical controller, and Program 14 closes
@@ -310,13 +357,14 @@ Network RetroPad. Recalbox and Batocera need a different boundary because their
 launchers generate RetroArch Player 1 from the controller selected in
 EmulationStation.
 
-On Recalbox and Batocera, one persistent service creates **VirtualGlove Merged
-Player 1** before gameplay. Installation records the selected physical
-controller's stable identity and complete EmulationStation mapping. The record
-keeps SDL indices for platform hotkey translation and authoritative Linux event
-codes for reading the device; those namespaces are not interchangeable on
-controllers whose Start, Select, or Home buttons use keyboard-class event
-codes.
+On Recalbox and Batocera, one persistent Controller Router service creates the
+enabled **VirtualGlove Merged Player 1–4** outputs before gameplay. The initial
+installation preserves the selected Player 1 arrangement; Setup can later
+assign several configured physical sources to a player and the one VirtualGlove
+to exactly one slot. The record keeps authoritative EmulationStation mappings,
+including SDL indices used only to translate them into Linux event controls;
+those namespaces are not interchangeable on controllers whose Start, Select,
+or Home buttons use keyboard-class event codes.
 
 The service never treats `/dev/input/eventN`, `/dev/input/jsN`, or a RetroArch
 joypad index as identity. It resolves the current event device from the saved
@@ -699,7 +747,7 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | UDP 55356 | Console to Controller relay to worker | Signed profile requests and acknowledgements |
 | Native-state record | Authenticated console receiver to native cores | `/run/virtualglove/native-state` on Linux or a per-user mapped file on LaunchBox; guarded latest sample for Super Glove Ball |
 | TCP 55357 | Pairing participants | Temporary one-time-code pairing service |
-| TCP 55358 | VirtualGlove Controller to console | Paired game-registry service |
+| TCP 55358 | VirtualGlove Controller to console | Paired game-registry and Controller Router services (`/registry` and `/inputs`) |
 | Private Unix sockets | App resolver to host Avahi; Recalbox/Batocera receiver to Player 1 merger | Local hostname resolution and bounded local VirtualGlove state delivery |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
 
@@ -807,7 +855,8 @@ it does not claim every path has been independently security-audited.
 | Public HTTP routing and worker proxy | `src/virtualglove/control_server.py` |
 | Shared page shell and maintained browser modules | `web_common.py`, `dashboard_web.py`, `academy_web.py`, `games_web.py`, `tuning_web.py`, `setup_web.py`, `player_web.py` |
 | Worker requests, status, practice leases | `src/virtualglove/debug_server.py` |
-| Controller packets, console output, and merged Player 1 | `src/virtualglove/transport.py`, `controller_protocol.py`, `receiver.py`, `merged_gamepad.py` |
+| Controller packets, console output, and Players 1–4 routing | `src/virtualglove/transport.py`, `controller_protocol.py`, `receiver.py`, `controller_router.py`; `merged_gamepad.py` retains migration primitives |
+| Optional RetroPie I-PAC/8BitDo/VirtualGlove cabinet merger | `retropie/arcade-cabinet-merger/` |
 | Profile requests, launch hooks, UDP relay | `src/virtualglove/profile_control.py`, `retropie_hook.py`, `scripts/profile-relay.py` |
 | Paired Games editing | `src/virtualglove/game_registry.py` |
 | Pairing and hostname resolution | `src/virtualglove/pairing.py`, `python/ssh_pair.py`, `src/virtualglove/resolver.py` |

@@ -19,6 +19,18 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Gave Controller Router its own Setup card between Connection and startup and
+  Pair this Controller, keeping controller assignments separate from pairing.
+- Made the Controller Router wait for Setup to restore the saved console
+  platform before checking assignments. An already paired console is no longer
+  briefly or permanently described as needing pairing again.
+- Simplified the Setup dead-zone camera test by hiding redundant direction
+  labels and idle status text. Its explanation now appears only while the
+  camera test is on.
+- Kept multi-player USB boards such as the I-PAC Ultimate I/O as separate
+  logical controllers. Controller Router now distinguishes the board's Player
+  1 and Player 2 interfaces while still recognizing the same board after a USB
+  port move.
 - Fixed Recalbox and Batocera merged Player 1 assignment when Linux's `jsN`
   number differs from RetroArch's joypad order. Ordinary FCEUmm games now use
   the same merged controller that RetroArch actually sees.
@@ -38,6 +50,28 @@ controller available, and let each game use the correct input method.
   steps aside cleanly instead of leaving a failed service warning.
 
 ### Added
+
+- Added optional **Controller Router** for RetroPie, Recalbox, and Batocera.
+  It can combine several EmulationStation-configured controllers into any of
+  four FCEUmm players and assign the single paired VirtualGlove to one player.
+  Setup provides review-before-save assignments, a short live-input check,
+  revision-safe saves, and rollback. Standard RetroPie remains unchanged until
+  Router is explicitly enabled.
+- Added a console-local Controller Router assignment screen with connection
+  status, Players 1–4, live input testing, save confirmation, and rollback.
+  Controller assignment remains separate from secure console pairing.
+- Recalbox and Batocera now migrate the released merged Player 1 record into
+  Controller Router without changing its controller, mapping, hotkeys, or
+  VirtualGlove assignment. The former Player 1 record remains available during
+  the transition.
+- Controller Router assignments are confined to FCEUmm's core-specific
+  RetroArch override, keeping native Nestopia and unrelated NES cores outside
+  the routing boundary. The recovered cabinet integration now includes its
+  exact RetroArch profiles plus receipt-gated migration and one-command
+  rollback tooling.
+- Added an advanced per-game `four_score: "force"` option for compatible ROM
+  variants that FCEUmm's CRC list does not recognize. Known Four Score games
+  continue to use FCEUmm's automatic detection.
 
 - Added printable VirtualGlove Controller enclosures: a compact UNO Q case, a
   new full-access Controller Dock V2, and the retained low-profile Dock V1. V2

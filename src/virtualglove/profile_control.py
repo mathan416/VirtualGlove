@@ -300,7 +300,7 @@ def _registry_entry(value: Any) -> dict[str, Any]:
     """Normalize one legacy or structured game mapping."""
     if isinstance(value, str):
         entry = {"profile": value}
-    elif isinstance(value, dict) and set(value) <= {"profile", "rapid_a", "rapid_b"}:
+    elif isinstance(value, dict) and set(value) <= {"profile", "rapid_a", "rapid_b", "four_score"}:
         entry = dict(value)
     else:
         raise ValueError("game mapping must be a profile or settings object")
@@ -310,6 +310,8 @@ def _registry_entry(value: Any) -> dict[str, Any]:
     for name in ("rapid_a", "rapid_b"):
         if name in entry and type(entry[name]) is not bool:
             raise ValueError(f"{name} must be a boolean")
+    if "four_score" in entry and entry["four_score"] != "force":
+        raise ValueError("four_score must be 'force'")
     return entry
 
 

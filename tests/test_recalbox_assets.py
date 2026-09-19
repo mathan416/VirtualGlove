@@ -29,13 +29,13 @@ class RecalboxAssetsTests(unittest.TestCase):
         text = (ROOT / "recalbox/virtualglove-service").read_text()
         self.assertIn("/recalbox/share/system/virtualglove", text)
         self.assertIn("virtualglove.$name", text)
-        self.assertIn("merged_gamepad serve", text)
+        self.assertIn("controller_router serve", text)
         self.assertIn("--output-device merged-gamepad", text)
         self.assertIn("--merged-socket", text)
         self.assertIn('MERGED_SOCKET="$SOCKET_DIR/merged-gamepad.sock"', text)
         self.assertIn('VIRTUALGLOVE_SOCKET_DIR:-/run/virtualglove', text)
         self.assertNotIn('$RUN/merged-gamepad.sock', text)
-        self.assertIn("player1-controller.json", text)
+        self.assertIn("controller-router.json", text)
         self.assertIn("/run/virtualglove/native-state", text)
         self.assertIn('sh "$CORE_MOUNT" start', text)
         self.assertIn('--receiver-restart-command sh "$0" restart-receiver', text)
@@ -50,11 +50,14 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)
 
-    def test_nes_override_is_runtime_managed_without_keyboard_bindings(self):
-        text = (ROOT / "recalbox/retroarch-nes.cfg").read_text()
-        for key in ("a", "b", "start", "select", "up", "down", "left", "right"):
-            self.assertNotIn("input_player1_" + key + " = ", text)
-        self.assertIn("merged Player 1", text)
+    def test_router_uses_fceumm_override_without_touching_native_core(self):
+        setup = (ROOT / "scripts/setup-machine.py").read_text()
+        router = (ROOT / "src/virtualglove/controller_router.py").read_text()
+        for root in ("/recalbox/share/system/configs/retroarch",
+                     "/userdata/system/configs/retroarch"):
+            self.assertIn(root + "/config/FCEUmm/FCEUmm.cfg", setup)
+        self.assertIn('retroarch / "config/FCEUmm/FCEUmm.cfg"', router)
+        self.assertNotIn("Nestopia", router)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()
@@ -75,11 +78,19 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("virtualglove-core-mount", service)
         self.assertIn("/userdata/system/virtualglove", service)
         self.assertIn("gameStart", event)
-        self.assertIn("merged_gamepad sync-index", event)
+        self.assertIn("controller_router apply", event)
         self.assertIn("gameStop", event)
         self.assertIn('emulator="lr-${4:-}"', event)
         self.assertIn('nestopia_powerglove) emulator="lr-nestopia-powerglove"', event)
+        self.assertIn('if [ "$emulator" = lr-fceumm ]', event)
         self.assertNotIn("systemctl", service + event)
+
+    def test_router_live_check_does_not_replace_unsaved_setup_choices(self):
+        script = (ROOT / "src/virtualglove/controller_router_web.py").read_text()
+        check_handler = script.split("byId('router-check').onclick=", 1)[1].split(
+            "byId('router-rollback').onclick=", 1)[0]
+        self.assertNotIn("render(result)", check_handler)
+        self.assertIn("connected.get(select.dataset.source)", check_handler)
 
     def test_batocera_native_core_overlay_is_separate_and_reversible(self):
         text = (ROOT / "batocera/virtualglove-core-mount").read_text()

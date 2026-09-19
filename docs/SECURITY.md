@@ -118,15 +118,18 @@ requires explicit security review.
 
 ## Console input boundaries
 
-On Recalbox and Batocera, the root-owned merger reads only the explicitly saved
-physical controller mapping and the receiver's bounded local datagrams. It emits
-one fixed-capability device named **VirtualGlove Merged Player 1**. The physical
-hotkey maps to a dedicated output button; VirtualGlove Select has no path to
-that button. Malformed mappings and local states are rejected, tracking timeout
-clears only the VirtualGlove source, and a physical disconnect releases only
-physical state. The device emits neutral state outside RetroArch so it cannot
-duplicate navigation in EmulationStation. Its Unix socket and controller record
-must remain inside the platform's private VirtualGlove directories.
+On Recalbox and Batocera—and on RetroPie only when explicitly enabled—the
+root-owned Controller Router reads only explicitly saved EmulationStation
+mappings and the receiver's bounded local datagrams. It emits up to four
+fixed-capability devices named **VirtualGlove Merged Player 1–4**. Only Player
+1 carries a physical hotkey; VirtualGlove Select has no path to that control.
+Malformed mappings and local states are rejected, tracking timeout clears only
+the VirtualGlove source, and a physical disconnect releases only that source.
+Outputs are neutral and physical devices are not grabbed outside FCEUmm, so
+Router cannot duplicate EmulationStation navigation. Its Unix socket and
+versioned record remain inside the platform's private VirtualGlove directories.
+Managed Player indexes are confined to FCEUmm's core override; the native
+Nestopia path and unrelated cores do not consume them.
 
 LaunchBox installs no Windows virtual-pad, keyboard-filter, or device-hiding
 driver. Ordinary games receive VirtualGlove through RetroArch's built-in Network
@@ -230,11 +233,15 @@ Changing a download URL, checksum, dependency source, pairing primitive,
 network binding, file permission, or privileged service requires focused review
 and corresponding tests and documentation.
 
-## Paired game editing and gesture tuning
+## Paired games, controller routing, and gesture tuning
 
-The separate console Games service listens on TCP `55358`. Only the paired Controller
+The separate console administration service listens on TCP `55358`. Only the paired Controller
 proxy uses it; browsers call the UNO website. Requests and replies use a distinct
-HMAC-authenticated protocol. Server challenges expire after fifteen seconds and
+HMAC-authenticated protocol. `/registry` uses `virtualglove-games/1`; `/inputs`
+uses the separately domain-labelled `virtualglove-inputs/1` protocol for bounded
+inventory, read, save, check, and rollback operations. It returns friendly
+controller metadata and assignments, never device paths or pairing material.
+Server challenges expire after fifteen seconds and
 are consumed once. The shared token never goes to the browser. This protects
 message integrity; the LAN transport does not encrypt ROM filenames.
 
@@ -245,7 +252,7 @@ The service has bounded document sizes, pending challenges, and socket timeouts;
 it runs separately from controller input delivery. Its systemd unit confines writes
 to the configured registry directory and removes device access and capabilities.
 
-The new Games and Tune browser actions require JSON, an explicit action header,
+The Games, Controller Router, and Tune browser actions require JSON, an explicit action header,
 and matching Origin when supplied; cross-site browser requests are rejected.
 They retain the existing trusted-LAN administration model, not per-user accounts.
 Normal personalization contains numerical thresholds only. Measurements are held briefly

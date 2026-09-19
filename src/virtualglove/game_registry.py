@@ -17,6 +17,7 @@ import json
 import os
 import secrets
 import tempfile
+import subprocess
 import threading
 import time
 import urllib.request
@@ -159,7 +160,7 @@ class RegistryService:
         return sign_message(response, token)
 
 
-def make_registry_handler(service):
+def make_registry_handler(service, input_service=None):
     """Expose only a bounded JSON exchange endpoint, with no browser CORS access."""
     class Handler(BaseHTTPRequestHandler):
         """Handle the one fixed-purpose endpoint with bounded request lifetimes."""
@@ -173,16 +174,19 @@ def make_registry_handler(service):
 
         def do_POST(self):
             try:
-                if self.path != "/registry" or self.headers.get("Origin"):
+                services = {"/registry": service}
+                if input_service is not None:
+                    services["/inputs"] = input_service
+                if self.path not in services or self.headers.get("Origin"):
                     raise ValueError("Use the paired UNO Games page.")
                 length = int(self.headers.get("Content-Length", "0"))
                 if not 0 < length <= MAX_REQUEST:
                     raise ValueError("Invalid request size.")
                 request = json.loads(self.rfile.read(length), object_pairs_hook=_unique)
-                body = json.dumps(service.exchange(request)).encode()
+                body = json.dumps(services[self.path].exchange(request)).encode()
                 status = 200
             except (ValueError, TypeError, OSError):
-                status, body = 400, b'{"error":"Games request rejected. Check pairing or retry."}'
+                status, body = 400, b'{"error":"Paired console request rejected. Check pairing or retry."}'
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -242,7 +246,26 @@ def main() -> int:
     settings = json.loads(args.settings.read_text())
     store = RegistryStore(settings.get("registry", "/etc/virtualglove/games.json"))
     service = RegistryService(store, Path(settings["token_file"]))
-    HTTPServer((args.listen, args.port), make_registry_handler(service)).serve_forever()
+    input_service = None
+    router = settings.get("controller_router")
+    if isinstance(router, dict):
+        from .controller_router import RouterService, RouterStore
+        required = ("path", "platform", "es_inputs", "retroarch_config")
+        if all(isinstance(router.get(key), str) and router[key] for key in required):
+            activate = None
+            if router["platform"] == "retropie":
+                def activate():
+                    """Enable RetroPie's opt-in router and move receiver output safely."""
+                    for command in (("systemctl", "enable", "--now", "virtualglove-controller-router.service"),
+                                    ("systemctl", "restart", "virtualglove-receiver.service")):
+                        result = subprocess.run(command, check=False, timeout=15)
+                        if result.returncode:
+                            raise RuntimeError("Controller Router service activation failed")
+            input_store = RouterStore(Path(router["path"]), router["platform"],
+                                      Path(router["es_inputs"]), Path(router["retroarch_config"]),
+                                      activate=activate)
+            input_service = RouterService(input_store, Path(settings["token_file"]))
+    HTTPServer((args.listen, args.port), make_registry_handler(service, input_service)).serve_forever()
     return 0
 
 

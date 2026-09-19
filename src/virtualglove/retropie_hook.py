@@ -29,6 +29,33 @@ from .profile_control import load_registry, read_token, select_profile_settings,
 
 
 DEFAULT_SESSION_FILE = Path.home() / ".cache" / "virtualglove" / "active-game.json"
+FOUR_SCORE_DEVICE = "769"  # FCEUmm RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 2)
+
+
+def configure_four_score(settings: dict, force: bool) -> None:
+    """Manage only FCEUmm's User 5 adaptor selection; absence leaves CRC auto-detection."""
+    router = settings.get("controller_router", {})
+    path = Path(router.get("retroarch_config", "")) if isinstance(router, dict) else Path()
+    if not str(path) or str(path) == "." or path.is_symlink():
+        return
+    text = path.read_text() if path.exists() else ""
+    begin, end = "# VirtualGlove Four Score", "# End VirtualGlove Four Score"
+    output, inside = [], False
+    for line in text.splitlines():
+        if line.strip() == begin:
+            inside = True
+            continue
+        if inside:
+            if line.strip() == end:
+                inside = False
+            continue
+        output.append(line)
+    while output and not output[-1]:
+        output.pop()
+    if force:
+        output.extend(["", begin, 'input_libretro_device_p5 = "' + FOUR_SCORE_DEVICE + '"', end])
+    from .game_registry import atomic_write
+    atomic_write(path, "\n".join(output).lstrip("\n") + "\n", 0o644)
 KNOWN_CORES = {
     "fceumm_libretro.so": "lr-fceumm",
     "nestopia_powerglove_libretro.so": "lr-nestopia-powerglove",
@@ -211,6 +238,10 @@ def main() -> int:
             selection = select_profile_settings(
                 load_registry(registry_path), args.system, args.rom
             )
+        if args.action == "start":
+            configure_four_score(settings, bool(selection and selection.get("four_score") == "force"))
+        elif args.action == "end":
+            configure_four_score(settings, False)
         profile = selection["profile"] if selection else None
         if args.action == "session":
             if profile is None:

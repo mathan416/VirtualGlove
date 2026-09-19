@@ -62,7 +62,7 @@ def run(*args):
 def runtime_module_processes(prefixes, proc_root=Path("/proc")):
     """Return exact managed module processes, without matching shell command text."""
     modules = {prefix.encode() + name.encode() for prefix in prefixes for name in (
-        "merged_gamepad", "game_registry", "console_monitor", "receiver",
+        "merged_gamepad", "controller_router", "game_registry", "console_monitor", "receiver",
         "vision_app", "profile_control",
     )}
     found = []
@@ -229,13 +229,19 @@ def install_retropie(peer):
     write_file("/etc/virtualglove/games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
     config = json.loads((SOURCE / "config/launcher.example.json").read_text())
     config["uno_q"] = peer
-    write_file(launcher, json.dumps(config, indent=2) + "\n", preserve=True)
+    config["controller_router"] = controller_router_settings("retropie")
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = config["controller_router"]
+        config = existing
+    write_file(launcher, json.dumps(config, indent=2) + "\n")
     # Never truncate an existing token. Empty means pairing is still required.
     token = Path("/etc/virtualglove/token")
     write_file(token, b"", 0o640, preserve=True)
     token.chmod(0o640)
     os.chown(str(token), 0, grp.getgrnam("input").gr_gid)
-    for unit in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service"):
+    for unit in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service",
+                 "virtualglove-controller-router.service"):
         write_file(Path("/etc/systemd/system") / unit, (SOURCE / "retropie" / unit).read_bytes())
     profile = "VirtualGlove.cfg"
     write_file(base / "retroarch/autoconfig" / profile, (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
@@ -574,6 +580,14 @@ def merged_controller_module():
     return merged_gamepad
 
 
+def controller_router_module():
+    """Load the shared Player 1-4 Controller Router implementation."""
+    if str(SOURCE / "src") not in sys.path:
+        sys.path.insert(0, str(SOURCE / "src"))
+    from virtualglove import controller_router
+    return controller_router
+
+
 def merged_controller_paths(platform):
     """Return the platform's frontend map and saved Player 1 record paths."""
     if platform == "recalbox":
@@ -609,7 +623,10 @@ def configure_merged_player1(platform, requested=None):
         if connected is not None and connected["mapping"] != saved["mapping"]:
             saved["mapping"] = connected["mapping"]
             write_file(config, json.dumps(saved, indent=2) + "\n")
-        return saved
+        selected = saved
+        router = controller_router_module()
+        router.migrate_player1(config, config.with_name(router.CONFIG_NAME), platform)
+        return selected
     candidate = merged.choose_controller(
         merged.controller_candidates(es_inputs), requested=requested)
     data = {"format": merged.FORMAT, "platform": platform,
@@ -617,7 +634,33 @@ def configure_merged_player1(platform, requested=None):
                ("id", "name", "guid", "vendor", "product", "version", "uniq", "phys")},
             "mapping": candidate["mapping"]}
     write_file(config, json.dumps(data, indent=2) + "\n")
+    router = controller_router_module()
+    router_path = config.with_name(router.CONFIG_NAME)
+    if requested is not None or not router_path.exists():
+        routed = router.validate_config({
+            "format": router.FORMAT, "platform": platform,
+            "players": [{"player": 1, "sources": [data]}],
+            "virtualglove_player": 1,
+        })
+        write_file(router_path, json.dumps(routed, indent=2) + "\n")
     return data
+
+
+def controller_router_settings(platform):
+    """Return trusted console-local paths exposed through the paired inputs API."""
+    if platform == "recalbox":
+        root = Path("/recalbox/share/system/virtualglove")
+        return {"path": str(root / "data/controller-router.json"), "platform": platform,
+                "es_inputs": "/recalbox/share/system/.emulationstation/es_input.cfg",
+                "retroarch_config": "/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"}
+    if platform == "batocera":
+        root = Path("/userdata/system/virtualglove")
+        return {"path": str(root / "data/controller-router.json"), "platform": platform,
+                "es_inputs": "/userdata/system/configs/emulationstation/es_input.cfg",
+                "retroarch_config": "/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"}
+    return {"path": "/etc/virtualglove/controller-router.json", "platform": "retropie",
+            "es_inputs": "/opt/retropie/configs/all/emulationstation/es_input.cfg",
+            "retroarch_config": "/opt/retropie/configs/all/retroarch/config/FCEUmm/FCEUmm.cfg"}
 
 
 def install_recalbox(peer, player1_device=None):
@@ -681,17 +724,25 @@ def install_recalbox(peer, player1_device=None):
         "uno_q": peer,
         "token_file": str(data / "token"),
         "registry": str(data / "games.json"),
+        "controller_router": controller_router_settings("recalbox"),
     })
-    write_file(launcher, json.dumps(settings, indent=2) + "\n", preserve=True)
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = settings["controller_router"]
+        settings = existing
+    write_file(launcher, json.dumps(settings, indent=2) + "\n")
     write_file(data / "token", b"", preserve=True)
     configure_merged_player1("recalbox", player1_device)
 
     service = destination / "recalbox/virtualglove-service"
+    write_file(destination / "scripts/virtualglove-controller-router",
+               (SOURCE / "scripts/virtualglove-controller-router").read_bytes(), 0o755)
     custom = Path("/recalbox/share/system/custom.sh")
     write_file(custom, recalbox_custom_hook(
         custom.read_text() if custom.exists() else ""), 0o755)
     custom.chmod(0o755)
     backup_file("/recalbox/share/system/configs/retroarch/nes.cfg")
+    backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     run("sh", service, "restart")
 
 
@@ -713,11 +764,20 @@ def check_recalbox(report):
             selected, merged.input_devices()) is not None, pending=True)
         index = merged.merged_joypad_index()
         report.check("Merged Player 1 gamepad available", index is not None)
-        nes_text = Path("/recalbox/share/system/configs/retroarch/nes.cfg").read_text()
+        nes_text = Path("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg").read_text()
         report.check("RetroArch uses merged Player 1", index is not None and
                      ('input_player1_joypad_index = "%d"' % index) in nes_text)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
+    try:
+        router = controller_router_module()
+        routed = router.load_config(root / "data/controller-router.json")
+        players = router.enabled_players(routed)
+        indexes = router.output_indexes(players)
+        report.check("Controller Router configuration", routed["platform"] == "recalbox")
+        report.check("Controller Router outputs available", len(indexes) == len(players))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Controller Router configuration", False)
     native_manifest = root / "native/recalbox/manifest.json"
     native = None
     if native_manifest.is_file():
@@ -791,8 +851,13 @@ def install_batocera(peer, player1_device=None):
     launcher = data / "launcher.json"
     settings = json.loads((SOURCE / "config/launcher.example.json").read_text())
     settings.update({"uno_q": peer, "token_file": str(data / "token"),
-                     "registry": str(data / "games.json")})
-    write_file(launcher, json.dumps(settings, indent=2) + "\n", preserve=True)
+                     "registry": str(data / "games.json"),
+                     "controller_router": controller_router_settings("batocera")})
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = settings["controller_router"]
+        settings = existing
+    write_file(launcher, json.dumps(settings, indent=2) + "\n")
     write_file(data / "token", b"", preserve=True)
     configure_merged_player1("batocera", player1_device)
 
@@ -808,9 +873,13 @@ def install_batocera(peer, player1_device=None):
         destination / "scripts/configure-batocera-super-glove-ball-core.py",
         destination / "scripts/verify-batocera-native-core.py",
     ]
+    write_file(destination / "scripts/virtualglove-controller-router",
+               (SOURCE / "scripts/virtualglove-controller-router").read_bytes(), 0o755)
+    executables.append(destination / "scripts/virtualglove-controller-router")
     for executable in executables:
         executable.chmod(0o755)
     backup_file("/userdata/system/configs/retroarch/nes.cfg")
+    backup_file("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     run("batocera-services", "enable", "VirtualGlove")
     subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
     run("batocera-services", "start", "VirtualGlove")
@@ -835,11 +904,20 @@ def check_batocera(report):
             selected, merged.input_devices()) is not None, pending=True)
         index = merged.merged_joypad_index()
         report.check("Merged Player 1 gamepad available", index is not None)
-        nes_text = Path("/userdata/system/configs/retroarch/nes.cfg").read_text()
+        nes_text = Path("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg").read_text()
         report.check("RetroArch uses merged Player 1", index is not None and
                      ('input_player1_joypad_index = "%d"' % index) in nes_text)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
+    try:
+        router = controller_router_module()
+        routed = router.load_config(root / "data/controller-router.json")
+        players = router.enabled_players(routed)
+        indexes = router.output_indexes(players)
+        report.check("Controller Router configuration", routed["platform"] == "batocera")
+        report.check("Controller Router outputs available", len(indexes) == len(players))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Controller Router configuration", False)
     native = Path("/usr/lib/libretro/nestopia_powerglove_libretro.so")
     native_info = Path("/usr/share/libretro/info/nestopia_powerglove_libretro.info")
     report.check("Optional native Super Glove Ball core", native.is_file() and

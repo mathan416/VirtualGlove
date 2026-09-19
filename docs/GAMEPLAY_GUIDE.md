@@ -631,11 +631,11 @@ merged physical controller's movement and menus.
 provide the two action buttons while the merged physical Player 1 controller
 supplies movement or menu combinations. Shared gesture Start, Select, and Menu
 Guard remain available, but camera movement never sends a D-pad direction.
-Recalbox and Batocera provide this combined Player 1 automatically through
-**VirtualGlove Merged Player 1**; LaunchBox combines physical XInput with its
-loopback RetroPad while retaining real keys as a backup. Generic RetroPie exposes VirtualGlove as a separate gamepad, so a
-same-player hybrid requires an explicit local controller merger such as the
-cabinet's specialized configuration.
+Recalbox and Batocera provide this combination through Controller Router's
+enabled **VirtualGlove Merged Player 1–4** outputs; assign both sources to the
+same player in Setup. LaunchBox combines physical XInput with its loopback
+RetroPad while retaining real keys as a backup. Generic RetroPie exposes
+VirtualGlove as a separate gamepad unless optional Controller Router is enabled.
 
 **First round:**
 

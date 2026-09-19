@@ -11,4 +11,18 @@
 # Full history: docs/CHANGELOG.md and Git history.
 
 export PYTHONPATH=/opt/virtualglove-src/src
+if [ -s /etc/virtualglove/controller-router.json ]; then
+    count=0
+    while [ ! -S /run/virtualglove/controller-router.sock ] && [ "$count" -lt 50 ]; do
+        sleep 0.1
+        count=$((count + 1))
+    done
+    if [ -S /run/virtualglove/controller-router.sock ]; then
+        exec /usr/bin/python3 -m virtualglove.receiver "$@" \
+            --output-device merged-gamepad \
+            --merged-socket /run/virtualglove/controller-router.sock
+    fi
+    echo "Controller Router is configured but unavailable; refusing duplicate Player 1 output." >&2
+    exit 1
+fi
 exec /usr/bin/python3 -m virtualglove.receiver "$@"

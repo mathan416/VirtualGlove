@@ -109,10 +109,11 @@ name on a first installation. The
 [Installation Guide](INSTALL_README.md#3-install-the-console) gives the complete
 copyable commands, prerequisites, questions, and checkpoints.
 
-Recalbox and Batocera select one configured physical Player 1 controller. One
-connected pad is automatic; with several, run the matching installer with
+Recalbox and Batocera select an initial configured physical Player 1 controller.
+One connected pad is automatic; with several, run the matching installer with
 `--list-player1-devices`, then repeat it with `--player1-device DEVICE-ID`.
-Their NES gamepad is named **VirtualGlove Merged Player 1**.
+After pairing, use Setup's **Controller Router** to assign configured physical
+controllers and the one VirtualGlove across enabled merged Players 1–4.
 
 The following source-checkout path is specifically for RetroPie developers. Run
 it in a local terminal or SSH session with the normal RetroPie account.
@@ -254,9 +255,10 @@ python3 /userdata/system/virtualglove/scripts/verify-batocera-native-core.py \
 ```
 
 RetroPie's separate virtual controller appears after the first authenticated
-packet. Recalbox and Batocera keep **VirtualGlove Merged Player 1** present from
-service startup; their checks confirm the selected physical pad, merged device,
-and NES joypad index. LaunchBox retains physical XInput and adds VirtualGlove
+packet unless optional Controller Router is enabled. Recalbox and Batocera keep
+their enabled **VirtualGlove Merged Player 1–4** outputs present from service
+startup; checks resolve saved sources and current FCEUmm indexes rather than
+persisting enumeration numbers. LaunchBox retains physical XInput and adds VirtualGlove
 through a LAN-isolated loopback RetroPad; real keyboard mappings remain a manual
 fallback and their command/hotkey conflicts are reported. Native
 Super Glove Ball sends recognized hand controls only through the guarded native

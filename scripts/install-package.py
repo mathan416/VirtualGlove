@@ -170,9 +170,9 @@ def unpack(archive, destination, machine, version):
                      if machine == "uno-q" else ([
                          "src/virtualglove/console_monitor.py",
                          "src/virtualglove/merged_gamepad.py",
+                         "src/virtualglove/controller_router.py",
                          "recalbox/virtualglove-service",
                          "recalbox/virtualglove-core-mount",
-                         "recalbox/retroarch-nes.cfg",
                          "scripts/build-recalbox-nestopia-powerglove.sh",
                          "scripts/build-recalbox-native-matrix.sh",
                          "scripts/install-recalbox-nestopia-powerglove.sh",
@@ -183,12 +183,12 @@ def unpack(archive, destination, machine, version):
                          "python/ssh_pair.py",
                      ] if machine == "recalbox" else ([
                          "src/virtualglove/merged_gamepad.py",
+                         "src/virtualglove/controller_router.py",
                          "src/virtualglove/retropie_hook.py",
                          "recalbox/virtualglove-service",
                          "batocera/VirtualGlove",
                          "batocera/virtualglove-game",
                          "batocera/virtualglove-core-mount",
-                         "batocera/retroarch-nes.cfg",
                          "scripts/build-batocera-nestopia-powerglove.sh",
                          "scripts/build-batocera-native-matrix.sh",
                          "scripts/install-batocera-nestopia-powerglove.sh",
@@ -200,6 +200,7 @@ def unpack(archive, destination, machine, version):
                      ] if machine == "batocera" else [
                          "retropie/virtualglove-receiver.service",
                          "retropie/virtualglove-receiver.timer",
+                         "retropie/virtualglove-controller-router.service",
                          "retropie/virtualglove-games.service",
                          "src/virtualglove/retropie_hook.py",
                          "retropie/bin/virtualglove-retropie-hook",

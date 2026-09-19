@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Simplified camera-test guidance and hid redundant direction text.
 #   2026-09-12 - Preview unsaved grid bounds and directions immediately during practice.
 #   2026-09-12 - Made 60% the standard centre-box size for new players.
 #   2026-09-06 - Added Setup dead-zone controls with per-player persistence.
@@ -20,10 +21,10 @@ JOYSTICK_CONTENT = """<section class=card id=joystick-settings style="margin-top
 <style>#joystick-camera-stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:14px;margin-top:14px}#joystick-camera-stage .camera{display:block;width:100%;height:auto;aspect-ratio:auto;border:0;border-radius:0;margin:0}#joystick-grid{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}#joystick-grid line{stroke:rgba(255,255,255,.55);stroke-width:1;vector-effect:non-scaling-stroke}#joystick-region{fill:rgba(54,219,232,.16)}</style>
 <div id=joystick-camera-stage hidden><img class=camera id=joystick-camera hidden alt="Mirrored camera view for the dead-zone test">
 <svg id=joystick-grid hidden aria-hidden=true viewBox="0 0 1 1" preserveAspectRatio=none><rect id="joystick-region" hidden /><line id="joystick-grid-left" /><line id="joystick-grid-right" /><line id="joystick-grid-top" /><line id="joystick-grid-bottom" /></svg></div>
-<div id=joystick-directions class=controls aria-label="Live direction states"><span class=bit data-direction=left>Left: off</span><span class=bit data-direction=up>Up: off</span><span class=bit data-direction=down>Down: off</span><span class=bit data-direction=right>Right: off</span></div>
-<p id=joystick-live role=status aria-live=polite>Camera test is off.</p><p id=joystick-center-status role=status aria-live=polite></p><p id=joystick-notice role=status aria-live=polite></p>
-<p>Turn on the camera to test a box anchored to the hand center you saved with <strong>Center hand</strong>. The chosen percentage sets its width and height, but the box is never smaller than 1.5 times your calibrated hand size. Near an edge, the whole box moves inward so it stays full-size. Inside the box stops movement; moving beyond an edge or corner selects a direction. Native Super Glove Ball X/Y reach is separate.</p>
-<p>Slider changes preview immediately in this camera test. Select Save dead zone to use them in gameplay.</p></section>"""
+<div id=joystick-directions class=controls hidden aria-hidden=true><span class=bit data-direction=left>Left: off</span><span class=bit data-direction=up>Up: off</span><span class=bit data-direction=down>Down: off</span><span class=bit data-direction=right>Right: off</span></div>
+<p id=joystick-live role=status aria-live=polite></p><p id=joystick-center-status role=status aria-live=polite></p><p id=joystick-notice role=status aria-live=polite></p>
+<div id=joystick-camera-help hidden><p>The live box is anchored to the hand center saved with <strong>Center hand</strong>. The chosen percentage sets its width and height, but the box is never smaller than 1.5 times your calibrated hand size. Near an edge, the whole box moves inward so it stays full-size. Inside the box stops movement; moving beyond an edge or corner selects a direction. Native Super Glove Ball X/Y reach is separate.</p>
+<p>Slider changes preview immediately. Select <strong>Save dead zone</strong> to use them in gameplay.</p></div></section>"""
 
 JOYSTICK_SCRIPT = r"""(()=>{
 const el=id=>document.getElementById(id), directions=['left','right','up','down'];
@@ -55,7 +56,7 @@ let centering=false, centerSeen=false, centerStarted=0, centerDoneUntil=0;
 const releases=new Set();
 const clock=()=>performance.now();
 function ownsPractice(){return cameraWanted&&leaseAt!==null&&clock()-leaseAt<4500&&gridStatus?.practice_mode===true&&gridStatus?.vision_state==='active'&&viewReady&&imageLoaded;}
-function cameraControls(){const toggle=el('joystick-camera-toggle'),center=el('joystick-center');toggle.textContent=cameraWanted?'Turn off camera':'Turn on camera';toggle.disabled=cameraBusy||centering;toggle.setAttribute('aria-pressed',String(cameraWanted));center.disabled=busy||centering||!ownsPractice();center.classList.toggle('danger',centering);center.setAttribute('aria-busy',String(centering));center.textContent=centering?'Centering…':clock()<centerDoneUntil?'Center saved ✓':'Center hand';}
+function cameraControls(){const toggle=el('joystick-camera-toggle'),center=el('joystick-center');toggle.textContent=cameraWanted?'Turn off camera':'Turn on camera';toggle.disabled=cameraBusy||centering;toggle.setAttribute('aria-pressed',String(cameraWanted));el('joystick-camera-help').hidden=!cameraWanted;center.disabled=busy||centering||!ownsPractice();center.classList.toggle('danger',centering);center.setAttribute('aria-busy',String(centering));center.textContent=centering?'Centering…':clock()<centerDoneUntil?'Center saved ✓':'Center hand';}
 function cancelCenter(message=''){centering=false;centerSeen=false;centerStarted=0;if(message)el('joystick-center-status').textContent=message;cameraControls();}
 function updateCenter(s){if(!centering){cameraControls();return;}if(s.calibrating)centerSeen=true;
  if(s.calibration_save_error){cancelCenter('The hand center could not be saved. Try again.');return;}
@@ -66,7 +67,7 @@ function directionsOff(){for(const d of directions){const node=el('joystick-dire
 function hideCamera(){viewReady=false;imageLoaded=false;gridStatus=null;clearGrid();el('joystick-camera-stage').hidden=true;el('joystick-camera').removeAttribute('src');el('joystick-camera').hidden=true;directionsOff();cameraControls();}
 async function request(path,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);try{const r=await fetch(path,{...options,signal:controller.signal});const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed.');return data;}finally{clearTimeout(timer)}}
 async function practiceLease(id,enabled){return request('/api/practice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:id,enabled}),keepalive:!enabled});}
-async function release(id){if(!id)return;releases.add(id);try{await practiceLease(id,false);releases.delete(id);}catch(e){if(alive&&!cameraWanted)el('joystick-live').textContent='Camera test is off. Lease release is unconfirmed; retrying. The lease expires if it cannot be renewed.';}}
+async function release(id){if(!id)return;releases.add(id);try{await practiceLease(id,false);releases.delete(id);}catch(e){if(alive&&!cameraWanted)el('joystick-live').textContent='Camera shutdown is still being confirmed; retrying safely.';}}
 async function renew(){if(leaseBusy||!cameraWanted||!alive)return;leaseBusy=true;const id=session,revision=cameraRevision,started=clock();
  try{const result=await practiceLease(id,true);if(!alive||revision!==cameraRevision){await release(id);return;}
  if(result.session_active!==true||result.practice_mode!==true){cameraWanted=false;cameraRevision++;leaseAt=null;hideCamera();cameraControls();await release(id);el('joystick-live').textContent='Camera test stopped: this practice lease was not accepted. Turn on the camera to retry after updating the Controller or closing the conflicting session.';return;}
@@ -75,7 +76,7 @@ async function renew(){if(leaseBusy||!cameraWanted||!alive)return;leaseBusy=true
  finally{leaseBusy=false;}
 }
 el('joystick-camera-toggle').onclick=async()=>{if(cameraBusy)return;cameraBusy=true;cameraRevision++;leaseAt=null;hideCamera();
- if(cameraWanted){const old=session;cameraWanted=false;cameraControls();el('joystick-live').textContent='Camera test is off.';await release(old);}
+ if(cameraWanted){const old=session;cameraWanted=false;cameraControls();el('joystick-live').textContent='';await release(old);}
  else{session=globalThis.crypto?.randomUUID?.()||`joystick-${Date.now()}-${Math.random().toString(36).slice(2)}`;cameraWanted=true;retryAt=0;cameraControls();el('joystick-live').textContent='Starting safe camera practice…';await renew();}
  cameraBusy=false;cameraControls();if(alive)poll();
 };
@@ -146,8 +147,8 @@ async function poll(){if(polling||busy||document.hidden||!alive)return;polling=t
  const s=await request('/status',{cache:'no-store'});if(alive&&revision===cameraRevision)feedback(s);
  }catch(e){if(alive&&revision===cameraRevision){hideCamera();if(cameraWanted)el('joystick-live').textContent='Camera test feedback unavailable. Retrying…';notice(e.message);}}
  finally{polling=false;if(centering&&clock()-centerStarted>20000)cancelCenter('Centering did not finish. Show one relaxed open hand and try again.');}}
-async function heartbeat(){if(!alive)return;await renew();for(const id of [...releases])await release(id);if(!cameraWanted&&releases.size===0)el('joystick-live').textContent='Camera test is off.';}
-window.addEventListener('pagehide',()=>{alive=false;cameraWanted=false;cameraRevision++;leaseAt=null;centering=false;hideCamera();cameraControls();el('joystick-live').textContent='Camera test is off.';
+async function heartbeat(){if(!alive)return;await renew();for(const id of [...releases])await release(id);if(!cameraWanted&&releases.size===0)el('joystick-live').textContent='';}
+window.addEventListener('pagehide',()=>{alive=false;cameraWanted=false;cameraRevision++;leaseAt=null;centering=false;hideCamera();cameraControls();el('joystick-live').textContent='';
  for(const id of new Set([session,...releases]))if(id)fetch('/api/practice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:id,enabled:false}),keepalive:true}).catch(()=>{});
 });
 window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});

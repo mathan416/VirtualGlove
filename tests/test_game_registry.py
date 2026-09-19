@@ -22,6 +22,7 @@ from virtualglove.game_registry import (
     make_registry_handler, registry_request,
 )
 from virtualglove.profile_control import sign_message, verify_message
+from virtualglove.controller_router import RouterService, router_request
 
 ORIGINAL = '{"games":{"Joust (USA).7z":"program_b"}}'
 CHANGED = '{"games":{"Joust (USA).7z":"program_h"}}'
@@ -119,6 +120,26 @@ class RegistryTests(unittest.TestCase):
             self.assertEqual(restored['document'], ORIGINAL)
             with self.assertRaises(ValueError):
                 registry_request(dict(settings, token='wrong-secret-token'), 'read', port=port)
+        finally:
+            server.shutdown(); server.server_close(); thread.join()
+
+    def test_inputs_endpoint_uses_separate_authenticated_protocol(self):
+        class InputStore:
+            def operate(self, operation, payload):
+                return {"operation": operation, "watch_ms": payload.get("watch_ms", 0)}
+
+        inputs = RouterService(InputStore(), self.token_path, lambda: self.now)
+        server = HTTPServer(('127.0.0.1', 0), make_registry_handler(self.service, inputs))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            settings = {'receiver': '127.0.0.1', 'token': self.token}
+            result = router_request(settings, 'check', {'watch_ms': 750},
+                                    port=server.server_address[1])
+            self.assertEqual(result, {"operation": "check", "watch_ms": 750})
+            with self.assertRaises(ValueError):
+                router_request(dict(settings, token='wrong-secret-token'), 'read',
+                               port=server.server_address[1])
         finally:
             server.shutdown(); server.server_close(); thread.join()
 

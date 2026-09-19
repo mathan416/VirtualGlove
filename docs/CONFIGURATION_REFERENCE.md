@@ -26,8 +26,8 @@ file the running system reads.
 | VirtualGlove Controller Setup page | Console platform and address, controller port, startup profile, camera, and pairing token | Browser Setup page |
 | VirtualGlove Controller application files | Gesture sensitivity and advanced runtime defaults | Edit only when tuning is required |
 | RetroPie `/etc/virtualglove/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Protected files on RetroPie |
-| Recalbox `/recalbox/share/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, receiver token, and selected physical Player 1 identity/mapping | Installer or persistent Recalbox share |
-| Batocera `/userdata/system/virtualglove/data/` | VirtualGlove Controller address, per-game profile selection, receiver token, and selected physical Player 1 identity/mapping | Installer or persistent Batocera user data |
+| Recalbox `/recalbox/share/system/virtualglove/data/` | Controller address, game registry, receiver token, and versioned Controller Router assignments | Installer or persistent Recalbox share |
+| Batocera `/userdata/system/virtualglove/data/` | Controller address, game registry, receiver token, and versioned Controller Router assignments | Installer or persistent Batocera user data |
 | LaunchBox `%LOCALAPPDATA%\VirtualGlove\data\` | VirtualGlove Controller address, exact-ROM profiles, RetroArch paths, and receiver token | Current Windows user |
 
 The examples under the repository's `config/` directory are installation
@@ -1434,6 +1434,13 @@ It matches the virtual device name plus vendor and product IDs `1:1`, uses the
 axes to a standard RetroPad. It does not configure an I-PAC, 8BitDo controller,
 or any other physical controller.
 
+The optional development-cabinet integration is maintained separately under
+`retropie/arcade-cabinet-merger/`. It adds two `Arcade Merged Player`
+autoconfigurations and a cabinet-specific service without changing this
+standard `VirtualGlove.cfg`. Do not apply its I-PAC button numbers or device
+names to another cabinet until that hardware's Linux events and hotkeys have
+been confirmed.
+
 If RetroArch has a hand-written override for this device, remove or reconcile
 that override before diagnosing the supplied autoconfiguration.
 
@@ -1846,6 +1853,54 @@ existing `root` login on Recalbox or Batocera. `--check` performs read-only chec
 Exit codes are `0` for success, `1` for an installation/check failure, and `2`
 for outstanding user action. Argument errors also use argparse's exit code `2`.
 The current check always asks for human gameplay confirmation.
+
+### Configure Controller Router
+
+The `virtualglove-controller-router` tool is installed on supported Linux
+consoles. Its
+`setup` command opens an interactive local assignment screen with no additional
+terminal-interface dependency. It detects the platform automatically, displays
+connection state, tests controls, assigns Players 1–4, and confirms save or
+rollback operations. Lower-level commands are `list`, `show`, `configure`,
+`check`, `apply`, and `rollback`. `--platform` can override automatic detection.
+`configure` accepts `--document PATH`; `apply` updates only the managed FCEUmm
+core override. Nestopia (VirtualGlove) and unrelated NES cores never load that
+override. RetroPie keeps Router disabled until an authenticated Setup save or
+an explicit `apply`. Recalbox and Batocera migrate their existing version-1
+Player 1 record automatically.
+
+RetroPie installs the command at
+`/opt/virtualglove/bin/virtualglove-controller-router`. Read-only platform
+layouts retain their launcher at
+`/recalbox/share/system/virtualglove/scripts/virtualglove-controller-router` or
+`/userdata/system/virtualglove/scripts/virtualglove-controller-router`, so the
+tool survives Recalbox and Batocera reboots and upgrades. Invoke these two
+persistent-share launchers with `sh`, because the shares do not permit direct
+program execution.
+
+The version-2 `controller-router.json` document contains `platform`, `players`,
+and `virtualglove_player`. Each player entry contains a slot from 1–4 and stable
+physical source records. Sources contain the friendly identity and authoritative
+EmulationStation mapping, never `eventN`, `jsN`, or a saved RetroArch index. A
+source may appear in only one player. `virtualglove_player` is `null` or one
+slot from 1–4. Enabled outputs are the slots with at least one physical source
+or the assigned VirtualGlove slot.
+
+Remote Setup uses `/inputs` on TCP 55358 with `virtualglove-inputs/1`. Saves
+carry the revision returned by `read`; stale revisions and changes during a
+running FCEUmm game are rejected. `rollback` restores the previous complete
+document atomically.
+
+The development cabinet has a separate receipt-gated migration helper under
+`retropie/arcade-cabinet-merger/`. Its `check` action observes one live control
+from every proposed physical source and temporarily creates all proposed
+outputs without changing RetroArch. `apply` requires that fresh receipt,
+preserves the old merger state and FCEUmm override, and automatically restores
+them if activation fails. `rollback` performs the same restoration explicitly.
+
+Structured game entries may add `"four_score": "force"`. This sets FCEUmm's
+User 5 device to its 4-Player Adaptor value (`769`) for a compatible altered
+ROM. Leave the field absent for normal CRC-based automatic detection.
 
 ### Run the RetroPie receiver
 

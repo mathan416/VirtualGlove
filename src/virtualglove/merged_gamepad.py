@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Distinguished multiple gamepad interfaces exposed by one USB board.
 #   2026-09-16 - Added Recalbox/Batocera merged Player 1 input.
 # Full history: docs/CHANGELOG.md and Git history.
 
@@ -153,6 +154,19 @@ def _valid_input_code(kind: str, code: int) -> bool:
             (kind in ("axis", "hat") and 0 <= code <= 0x3F))
 
 
+def _logical_input_interface(phys: str) -> str:
+    """Return a stable HID collection suffix such as ``input0``.
+
+    One USB board may expose several independent gamepads with the same name,
+    USB identifiers, and serial/uniq value.  Linux distinguishes those HID
+    collections in ``phys``.  Keep only the collection suffix for serialized
+    devices so moving a serial-numbered controller to another USB port does
+    not change its identity.
+    """
+    match = re.search(r"(?:^|/)(input[0-9]+)$", phys or "")
+    return match.group(1) if match else ""
+
+
 def input_devices(sys_root: Path = Path("/sys/class/input"),
                   dev_root: Path = Path("/dev/input")) -> list[dict]:
     """Return stable descriptions of connected non-VirtualGlove event devices."""
@@ -184,10 +198,16 @@ def input_devices(sys_root: Path = Path("/sys/class/input"),
             # EmulationStation stores SDL indices rather than evdev codes. A
             # sibling joystick node is required to translate them safely.
             continue
-        stable_keys = (("name", "vendor", "product", "version", "uniq")
-                       if identity["uniq"] else
-                       ("name", "vendor", "product", "version", "phys"))
-        stable = "\0".join(identity[key] for key in stable_keys)
+        if identity["uniq"]:
+            # ``uniq`` identifies the USB board, not necessarily one logical
+            # controller.  Include the stable HID collection so an I-PAC's
+            # Player 1 and Player 2 interfaces do not collapse into one pad.
+            stable = "\0".join(identity[key] for key in
+                                ("name", "vendor", "product", "version", "uniq"))
+            stable += "\0" + _logical_input_interface(identity["phys"])
+        else:
+            stable = "\0".join(identity[key] for key in
+                                ("name", "vendor", "product", "version", "phys"))
         identity["id"] = hashlib.sha256(stable.encode()).hexdigest()[:16]
         devices.append(identity)
     return devices
@@ -414,7 +434,11 @@ def controller_matches(saved: dict, candidate: dict) -> bool:
         if saved.get(key, "") != candidate.get(key, ""):
             return False
     if saved.get("uniq"):
-        return saved["uniq"] == candidate.get("uniq")
+        if saved["uniq"] != candidate.get("uniq"):
+            return False
+        saved_interface = _logical_input_interface(saved.get("phys", ""))
+        candidate_interface = _logical_input_interface(candidate.get("phys", ""))
+        return not saved_interface or saved_interface == candidate_interface
     return bool(saved.get("phys")) and saved["phys"] == candidate.get("phys")
 
 
@@ -621,7 +645,8 @@ class UInputMergedGamepad:
 
     EVENT = struct.Struct("llHHi")
 
-    def __init__(self, path: Path = Path("/dev/uinput")) -> None:
+    def __init__(self, path: Path = Path("/dev/uinput"), *,
+                 name: str = DEVICE_NAME, product: int = 0x5647) -> None:
         self.fd = os.open(str(path), os.O_WRONLY | os.O_NONBLOCK)
         self.closed = False
         self.buttons: set[str] = set()
@@ -633,8 +658,13 @@ class UInputMergedGamepad:
                 fcntl.ioctl(self.fd, UI_SET_KEYBIT, code)
             for code in AXIS_CODES.values():
                 fcntl.ioctl(self.fd, UI_SET_ABSBIT, code)
-            header = struct.pack("80sHHHHi", DEVICE_NAME.encode(), BUS_VIRTUAL,
-                                 0x1209, 0x5647, 0x0100, 0)
+            encoded_name = name.encode("utf-8")
+            if not encoded_name or len(encoded_name) >= 80:
+                raise ValueError("invalid merged gamepad name")
+            if not 0 <= product <= 0xFFFF:
+                raise ValueError("invalid merged gamepad product id")
+            header = struct.pack("80sHHHHi", encoded_name, BUS_VIRTUAL,
+                                 0x1209, product, 0x0100, 0)
             maximum = [0] * 64
             minimum = [0] * 64
             flat = [0] * 64
@@ -697,7 +727,8 @@ def retroarch_running(proc_root: Path = Path("/proc")) -> bool:
 
 
 def merged_joypad_index(sys_root: Path = Path("/sys/class/input"),
-                        udev_root: Path = Path("/run/udev/data")) -> int | None:
+                        udev_root: Path = Path("/run/udev/data"),
+                        device_name: str = DEVICE_NAME) -> int | None:
     """Return the merged device's RetroArch udev joypad index.
 
     RetroArch numbers only event devices tagged ``ID_INPUT_JOYSTICK=1`` and
@@ -715,7 +746,7 @@ def merged_joypad_index(sys_root: Path = Path("/sys/class/input"),
         if "E:ID_INPUT_JOYSTICK=1" in properties:
             joypads.append(item)
     for index, item in enumerate(joypads):
-        if _text(item / "device/name") == DEVICE_NAME:
+        if _text(item / "device/name") == device_name:
             return index
     return None
 

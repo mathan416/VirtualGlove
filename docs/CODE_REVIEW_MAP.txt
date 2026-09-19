@@ -2,8 +2,8 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 673
-Python test modules: 75
+Git-visible files: 671
+Python test modules: 77
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
 
@@ -116,7 +116,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 75 test modules. JavaScript
+Normal Python discovery currently contains 77 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-673 tracked or non-ignored files are present in this checkout. Ignored
+671 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -608,20 +608,6 @@ are intentionally omitted.
 |-- output
 |   |-- app-lab
 |   |   `-- VirtualGlove-Uno-Q.zip.sha256
-|   |-- install-merged-player1
-|   |   |-- install-batocera.sh
-|   |   |-- install-package.py
-|   |   |-- install-recalbox.sh
-|   |   |-- install-retropie.sh
-|   |   |-- install-uno-q.sh
-|   |   |-- SHA256SUMS
-|   |   |-- VirtualGlove-Batocera.zip
-|   |   |-- VirtualGlove-Engineering-Tools.zip
-|   |   |-- VirtualGlove-Engineering-Tools.zip.sha256
-|   |   |-- VirtualGlove-LaunchBox.zip
-|   |   |-- VirtualGlove-Recalbox.zip
-|   |   |-- VirtualGlove-RetroPie.zip
-|   |   `-- VirtualGlove-Uno-Q.zip
 |   `-- pdf
 |       |-- VirtualGlove-Architecture.pdf
 |       |-- VirtualGlove-Build-Your-Own.pdf
@@ -629,7 +615,6 @@ are intentionally omitted.
 |       |-- VirtualGlove-Changelog.pdf
 |       |-- VirtualGlove-Configuration-Reference.pdf
 |       |-- VirtualGlove-Contributing.pdf
-|       |-- VirtualGlove-Direction-Response.pdf
 |       |-- VirtualGlove-Enclosure-Guide.pdf
 |       |-- VirtualGlove-Enclosure-Quick-Reference.pdf
 |       |-- VirtualGlove-Engineering-Journey.pdf
@@ -639,11 +624,9 @@ are intentionally omitted.
 |       |-- VirtualGlove-Input-Audit.pdf
 |       |-- VirtualGlove-Input-Modes.pdf
 |       |-- VirtualGlove-Matrix-Guide.pdf
-|       |-- VirtualGlove-Native-Emulation.pdf
 |       |-- VirtualGlove-Overview.pdf
 |       |-- VirtualGlove-Quick-Reference.pdf
 |       |-- VirtualGlove-Security.pdf
-|       |-- VirtualGlove-Super-Glove-Ball-Native.pdf
 |       |-- VirtualGlove-Third-Party-Notices.pdf
 |       `-- VirtualGlove-Troubleshooting.pdf
 |-- python
@@ -656,8 +639,18 @@ are intentionally omitted.
 |   |-- virtualglove-core-mount
 |   `-- virtualglove-service
 |-- retropie
+|   |-- arcade-cabinet-merger
+|   |   |-- retroarch
+|   |   |   |-- Arcade Merged Player 1.cfg
+|   |   |   `-- Arcade Merged Player 2.cfg
+|   |   |-- arcade-gamepad-merger
+|   |   |-- arcade-gamepad-merger.service
+|   |   |-- cabinet-controller-router-migration.py
+|   |   |-- propose-controller-router.py
+|   |   `-- README.txt
 |   |-- bin
 |   |   |-- virtualglove-bsb-zap
+|   |   |-- virtualglove-controller-router
 |   |   |-- virtualglove-dot
 |   |   |-- virtualglove-games
 |   |   |-- virtualglove-pair
@@ -668,6 +661,7 @@ are intentionally omitted.
 |   |   `-- VirtualGlove.cfg
 |   |-- runcommand-onend-virtualglove.sh
 |   |-- runcommand-onstart-virtualglove.sh
+|   |-- virtualglove-controller-router.service
 |   |-- virtualglove-games.service
 |   |-- virtualglove-receiver.service
 |   `-- virtualglove-receiver.timer
@@ -761,7 +755,8 @@ are intentionally omitted.
 |   |-- verify-app-lab-package.py
 |   |-- verify-batocera-native-core.py
 |   |-- verify-launchbox-native-core.py
-|   `-- verify-recalbox-native-core.py
+|   |-- verify-recalbox-native-core.py
+|   `-- virtualglove-controller-router
 |-- sketch
 |   |-- firmware_version.h
 |   |-- sketch.ino
@@ -778,6 +773,8 @@ are intentionally omitted.
 |       |-- console_monitor.py
 |       |-- control_server.py
 |       |-- controller_protocol.py
+|       |-- controller_router.py
+|       |-- controller_router_web.py
 |       |-- dashboard_web.py
 |       |-- debug_server.py
 |       |-- diagnostic_trace.py
@@ -835,6 +832,7 @@ are intentionally omitted.
 |   |-- setup_status_harness.mjs
 |   |-- test_academy_controls.py
 |   |-- test_academy_diagnostics.py
+|   |-- test_arcade_cabinet_merger.py
 |   |-- test_audit_regressions.py
 |   |-- test_batocera_native_core.py
 |   |-- test_benchmark_vision_replay.py
@@ -849,6 +847,7 @@ are intentionally omitted.
 |   |-- test_console_monitor.py
 |   |-- test_control_server.py
 |   |-- test_controller_protocol.py
+|   |-- test_controller_router.py
 |   |-- test_deployment_backup_rotation.py
 |   |-- test_direction_benchmark.py
 |   |-- test_dot_input.py

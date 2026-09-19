@@ -29,13 +29,44 @@ several minutes.
 | Platform | Where you install | How Player 1 works |
 | --- | --- | --- |
 | RetroPie | Raspberry Pi terminal | VirtualGlove appears beside your physical controller. |
-| Recalbox 10.x | Recalbox terminal as `root` | Your selected physical controller and VirtualGlove share **VirtualGlove Merged Player 1**. |
-| Batocera 38 or newer | Batocera terminal as `root` | Your selected physical controller and VirtualGlove share **VirtualGlove Merged Player 1**. |
+| Recalbox 10.x | Recalbox terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
+| Batocera 38 or newer | Batocera terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
 | LaunchBox | Windows PowerShell | Your physical XInput controller remains available while VirtualGlove supplies a managed RetroArch controller. |
 
 Most NES games use the included FCEUmm core. Super Glove Ball also supports the
 special **Nestopia (VirtualGlove)** core, which provides its native three-axis
 movement and glove actions. FCEUmm remains a complete joystick-mode fallback.
+
+### Optional Controller Router
+
+After pairing, Setup shows **Controller Router**. It lists only controllers
+already configured by EmulationStation. Review the suggested Player 1–4 choices,
+choose one player or Unassigned for each physical controller, choose at most one
+VirtualGlove player, then save. Opening the card never changes the console.
+
+Recalbox and Batocera automatically carry their released Player 1 selection into
+the new format. A normal RetroPie install keeps its separate `VirtualGlove`
+gamepad until Router is explicitly saved and applied. Original physical
+controllers remain the frontend controllers; merged outputs stay neutral
+outside FCEUmm. Router writes a core-specific FCEUmm override, so Nestopia
+(VirtualGlove) and other NES cores retain their existing physical-controller
+path.
+
+Use **Check controllers** and press a direction or button on each pad. Close any
+running FCEUmm game before changing assignments. **Restore previous assignments**
+provides an atomic rollback after a save.
+
+The same assignments can be managed locally without pairing. Open the console
+terminal and run the platform's persistent command:
+
+- RetroPie: `sudo /opt/virtualglove/bin/virtualglove-controller-router setup`
+- Recalbox: `sh /recalbox/share/system/virtualglove/scripts/virtualglove-controller-router setup`
+- Batocera: `sh /userdata/system/virtualglove/scripts/virtualglove-controller-router setup`
+
+The terminal screen detects the platform, shows controller connection state,
+tests live controls, assigns Players 1–4, and provides save and rollback actions.
+This local tool changes controller assignments only; secure
+Controller-to-console pairing remains a separate Setup step.
 
 ### Open a Controller terminal
 
@@ -144,6 +175,14 @@ VirtualGlove appears as a separate game controller. Your physical controller
 remains available for menus and gameplay. Registered games tell VirtualGlove
 which profile to use, and game exit safely releases all controls.
 
+The VirtualGlove development arcade cabinet optionally combines its I-PAC
+panel, supported 8BitDo controllers, and VirtualGlove into shared arcade-player
+devices. That cabinet-specific component is maintained with the project but is
+not enabled by the normal installer. Most RetroPie systems should keep the
+separate-controller arrangement above. See [VirtualGlove Input
+Modes](INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet)
+for the two designs and when each is appropriate.
+
 For Super Glove Ball, FCEUmm is the safe fallback. To use native glove control,
 choose `lr-nestopia-powerglove` for that ROM from RetroPie's launch menu.
 
@@ -188,10 +227,13 @@ curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/ins
 
 #### What the installer configures
 
-Recalbox receives one game controller named **VirtualGlove Merged Player 1**.
-It combines the selected physical controller with VirtualGlove during NES
-gameplay. The original controller continues to operate EmulationStation without
-duplicate menu movement. Player 2 and unrelated settings are preserved.
+Recalbox initially enables **VirtualGlove Merged Player 1**, preserving the
+selected physical controller and VirtualGlove arrangement. After pairing, the
+**Controller Router** card in Setup can enable merged Players 1–4, assign
+several configured physical controllers to one player, or move the one
+VirtualGlove to another player. Original controllers continue to operate
+EmulationStation without duplicate menu movement. Unrelated settings are
+preserved.
 
 Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
 core when a compatible core is available and you have not already made an
@@ -200,9 +242,9 @@ used.
 
 #### Checkpoint
 
-The final report should confirm automatic startup, the selected physical Player
-1 controller, and creation of **VirtualGlove Merged Player 1**. Pairing and live
-gameplay may still appear as `ACTION` items.
+The final report should confirm automatic startup, the initial physical Player
+1 controller, and the Controller Router output. Pairing, extra player
+assignments, and live gameplay may still appear as `ACTION` items.
 
 #### First game and updates
 
@@ -239,10 +281,13 @@ curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/ins
 
 #### What the installer configures
 
-Batocera receives one game controller named **VirtualGlove Merged Player 1**.
-It combines the selected physical controller with VirtualGlove during NES
-gameplay. The original controller continues to operate EmulationStation without
-duplicate menu movement. Player 2 and unrelated settings are preserved.
+Batocera initially enables **VirtualGlove Merged Player 1**, preserving the
+selected physical controller and VirtualGlove arrangement. After pairing, the
+**Controller Router** card in Setup can enable merged Players 1–4, assign
+several configured physical controllers to one player, or move the one
+VirtualGlove to another player. Original controllers continue to operate
+EmulationStation without duplicate menu movement. Unrelated settings are
+preserved.
 
 Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
 core when a compatible core is available and you have not already made an
@@ -251,9 +296,9 @@ used.
 
 #### Checkpoint
 
-The final report should confirm automatic startup, the selected physical Player
-1 controller, and creation of **VirtualGlove Merged Player 1**. Pairing and live
-gameplay may still appear as `ACTION` items.
+The final report should confirm automatic startup, the initial physical Player
+1 controller, and the Controller Router output. Pairing, extra player
+assignments, and live gameplay may still appear as `ACTION` items.
 
 #### First game and updates
 

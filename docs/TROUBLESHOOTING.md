@@ -158,10 +158,11 @@ Glove channel instead of also sending ordinary RetroPad input. Dashboard recogni
 by itself prove that an older Windows receiver has this correction.
 
 On generic RetroPie, confirm the separate `VirtualGlove` input device and its
-Player 1 mapping. On Recalbox or Batocera, run the installation check and confirm
-the selected physical controller is connected, **VirtualGlove Merged Player 1**
-exists, and its current index is assigned to NES Player 1. The merged device is
-intentionally neutral in EmulationStation. On LaunchBox, the installer must
+Player 1 mapping. If optional Controller Router is enabled—or on Recalbox and
+Batocera—open its Setup card or run `virtualglove-controller-router check`.
+Confirm each saved source is connected, every enabled **VirtualGlove Merged
+Player 1–4** output exists, and the current FCEUmm player indexes are assigned.
+Merged devices are intentionally neutral in EmulationStation. On LaunchBox, the installer must
 report `network-retropad`, a random high loopback port, and a validated isolation
 rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
 and physical XInput remain available. If gestures are recognized but FCEUmm does
@@ -175,7 +176,7 @@ failed; leave FCEUmm selected and do not copy a core from another target.
 Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
 before editing RetroArch settings.
 
-If a Recalbox/Batocera update reports several possible Player 1 controllers,
+If a fresh Recalbox/Batocera update reports several possible initial Player 1 controllers,
 run the installer with `--list-player1-devices`, identify the intended pad, and
 repeat it with `--player1-device DEVICE-ID`. Two identical, non-serialized pads
 are not guessed. If the selected pad disconnects during play, only its held

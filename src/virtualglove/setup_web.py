@@ -42,7 +42,8 @@ SETUP_CONTENT = """<style>main a{color:var(--cyan)}#players{margin-bottom:14px}#
 </div><details><summary>Advanced connection</summary><div class=formgrid><label>Receiver UDP port<input id=port name=port type=number min=1 max=65535 required></label></div></details>
 <div class=controls><button type=submit id=connection-save>Save connection</button><button class=secondary type=button id=test>Check console address</button></div><p class=setup-status-note>Checking an address confirms name resolution only—not pairing or gameplay.</p><p class=notice id=notice role=status aria-live=polite></p></fieldset><button id=setup-retry type=button hidden>Reload saved settings</button></form>
 </section>
-<section id=pairing-card class=card style="margin-bottom:14px"><div id=pairing-section class=connection-pairing role=region aria-labelledby=pair-title><h2 id=pair-title>Pair this Controller</h2>
+{{ROUTER_CONTENT}}
+<section id=pairing-card class=card style="margin-bottom:14px"><div id=pairing-section role=region aria-labelledby=pair-title><h2 id=pair-title>Pair this Controller</h2>
 <p id=secure-note></p>
 <div id=pair-wizard hidden>
 <p class=pair-destination>Saved console: <strong id=pair-destination>Loading…</strong> <a id=pair-change href=#connection-section>Change</a></p>
@@ -126,6 +127,7 @@ async function load(updateFields=false){
   savedConfig=c;
   renderPairing();
   $('setup-retry').hidden=true;
+  if(updateFields)window.dispatchEvent(new Event('virtualglove-config-loaded'));
 }
 async function initialLoad(){$('notice').textContent='Loading saved settings…';$('camera-notice').textContent='';try{await load(true);$('notice').textContent=''}catch(e){$('notice').textContent='Could not load saved settings. '+e.message;$('setup-retry').hidden=false}}
 $('setup-retry').onclick=initialLoad;initialLoad();
@@ -251,7 +253,7 @@ $('pair-submit').onclick=async()=>{
  const payload={host:prepared.host,platform:prepared.platform,device_code:$('device-code').value};
  if(chosen==='ssh'){payload.username=$('pair-user').value.trim();payload.password=$('pair-password').value}else payload.code=$('pair-code').value.trim();
  pairingBusy=true;renderPairing();pairNotice('Pairing in progress. Waiting for the console…');focusPairing('pair-pending-heading');
- try{const result=await api('/api/pair/'+chosen,payload);if(result.paired!==true)throw Error('The Controller did not confirm pairing.');prepared=null;lockedUntil=0;clearSecrets();$('pair-notice').textContent='Pairing complete. The console receiver was restarted.';moveTo(4)}
+ try{const result=await api('/api/pair/'+chosen,payload);if(result.paired!==true)throw Error('The Controller did not confirm pairing.');prepared=null;lockedUntil=0;clearSecrets();$('pair-notice').textContent='Pairing complete. The console receiver was restarted.';moveTo(4);window.dispatchEvent(new Event('virtualglove-paired'))}
  catch(e){prepared=null;clearSecrets();retryConfirmation=true;$('pair-notice').textContent=(e.message||'Connection lost. Pairing could not be confirmed.')+' Start a new Controller confirmation before retrying.';moveTo(2);focusPairing('pair-notice')}
  finally{payload.password='';payload.code='';payload.device_code='';pairingBusy=false;expirePairing()}
 };
@@ -316,6 +318,11 @@ from .joystick_web import JOYSTICK_CONTENT, JOYSTICK_SCRIPT
 
 SETUP_CONTENT = SETUP_CONTENT.replace("{{JOYSTICK_CONTENT}}", JOYSTICK_CONTENT)
 SETUP_SCRIPT += "\n" + JOYSTICK_SCRIPT
+
+from .controller_router_web import ROUTER_CONTENT, ROUTER_SCRIPT
+
+SETUP_CONTENT = SETUP_CONTENT.replace("{{ROUTER_CONTENT}}", ROUTER_CONTENT)
+SETUP_SCRIPT += "\n" + ROUTER_SCRIPT
 
 
 from .connection_doctor_web import DOCTOR_CONTENT, DOCTOR_SCRIPT

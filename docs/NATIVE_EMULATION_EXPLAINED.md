@@ -53,10 +53,11 @@ assuming that the more technical reader or larger buffer count is faster.
 
 ## Joystick-style input: directions and buttons
 
-With FCEUmm, the console exposes VirtualGlove as Player 1 input. Generic RetroPie
-uses a separate **VirtualGlove** virtual gamepad. Recalbox and Batocera expose
-**VirtualGlove Merged Player 1**, combining a selected physical controller and
-gestures in one NES gamepad while leaving the original pad in charge of the
+With FCEUmm, the console exposes VirtualGlove as RetroPad input. Generic
+RetroPie uses a separate **VirtualGlove** virtual gamepad unless optional
+Controller Router is enabled. Recalbox and Batocera use Controller Router's
+enabled **VirtualGlove Merged Player 1–4** outputs, combining assigned physical
+controllers and gestures while leaving the original pads in charge of the
 frontend. LaunchBox retains physical XInput plus a loopback Network RetroPad
 for FCEUmm games, with real keyboard bindings as a manual fallback. Native Super Glove Ball bypasses that RetroPad path
 and consumes only the guarded native record, while its core additionally
