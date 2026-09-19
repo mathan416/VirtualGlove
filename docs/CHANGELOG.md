@@ -108,6 +108,13 @@ authoritative record for line-level and file-level history.
 
 ### Changed
 
+- Rewrote the Installation Guide as a concise 0.5.0 walkthrough. RetroPie,
+  Recalbox, Batocera, and LaunchBox now follow the same install, checkpoint,
+  first-game, and update structure; low-level build and integration details
+  remain in the technical references instead of blocking the setup steps. The
+  architecture, native-emulation, configuration, and compatibility guides now
+  use the same platform terminology and distinguish completed physical tests
+  from packaged-but-not-yet-played hardware targets.
 - Renamed the internal Python package and command entry points to the
   `virtualglove` namespace. Source imports, installers, console launchers,
   tests, engineering tools, and package metadata now use the current product

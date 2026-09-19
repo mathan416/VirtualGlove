@@ -99,14 +99,15 @@ use the platform installer from the same release as the Controller:
 
 | Console | Command and account |
 | --- | --- |
-| RetroPie | `bash install-retropie.sh --version VERSION --peer UNO-Q-NAME.local` as the normal RetroPie user |
-| Recalbox 10.x | `bash install-recalbox.sh --version VERSION --peer UNO-Q-NAME.local` as `root` |
-| Batocera 38+ | `bash install-batocera.sh --version VERSION --peer UNO-Q-NAME.local` as `root` |
+| RetroPie | Download and run the latest `install-retropie.sh` as the normal RetroPie user |
+| Recalbox 10.x | Download and run the latest `install-recalbox.sh` as `root` |
+| Batocera 38+ | Download and run the latest `install-batocera.sh` as `root` |
 | LaunchBox x86-64 | Run `launchbox\install-launchbox.ps1` as the Windows user who runs LaunchBox |
 
-Replace `VERSION` with the same published v0.5.0 tag on both machines. The
-[Installation Guide](INSTALL_README.md#3-install-the-console) gives full commands,
-persistent paths, prerequisites, and checks.
+The Linux installers select the latest stable release and ask for the Controller
+name on a first installation. The
+[Installation Guide](INSTALL_README.md#3-install-the-console) gives the complete
+copyable commands, prerequisites, questions, and checkpoints.
 
 Recalbox and Batocera select one configured physical Player 1 controller. One
 connected pad is automatic; with several, run the matching installer with

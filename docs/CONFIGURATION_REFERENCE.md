@@ -2876,17 +2876,22 @@ Publishing, tagging, or deploying firmware is not implied by building packages.
 
 Automated tests cover isolated fresh-directory installs and repeat updates,
 archive rejection, download failure, and settings preservation. These are not
-fresh-device tests. The current Controller and RetroPie paths have been deployed
-on the existing cabinet. On the available Raspberry Pi 3 running Recalbox
-10.1's `rpizero2` target, registered Super Mario Bros., native Super Glove Ball,
-simultaneous physical-joypad use, and reboot persistence have passed. Exact-image
-Recalbox targets other than `rpizero2`, Batocera hardware, and LaunchBox native
-gameplay remain explicit v0.5.0 acceptance items. Recalbox 10.1 packages do
-include manifest-verified binaries and complete source archives for all seven
-supported targets; packaging does not substitute for those hardware checks.
-Run read-only checks on both
-devices after installation; no automated check proves that a hand gesture
-controls a game correctly.
+fresh-device tests. Current physical evidence is recorded separately from
+package coverage:
+
+| Platform | Physical validation completed | Still platform-specific |
+| --- | --- | --- |
+| Controller and RetroPie | Fresh install and v0.4.2 upgrade paths, FCEUmm games, native Super Glove Ball, pairing, and preserved player/device data | Repeat after relevant installer, transport, or core changes. |
+| Recalbox 10.1 `rpizero2` on Raspberry Pi 3 | Super Mario Bros. through FCEUmm, native Super Glove Ball, simultaneous physical-joypad use, and reboot persistence | The other six packaged targets still require their own hardware checks. |
+| Batocera 43u.1 x86-64 | Installation, persistent startup integration, architecture resolution, native-core verification/load test, and secure pairing | FCEUmm and native Super Glove Ball physical gameplay remain to be completed on this machine; the other packaged architectures also require target hardware checks. |
+| LaunchBox on Windows x86-64 | Installation and wrapped launch, Super Mario Bros. through the Network RetroPad, native Super Glove Ball, Start-path correction, directional holds/releases, and physical-gamepad availability | Repeat after relevant Windows, RetroArch, wrapper, firewall, or native-core changes. |
+
+Recalbox 10.1 packages contain manifest-verified binaries and complete source
+archives for all seven supported targets. Batocera 43.1 packages contain the
+same evidence for 15 architectures. Packaging and a successful load test do not
+substitute for gameplay on each hardware target. Run read-only checks after
+installation, then test a real registered game; no automated check proves that
+a hand gesture controlled it.
 
 ### Shared installer and application sources
 

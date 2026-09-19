@@ -16,39 +16,19 @@ VirtualGlove recognizes the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current stable release: v0.4.2**
+**Current release: v0.5.0**
 
-Development toward **v0.5.0** adds installation targets for Recalbox 10.x,
-Batocera 38+, and LaunchBox on Windows x86-64, while retaining RetroPie. Recalbox and
-Batocera create **VirtualGlove Merged Player 1**, a gamepad that combines the
-chosen physical controller with gestures for NES gameplay. LaunchBox adds a
-loopback-only RetroPad beside its physical XInput controller while retaining
-real keyboard controls as a manual fallback. All targets keep
-their services, game hooks, pairing, and configuration in each console's
-supported persistent storage. They are under validation and are not part of
-the stable v0.4.2 downloads yet. Batocera packages now carry 15 target-built,
-separately named Nestopia (VirtualGlove) cores for native Super Glove Ball
-without replacing stock Nestopia. The installer resolves the Batocera target,
-verifies the packaged binary and corresponding source, and load-tests the core
-on the console before exposing it. Recalbox packages are selected by its exact
-target (`rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, or
-`x86_64`) and verified against their recorded ELF identity. Within Recalbox
-10.x, an exact release build is preferred and the newest packaged 10.x build is
-the load-tested fallback. Builds are never reused across a major release. The available
-Raspberry Pi 3 running Recalbox's `rpizero2` image has passed Super Mario Bros.,
-native Super Glove Ball, physical-joypad coexistence, and reboot-persistence
-checks. Recalbox 10.1 binaries and corresponding source archives are packaged
-for all seven targets; targets other than the tested `rpizero2` image remain
-subject to their own load and hardware validation. An unpackaged or unloadable
-target safely keeps using FCEUmm. LaunchBox reports conflicts affecting its
-manual keyboard fallback without disabling the independent VirtualGlove RetroPad.
-Its installer load-tests the separate Windows Nestopia core and its
-wrapper falls back to FCEUmm joystick mode if that DLL is later missing or changed.
-The v0.5.0 installers also provide a guarded upgrade from the released v0.4.2
-Controller and RetroPie packages: the retired managed runtime is verified and
-backed up before removal, while players, calibration, tuning, pairing, device
-configuration, game registries, ROMs, saves, and controller assignments are
-preserved. Unexpected local runtime changes stop the upgrade before it writes.
+VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
+64-bit Windows. Recalbox and Batocera combine the selected physical controller
+and VirtualGlove as **VirtualGlove Merged Player 1**. LaunchBox keeps physical
+XInput beside VirtualGlove's managed RetroArch controller. Every platform keeps
+the physical controller usable and preserves unrelated controller settings.
+
+Ordinary NES games use FCEUmm. Super Glove Ball can also use the separately
+named Nestopia (VirtualGlove) core for native movement and glove actions without
+replacing stock Nestopia. The v0.5.0 installers provide a guarded upgrade from
+v0.4.2 while preserving players, calibration, tuning, pairing, device settings,
+game registrations, ROMs, saves, and controller assignments.
 
 ## Why VirtualGlove?
 
@@ -75,7 +55,7 @@ preserved. Unexpected local runtime changes stop the upgrade before it writes.
 
 - An Arduino UNO Q provisioned through Arduino App Lab
 - A supported console: RetroPie, Recalbox 10.x, Batocera 38+, or LaunchBox with
-  64-bit Windows and 64-bit RetroArch (the latter three are v0.5.0 targets)
+  64-bit Windows and 64-bit RetroArch
 - A UVC-compatible USB camera and powered USB hub
 - A physical controller for RetroArch setup and recovery
 - Both devices on the same trusted local network with internet access during
@@ -87,8 +67,8 @@ parts, expected cost, and difficulty.
 
 ## Install VirtualGlove
 
-These steps install the current stable release. Install the **same
-version on both devices** and close any running RetroArch game first. The scripts
+These steps install the latest stable release. Install the **same version on
+both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
 
@@ -104,9 +84,7 @@ Open a terminal on the UNO Q and run:
 
 ```sh
 cd /home/arduino
-curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-uno-q.sh
-bash install-uno-q.sh --version v0.4.2
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh && bash install-uno-q.sh
 ```
 
 On a first installation, the installer suggests **virtualglove** as the
@@ -123,34 +101,20 @@ host helpers.
 
 ### 4. Install the console software
 
-For the current stable v0.4.2 release, open a terminal on RetroPie and run:
-
-```sh
-curl -fLO \
-  https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-retropie.sh
-bash install-retropie.sh --version v0.4.2
-```
-
-If an older Buster-based RetroPie reports that its Raspbian repository has no
-Release file, stop and follow [Buster package source moved](docs/TROUBLESHOOTING.md#buster-package-source-moved),
-then rerun this step. The installer does not silently rewrite operating-system
-repositories.
-
-For v0.5.0, choose exactly one console installer:
+Choose exactly one console installer:
 
 | Console | Run on the console | Installed in |
 | --- | --- | --- |
-| RetroPie | `bash install-retropie.sh --version VERSION` | `/opt/virtualglove-src` and `/etc/virtualglove` |
-| Recalbox | `bash install-recalbox.sh --version VERSION` as `root` | `/recalbox/share/system/virtualglove` |
-| Batocera | `bash install-batocera.sh --version VERSION` as `root` | `/userdata/system/virtualglove` |
+| RetroPie | `install-retropie.sh` as the normal user | `/opt/virtualglove-src` and `/etc/virtualglove` |
+| Recalbox | `install-recalbox.sh` as `root` | `/recalbox/share/system/virtualglove` |
+| Batocera | `install-batocera.sh` as `root` | `/userdata/system/virtualglove` |
 | LaunchBox | `install-launchbox.ps1` as the Windows player | `%LOCALAPPDATA%\VirtualGlove` |
 
-Replace `VERSION` with the same published v0.5.0 prerelease or release tag used
-on the Controller. Download the matching Linux installer from that release's
-GitHub assets. LaunchBox is installed from the extracted Windows package. The
-complete [Installation
-Guide](docs/INSTALL_README.md#3-install-the-console) has copyable commands for all
-four platforms.
+Each Linux command downloads the latest installer from GitHub and selects the
+latest stable release automatically. LaunchBox is installed from the extracted
+Windows package. The complete [Installation
+Guide](docs/INSTALL_README.md#3-install-the-console) has copyable commands,
+prerequisites, questions, and checkpoints for all four platforms.
 
 Each installer uses the platform's persistent storage, preserves ROMs, saves,
 the game registry, pairing, and unrelated controller configuration, and keeps a
@@ -324,25 +288,17 @@ its local Help page.
 
 ## Project status
 
-The stable v0.4.2 release keeps the proven CPU MediaPipe Hands path, Programs 1–14,
-guided readiness checks, and live dead-zone visualization. It adds live
-rapid-fire controls, source-accurate rapid defaults, leaner documentation and
-deployment packages, cached Dashboard status inputs, and removal of retired
-pre-0.4.1 compatibility and protocol paths. The release updates
-the UNO Q and RetroPie together while preserving pairing, players, calibration,
-tuning, Academy progress, and the installed game registry.
+VirtualGlove 0.5.0 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
+guided readiness checks, live dead-zone visualization, and source-accurate
+rapid-fire behavior. It extends the authenticated console integration to
+Recalbox, Batocera, and LaunchBox while retaining RetroPie.
 
-The v0.5.0 development line extends the same authenticated design to Recalbox,
-Batocera, and LaunchBox. Recalbox and Batocera use a persistent merged Player 1
-gamepad with a separately selected frontend controller; LaunchBox uses a
-LAN-isolated local RetroPad while leaving XInput and real keys available. Recalbox on the
-available Raspberry Pi 3 has passed
-registered FCEUmm play, native Super Glove Ball, simultaneous physical-joypad
-use, and reboot persistence. Batocera's 15 packaged architectures and LaunchBox's
-Windows x86-64 DLL have reproducible build, package, and runtime checks; live
-Batocera and LaunchBox gameplay acceptance remains required before release.
-Different cameras, rooms, players, controllers, operating-system images, and
-console architectures remain valuable real-world tests.
+Recalbox and Batocera use a persistent merged Player 1 gamepad with the selected
+physical controller. LaunchBox uses a local RetroPad while leaving XInput and
+real keyboard controls available. Every platform supports registered FCEUmm
+games and the separately named Nestopia (VirtualGlove) path for native Super
+Glove Ball. The installers update managed files while preserving pairing,
+players, calibration, tuning, Academy progress, games, ROMs, and saves.
 
 Use Setup's **Download system report** when asking for help. It records useful
 software, camera, controller, and connection health without including video,

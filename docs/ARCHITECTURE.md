@@ -531,6 +531,10 @@ Glove Ball actions are mapped. The raw roll byte and unobserved button codes
 remain neutral because the exact ROM has shown no separate action for them;
 guessing values could create unintended input. Stock Nestopia remains untouched.
 RetroPie registers the custom core in its normal secondary-core directory.
+Recalbox keeps a target-specific core in its persistent share and exposes the
+separate core plus a current system-list entry through reversible runtime
+mounts. Its bounded RetroArch process monitor recognizes the actual core command
+line and authenticates the same native profile identity used by RetroPie.
 Batocera keeps the architecture-selected core in persistent `/userdata`, then uses two
 reversible overlay mounts to expose only the separately named core and matching
 info record through Batocera's read-only core paths. The core forces its own
@@ -542,6 +546,13 @@ release carries 15 separately targeted Batocera 43.1 cores; it never treats one
 binary as cross-architecture. Exact registered Super Glove Ball filenames are
 selected only when no existing per-ROM core choice is present. See the
 [native compatibility record](super-glove-ball-native.md).
+
+LaunchBox installs a separately named x86-64 DLL and corresponding source in
+its per-user VirtualGlove directory. The wrapper verifies the installed DLL
+before each native launch and publishes the guarded record through a per-user
+Windows file mapping. A missing or changed DLL selects FCEUmm instead. Ordinary
+LaunchBox profiles continue through the loopback Network RetroPad; native Super
+Glove Ball never duplicates those gestures through that route.
 
 The optional project-owned `lr-powerglove-dot` core reads the same guarded
 native-state record but does not emulate a Power Glove packet or load a ROM. A

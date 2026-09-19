@@ -3,7 +3,9 @@
 VirtualGlove offers two ways to turn the same recognized hand into game
 input. Most supported games use ordinary NES-style directions and buttons.
 Super Glove Ball can instead consume a native Power Glove packet through
-**Nestopia (PowerGlove)**, the separate `lr-nestopia-powerglove` core.
+**Nestopia (VirtualGlove)**, the separately named native core. Linux keeps the
+internal `lr-nestopia-powerglove` compatibility name; LaunchBox uses the
+matching Windows DLL without exposing that internal name to the player.
 
 The distinction is what the game receives. It does not require a second camera
 system or a different hand calibration.
@@ -61,14 +63,6 @@ This is useful for games expecting a conventional controller. Original Programs
 registered titles can also apply the documented rapid-fire exceptions. They do
 not teach the game to understand continuous hand coordinates. FCEUmm remains an
 explicit, complete joystick-style fallback for Super Glove Ball.
-
-The numeric set also includes deliberate hybrid and no-gesture modes. Program 2
-keeps Program 1 joystick output while adding live centering feedback. Program 13
-keeps the camera active for gesture A/B but emits no camera D-pad, allowing the
-merged physical Player 1 controller to provide movement. Program 14 closes the
-camera and neutralizes every VirtualGlove control while retaining the visible
-profile and authenticated game session. These are still joystick-session
-profiles; none activates the native packet path.
 
 Three numeric profiles deliberately change how the camera participates:
 Program 2 adds live centering feedback without changing the saved calibration;
@@ -152,6 +146,16 @@ The modified core preserves stock Nestopia and leaves FCEUmm available. The
 console selects it for the chosen ROM rather than changing every NES game. Its launch
 configuration attaches the emulated Power Glove before the game's detection
 sequence begins.
+
+| Platform | Native-core delivery and selection |
+| --- | --- |
+| RetroPie | Builds the separate Linux core from pinned source and offers it in the per-ROM launch menu. FCEUmm remains selected until the player changes that ROM. |
+| Recalbox | Installs a verified target-specific core in persistent storage, exposes it through a reversible runtime overlay, and creates an exact-ROM choice only when no choice already exists. |
+| Batocera | Resolves one of the packaged architecture builds, verifies and load-tests it, then exposes it through reversible overlays and an exact-ROM choice. |
+| LaunchBox | Installs the verified x86-64 DLL beside its corresponding source and lets the VirtualGlove RetroArch wrapper choose it only for an exact registered Super Glove Ball filename. |
+
+Every platform fails safely to FCEUmm when the native artifact is missing,
+changed, incompatible, or not selected. No installer replaces stock Nestopia.
 
 The receiver's shared record and the ROM's packet are different formats: the
 record is a 64-byte host interface; the game reads the ten-byte emulated packet.

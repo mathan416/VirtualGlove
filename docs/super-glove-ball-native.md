@@ -69,6 +69,19 @@ It remains outside the source tree and release packages. These results apply to
 that exact image; never silently turn a NESdev assumption into a compatibility
 claim for another revision.
 
+### Platform validation status
+
+| Platform | Native Super Glove Ball evidence |
+| --- | --- |
+| RetroPie | Completed cabinet play confirms detection, Start, continuous movement, depth, grab/throw, Robo-Bullet, and Power Punch. |
+| Recalbox 10.1 `rpizero2` on Raspberry Pi 3 | Native gameplay, simultaneous physical-joypad use, and reboot persistence passed. Other packaged Recalbox targets retain their own hardware-validation requirement. |
+| Batocera 43u.1 x86-64 | The installer resolved, verified, and load-tested the packaged x86-64 core and pairing passed. Physical native gameplay on this machine has not yet been recorded. |
+| LaunchBox on Windows x86-64 | Native gameplay passed through the separately named DLL. VirtualGlove movement worked, and the physical gamepad supplied Start during diagnosis before the corrected V-sign Start path also passed. |
+
+These platform results supplement the exact-ROM software evidence above. They
+do not make one target's binary, controller mapping, or operating-system
+integration evidence for another target.
+
 ## Confirmed exact-ROM packet
 
 The ROM does not consume the full twelve-byte shape described by some secondary
