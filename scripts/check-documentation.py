@@ -231,6 +231,13 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     title_aliases = {
         "1943 - The Battle of Midway": "1943",
         "Iron Tank - The Invasion of Normandy": "Iron Tank",
+        "Legend of Zelda II, The - The Adventure of Link": "Zelda II - The Adventure of Link",
+        "Life Force - Salamander": "Life Force",
+        "Sesame Street ABC & 123": "Sesame Street 1-2-3",
+        "Super Mario Bros. + Duck Hunt": "Super Mario Bros.",
+        "Super Mario Bros. + Duck Hunt + World Class Track Meet": "Super Mario Bros.",
+        "Super Mario Bros. + Tetris + Nintendo World Cup": "Super Mario Bros.",
+        "Xevious - The Avenger": "Xevious",
     }
     def normalize_title(value):
         """Normalize registered ROM filenames to handbook game titles."""

@@ -232,6 +232,26 @@ class ProfileTests(unittest.TestCase):
                 settings = select_profile_settings(registry, "nes", name + extension)
                 self.assertEqual(settings["profile"] if settings else None, expected)
 
+    def test_shipped_registry_covers_collection_aliases_and_combo_carts(self):
+        registry = load_registry(Path(__file__).resolve().parents[1] / "config/games.json")
+        expected = {
+            "Legend of Zelda II, The - The Adventure of Link (USA).7z": "program_1",
+            "Life Force - Salamander (Europe).zip": "program_5",
+            "Xevious - The Avenger (USA).7z": "program_5",
+            "Sesame Street ABC & 123 (USA).7z": "program_f",
+            "Super Mario Bros. + Duck Hunt (USA).7z": "program_12",
+            "Super Mario Bros. + Duck Hunt + World Class Track Meet (USA) (Rev A).7z": "program_12",
+            "Super Mario Bros. + Tetris + Nintendo World Cup (Europe) (Rev A).7z": "program_12",
+        }
+        for name, profile in expected.items():
+            settings = select_profile_settings(registry, "nes", name)
+            self.assertEqual(settings["profile"] if settings else None, profile)
+
+        blaster = select_profile_settings(registry, "nes", "Blaster Master (Europe).zip")
+        self.assertEqual(blaster, {"profile": "program_1", "rapid_a": False})
+        racket = select_profile_settings(registry, "nes", "Racket Attack (Europe).zip")
+        self.assertEqual(racket, {"profile": "program_1", "rapid_a": False, "rapid_b": False})
+
     def test_command_server_acknowledges_profile(self):
         token = "a-long-test-token"
         server = ProfileCommandServer("127.0.0.1", 0, token)
