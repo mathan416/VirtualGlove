@@ -44,7 +44,9 @@ from virtualglove.control_server import (
     ControlState, help_document_page, help_index_page, start_control_server,
 )
 from virtualglove.debug_server import SharedDebugState
-from virtualglove.help_content import enclosure_asset, guide_pdf, help_asset, render_markdown
+from virtualglove.help_content import (
+    enclosure_asset, guide_pdf, help_asset, help_document_content, render_markdown,
+)
 from virtualglove.help_content import cabinet_reference_content, request_browser_address
 from virtualglove.vision_app import (
     _base_status, _effective_profile, _requested_rapid_fire,
@@ -810,6 +812,7 @@ class ControlStateTests(unittest.TestCase):
             "virtualglove-controller-dock-left.png",
             "virtualglove-controller-dock-right.png",
             "virtualglove-controller-dock-exploded.png",
+            "virtualglove-enclosure-quick-reference.png",
         ):
             with self.subTest(preview_name=preview_name):
                 self.assertEqual(
@@ -818,6 +821,17 @@ class ControlStateTests(unittest.TestCase):
                 )
         self.assertIsNone(enclosure_asset("../../data/device.json"))
         self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
+
+    def test_enclosure_quick_reference_help_uses_the_printable_pictograph(self):
+        document = help_document_content("enclosure-quick-reference")
+        self.assertIsNotNone(document)
+        assert document is not None
+        page, _title = document
+        self.assertIn(
+            "/help-enclosure/previews/virtualglove-enclosure-quick-reference.png",
+            page,
+        )
+        self.assertNotIn("Fit the inserts and mount the UNO Q", page)
 
     def test_help_routes_serve_html_markdown_and_images(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
@@ -853,6 +867,7 @@ class ControlStateTests(unittest.TestCase):
                 ("/help-enclosure/previews/virtualglove-controller-dock-left.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-right.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference.png", "image/png"),
                 ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)

@@ -684,99 +684,240 @@ def _quick_part_icon(canvas: Canvas, kind: str, x: float, y: float) -> None:
         canvas.circle(x - 20, y - 12, 4, fill=0, stroke=1)
 
 
-def _assembly_parts_strip(canvas: Canvas, items: list[tuple[str, str]], y: float) -> None:
-    """Draw the shared workbench inventory for the one-page assembly map."""
+def _pict_arrow(canvas: Canvas, x1: float, y1: float, x2: float, y2: float,
+                colour: colors.Color = RED, line_width: float = 2.2) -> None:
+    """Draw a bold motion arrow for a pictograph panel."""
+    angle = math.atan2(y2 - y1, x2 - x1)
+    canvas.setStrokeColor(colour)
+    canvas.setLineWidth(line_width)
+    canvas.line(x1, y1, x2, y2)
+    size = 6
+    canvas.line(x2, y2, x2 - size * math.cos(angle - 0.55),
+                y2 - size * math.sin(angle - 0.55))
+    canvas.line(x2, y2, x2 - size * math.cos(angle + 0.55),
+                y2 - size * math.sin(angle + 0.55))
+
+
+def _pict_check(canvas: Canvas, x: float, y: float, good: bool = True) -> None:
+    """Draw the manual's positive check or stop mark."""
+    colour = colors.HexColor("#168153") if good else RED
+    canvas.setStrokeColor(colour)
+    canvas.setLineWidth(2.8)
+    canvas.circle(x, y, 9, fill=0, stroke=1)
+    if good:
+        canvas.line(x - 5, y, x - 1, y - 4)
+        canvas.line(x - 1, y - 4, x + 6, y + 5)
+    else:
+        canvas.line(x - 5, y - 5, x + 5, y + 5)
+        canvas.line(x - 5, y + 5, x + 5, y - 5)
+
+
+def _pict_base(canvas: Canvas, x: float, y: float, width: float = 112,
+               height: float = 52, dock: bool = False) -> None:
+    """Draw a simplified black-line enclosure base."""
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.8)
+    canvas.setFillColor(colors.white)
+    canvas.roundRect(x, y, width, height, 6, fill=1, stroke=1)
+    canvas.setLineWidth(0.9)
+    canvas.roundRect(x + 7, y + 7, width - 14, height - 14, 3, fill=0, stroke=1)
+    for px, py in ((x + 12, y + 12), (x + width - 12, y + 12),
+                   (x + 12, y + height - 12), (x + width - 12, y + height - 12)):
+        canvas.circle(px, py, 3.3, fill=0, stroke=1)
+    if dock:
+        canvas.line(x + width * 0.53, y + 5, x + width * 0.53, y + height - 5)
+
+
+def _pict_board(canvas: Canvas, x: float, y: float, width: float = 74,
+                height: float = 42) -> None:
+    """Draw a simplified UNO Q with a highlighted USB-C connector."""
+    canvas.setFillColor(colors.HexColor("#E3FBFD"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.6)
+    canvas.roundRect(x, y, width, height, 2, fill=1, stroke=1)
+    for px, py in ((x + 7, y + 7), (x + width - 7, y + 7),
+                   (x + 7, y + height - 7), (x + width - 7, y + height - 7)):
+        canvas.circle(px, py, 2, fill=0, stroke=1)
+    canvas.setFillColor(CYAN)
+    canvas.setStrokeColor(BLUE)
+    canvas.rect(x + width - 7, y + height / 2 - 7, 10, 14, fill=1, stroke=1)
+
+
+def _pict_lid(canvas: Canvas, x: float, y: float, width: float = 112,
+              height: float = 52, dock: bool = False) -> None:
+    """Draw a lid, Matrix opening, and optional Dock service opening."""
+    canvas.setFillColor(colors.HexColor("#F3F5F8"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.8)
+    canvas.roundRect(x, y, width, height, 6, fill=1, stroke=1)
+    canvas.setStrokeColor(CYAN)
+    canvas.setLineWidth(2.4)
+    canvas.rect(x + width / 2 - 16, y + height / 2 - 11, 32, 22, fill=0, stroke=1)
+    if dock:
+        canvas.setStrokeColor(NIGHT)
+        canvas.setLineWidth(1.2)
+        canvas.rect(x + width - 30, y + height - 13, 21, 8, fill=0, stroke=1)
+
+
+def _pict_hub(canvas: Canvas, x: float, y: float, width: float = 92,
+              height: float = 27) -> None:
+    """Draw the Arduino USB-C Hub with its outward-facing ports."""
+    canvas.setFillColor(colors.HexColor("#EEF1F5"))
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(1.7)
+    canvas.roundRect(x, y, width, height, 3, fill=1, stroke=1)
+    for offset in (9, 29, 49, 69):
+        canvas.rect(x + offset, y - 1, 12, 6, fill=0, stroke=1)
+
+
+def _pict_driver(canvas: Canvas, x: float, y: float,
+                 heat_tool: bool = False) -> None:
+    """Draw a hand-tool silhouette without relying on font glyphs."""
+    canvas.setStrokeColor(NIGHT)
+    canvas.setLineWidth(6)
+    canvas.line(x, y, x + 22, y + 22)
+    canvas.setLineWidth(2)
+    canvas.line(x + 22, y + 22, x + 39, y + 39)
+    if heat_tool:
+        canvas.setStrokeColor(colors.HexColor("#D7A83D"))
+        canvas.setLineWidth(3)
+        canvas.line(x + 39, y + 39, x + 46, y + 46)
+        canvas.setStrokeColor(RED)
+        canvas.setLineWidth(1.2)
+        canvas.arc(x + 36, y + 37, x + 52, y + 53, 20, 140)
+
+
+def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
+               width: float, height: float) -> None:
+    """Draw one assembly action as line art with arrows and checks."""
+    cx = x + width / 2
+    if kind == "inserts":
+        _pict_base(canvas, cx - 55, y + 10, 110, 50)
+        targets = ((cx - 43, y + 22), (cx + 43, y + 22),
+                   (cx - 43, y + 48), (cx + 43, y + 48))
+        for index, (tx, ty) in enumerate(targets):
+            sx = cx - 42 + index * 28
+            canvas.setFillColor(colors.HexColor("#D7A83D"))
+            canvas.setStrokeColor(NIGHT)
+            canvas.circle(sx, y + 94, 4.2, fill=1, stroke=1)
+            _pict_arrow(canvas, sx, y + 87, tx, ty + 6, BLUE, 1.5)
+        _pict_driver(canvas, x + width - 48, y + 70, heat_tool=True)
+        canvas.setFillColor(NIGHT)
+        canvas.setFont("Helvetica-Bold", 8)
+        canvas.drawString(x + 8, y + 95, "x4")
+    elif kind in {"board", "dock-board"}:
+        dock = kind == "dock-board"
+        base_width = 132 if dock else 112
+        _pict_base(canvas, cx - base_width / 2, y + 8, base_width, 52, dock=dock)
+        _pict_board(canvas, cx - 37, y + 74)
+        _pict_arrow(canvas, cx - 23, y + 70, cx - 23, y + 54, BLUE)
+        _pict_arrow(canvas, cx + 23, y + 70, cx + 23, y + 54, BLUE)
+        canvas.setStrokeColor(RED)
+        canvas.setLineWidth(1.5)
+        canvas.line(cx + 37, y + 95, x + width - 12, y + 95)
+        canvas.setFillColor(RED)
+        canvas.setFont("Helvetica-Bold", 7)
+        canvas.drawRightString(x + width - 8, y + 92, "USB-C")
+    elif kind == "plug":
+        canvas.setStrokeColor(NIGHT)
+        canvas.setLineWidth(2)
+        canvas.rect(x + 18, y + 67, 34, 28, fill=0, stroke=1)
+        canvas.setFillColor(CYAN)
+        canvas.rect(x + 49, y + 74, 8, 14, fill=1, stroke=1)
+        canvas.setFillColor(colors.HexColor("#EEF1F5"))
+        canvas.roundRect(x + 102, y + 73, 30, 16, 4, fill=1, stroke=1)
+        canvas.rect(x + 94, y + 77, 9, 8, fill=1, stroke=1)
+        _pict_arrow(canvas, x + 90, y + 81, x + 62, y + 81, BLUE)
+        _pict_check(canvas, x + 145, y + 82, True)
+        canvas.setStrokeColor(NIGHT)
+        canvas.setLineWidth(2)
+        canvas.rect(x + 18, y + 18, 34, 28, fill=0, stroke=1)
+        canvas.setStrokeColor(RED)
+        canvas.line(x + 91, y + 20, x + 59, y + 37)
+        canvas.setLineWidth(5)
+        canvas.line(x + 103, y + 14, x + 91, y + 20)
+        _pict_check(canvas, x + 145, y + 31, False)
+    elif kind in {"close", "dock-close"}:
+        dock = kind == "dock-close"
+        base_width = 132 if dock else 112
+        _pict_base(canvas, cx - base_width / 2, y + 7, base_width, 48, dock=dock)
+        _pict_lid(canvas, cx - base_width / 2, y + 72, base_width, 48, dock=dock)
+        _pict_arrow(canvas, cx - 36, y + 68, cx - 36, y + 52, BLUE)
+        _pict_arrow(canvas, cx + 36, y + 68, cx + 36, y + 52, BLUE)
+        _pict_driver(canvas, x + width - 48, y + 77)
+        _pict_check(canvas, x + width - 18, y + 22, True)
+    elif kind == "hub":
+        _pict_base(canvas, x + 10, y + 10, width - 20, 55, dock=True)
+        _pict_hub(canvas, x + 56, y + 80, 92, 27)
+        _pict_arrow(canvas, x + 105, y + 76, x + 105, y + 58, BLUE)
+        canvas.setFillColor(RED)
+        canvas.setFont("Helvetica-Bold", 7)
+        canvas.drawRightString(x + width - 8, y + 91, "PORTS OUT")
+    elif kind == "cable":
+        _pict_board(canvas, x + 10, y + 66, 62, 36)
+        _pict_hub(canvas, x + 92, y + 72, 65, 23)
+        canvas.setStrokeColor(BLUE)
+        canvas.setLineWidth(2.4)
+        canvas.bezier(x + 96, y + 80, x + 75, y + 80,
+                      x + 86, y + 55, x + 69, y + 80)
+        _pict_check(canvas, x + width - 15, y + 107, True)
+        canvas.setStrokeColor(RED)
+        canvas.setLineWidth(2.2)
+        canvas.line(x + 42, y + 29, x + 70, y + 29)
+        canvas.line(x + 70, y + 29, x + 58, y + 16)
+        canvas.line(x + 58, y + 16, x + 92, y + 16)
+        _pict_check(canvas, x + width - 15, y + 23, False)
+    elif kind == "finish":
+        _pict_lid(canvas, cx - 66, y + 34, 132, 58, dock=True)
+        canvas.setStrokeColor(NIGHT)
+        canvas.setLineWidth(1.3)
+        for offset in (-33, -22, -11, 0, 11, 22, 33):
+            canvas.line(cx + offset, y + 24, cx + offset + 5, y + 24)
+        _pict_check(canvas, x + width - 18, y + 102, True)
+        _pict_check(canvas, x + width - 18, y + 24, True)
+
+
+def _pict_panel(canvas: Canvas, x: float, y: float, width: float, height: float,
+                number: int, title: str, kind: str,
+                accent: colors.Color) -> None:
+    """Frame one word-light, numbered pictograph."""
+    canvas.setFillColor(colors.white)
+    canvas.setStrokeColor(GRID)
+    canvas.setLineWidth(1)
+    canvas.roundRect(x, y, width, height, 6, fill=1, stroke=1)
+    canvas.setFillColor(accent)
+    canvas.circle(x + 18, y + height - 18, 11, fill=1, stroke=0)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 11)
+    canvas.drawCentredString(x + 18, y + height - 22, str(number))
+    canvas.setFillColor(INK)
+    canvas.setFont("Helvetica-Bold", 8.5)
+    canvas.drawString(x + 36, y + height - 21, title)
+    _pictogram(canvas, kind, x + 7, y + 7, width - 14, height - 40)
+
+
+def _pict_parts(canvas: Canvas, y: float) -> None:
+    """Draw a visual parts inventory with only short identifying labels."""
     page_width, _ = landscape(letter)
-    x, width, height = 24, page_width - 48, 62
     canvas.setFillColor(PALE_BLUE)
-    canvas.roundRect(x, y, width, height, 7, fill=1, stroke=0)
+    canvas.roundRect(24, y, page_width - 48, 52, 7, fill=1, stroke=0)
     canvas.setFillColor(NIGHT)
-    canvas.setFont("Helvetica-Bold", 9)
-    canvas.drawString(x + 10, y + height - 14, "LAY OUT THE PARTS")
-    item_width = (width - 112) / len(items)
+    canvas.setFont("Helvetica-Bold", 8)
+    canvas.drawString(34, y + 36, "PARTS")
+    items = [("board", "UNO Q"), ("hub", "HUB"), ("base", "BASE"),
+             ("lid", "LID"), ("hardware", "M3 x8"),
+             ("tools", "TOOLS"), ("finish", "FINISH")]
+    item_width = 88
     for index, (kind, label) in enumerate(items):
-        left = x + 102 + index * item_width
-        _quick_part_icon(canvas, kind, left + item_width / 2, y + 35)
+        cx = 132 + index * item_width
+        _quick_part_icon(canvas, kind, cx, y + 31)
         canvas.setFillColor(INK)
-        canvas.setFont("Helvetica-Bold", 6.7)
-        canvas.drawCentredString(left + item_width / 2, y + 7, label)
-
-
-def _assembly_step_row(canvas: Canvas, x: float, y: float, width: float,
-                       number: int, title: str, note: str,
-                       accent: colors.Color) -> None:
-    """Draw one compact, numbered workbench instruction."""
-    canvas.setFillColor(colors.white)
-    canvas.setStrokeColor(GRID)
-    canvas.setLineWidth(0.8)
-    canvas.roundRect(x, y, width, 35, 5, fill=1, stroke=1)
-    canvas.setFillColor(accent)
-    canvas.circle(x + 18, y + 17.5, 10.5, fill=1, stroke=0)
-    canvas.setFillColor(colors.white)
-    canvas.setFont("Helvetica-Bold", 10.5)
-    canvas.drawCentredString(x + 18, y + 13.7, str(number))
-    canvas.setFillColor(INK)
-    canvas.setFont("Helvetica-Bold", 8.3)
-    canvas.drawString(x + 36, y + 21, title)
-    canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 7)
-    canvas.drawString(x + 36, y + 9, note)
-
-
-def _assembly_path_panel(canvas: Canvas, x: float, y: float, width: float,
-                         title: str, subtitle: str, image_path: Path,
-                         steps: list[tuple[str, str]],
-                         accent: colors.Color) -> None:
-    """Draw one enclosure path with an exploded view and four clear actions."""
-    height = 296
-    canvas.setFillColor(colors.white)
-    canvas.setStrokeColor(GRID)
-    canvas.setLineWidth(1)
-    canvas.roundRect(x, y, width, height, 8, fill=1, stroke=1)
-    canvas.setFillColor(accent)
-    canvas.roundRect(x, y + height - 35, width, 35, 8, fill=1, stroke=0)
-    canvas.rect(x, y + height - 35, width, 9, fill=1, stroke=0)
-    canvas.setFillColor(colors.white)
-    canvas.setFont("Helvetica-Bold", 13)
-    canvas.drawString(x + 14, y + height - 23, title)
-    canvas.setFont("Helvetica-Bold", 7)
-    canvas.drawRightString(x + width - 14, y + height - 22, subtitle)
-    canvas.drawImage(
-        ImageReader(str(image_path)), x + 18, y + 157,
-        width=width - 36, height=96, preserveAspectRatio=True,
-        anchor="c", mask="auto",
-    )
-    canvas.setStrokeColor(colors.HexColor("#DDE5EF"))
-    canvas.line(x + 15, y + 151, x + width - 15, y + 151)
-    for index, (step_title, note) in enumerate(steps, 1):
-        _assembly_step_row(
-            canvas, x + 12, y + 112 - (index - 1) * 36,
-            width - 24, index, step_title, note, accent,
-        )
-
-
-def _assembly_safety_chip(canvas: Canvas, x: float, y: float, width: float,
-                          title: str, detail: str) -> None:
-    """Draw one final inspection item."""
-    canvas.setFillColor(colors.HexColor("#E9FFF7"))
-    canvas.setStrokeColor(colors.HexColor("#55B88A"))
-    canvas.setLineWidth(1)
-    canvas.roundRect(x, y, width, 42, 6, fill=1, stroke=1)
-    canvas.setStrokeColor(colors.HexColor("#168153"))
-    canvas.setLineWidth(2.3)
-    canvas.circle(x + 18, y + 21, 10, fill=0, stroke=1)
-    canvas.line(x + 13, y + 21, x + 17, y + 17)
-    canvas.line(x + 17, y + 17, x + 24, y + 25)
-    canvas.setFillColor(INK)
-    canvas.setFont("Helvetica-Bold", 7.8)
-    canvas.drawString(x + 35, y + 24, title)
-    canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 6.8)
-    canvas.drawString(x + 35, y + 11, detail)
+        canvas.setFont("Helvetica-Bold", 6.5)
+        canvas.drawCentredString(cx, y + 7, label)
 
 
 def build_enclosure_quick_reference(output: Path) -> None:
-    """Build a single-page, diagram-first enclosure assembly sheet."""
+    """Build a single-page pictograph homage to flat-pack assembly manuals."""
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas = Canvas(str(output), pagesize=landscape(letter), pageCompression=1)
     canvas.setTitle("VirtualGlove Enclosure Assembly Quick Reference")
@@ -784,93 +925,75 @@ def build_enclosure_quick_reference(output: Path) -> None:
     page_width, page_height = landscape(letter)
     canvas.setFillColor(colors.white)
     canvas.rect(0, 0, page_width, page_height, fill=1, stroke=0)
-
     canvas.setFillColor(NIGHT)
-    canvas.rect(0, page_height - 66, page_width, 66, fill=1, stroke=0)
-    canvas.drawImage(ImageReader(str(LOGO)), 24, page_height - 58,
-                     width=150, height=42, preserveAspectRatio=True,
+    canvas.rect(0, page_height - 58, page_width, 58, fill=1, stroke=0)
+    canvas.drawImage(ImageReader(str(LOGO)), 22, page_height - 51,
+                     width=138, height=38, preserveAspectRatio=True,
                      anchor="w", mask="auto")
     canvas.setFillColor(colors.white)
-    canvas.setFont("Helvetica-Bold", 18)
-    canvas.drawString(200, page_height - 30, "ENCLOSURE ASSEMBLY")
+    canvas.setFont("Helvetica-Bold", 17)
+    canvas.drawString(185, page_height - 27, "ENCLOSURE ASSEMBLY")
     canvas.setFillColor(CYAN)
-    canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(200, page_height - 46, "ONE WORKBENCH SHEET / TWO BUILD PATHS")
+    canvas.setFont("Helvetica-Bold", 7.5)
+    canvas.drawString(185, page_height - 42, "PICTOGRAPH WORKBENCH GUIDE")
     canvas.setFillColor(RED)
-    canvas.roundRect(page_width - 174, page_height - 47, 150, 25, 12, fill=1, stroke=0)
+    canvas.roundRect(page_width - 169, page_height - 43, 145, 23, 11, fill=1, stroke=0)
     canvas.setFillColor(colors.white)
-    canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawCentredString(page_width - 99, page_height - 38,
-                             "PRINT THE FIT COUPONS FIRST")
+    canvas.setFont("Helvetica-Bold", 7.5)
+    canvas.drawCentredString(page_width - 96.5, page_height - 35,
+                             "FIT COUPONS BEFORE ASSEMBLY")
 
-    canvas.setFillColor(PALE_BLUE)
-    canvas.roundRect(24, 490, page_width - 48, 46, 7, fill=1, stroke=0)
-    canvas.setFillColor(NIGHT)
-    canvas.setFont("Helvetica-Bold", 9)
-    canvas.drawString(36, 517, "CHOOSE ONE")
+    _pict_parts(canvas, 490)
+
+    panel_width, panel_height, gap = 180, 166, 8
     canvas.setFillColor(BLUE)
-    canvas.drawString(133, 517, "UNO Q CASE")
-    canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 7.5)
-    canvas.drawString(133, 502, "Smallest build / hub remains outside")
-    canvas.setFillColor(RED)
-    canvas.setFont("Helvetica-Bold", 9)
-    canvas.drawString(432, 517, "CONTROLLER DOCK")
-    canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 7.5)
-    canvas.drawString(432, 502, "UNO Q + hub travel as one unit")
-
-    _assembly_parts_strip(
-        canvas,
-        [("board", "UNO Q"), ("hub", "USB-C HUB"), ("base", "BASE"),
-         ("lid", "LID"), ("hardware", "INSERTS + SCREWS"),
-         ("tools", "HEAT TOOL + DRIVER"), ("finish", "BEZEL + EMBLEM")],
-        418,
-    )
-
-    _assembly_path_panel(
-        canvas, 24, 110, 366, "UNO Q CASE", "HUB OUTSIDE",
-        ROOT / "hardware" / "enclosures" / "previews" /
-        "virtualglove-uno-case-exploded.png",
-        [("Fit four inserts", "Heat squarely; stop flush; let them cool."),
-         ("Mount the UNO Q", "USB-C faces the broad side opening."),
-         ("Test the hub plug", "It enters straight without side pressure."),
-         ("Close and finish", "Lid, four screws, bezel, emblem, feet.")],
-        BLUE,
-    )
-    _assembly_path_panel(
-        canvas, 402, 110, 366, "CONTROLLER DOCK", "HUB IN OPEN BAY",
-        ROOT / "hardware" / "enclosures" / "previews" /
-        "virtualglove-controller-dock-exploded.png",
-        [("Mount the UNO Q", "Fit inserts; USB-C faces the opening."),
-         ("Seat the hub", "Ports face outward in the open service bay."),
-         ("Route the cable", "Gentle bend; keep it below the lid line."),
-         ("Close and finish", "No pinch; add screws, bezel, emblem, feet.")],
-        RED,
-    )
-
-    safety_width = (page_width - 60) / 4
-    checks = [
-        ("POWER OFF", "Disconnect before opening."),
-        ("CABLE FREE", "No pinch or sharp bend."),
-        ("AIR + PORTS", "Everything stays clear."),
-        ("LID FLAT", "Never pull it down by screws."),
-    ]
-    for index, (title, detail) in enumerate(checks):
-        _assembly_safety_chip(
-            canvas, 24 + index * (safety_width + 4), 53,
-            safety_width, title, detail,
-        )
-    canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 7)
-    canvas.drawString(
-        24, 27,
-        "Full print settings, downloads, fit guidance, and troubleshooting: Controller Enclosure Guide",
-    )
-    canvas.setFillColor(NIGHT)
+    canvas.roundRect(24, 459, page_width - 48, 23, 6, fill=1, stroke=0)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 10)
+    canvas.drawString(35, 467, "UNO Q CASE")
     canvas.setFont("Helvetica-Bold", 7)
-    canvas.drawRightString(page_width - 24, 27,
-                           "virtualglove.local:8088/help/enclosure")
+    canvas.drawRightString(page_width - 35, 467, "HUB REMAINS OUTSIDE")
+    uno_steps = [("INSERTS x4", "inserts"), ("UNO Q", "board"),
+                 ("USB-C FIT", "plug"), ("CLOSE", "close")]
+    for index, (title, kind) in enumerate(uno_steps, 1):
+        _pict_panel(canvas, 24 + (index - 1) * (panel_width + gap), 285,
+                    panel_width, panel_height, index, title, kind, BLUE)
+
+    canvas.setFillColor(RED)
+    canvas.roundRect(24, 254, page_width - 48, 23, 6, fill=1, stroke=0)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 10)
+    canvas.drawString(35, 262, "CONTROLLER DOCK")
+    canvas.setFont("Helvetica-Bold", 7)
+    canvas.drawRightString(page_width - 35, 262, "UNO Q + HUB IN OPEN SERVICE BAY")
+    dock_steps = [("UNO Q", "dock-board"), ("HUB", "hub"),
+                  ("CABLE", "cable"), ("CLOSE + CLEAR", "finish")]
+    for index, (title, kind) in enumerate(dock_steps, 1):
+        _pict_panel(canvas, 24 + (index - 1) * (panel_width + gap), 80,
+                    panel_width, panel_height, index, title, kind, RED)
+
+    checks = [("POWER OFF", True), ("NO PINCH", True),
+              ("PORTS + VENTS", True), ("FORCED LID", False)]
+    chip_width = (page_width - 60) / 4
+    for index, (label, good) in enumerate(checks):
+        x = 24 + index * (chip_width + 4)
+        canvas.setFillColor(colors.HexColor("#E9FFF7") if good else colors.HexColor("#FFF1F3"))
+        canvas.setStrokeColor(colors.HexColor("#55B88A") if good else RED)
+        canvas.roundRect(x, 28, chip_width, 38, 6, fill=1, stroke=1)
+        _pict_check(canvas, x + 19, 47, good)
+        canvas.setFillColor(INK)
+        canvas.setFont("Helvetica-Bold", 7.5)
+        canvas.drawString(x + 36, 44, label)
+        if not good:
+            canvas.setFillColor(RED)
+            canvas.setFont("Helvetica-Bold", 6.5)
+            canvas.drawString(x + 36, 34, "STOP - CHECK THE FIT")
+    canvas.setFillColor(MUTED)
+    canvas.setFont("Helvetica", 6.5)
+    canvas.drawString(24, 12, "Detailed printing, fit, and troubleshooting: Controller Enclosure Guide")
+    canvas.setFillColor(NIGHT)
+    canvas.setFont("Helvetica-Bold", 6.5)
+    canvas.drawRightString(page_width - 24, 12, "/help/enclosure")
     canvas.showPage()
     canvas.save()
 
