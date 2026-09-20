@@ -48,6 +48,9 @@ def build(version, destination):
     if errors:
         raise ValueError("\n".join(errors))
     destination.mkdir(parents=True, exist_ok=True)
+    stale_website = destination / "VirtualGlove-Website.zip"
+    if stale_website.exists():
+        stale_website.unlink()
     assets = []
     with zipfile.ZipFile(archive) as original:
         for machine, name in (("uno-q", "Uno-Q"), ("retropie", "RetroPie"),
@@ -135,11 +138,6 @@ def build(version, destination):
         target = destination / source.name
         shutil.copy2(source, target)
         assets.append(target)
-    website_builder = runpy.run_path(str(ROOT / "website/build.py"))
-    website = website_builder["build"]()
-    website_target = destination / website.name
-    shutil.copy2(website, website_target)
-    assets.append(website_target)
     lines = []
     for path in assets:
         digest = hashlib.sha256()

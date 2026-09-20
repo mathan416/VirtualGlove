@@ -101,6 +101,14 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn(".build-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))", styles)
         self.assertIn(".build-actions .button{display:flex;align-items:center;justify-content:center", styles)
 
+    def test_website_upload_is_separate_from_release_assets(self):
+        builder = (ROOT / "scripts/build-install-packages.py").read_text()
+        workflow = (ROOT / ".github/workflows/install-release.yml").read_text()
+        self.assertNotIn('runpy.run_path(str(ROOT / "website/build.py"))', builder)
+        self.assertIn('stale_website = destination / "VirtualGlove-Website.zip"', builder)
+        self.assertIn("output/install/SHA256SUMS", workflow)
+        self.assertNotIn('gh release create "$RELEASE_VERSION" output/install/*', workflow)
+
     def test_enclosure_manifest_covers_every_public_print_file(self):
         root = ROOT / "hardware/enclosures"
         data = json.loads((root / "enclosure-files.json").read_text())

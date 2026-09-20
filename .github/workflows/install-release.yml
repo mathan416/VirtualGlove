@@ -88,4 +88,6 @@ jobs:
         run: |
           args=()
           if [ "$PRERELEASE" = true ]; then args+=(--prerelease); fi
-          gh release create "$RELEASE_VERSION" output/install/* --target "$(git rev-parse HEAD)" --title "VirtualGlove $RELEASE_VERSION" --generate-notes "${args[@]}"
+          mapfile -t release_assets < <(awk '{print "output/install/" $2}' output/install/SHA256SUMS)
+          release_assets+=(output/install/SHA256SUMS)
+          gh release create "$RELEASE_VERSION" "${release_assets[@]}" --target "$(git rev-parse HEAD)" --title "VirtualGlove $RELEASE_VERSION" --generate-notes "${args[@]}"

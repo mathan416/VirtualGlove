@@ -2881,11 +2881,17 @@ the Engineering Toolkit ZIP; use a complete Git checkout for those tasks.
 
 ### Build and publish installation assets
 
-Generate the public PDFs and App Lab ZIP, then build the release assets:
+Generate and validate the manually uploaded website independently:
+
+```sh
+python3 website/build.py
+```
+
+Generate the public PDFs and App Lab ZIP, then build the software release
+assets:
 
 ```sh
 python3 scripts/build-enclosure-packages.py
-python3 website/build.py
 python3 scripts/build-docs-pdf.py
 bash scripts/build-app-lab-package.sh
 python3 scripts/build-install-packages.py --version dev-COMMIT
@@ -2893,10 +2899,11 @@ python3 scripts/build-install-packages.py --version dev-COMMIT
 
 `output/install/` contains the Controller, RetroPie, Recalbox, Batocera, and
 LaunchBox packages, the optional Engineering Toolkit ZIP, the Linux entry scripts, their shared package installer,
-the three design-specific enclosure bundles, the public website upload ZIP,
-checksum companions, and `SHA256SUMS`. Package identity and safe paths are
-validated at build time and installation time. Private runtime files are
-excluded.
+the three design-specific enclosure bundles, checksum companions, and
+`SHA256SUMS`. The public website remains under `output/website/` for separate
+manual publishing and is never attached to a GitHub RC or release. Package
+identity and safe paths are validated at build time and installation time.
+Private runtime files are excluded.
 
 The **Build installation release** workflow accepts an existing source revision
 and a new release tag. Its default builds downloadable workflow artifacts only.

@@ -22,7 +22,9 @@ result before naming the underlying mechanism.
 - Rebuilt the public website for 0.5.0 as four tracked, static pages covering
   the project, installation and upgrades, enclosure choices, and the creator's
   motivation. Release-sensitive commands and links now come from one checked
-  facts record, and the build produces a verified ZIP for manual upload.
+  facts record, and the build produces a verified ZIP for manual upload. That
+  independently published website ZIP is no longer attached to application
+  release candidates or releases.
 - Made every platform installation example begin in a known writable folder,
   including an explicit extracted-package `Set-Location` step for LaunchBox.
   Fresh installation and v0.4.2 upgrade checks are now separate and copyable.
