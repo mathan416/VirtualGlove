@@ -884,7 +884,6 @@ def install_batocera(peer, player1_device=None):
     executables = [
         service, event,
         destination / "batocera/virtualglove-core-mount",
-        destination / "scripts/build-batocera-nestopia-powerglove.sh",
         destination / "scripts/install-batocera-nestopia-powerglove.sh",
         destination / "scripts/configure-batocera-super-glove-ball-core.py",
         destination / "scripts/verify-batocera-native-core.py",
