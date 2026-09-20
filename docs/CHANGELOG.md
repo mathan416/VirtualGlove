@@ -19,6 +19,12 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Added a red Controller Router warning when no physical controller is assigned
+  to Player 1, because RetroArch menu and exit hotkeys may then be unavailable
+  during FCEUmm gameplay.
+- Improved Controller Router table spacing with clearer status and player
+  assignment headings, balanced column widths, and readable small-screen
+  scrolling.
 - Gave Controller Router its own Setup card between Connection and startup and
   Pair this Controller, keeping controller assignments separate from pairing.
 - Made the Controller Router wait for Setup to restore the saved console

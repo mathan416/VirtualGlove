@@ -49,6 +49,19 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn('<section id=controller-router class=card', SETUP_CONTENT)
         self.assertNotIn('id=pairing-section class=connection-pairing', SETUP_CONTENT)
 
+    def test_router_table_has_readable_columns(self):
+        self.assertIn('<th>Connection status</th><th>Player assignment</th>', ROUTER_CONTENT)
+        self.assertIn('min-width:620px', ROUTER_CONTENT)
+        self.assertIn('th:nth-child(1){width:52%}', ROUTER_CONTENT)
+        self.assertIn('td select{min-width:150px}', ROUTER_CONTENT)
+
+    def test_router_warns_when_player1_has_no_physical_controller(self):
+        self.assertIn('id=router-hotkey-warning', ROUTER_CONTENT)
+        self.assertIn('No physical controller is assigned to Player 1.', ROUTER_CONTENT)
+        self.assertIn('menu and exit hotkeys may be unavailable', ROUTER_CONTENT)
+        self.assertIn("some(item=>item.value==='1')", ROUTER_SCRIPT)
+        self.assertIn("addEventListener('change'", ROUTER_SCRIPT)
+
     def test_config_supports_four_slots_and_rejects_duplicate_source(self):
         data = router.validate_config({"format": 2, "platform": "batocera",
             "players": [{"player": 1, "sources": [source()]},
