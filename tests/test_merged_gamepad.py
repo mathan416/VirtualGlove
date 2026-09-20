@@ -67,7 +67,7 @@ class MergedGamepadTests(unittest.TestCase):
             root = Path(name)
             current = "03000000341200007856000001000000"
             es = root / "es_input.cfg"
-            body = ES_INPUT.removeprefix("<inputList>").removesuffix("</inputList>")
+            body = ES_INPUT[len("<inputList>"):-len("</inputList>")]
             stale = body.replace('deviceGUID="abc"', 'deviceGUID="stale"')
             matching = body.replace('deviceGUID="abc"', f'deviceGUID="{current}"')
             es.write_text("<inputList>" + stale + matching + "</inputList>")

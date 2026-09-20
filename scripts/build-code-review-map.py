@@ -77,7 +77,7 @@ def main(*, check: bool = False) -> int:
 
     preface = f"""VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
-Source: {ROOT}
+Source: repository root
 Project version: {version}
 Git-visible files: {len(files)}
 Python test modules: {len(tests)}

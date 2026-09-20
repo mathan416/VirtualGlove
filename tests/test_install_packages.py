@@ -478,7 +478,7 @@ class ArchiveTests(unittest.TestCase):
                 self.assertEqual((app / 'data/gesture-tuning.json').read_text(), 'private-gesture-thresholds')
                 self.assertEqual((app / 'docs/cheatsheet.md').read_text(), 'local cabinet')
                 command.assert_any_call('runuser', '-u', 'arduino', '--', 'arduino-app-cli', 'app', 'start', app)
-                calls = [item.args for item in command.call_args_list]
+                calls = [item[0] for item in command.call_args_list]
                 upgrade_start = [index for index, item in enumerate(calls)
                                  if item == ('runuser', '-u', 'arduino', '--',
                                              'arduino-app-cli', 'app', 'start', app)][1]
@@ -726,7 +726,7 @@ class RuntimeLifecycleTests(unittest.TestCase):
                 patch.object(installer.subprocess, 'run') as run:
             self.assertEqual(installer.stop_managed_runtime('retropie', setup),
                              'retropie')
-        commands = [tuple(item.args[0]) for item in run.call_args_list]
+        commands = [tuple(item[0][0]) for item in run.call_args_list]
         self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.timer'), commands)
         self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.service'), commands)
         self.assertIn(('systemctl', 'stop', 'virtualglove-games.service'), commands)
@@ -745,7 +745,7 @@ class RuntimeLifecycleTests(unittest.TestCase):
                 patch.object(Path, 'read_text', return_value='x' * 32), \
                 patch.object(installer.subprocess, 'run') as run:
             installer.restart_managed_runtime('retropie')
-        commands = [tuple(item.args[0]) for item in run.call_args_list]
+        commands = [tuple(item[0][0]) for item in run.call_args_list]
         self.assertLess(
             commands.index(('systemctl', 'start', 'virtualglove-controller-router.service')),
             commands.index(('systemctl', 'start', 'virtualglove-receiver.service')),
@@ -913,7 +913,7 @@ class GameSetupTests(unittest.TestCase):
                 setup.configure_games(lambda message: prompts.append(message) or False)
 
             self.assertEqual(native.read_bytes(), b"new-native")
-            self.assertTrue(any("install-nestopia-powerglove.sh" in str(call.args[1])
+            self.assertTrue(any("install-nestopia-powerglove.sh" in str(call[0][1])
                                 for call in run.call_args_list))
             self.assertFalse(any("lr-nestopia-powerglove" in message for message in prompts))
 

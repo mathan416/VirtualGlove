@@ -52,7 +52,7 @@ jobs:
       - name: Prepare build tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes rsync zip
+          sudo apt-get install --yes poppler-utils rsync zip
           python -m pip install reportlab pypdf numpy opencv-python-headless
       - name: Test and build
         env:

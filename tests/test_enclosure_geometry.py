@@ -11,6 +11,8 @@
 
 """Protect the enclosure dimensions and the physical-fit corrections."""
 
+from __future__ import annotations
+
 from pathlib import Path
 import struct
 import unittest

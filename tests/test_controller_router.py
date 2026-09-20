@@ -556,8 +556,8 @@ class ControllerRouterTests(unittest.TestCase):
         device._drain_virtual()
 
         device._virtual.assert_called_once()
-        self.assertTrue(device._virtual.call_args.args[0]["dpad"]["right"])
-        self.assertFalse(device._virtual.call_args.args[0]["dpad"].get("left", False))
+        self.assertTrue(device._virtual.call_args[0][0]["dpad"]["right"])
+        self.assertFalse(device._virtual.call_args[0][0]["dpad"].get("left", False))
 
     def test_virtual_socket_drain_is_bounded_under_continuous_traffic(self):
         device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)

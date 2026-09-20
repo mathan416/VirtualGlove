@@ -11,6 +11,8 @@
 
 """Atomically set or remove Batocera's exact per-ROM native-core selection."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os

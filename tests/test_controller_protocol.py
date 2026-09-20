@@ -212,7 +212,7 @@ class SignedControllerTests(unittest.TestCase):
         remote.return_value.write_state.assert_not_called()
         remote.return_value.release.assert_called()
         native.write.assert_called_once()
-        self.assertTrue(native.write.call_args.args[0]['buttons']['start'])
+        self.assertTrue(native.write.call_args[0][0]['buttons']['start'])
 
     def test_windows_native_profile_stays_out_of_retropad_when_record_unavailable(self):
         sessions = ReceiverSessions(TOKEN)

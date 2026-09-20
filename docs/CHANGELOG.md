@@ -111,6 +111,10 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Restored the release checks on every supported Python version and installed
+  the PDF preview tool in the automated packaging environment. Release builds
+  now exercise the same enclosure previews and compatibility paths as local
+  validation before a candidate can be published.
 - Completed the LaunchBox in-place namespace upgrade. Installations that used
   the current package name with the retired Python module folder now remove
   only that leftover managed runtime folder and command files, while preserving

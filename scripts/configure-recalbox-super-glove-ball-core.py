@@ -11,6 +11,8 @@
 
 """Build Recalbox's temporary core list and exact-ROM selection safely."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os

@@ -1,6 +1,6 @@
 VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
-Source: /Users/mathan/Developer/PowerGlove
+Source: repository root
 Project version: 0.5.0
 Git-visible files: 727
 Python test modules: 78

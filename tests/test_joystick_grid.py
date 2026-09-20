@@ -82,7 +82,7 @@ class JoystickGridTests(unittest.TestCase):
         source=Path('src/virtualglove/vision_app.py').read_text()
         tree=ast.parse(source)
         assignment=next(n for n in ast.walk(tree) if isinstance(n,ast.Assign) and isinstance(n.value,ast.Call) and isinstance(n.value.func,ast.Name) and n.value.func.id=='_joystick_grid_status')
-        condition=next(n for n in ast.walk(tree) if isinstance(n,ast.If) and any(isinstance(x,ast.Constant) and x.value=='joystick_grid' for x in ast.walk(n)) and isinstance(n.test,ast.Compare) and isinstance(n.test.left,ast.Name) and n.test.left.id=='grid')
+        condition=next(n for n in ast.walk(tree) if isinstance(n,ast.If) and any(getattr(x,'s',getattr(x,'value',None))=='joystick_grid' for x in ast.walk(n)) and isinstance(n.test,ast.Compare) and isinstance(n.test.left,ast.Name) and n.test.left.id=='grid')
         code=compile(ast.fix_missing_locations(ast.Module(body=[assignment,condition],type_ignores=[])),'grid-status','exec')
         for practice,needs,error in [(False,False,None),(True,True,None),(True,False,'save failed'),(True,False,None)]:
             scope=dict(engine=self.engine(),practice_mode=practice,needs_center=needs,calibration_save_error=error,status={},_joystick_grid_status=_joystick_grid_status)

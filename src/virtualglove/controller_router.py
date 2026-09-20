@@ -997,7 +997,8 @@ class RouterStore:
                     if previous_text is not None:
                         atomic_write(self.path, previous_text)
                     else:
-                        self.path.unlink(missing_ok=True)
+                        if self.path.exists():
+                            self.path.unlink()
                     raise ValueError("Assignments were not activated; the previous configuration was restored.")
             return self.read()
 
