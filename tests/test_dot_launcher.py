@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision import dot_launcher
+from virtualglove import dot_launcher
 
 
 class DotLauncherTests(unittest.TestCase):

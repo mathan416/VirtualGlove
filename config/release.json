@@ -1,0 +1,21 @@
+{
+  "project_version": "0.5.0",
+  "candidate_tag": "v0.5.0-rc.1",
+  "channel": "release-candidate",
+  "oldest_supported_upgrade": "v0.4.2",
+  "upgrade_acceptance": {
+    "from": "v0.4.2",
+    "status": "passed",
+    "confirmed_on": "2026-09-20",
+    "scope": "Controller and applicable consoles"
+  },
+  "supported_platforms": [
+    "RetroPie",
+    "Recalbox 10.x",
+    "Batocera 38+",
+    "LaunchBox on 64-bit Windows"
+  ],
+  "removed_features": [
+    "ready-to-play"
+  ]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: scripts/rotate-deployment-backups.py
-# Purpose: Bound routine UNO Q payload backups without touching named engineering evidence.
+# Purpose: Bound routine deployment backups without touching named engineering evidence.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -20,7 +20,7 @@ import re
 import shutil
 
 
-PAYLOAD_BACKUP = re.compile(r"payload-(\d{8})-(\d{6})-(\d+)")
+ROUTINE_BACKUP = re.compile(r"(?:payload-)?(\d{8})-(\d{6})-(\d+)")
 KEEP_MARKER = ".virtualglove-keep"
 
 
@@ -28,7 +28,7 @@ def _routine_backups(root: Path) -> list[Path]:
     """Return strictly named routine backups from newest to oldest."""
     found = []
     for path in root.iterdir():
-        match = PAYLOAD_BACKUP.fullmatch(path.name)
+        match = ROUTINE_BACKUP.fullmatch(path.name)
         if (not match or path.is_symlink() or not path.is_dir()
                 or (path / KEEP_MARKER).exists()):
             continue
@@ -49,7 +49,7 @@ def rotate(root: Path, keep: int = 12, *, dry_run: bool = False) -> list[Path]:
         raise ValueError("backup root is not a directory")
     stale = _routine_backups(root)[keep:]
     for path in stale:
-        if path.parent != root or not PAYLOAD_BACKUP.fullmatch(path.name):
+        if path.parent != root or not ROUTINE_BACKUP.fullmatch(path.name):
             raise ValueError("refusing unsafe backup path")
         if not dry_run:
             shutil.rmtree(path)

@@ -74,9 +74,10 @@ def load_device_config() -> dict:
     if CONFIG_PATH.exists():
         return json.loads(CONFIG_PATH.read_text())
     # A useful, portable first-run default. The same token must be copied to
-    # the RetroPie receiver before controller packets will be accepted.
+    # the selected console receiver before controller packets will be accepted.
     settings = {
         "receiver": "",
+        "platform": "",
         "token": secrets.token_urlsafe(24),
         "profile": "off",
         "glove_color": "none",
@@ -95,7 +96,7 @@ def load_device_config() -> dict:
         "camera_manual_gain": 96,
     }
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    from powerglove_vision.game_registry import atomic_write
+    from virtualglove.game_registry import atomic_write
     atomic_write(CONFIG_PATH, json.dumps(settings, indent=2) + "\n")
     return settings
 
@@ -118,7 +119,7 @@ def worker_runtime_prefix() -> list[str]:
 def worker_command(settings: dict, model_path: Path, controller_enabled: bool = False) -> list[str]:
     """Build the isolated MediaPipe worker command from validated runtime settings."""
     command = worker_runtime_prefix() + [
-        "python", "-m", "powerglove_vision.vision_app",
+        "python", "-m", "virtualglove.vision_app",
         "--receiver", str(settings.get("receiver", "")),
         "--port", str(settings.get("port", 55355)),
         "--device-config", str(CONFIG_PATH),
@@ -226,11 +227,11 @@ def prefer_retained_worker_cache(environment: dict[str, str]) -> dict[str, str]:
 def main() -> int:
     """Supervise the worker, control server, matrix, camera availability, and clean shutdown."""
     settings = load_device_config()
-    from powerglove_vision.matrix import MatrixStatus, UnoQMatrix, status_from_worker
+    from virtualglove.matrix import MatrixStatus, UnoQMatrix, status_from_worker
     matrix = UnoQMatrix()
     matrix.set_status(MatrixStatus.LOADING)
-    from powerglove_vision.control_server import start_control_server
-    from powerglove_vision.camera import CameraRecoveryRequester
+    from virtualglove.control_server import start_control_server
+    from virtualglove.camera import CameraRecoveryRequester
     control_server, control = start_control_server(
         CONFIG_PATH, pairing_display=matrix.show_pairing, pairing_finished=matrix.finish_pairing
     )

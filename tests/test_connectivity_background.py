@@ -9,7 +9,7 @@
 #   2026-09-11 - Cover physical broadcasts and discovery during resolver failure.
 #   2026-09-06 - Cover slow DNS, newest-state sends, stale answers, and Wi-Fi independence.
 
-"""Exercise connectivity behavior without depending on a physical wireless device."""
+"""Exercise connectivity behaviour without depending on a physical wireless device."""
 import json
 import runpy
 import tempfile
@@ -18,14 +18,14 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import Mock,patch
-from powerglove_vision.resolver import BackgroundAddress
-from powerglove_vision.transport import UdpSender
-from powerglove_vision.controller_protocol import decode_message
-from powerglove_vision.model import ControllerState
-from powerglove_vision.wifi_status import (
+from virtualglove.resolver import BackgroundAddress
+from virtualglove.transport import UdpSender
+from virtualglove.controller_protocol import decode_message
+from virtualglove.model import ControllerState
+from virtualglove.wifi_status import (
     read_discovery_addresses, read_network_status, read_wifi_status,
 )
-from powerglove_vision.matrix import UnoQMatrix
+from virtualglove.matrix import UnoQMatrix
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -35,7 +35,7 @@ class BackgroundTests(unittest.TestCase):
         entered,release=threading.Event(),threading.Event()
         def slow(_host):
             entered.set();release.wait(2);return '192.0.2.4'
-        with patch('powerglove_vision.transport.resolve_ipv4',side_effect=slow),patch('powerglove_vision.transport.socket.socket') as factory:
+        with patch('virtualglove.transport.resolve_ipv4',side_effect=slow),patch('virtualglove.transport.socket.socket') as factory:
             sender=UdpSender('cabinet.local',55355,'test-token')
             try:
                 factory.return_value.recvfrom.side_effect = BlockingIOError
@@ -108,7 +108,7 @@ class WifiTests(unittest.TestCase):
     def test_network_reader_handles_old_and_fresh_reports(self):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'status.json'
-            with patch('powerglove_vision.wifi_status.time.time',return_value=100):
+            with patch('virtualglove.wifi_status.time.time',return_value=100):
                 for value,expected in [({'state':'connected'},'connected'),({'state':'disconnected'},'unavailable'),({'state':'disconnected','networking':'connected'},'connected'),({'networking':'disconnected'},'disconnected'),({'networking':'invalid'},'unavailable')]:
                     path.write_text(json.dumps(dict(version=1,observed_at=100,**value)))
                     self.assertEqual(read_network_status(path),expected)
@@ -147,13 +147,13 @@ class WifiTests(unittest.TestCase):
             self.assertEqual(read_wifi_status(path),'unavailable')
             for delta,expected in [(0,'connected'),(-16,'unavailable'),(5,'unavailable')]:
                 path.write_text(json.dumps({'version':1,'state':'connected','observed_at':100+delta}))
-                with patch('powerglove_vision.wifi_status.time.time',return_value=100):
+                with patch('virtualglove.wifi_status.time.time',return_value=100):
                     self.assertEqual(read_wifi_status(path),expected)
 
     def test_app_accepts_only_fresh_bounded_discovery_addresses(self):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp)/'status.json'
-            with patch('powerglove_vision.wifi_status.time.time',return_value=100):
+            with patch('virtualglove.wifi_status.time.time',return_value=100):
                 path.write_text(json.dumps({'version':2,'observed_at':100,
                     'broadcasts':['10.0.2.255','192.168.50.255','10.0.2.255']}))
                 self.assertEqual(read_discovery_addresses(path),('10.0.2.255','192.168.50.255'))
@@ -166,9 +166,9 @@ class WifiTests(unittest.TestCase):
 
     def test_network_pixel_does_not_depend_on_console(self):
         calls=[];matrix=UnoQMatrix(call=lambda *args:calls.append(args))
-        with patch('powerglove_vision.wifi_status.read_network_status',return_value='connected'):
+        with patch('virtualglove.wifi_status.read_network_status',return_value='connected'):
             matrix.set_attract({'matrix_attract':'off'},idle=False)
         self.assertEqual(calls[-1],('set_virtualglove_attract',2,4))
-        with patch('powerglove_vision.wifi_status.read_network_status',return_value='disconnected'):
+        with patch('virtualglove.wifi_status.read_network_status',return_value='disconnected'):
             matrix.set_attract({'matrix_attract':'off'},idle=False)
         self.assertEqual(calls[-1],('set_virtualglove_attract',2,0))

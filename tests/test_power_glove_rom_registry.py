@@ -14,7 +14,7 @@ import json
 import unittest
 from pathlib import Path
 
-from powerglove_vision.profile_control import load_registry, select_profile_settings
+from virtualglove.profile_control import load_registry, select_profile_settings
 
 
 ROOT = Path(__file__).resolve().parents[1]

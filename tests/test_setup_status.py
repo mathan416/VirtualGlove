@@ -15,8 +15,8 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from powerglove_vision.control_server import SETUP
-from powerglove_vision.dashboard_web import DASHBOARD
+from virtualglove.control_server import SETUP
+from virtualglove.dashboard_web import DASHBOARD
 
 
 class SetupStatusHarnessTests(unittest.TestCase):
@@ -38,6 +38,20 @@ class SetupStatusHarnessTests(unittest.TestCase):
             input=DASHBOARD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
         self.assertEqual(result.returncode, 0, (result.stdout + result.stderr).decode())
+
+    @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
+    def test_every_dashboard_control_and_recovery_path(self):
+        """Exercise the rendered Dashboard without changing a real Controller."""
+        result = subprocess.run(
+            [shutil.which("node"), str(Path(__file__).with_name(
+                "dashboard_controls_harness.mjs"))],
+            input=DASHBOARD, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            (result.stdout + result.stderr).decode("utf-8", "replace"),
+        )
+        self.assertIn(b"Dashboard control harness passed", result.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node runtime is not installed")
     def test_controller_output_states(self):

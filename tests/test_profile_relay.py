@@ -26,8 +26,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from powerglove_vision import retropie_hook
-from powerglove_vision.profile_control import ProfileCommandServer, send_request
+from virtualglove import retropie_hook
+from virtualglove.profile_control import ProfileCommandServer, send_request
 
 spec = importlib.util.spec_from_file_location("profile_relay", Path(__file__).resolve().parents[1] / "scripts/profile-relay.py")
 module = importlib.util.module_from_spec(spec)
@@ -216,8 +216,8 @@ class VisionControlTests(unittest.TestCase):
     def test_off_applies_during_blocked_camera_open(self):
         from types import SimpleNamespace
         from unittest.mock import MagicMock
-        from powerglove_vision import vision_app
-        from powerglove_vision.profile_control import ProfileRequest
+        from virtualglove import vision_app
+        from virtualglove.profile_control import ProfileRequest
 
         blocked = threading.Event()
         release = threading.Event()

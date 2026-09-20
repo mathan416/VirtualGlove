@@ -1,4 +1,4 @@
-# VirtualGlove Configuration Reference
+# Configuration Reference
 
 Use this reference to find a setting, change a game mapping, tune a gesture,
 or look up a command. Each section identifies the active file and explains
@@ -16,16 +16,19 @@ specific commands and filenames retain `uno-q` where that literal name is requir
 > authenticate controller packets and profile changes. Never paste it into an
 > issue, screenshot, command line, public backup, or Git commit.
 
-## The three places configuration lives
+## Where configuration lives
 
-VirtualGlove runs on two computers. A repository template is not always the
+VirtualGlove runs on a Controller and one console. A repository template is not always the
 file the running system reads.
 
 | Location | What it controls | Preferred way to change it |
 | --- | --- | --- |
-| VirtualGlove Controller Setup page | Console address, controller port, startup profile, camera, and pairing token | Browser Setup page |
+| VirtualGlove Controller Setup page | Console platform and address, controller port, startup profile, camera, and pairing token | Browser Setup page |
 | VirtualGlove Controller application files | Gesture sensitivity and advanced runtime defaults | Edit only when tuning is required |
 | RetroPie `/etc/virtualglove/` | VirtualGlove Controller address, per-game profile selection, and receiver token | Protected files on RetroPie |
+| Recalbox `/recalbox/share/system/virtualglove/data/` | Controller address, game registry, receiver token, and versioned Controller Router assignments | Installer or persistent Recalbox share |
+| Batocera `/userdata/system/virtualglove/data/` | Controller address, game registry, receiver token, and versioned Controller Router assignments | Installer or persistent Batocera user data |
+| LaunchBox `%LOCALAPPDATA%\VirtualGlove\data\` | VirtualGlove Controller address, exact-ROM profiles, RetroArch paths, and receiver token | Current Windows user |
 
 The examples under the repository's `config/` directory are installation
 templates. Editing them does not change an already installed system. The active
@@ -36,7 +39,7 @@ In commands and examples, replace these placeholders:
 | Placeholder | Replace with |
 | --- | --- |
 | `UNO-Q-NAME.local` | Your VirtualGlove Controller hostname or reserved IP address |
-| `RETROPIE-NAME.local` | Your RetroPie hostname or reserved IP address |
+| `CONSOLE-NAME.local` | Your RetroPie, Recalbox, Batocera, or LaunchBox hostname or reserved IP address |
 | `/home/arduino/ArduinoApps/virtualglove` | Required directory for the supported VirtualGlove Controller installer and host helpers; do not substitute a different path |
 
 ## Find the setting or command you need
@@ -46,7 +49,7 @@ In commands and examples, replace these placeholders:
 | Install and pair both machines | [Installation Guide](INSTALL_README.md) |
 | Change the camera or startup profile | [VirtualGlove Controller settings](#virtualglove-controller-settings) |
 | Repair pairing or token permissions | [Pairing and token management](#pairing-and-token-management) |
-| Change the VirtualGlove Controller destination on RetroPie | [RetroPie connection settings](#retropie-connection-settings) |
+| Change the VirtualGlove Controller destination on the console | [Console connection settings](#console-connection-settings) |
 | Make a game select a profile | [Register games and select profiles](#register-games-and-select-profiles) |
 | Adjust gesture sensitivity | [Tune gesture sensitivity](#tune-gesture-sensitivity) |
 | Install or check engineering tools | [Engineering Toolkit command reference](#engineering-toolkit-command-reference) |
@@ -78,8 +81,8 @@ on the physical matrix before entering the one-time PIN.
 ### Joystick dead-zone camera test
 
 In **Setup → Joystick dead zone**, the chosen percentage is the nominal width
-and height of the center region as a fraction of the full camera frame. The box
-is anchored to the neutral palm center saved by **Center hand** and never follows
+and height of the centre region as a fraction of the full camera frame. The box
+is anchored to the neutral palm centre saved by **Centre hand** and never follows
 the live hand. Its effective width and height are at least 1.5 times the saved
 calibrated palm size. If that full square would cross a camera edge, VirtualGlove
 translates it inward rather than clipping or shrinking it. The remaining space
@@ -88,12 +91,12 @@ range is 10–100%. Resting jitter and live hand-size changes do not move or res
 the box. Native Super Glove Ball X/Y calibration, noise filtering, and reach
 remain separate and unchanged.
 
-The **Turn on camera** and **Center hand** buttons follow **Use standard size**
+The **Turn on camera** and **Centre hand** buttons follow **Use standard size**
 in the slider's controls row. The panel starts off with its camera hidden.
-**Center hand** becomes available only after this panel owns an active practice
-lease and its preview is live. Centering keeps controller output paused, samples
+**Centre hand** becomes available only after this panel owns an active practice
+lease and its preview is live. Centring keeps controller output paused, samples
 the selected player's relaxed hand, and redraws the grid from the newly saved
-center and hand size without discarding an unsaved slider preview. The mirrored stream
+centre and hand size without discarding an unsaved slider preview. The mirrored stream
 shows a label-free 3×3 grid. Moving the slider immediately redraws the lines,
 highlight, and direction pills from the live palm position without another
 request. This is an **unsaved preview**: gameplay changes only after **Save dead
@@ -102,7 +105,7 @@ discards it. After saving, feedback waits for the worker's saved bounds before
 returning to its authoritative D-pad directions.
 
 Gameplay positional directions use the same absolute palm coordinates and
-saved-center bounds. Exact boundaries count as center. Tracking loss and
+saved-centre bounds. Exact boundaries count as centre. Tracking loss and
 menu/start/select suppression clear preview directions and highlights; missing
 calibration or a stopped camera or owned lease hides the grid. The camera
 toggle never saves settings. Existing player dead-zone numbers and all other
@@ -116,11 +119,11 @@ reports active practice vision.
 
 Practice `/status` includes a read-only `joystick_grid` only while valid active
 calibration is available. `anchor` is the saved neutral palm position, `center`
-is the possibly edge-translated box center, `half_size` is the saved effective
+is the possibly edge-translated box centre, `half_size` is the saved effective
 half-size, and `minimum_size` is the 1.5-hand floor needed to derive an exact
 draft preview. Coordinates match the mirrored preview and are not flipped again.
 The field is omitted outside practice,
-during centering, or while a required/failed calibration is pending. It is never
+during centring, or while a required/failed calibration is pending. It is never
 persisted. Player snapshots retain the chosen `deadzone`, report the possibly
 enlarged `effective_deadzone`, `hand_size_minimum`, and `hand_size_protected`,
 and retain `jitter_protected: false` for compatibility.
@@ -134,61 +137,13 @@ failures clear feedback and retry safely.
 and releases only this panel's lease. Leaving the page also releases it. If a
 release cannot be confirmed, the panel reports that fact and retries; abandoned
 leases expire after six seconds. Another practice tab can keep the shared camera
-running. Existing controller behavior resumes only as the practice mechanism
+running. Existing controller behaviour resumes only as the practice mechanism
 allows; this panel never sends a controller-start request.
-
-### Optional Get ready to play guide
-
-Open **Get ready to play** from Dashboard or Setup, or visit `/ready`. The guide
-is optional and resumes the active player's completed essential checks; Academy
-lessons stay independent. Every visit stops controller output before enabling
-player selection and rechecks the saved console, authenticated pairing, camera,
-center, and active registered game. A previous completion never bypasses these
-live checks.
-
-Confirm the player, check the saved console, then start safe practice. Center the
-hand if required or if the camera/playing position moved. The essentials are
-neutral, Left, Right, Up, Down, A, B, Start, Select, and Menu Guard. Each action
-starts from neutral, requires a steady hold, and finishes by releasing to neutral.
-Missing tracking, stale samples, or incomplete calibration cancel the current
-hold; completed checks remain saved. A failed save can be retried without
-changing Academy progress or calibration.
-
-Select **End practice and enable registered-game controls**, then wait for all
-practice/tuning sessions to stop. Launch a game registered in Games on RetroPie.
-If needed, select **Check game and enable controls**. Ready requires fresh camera
-and calibration status, a registered supported profile, matching native/joystick
-mode, and an authenticated receiver link. It does not prove that the ROM consumed
-input, that uinput was created, or that a native core consumed shared state.
-
-Guide progress stores only course version 1, the ten bounded check identifiers,
-and an optional UTC completion time. The players API rejects unknown checks,
-stale course/player generations, extra fields, and malformed timestamps. It
-merges completed checks without losing earlier progress. Version-5 migration
-adds an empty independent guide record to every player and retains the old file
-as `gesture-tuning-v5-backup.json` before the first write. Names, saved centers,
-thresholds, dead zones, and Academy progress are preserved.
-
-`POST /api/ready` uses the same-origin browser safeguard and
-`X-VirtualGlove-Action: ready`. A visit's opaque session owns the persistent
-`data/ready-guide-inhibit` marker. While it exists, manual and automatic starts
-are rejected and a restart remains disarmed. Only that visit can explicitly
-release practice or leave the guide; older tabs cannot unlock a newer visit.
-The guide uses its own existing Academy practice lease and never resets another
-tab's lease. Guide arming revalidates the active player, completed checks, live
-camera/center/game status, and authenticated console health.
-
-Closing the guide releases its practice lease but keeps output inhibited. Reopen
-the guide to resume, or select **Leave guide — keep controls stopped** to exit
-explicitly. This exit removes the guide inhibit and keeps the Controller
-disarmed; a later ordinary Start or registered-game launch follows the existing
-controller rules. No frames, landmarks, hand measurements, addresses, pairing
-material, ROM names, or diagnostic results are stored as guide progress.
 
 ### Connection Doctor
 
-In **Setup → Pair with RetroPie**, select **Check connection** for a checklist
-and suggested next steps. Save address, port, or startup-profile edits first.
+In **Setup → Pair this Controller**, select **Check connection** for a checklist
+and suggested next steps. Save platform, address, port, or startup-profile edits first.
 The Doctor never saves settings, pairs devices, starts controller output, or
 changes player/calibration data. Existing save and pair controls remain explicit actions.
 
@@ -205,7 +160,7 @@ emulator, and input mode using the current native-mode rules. This is a runtime
 consistency check, not inspection of installed core files or proof that the ROM
 matches its registry entry. The current protocol does not report virtual-gamepad
 creation, native-state consumption, or game-side input receipt. Those checks
-remain **Not verified** and require testing on RetroPie; the Doctor does not send
+remain **Not verified** and require testing on the selected console; the Doctor does not send
 input or create a virtual controller to test them.
 
 **Download connection report** exports only fixed checklist labels, results,
@@ -217,14 +172,14 @@ page invalidate them. Run the check again after changing the console or game.
 ### Settings shown in the browser
 
 Setup groups **Controller status**, **Players**, **Matrix attract mode**,
-**Connection and startup**, **Pair with RetroPie**, **Camera**,
+**Connection and startup**, **Pair this Controller**, **Camera**,
 **Trust this Controller**, **Joystick dead zone**, **Games**, and
-**Show statistics**. Receiver port and key replacement are under **Advanced
-connection**. The connection settings appear immediately before the secure pairing wizard. Camera selection, rate, reader, exposure, and diagnostic hand label
+**Show statistics**. Receiver port is under **Advanced connection**. The
+connection settings appear immediately before the secure pairing wizard. Camera selection, rate, reader, exposure, and diagnostic hand label
 are in their own action-first Camera section. The concise
 [Camera guide](CAMERA_GUIDE.md) explains compatibility, lighting, and recovery.
-Key replacement stops output and requires pairing again. A saved destination and
-key are not proof that RetroPie has received that key. **Check console address**
+A saved destination and pairing key are not proof that the selected console has
+received that key. **Check console address**
 verifies name resolution only.
 
 A failed initial load offers **Reload saved settings**; connection fields remain
@@ -237,16 +192,16 @@ from camera frames and controller packets, which remain newest-state-only.
 
 | Setting | Default | Meaning and recommendation |
 | --- | --- | --- |
-| Console hostname or IP | Empty (not configured) | Set your RetroPie hostname (`RETROPIE-NAME.local` in examples) or a reserved LAN address and pair through Connection before starting controls. Glove Academy and local settings work without a destination. Existing saved destinations are preserved. |
-| Receiver UDP port | `55355` | VirtualGlove Controller to RetroPie controller-state port. Leave it at the default unless both ends are changed. |
+| Console platform | Empty (not configured) | Choose RetroPie, Recalbox, Batocera, or LaunchBox before entering and saving the address. Pairing remains unavailable until both fields are saved. An upgraded installation with an existing address and token can continue operating, but must identify its platform before it can pair again. |
+| Console hostname or IP | Empty (not configured) | Set the selected console's `.local` hostname or a reserved LAN address and pair through Connection before starting controls. Glove Academy and local settings work without a destination. Existing saved destinations are preserved. |
+| Receiver UDP port | `55355` | VirtualGlove Controller to console controller-state port. Leave it at the default unless both ends are changed. |
 | Startup game profile | `off` | Fresh installations keep gestures and the camera off until the user selects a profile or launches a registered game. Existing saved startup profiles are preserved during upgrades. |
 | Hand or glove (diagnostic label) | `none` | `none`, `white`, or `black`. In the current release this is an informational diagnostic label; it does not change MediaPipe tracking. |
 | Camera | Automatic | Setup lists the currently discovered usable cameras. Prefer **Automatic — choose the connected camera**; choose a named camera only when more than one is attached or automatic selection is wrong. A saved disconnected camera remains visible as unavailable, and the list refreshes while Setup is open. |
 | Camera frame rate | Automatic | Tries 30 fps first, then accepts the camera driver's usable rate if necessary. Explicit 30- and 60-fps requests are available for comparison and fall back safely when unsupported. The live negotiated rate appears below the setting while tracking is active. |
 | Camera buffers | `1` | Selects one or two driver capture buffers. One minimizes queue depth; two may improve delivery continuity on some cameras. The latest-frame owner still discards superseded frames. Pixel Pal's camera test compares supported choices. |
 | Camera reader | Recommended — OpenCV | The portable, gameplay-validated capture path. **Engineering comparison — Direct V4L2** is an opt-in Linux 64-bit, 640×480 MJPEG experiment that drains to the newest driver buffer and falls back to OpenCV if its requirements are not met. |
-| Exposure behavior | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
-| Replace the pairing key when saving | Off | Rotates the shared secret. This immediately breaks the existing pairing until RetroPie is paired again. |
+| Exposure behaviour | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
 
 ![Advanced camera settings showing the discovered-camera dropdown and exposure controls](images/setup-camera.png)
 
@@ -256,15 +211,20 @@ restarts the vision worker using the saved calibration.
 Recalibrate only if you have moved the camera, changed your playing position,
 or notice unwanted movement while your hand is at rest.
 
-Setup pairing uses the saved console address, with one active step at a time:
+Setup pairing uses the saved console platform and address, with one active step at a time:
 choose a method, confirm the Controller certificate and matrix approval PIN,
-then provide the RetroPie one-time code or SSH credentials. Unsaved settings
-block pairing. The existing two-minute authorization window and server attempt
-limits remain authoritative; changing the console or method is disabled during
-the active window. Expiry clears secrets and offers fresh confirmation. A failed
-submitted request also requires confirmation again. Password entry is disabled
-until the certificate comparison and six-digit PIN step is complete. Ordinary
-HTTP shows only a link to secure Setup. Start/Stop and shutdown remain on Dashboard.
+then provide the selected console's one-time code or SSH credentials. The page
+shows only the command for that platform and supplies its normal SSH username
+(`pi` for RetroPie, `root` for Recalbox and Batocera). LaunchBox uses
+one-time-code pairing and never accepts SSH password pairing. Unsaved settings block
+pairing. The existing two-minute authorization window and server attempt limits
+remain authoritative; changing the console or method is disabled during the
+active window. The console verifies that the selected platform matches its
+installed operating system before changing its token. Expiry clears secrets and
+offers fresh confirmation. A failed submitted request also requires confirmation
+again. Password entry is disabled until the certificate comparison and six-digit
+PIN step is complete. Ordinary HTTP shows only a link to secure Setup. Start/Stop
+and shutdown remain on Dashboard.
 See the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices).
 
 The Controller authority is stable across ordinary upgrades and website-leaf
@@ -304,17 +264,17 @@ lock between completed inference and the signed controller send.
 
 Native X/Y can map a player's comfortable left, right, up, and down positions to
 the screen edges. It changes sensitivity and physical travel, not processing
-time. Gesture thresholds, D-pad behavior, depth, and Latest-coordinate movement
+time. Gesture thresholds, D-pad behaviour, depth, and Latest-coordinate movement
 stay unchanged.
 
 The four optional `calibration.neutral` fields `reach_left`, `reach_right`,
-`reach_up`, and `reach_down` are normalized image distances from the saved center.
+`reach_up`, and `reach_down` are normalized image distances from the saved centre.
 All four zero (or omitted in older backups) use the original camera-boundary
 mapping. Otherwise all four must be finite numbers at least `0.05` and fit inside
-the image around that center. Player presets and version-4 VirtualGlove hand-setup backups
+the image around that centre. Player presets and version-4 VirtualGlove hand-setup backups
 preserve them. New reach-bearing backups require reach-aware software on import.
-**Center hand preserves valid reach spans** because neutral centering and
-comfortable travel are separate adjustments. If a new center would place an
+**Centre hand preserves valid reach spans** because neutral centring and
+comfortable travel are separate adjustments. If a new centre would place an
 existing endpoint outside the camera image, the software safely returns to the
 full-field mapping. Review reach after moving the camera or changing playing
 position. Never reuse another camera setup's spans as universal defaults.
@@ -324,12 +284,12 @@ The four fields load the active player's exact saved spans, and the read-only
 summary shows the resulting width, height, and aspect ratio. Smaller values need
 less hand travel. **Save reach values** replaces only these four calibration
 fields. **Restore full camera field** writes four zeros after confirmation and
-does not alter center, scale, roll, jitter, thresholds, or Academy progress.
+does not alter centre, scale, roll, jitter, thresholds, or Academy progress.
 Controller output remains paused while Tune gestures is open.
 
 The operator helper `scripts/calibrate-reach.py` runs inside the Controller
 container, using the worker's Python environment and loopback APIs. After normal
-player centering, run these as separate commands, cueing the player before each:
+player centring, run these as separate commands, cueing the player before each:
 
 ```sh
 python scripts/calibrate-reach.py begin
@@ -342,7 +302,7 @@ python scripts/calibrate-reach.py apply
 ```
 
 `begin` saves a private complete backup under `data/backups/reach-*/`, persistently
-pauses delivery, and leases practice mode. Hold a relaxed palm at center for
+pauses delivery, and leases practice mode. Hold a relaxed palm at centre for
 `center`, then a steady, comfortable endpoint for each three-second directional
 step. The helper samples raw palm positions and requires at least 12 independent
 reliable observations, at least 80% reliable observations, and a stable hold away
@@ -371,7 +331,7 @@ active player's reach rectangle before mapping. Movement beyond an edge stays
 pinned to that edge and cannot build hidden off-screen state. The selected
 frame's capture timestamp drives freshness; inference-start time is not
 substituted for it. The production anchor remains the five-point average
-of wrist and four knuckles so existing centers and reach spans remain valid.
+of wrist and four knuckles so existing centres and reach spans remain valid.
 
 MediaPipe still supplies fingers, depth, roll, and gestures; FCEUmm directions
 and every game mapping are unchanged.
@@ -437,7 +397,8 @@ checking the reported supported range and live hand image.
 
 The earlier Kiyo Pro capture experiment used two buffers and a volatile HDR-off
 command while requesting 60 fps. It remains useful historical evidence, but it
-is not the 0.4.0 general default. See the [capture comparison](direction-response-benchmark.md#uno-q-kiyo-pro-capture-comparison--september-6-2026).
+is not the general default. See the camera-delivery work in the
+[Engineering Journey](ENGINEERING_JOURNEY.md#milestone-8-refine-camera-delivery-and-resilience-9-10-september-2026).
 
 The general default remains one buffer and no vendor control command. The HDR option
 checks USB identity `1532:0e05`, sends only the volatile HDR-off command, and sets
@@ -498,16 +459,18 @@ select an active profile or open Glove Academy. An active startup profile reques
 capture automatically after preloading. The player's explicit controller choice is
 restored as **armed** or **stopped**, but an armed worker does not transmit until a
 live registered game session or intentional manual Dashboard profile exists.
-Gestures off affects only VirtualGlove-generated input; the merged physical
-Player 1 joypad on RetroPie remains available. **Program 14 — Physical controller
-only** has the same neutral camera/output behavior while deliberately retaining
+Gestures off affects only VirtualGlove-generated input. Recalbox/Batocera's
+merged physical source and LaunchBox's physical XInput controller remain
+available; LaunchBox's loopback RetroPad becomes neutral and its real keyboard
+fallback remains available. Generic RetroPie follows its separate gamepad assignments. **Program
+14 — Physical controller only** has the same neutral camera/output behaviour while deliberately retaining
 the numbered profile and authenticated registered-game session.
 
 Activation waits for any unfinished preload, verifies the saved model, opens
 and configures the camera, waits for a usable frame, and creates the tracker.
 Dashboard, Play, and Glove Academy show **Starting camera and gesture tracking** until vision
 is active. The elapsed time covers startup work, not only the physical camera.
-**Center hand** stays disabled until initialization finishes.
+**Centre hand** stays disabled until initialization finishes.
 
 Switching between active profiles reuses the camera and tracker. **Gestures off**
 releases both, while imported libraries remain in memory. An application restart,
@@ -559,7 +522,7 @@ restore streaming, check the powered hub, cable, and camera connection.
 ### Glove Academy, calibration, and live readings
 
 Open **Glove Academy** at `/learn` to practise gestures, calibrate your resting
-position, or personalize recognition. The matrix shows **L** for lessons and
+position, or personalise recognition. The matrix shows **L** for lessons and
 **T** for tuning.
 
 Glove Academy starts the camera even when **Gestures off** is selected and uses a
@@ -589,7 +552,7 @@ practice indicators do not change those mappings.
 | V sign | Without personal adjustments, index and middle curl must be below 0.28; ring and little curl must exceed 0.42. Hold steadily for 0.50 seconds to send Start. A non-V pose must then remain visible for 0.30 seconds before Start can rearm. |
 | Thumbs-up | Without personal adjustments, thumb curl must be below 0.32 and all four finger curls above 0.42. Hold for 0.15 seconds to send Select. |
 | Live hand measurements | Shows curl values, thresholds, enlarged landmarks, and forward or backward movement relative to the calibrated hand size. |
-| Center hand | Replaces the saved resting reference. The button turns red while sampling, then blue with a brief completion message. |
+| Centre hand | Replaces the saved resting reference. The button turns red while sampling, then blue with a brief completion message. |
 
 #### Tracking and timing diagnostics
 
@@ -620,7 +583,7 @@ interpretation because its depth units differ.
 Glove Academy and gameplay share held finger and movement states. Glove Zap and Pull Back
 need two consecutive beyond-threshold observations plus 0.10 normalized
 palm-scale movement in the intended direction within 250 ms. Once confirmed,
-they remain recognized until movement falls below their respective release thresholds, and a confirmed menu pose
+they remain recognised until movement falls below their respective release thresholds, and a confirmed menu pose
 still satisfies its lesson after the short controller pulse ends. The browser
 preview is capped at 5 fps; status updates follow each tracking calculation.
 
@@ -631,7 +594,7 @@ you need to reposition without sending controls.
 
 The app reuses its saved resting reference across Glove Academy, gameplay, profile
 changes, and restarts. It calibrates automatically only when that reference is
-missing or invalid. Use **Center hand** after moving the camera or changing your
+missing or invalid. Use **Centre hand** after moving the camera or changing your
 playing position. Keep your palm near the resting position when practising
 finger curls so unintended movement does not obscure the finger readings.
 See [Saved neutral-hand calibration](#saved-neutral-hand-calibration) for storage
@@ -697,7 +660,7 @@ are tested engineering defaults rather than ordinary player controls.
 Direction-aware fast-sweep search is always active in the production MediaPipe
 path. It applies the measured gentle next-frame search translation without
 changing reach, gestures, mappings, or Latest-coordinate output. It has no
-device-file switch. Latest coordinate is the only live native X/Y behavior.
+device-file switch. Latest coordinate is the only live native X/Y behaviour.
 
 Setup's **Find the best camera settings** wizard temporarily compares the
 current configuration with capability-supported combinations. Its crash-safe
@@ -770,7 +733,7 @@ program_f  program_g  program_h  program_i
 ```
 
 The startup profile does not assign a profile to a ROM. Per-game selection is
-controlled by the RetroPie game registry described below.
+controlled by the game registry on the selected console.
 
 ## Pairing and token management
 
@@ -780,6 +743,8 @@ Both machines must hold the same token:
 | --- | --- |
 | VirtualGlove Controller | Application `data/device.json`, in the `token` field |
 | RetroPie | `/etc/virtualglove/token` |
+| Recalbox | `/recalbox/share/system/virtualglove/data/token` |
+| Batocera | `/userdata/system/virtualglove/data/token` |
 
 Use one-time-code pairing whenever possible:
 
@@ -787,11 +752,25 @@ Use one-time-code pairing whenever possible:
 sudo /opt/virtualglove/bin/virtualglove-pair
 ```
 
-Leave that command running on RetroPie, then complete pairing at
+On Recalbox use:
+
+```sh
+sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair
+```
+
+On Batocera use:
+
+```sh
+/userdata/system/services/VirtualGlove pair
+```
+
+Leave the matching command running on the console, then complete pairing at
 `https://UNO-Q-NAME.local:8443/setup`. The code is single use and expires after
-two minutes. Password pairing is also available when RetroPie accepts SSH
-password login; the password is used for one encrypted operation and is not
-stored.
+five minutes. Setup shows only the command matching the saved platform. Password
+pairing is also available when the console accepts SSH password login; use
+`pi` on a standard RetroPie installation and `root` on Recalbox or Batocera.
+The password is used for one encrypted operation and is not stored. Both methods
+reject a platform mismatch before replacing the console token.
 
 The RetroPie token must contain at least 16 characters and should remain owned
 by `root`, readable by the `input` group, and inaccessible to other users:
@@ -807,24 +786,26 @@ Use this fallback only when neither browser pairing method works. Both machines
 must already have the software installed.
 
 1. In App Lab, open the active application's private `data/device.json` and locate its `token` value.
-2. On RetroPie, run `sudo nano /etc/virtualglove/token`. Replace the file contents with that same value on one line, without quotation marks. Do not enter it as a shell command.
-3. Save with Ctrl+O, confirm the filename, and exit with Ctrl+X. Apply the ownership and permission commands above.
-4. Run `sudo systemctl restart virtualglove-receiver.service`, then test controller delivery from Dashboard. Clear the token from your clipboard and close the private file afterward.
+2. On the console, open the token file in its private data location listed at the start of this guide. Replace the contents with that same value on one line, without quotation marks. Do not enter it as a shell command.
+3. Restore the restrictive ownership and permissions required by that platform, then restart its VirtualGlove receiver.
+4. Test controller delivery from Dashboard. Clear the token from your clipboard and close the private file afterward.
 
-If you replace the pairing key in Setup, controller output stops; pair the devices again before selecting Start controller.
-Do not transfer the new token through a command-line argument; process listings
+Manual token copying is an emergency Linux-console recovery path. LaunchBox
+should be repaired with its one-time-code pairing command instead.
+
+Do not transfer a pairing token through a command-line argument; process listings
 and shell history can expose it.
 
-## RetroPie connection settings
+## Console connection settings
 
-The active launcher file is:
+The active launcher file is `/etc/virtualglove/launcher.json` on RetroPie,
+`/recalbox/share/system/virtualglove/data/launcher.json` on Recalbox, and
+`/userdata/system/virtualglove/data/launcher.json` on Batocera. LaunchBox uses
+`%LOCALAPPDATA%\VirtualGlove\data\launcher.json` and also records its RetroArch
+and core paths.
 
-```text
-/etc/virtualglove/launcher.json
-```
-
-It tells the runcommand hooks where to send profile changes when a game starts
-or exits.
+It tells that console's game lifecycle integration where to send profile
+changes when a game starts or exits.
 
 ```json
 {
@@ -838,8 +819,8 @@ or exits.
 
 | Field | Meaning |
 | --- | --- |
-| `uno_q` | VirtualGlove Controller hostname or reserved address reachable from RetroPie. |
-| `port` | RetroPie to VirtualGlove Controller profile-control port. This is `55356`, not the controller-state port. |
+| `uno_q` | VirtualGlove Controller hostname or reserved address reachable from the console. |
+| `port` | Console-to-Controller profile-control port. This is `55356`, not the controller-state port. |
 | `token_file` | Protected shared-token file. Keep the token out of this JSON file. |
 | `registry` | Active ROM-to-profile mapping. |
 | `timeout` | Seconds to wait for each acknowledgement. The hook retries up to three times and never prevents a game from launching. |
@@ -870,7 +851,7 @@ assigned to another device.
 
 Games is a section of **Setup**, below pairing; it is not a separate navigation tab.
 
-1. Open **Setup → Games** in the VirtualGlove Controller website. Both machines must be online and paired. The page reads the registry used by the installed RetroPie launch hook.
+1. Open **Setup → Games** in the VirtualGlove Controller website. Both machines must be online and paired. The page reads the registry used by the selected platform's installed launch integration.
 2. Select **Download backup** to keep a copy of the last verified installed registry on your computer.
 3. Edit the JSON, adding the exact ROM filename and a supported profile identifier inside `games`. Expand **Available profile identifiers** for the choices. Preserve your existing entries.
 4. Select **Validate**. It checks JSON syntax, supported profiles, and duplicate filenames, including names that differ only by letter case. **Format** tidies the JSON without saving it.
@@ -883,23 +864,38 @@ another editor changed the installed registry, saving is refused; download or co
 your draft before reloading. Connection failures leave the draft in the browser.
 Leaving or refreshing the page can discard unsaved work.
 
-The Games section needs the `virtualglove-games.service` installed by the current
-RetroPie setup workflow. If it reports an unavailable service, update the RetroPie
-installation, check pairing, and ensure TCP `55358` is reachable from the VirtualGlove Controller.
+The Games section needs the current platform's VirtualGlove Games service. If
+it reports an unavailable service, update that console installation, check
+pairing, and ensure TCP `55358` is reachable from the VirtualGlove Controller.
 Games does not require an SSH password after pairing.
 
 ### Registry format
 
-The active game registry is:
-
-```text
-/etc/virtualglove/games.json
-```
+The active game registry is `/etc/virtualglove/games.json` on RetroPie,
+`/recalbox/share/system/virtualglove/data/games.json` on Recalbox,
+`/userdata/system/virtualglove/data/games.json` on Batocera, and
+`%LOCALAPPDATA%\VirtualGlove\data\games.json` on LaunchBox.
 
 VirtualGlove matches the exact ROM basename, including its extension,
 without regard to letter case. Directory names are ignored. Automatic profile
-selection currently applies only when RetroPie reports the system as `nes` or
-`famicom`; other systems turn gesture control off.
+selection applies to NES launches reported by each supported platform
+integration. RetroPie also accepts `famicom`; unsupported systems turn gesture
+control off.
+
+After adding a ROM, refresh the frontend library and register its exact filename
+if it is not already present. Recalbox and Batocera rescan registered native
+Super Glove Ball filenames when their VirtualGlove service starts. LaunchBox's
+wrapper checks the registry on every launch. RetroPie retains its explicit
+per-ROM runcommand core selection. See [Add NES ROMs after VirtualGlove is
+installed](INSTALL_README.md#add-nes-roms-after-virtualglove-is-installed).
+
+LaunchBox stores `input_route: "network-retropad"` and a randomly selected
+`retroarch_remote_port` from `49152` through `65535` in its private
+`launcher.json`. The ordinary-game append configuration enables Network
+RetroPad for Player 1 on that port; the native Super Glove Ball configuration
+explicitly disables it. The sender always targets `127.0.0.1`, and the installer
+maintains a program- and port-scoped inbound firewall block for LocalSubnet.
+These values are installer-owned; rerun the installer rather than editing them.
 
 ```json
 {
@@ -944,7 +940,7 @@ Mattel's *Power Glove Instructions*, page 14, documents a separate hardware
 power-on rule: both rapid-fire switches initially turn on. That page also says
 not every program has rapid fire and points to the individual descriptions.
 VirtualGlove intentionally follows the active profile's documented button
-behavior instead of emulating the blanket hardware power-on state.
+behaviour instead of emulating the blanket hardware power-on state.
 
 Here, `rapid_a` and `rapid_b` control only repetition of the corresponding NES
 button while its gesture remains active. They do not modify profile-owned fast
@@ -975,7 +971,7 @@ The numeric portion of the shipped registry is:
 | Profile | Mattel-indexed titles | Structured rapid-fire entries |
 | --- | --- | --- |
 | `program_1` | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link | Blaster Master: `rapid_a=false`; Double Dribble and Racket Attack: `rapid_a=false`, `rapid_b=false` |
-| `program_2` | No indexed title; centering-practice alternative | None |
+| `program_2` | No indexed title; centring-practice alternative | None |
 | `program_3` | Ice Hockey; Top Gun | Ice Hockey: `rapid_b=false` |
 | `program_4` | Iron Tank | None |
 | `program_5` | Alpha Mission; Life Force; Xevious; 1943: The Battle of Midway | Alpha Mission: `rapid_a=false` |
@@ -1061,9 +1057,9 @@ reset or update another player. Saving errors pause lesson recognition until
 saved state is available again.
 
 Switching players, adding/deleting the active player, and restoring settings
-pause controller output. Each player keeps a separate saved calibration. Selecting a player immediately loads their sensitivity, progress, and saved center.
-Use **Center hand** after moving the camera or changing playing position. A new player has
-no saved center and needs centering once. Saved centers apply through the durable restore path;
+pause controller output. Each player keeps a separate saved calibration. Selecting a player immediately loads their sensitivity, progress, and saved centre.
+Use **Centre hand** after moving the camera or changing playing position. A new player has
+no saved centre and needs centring once. Saved centres apply through the durable restore path;
 output stays paused until you explicitly start it. Finish tuning and turn
 **Tune gestures** off before changing players or restoring settings.
 
@@ -1098,21 +1094,21 @@ rejected without changing the selected player. Fields are `name`, personal `thre
 personal thresholds mean no personal overrides. Effective thresholds contain
 all nine gesture activation/release pairs, including the supplied defaults in use.
 They let a later restore retain those sensitivity values when defaults change.
-Game mappings, recognition algorithms, and all other software behavior are not
+Game mappings, recognition algorithms, and all other software behaviour are not
 frozen by a hand backup.
 
 Calibration contains version `2` and `neutral` values: `palm_x`, `palm_y`,
 `palm_scale`, `roll`, `noise_x`, and `noise_y`. It comes from this player's saved
-reference, including while a selected player’s saved center is being applied.
+reference, including while a selected player’s saved centre is being applied.
 It is `null` if this player has no saved reference. The app does not assume that
-a stored center still matches the present physical setup.
+a stored centre still matches the present physical setup.
 
 **Restore hand setup** opens a review before any changes. It replaces the active
 player's name and sensitivity while keeping Academy progress. Check **Restore
 the complete saved sensitivity** to use `effective_thresholds`; leave it unchecked
 to restore personal adjustments with the installed defaults. Independently,
 check **My camera position and playing position match this backup** to reuse
-calibration. Otherwise set a fresh center. Controls stay paused until Start.
+calibration. Otherwise set a fresh centre. Controls stay paused until Start.
 
 Version 4 is the only supported portable backup format. Older formats are
 rejected with an unsupported-version message and their source file is never
@@ -1126,32 +1122,27 @@ device configuration files, and files larger than 8 KB are rejected. The API
 requires boolean `reuse_calibration: true` for backup calibration reuse and
 `use_effective_thresholds: true` for complete sensitivity restoration.
 
-`data/gesture-tuning.json` version 6 stores `version`, `active`, `generation`,
+`data/gesture-tuning.json` version 7 stores `version`, `active`, `generation`,
 `players`, and nullable `calibration_restore`. Each player has `name`,
 `thresholds`, one `joystick_deadzone`, `progress` (`course`, `completed`, `lesson`),
-separate `ready_progress` (`course`, `completed`, `completed_at`), `needs_center`, and
-nullable `calibration`. Course version 1 uses sixteen zero-based lesson indices.
+`needs_center`, and nullable `calibration`. Course version 1 uses sixteen zero-based lesson indices.
 Generations reject stale writes after switches/restores/resets. The active
 working reference is mirrored in `data/calibration.json`; individual references
 are kept in the player store. Migration associates an existing valid reference
-only with the currently centered player, not with every preset.
+only with the currently centred player, not with every preset.
 
 Confirmed reuse atomically stores a pending calibration while keeping output
 gated. The worker writes the active calibration, then clears the pending reference
-and centering gate. An interrupted restore resumes after restart; a failed write
+and centring gate. An interrupted restore resumes after restart; a failed write
 leaves output paused. Switching players cancels an unapplied reference. Export
 waits until a pending restore finishes.
 
-Internal store versions 1–5 migrate without losing names, sensitivity, or progress.
-Version 4 directional activation values migrate using their largest value and
-directional release values are retired.
-Before the first write, `data/gesture-tuning-vN-backup.json` retains the old
-store, where N is its version. This internal recovery migration is separate from
-the unsupported version-1 portable export format. Files use mode `0600` and
-survive upgrades. Older apps cannot read version 6; stop the app and restore the
-appropriate private store backup when deliberately rolling back.
+Version 6 records load without losing names, calibration, dead-zone settings,
+sensitivity, or Academy progress; the retired ready-guide progress is discarded.
+Files use mode `0600` and survive upgrades. Older apps cannot read version 7;
+stop the app and restore a private store backup when deliberately rolling back.
 
-`POST /api/players` supports `read`, `progress`, `ready_progress`, `reset_progress`, `create`,
+`POST /api/players` supports `read`, `progress`, `reset_progress`, `create`,
 `select`, `rename`, `delete`, `export`, `restore`, and `reuse_calibration`.
 Non-read requests include `player` and `generation`. Saved-player reuse also
 requires `confirmed: true`. JSON bodies are limited to 8192 bytes and require
@@ -1162,19 +1153,19 @@ progress are available on the trusted LAN; presets are not login accounts.
 
 ## Tune gesture sensitivity
 
-Use **Glove Academy → Tune gestures** to personalize recognition. You do not need to edit
+Use **Glove Academy → Tune gestures** to personalise recognition. You do not need to edit
 `config/profiles.json`; it is the release-owned shared baseline. Updates back up
 and replace it. Personal adjustments belong in `data/gesture-tuning.json`, which
 remains untouched.
 
-1. Choose **Set up a new hand**, **A gesture is hard to trigger**, **A gesture happens accidentally**, or **Movement feels off-center**.
-2. Choose the gesture when asked. Off-center movement instead shows the saved center and an explicit **Center hand** action.
+1. Choose **Set up a new hand**, **A gesture is hard to trigger**, **A gesture happens accidentally**, or **Movement feels off-centre**.
+2. Choose the gesture when asked. Off-centre movement instead shows the saved centre and an explicit **Centre hand** action.
 3. Keep the complete hand visible with valid palm geometry for one second. Select **I'm ready** and wait through the two-second countdown. The displayed MediaPipe score is handedness certainty, not a position-quality requirement.
 4. Follow the three recordings. Ordinary poses and movement steps last two seconds. Glove Zap and Pull Back use a six-second middle step containing three motions and returns.
-5. Analyze the recording and try the temporary preview twice. Return to neutral after each use and remain neutral for three seconds.
+5. Analyse the recording and try the temporary preview twice. Return to neutral after each use and remain neutral for three seconds.
 6. Save when the guided test passes. Only selected components are merged into the active player’s hand settings.
 
-![Tune mode with Pixel Pal guiding the personalization choices](images/tune-page.png)
+![Tune mode with Pixel Pal guiding the personalisation choices](images/tune-page.png)
 
 The reference screenshot deliberately excludes the live camera area. Pixel Pal
 presents one instruction and primary action at a time. **Movement reach** is a
@@ -1186,8 +1177,8 @@ shows a scanning **T** while tuning and a matching scanning **L** in ordinary pr
 Activation is the point where a non-positional gesture begins; release is the lower point where
 it stops. Separate values prevent rapid on/off flickering. Wrist steering, push,
 pull-back, fingers, and braking use these held states; game-specific button assignments
-and pulses still apply. Positional directions instead use Setup's single square center
-box and are not gesture-personalization channels. Compound gestures share component thresholds, so
+and pulses still apply. Positional directions instead use Setup's single square centre
+box and are not gesture-personalisation channels. Compound gestures share component thresholds, so
 changing a finger also affects other gestures that use it. Suggested menu-pose
 adjustments tune the closed fingers; already extended fingers retain their existing
 settings from hand setup or existing personal/default values. Button assignments and menu hold timing
@@ -1198,7 +1189,7 @@ Hand setup learns open and curled thresholds for all five fingers. Individual tu
 Only the active player’s adjusted components override all game profiles. Untuned components retain
 the shared supplied values. Personal adjustments are saved atomically in
 `data/gesture-tuning.json` and survive application restarts and normal updates.
-Normal personalization saves no images or recordings. Stored player files must
+Normal personalisation saves no images or recordings. Stored player files must
 use the version-6 format introduced with VirtualGlove 0.4.1 and retained by
 0.4.2; older files are
 reported as unsupported and are not overwritten.
@@ -1215,12 +1206,12 @@ changes the resting reference separately and invalidates any current recordings.
 
 ### Private Academy diagnostic capture
 
-The Advanced diagnostic is separate from personalization. Eight user-paced cues
+The Advanced diagnostic is separate from personalisation. Eight user-paced cues
 exercise neutral, directions, A/B, menu poses, rolls, depth motion, Menu Guard,
 and tracking recovery using the deployed **MediaPipe Hands** backend.
 The VirtualGlove Controller records a temporary local AVI only while a cue is active. Completion
 produces an aggregate JSON report containing detection continuity, confidence,
-latency, hand brightness, and recognized state names. It contains no frames or
+latency, hand brightness, and recognised state names. It contains no frames or
 per-frame landmarks. The AVI is deleted immediately after analysis or cancellation;
 an abandoned capture is deleted after 30 minutes. No network upload occurs.
 
@@ -1233,7 +1224,7 @@ useful for understanding the defaults; personal tuning is managed through Glove 
 
 | Field | What it measures | Effect of lowering the value |
 | --- | --- | --- |
-| `joystick_deadzone` | Chosen width and height of the saved-center region as a fraction of the full camera frame (0.10–1.00); effective size is at least 1.5 calibrated hands | Positional directions begin closer to the saved center unless the hand-size floor applies |
+| `joystick_deadzone` | Chosen width and height of the saved-centre region as a fraction of the full camera frame (0.10–1.00); effective size is at least 1.5 calibrated hands | Positional directions begin closer to the saved centre unless the hand-size floor applies |
 | `coordinate_edge_margin` | Camera margin excluded from native X/Y travel | Native travel reaches its edge closer to the camera boundary |
 | `coordinate_smoothing_min` | Minimum weight assigned to the newest native coordinate | Small native movements respond more immediately but may show more jitter |
 | `coordinate_smoothing_max` | Maximum newest-coordinate weight during deliberate travel | Large native movements catch up less quickly |
@@ -1248,7 +1239,7 @@ useful for understanding the defaults; personal tuning is managed through Glove 
 | `curl_off` | Curl amount at which an active curl releases | Curl stays active until the finger is straighter |
 | `roll_on` | Wrist rotation from the centred angle | Roll actions activate with less rotation |
 | `roll_off` | Rotation at which active roll releases | Roll stays active closer to neutral |
-| `push_on` | Relative increase in apparent hand size from center | Push actions activate with less forward movement |
+| `push_on` | Relative increase in apparent hand size from centre | Push actions activate with less forward movement |
 | `push_off` | Depth change at which an active push releases | Push stays active closer to the centred depth |
 | `depth_confirm_frames` | Consecutive beyond-threshold observations required for Glove Zap or Pull Back | Fewer observations accept shorter changes but reduce spike rejection |
 | `depth_motion_window_ms` | Window in which the required depth travel must occur | A longer interval accepts slower depth motion |
@@ -1292,7 +1283,7 @@ The supplied shared recognition defaults are:
 ```
 
 The `recognition` object applies to every game profile. FCEUmm positional movement
-uses a stateless 3×3 grid around the calibrated center. Positions inside or exactly
+uses a stateless 3×3 grid around the calibrated centre. Positions inside or exactly
 on the square produce no positional D-pad bits; side regions produce cardinals and
 corner regions produce diagonals. Neutral calibration records ordinary X/Y jitter
 and can safely enlarge the effective square beyond the player's chosen value. Setup
@@ -1301,7 +1292,7 @@ and dedicated game profiles only decide how shared recognition states map to
 controller output.
 
 Native stabilization treats a saturated `1.0` calibration jitter measurement as
-unusable. It keeps that calibration's center, scale, and wrist values but uses
+unusable. It keeps that calibration's centre, scale, and wrist values but uses
 the small fixed native noise floor, avoiding a large dead zone followed by a
 jump. A normal measured jitter value continues to raise the native noise floor.
 
@@ -1330,12 +1321,12 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 ### Upgrade both computers together
 
 1. Select **Stop controller** and back up both installations and private settings.
-2. Update RetroPie and the VirtualGlove Controller from the same development commit or compatible release. The default new receiver rejects old input, and the new sender does not downgrade to version 1; mixed versions will pause controller delivery.
-3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behavior and actual game input. Profile changes also establish a fresh controller session.
+2. Update the selected console and the VirtualGlove Controller from the same development commit or compatible release. The receiver rejects retired input protocols, and the sender does not downgrade; mixed versions pause controller delivery.
+3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behaviour and actual game input. Profile changes also establish a fresh controller session.
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
 Existing pairing credentials and native emulator files need no format migration.
-VirtualGlove 0.4.1 is the oldest supported in-place upgrade. Update both machines
+VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.0. Update both machines
 together. The Controller package carries
 and flashes the matching checksum-verified Matrix firmware; do not skip that
 installer stage or mix it with an older Controller/receiver build. Native
@@ -1389,6 +1380,14 @@ It matches the virtual device name plus vendor and product IDs `1:1`, uses the
 `udev` input driver, and maps D-pad directions, A, B, Start, Select, and four
 axes to a standard RetroPad. It does not configure an I-PAC, 8BitDo controller,
 or any other physical controller.
+
+The optional development-cabinet integration is maintained separately under
+`retropie/arcade-cabinet-merger/`. It adds two `Arcade Merged Player`
+autoconfigurations and a cabinet-specific service without changing this
+standard `VirtualGlove.cfg`. The development cabinet has migrated to Controller
+Router; this older integration remains the tested rollback and mapping
+reference. Do not apply its I-PAC button numbers or device names to another
+cabinet until that hardware's Linux events and hotkeys have been confirmed.
 
 If RetroArch has a hand-written override for this device, remove or reconcile
 that override before diagnosing the supplied autoconfiguration.
@@ -1455,12 +1454,12 @@ ports through a router or expose them directly to the Internet.
 
 | Port | Direction | Purpose |
 | --- | --- | --- |
-| UDP `55355` | VirtualGlove Controller to RetroPie | Authenticated live controller state |
-| UDP `55356` | RetroPie to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
+| UDP `55355` | VirtualGlove Controller to console | Authenticated live controller state |
+| UDP `55356` | Console to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
 | TCP `8088` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
 | TCP `8443` | Browser to VirtualGlove Controller | TLS Setup and pairing workflow |
-| TCP `55358` | VirtualGlove Controller to RetroPie | Paired game registry reads, saves, and restoration |
-| TCP `55357` | VirtualGlove Controller to RetroPie | Temporary one-time-code pairing helper |
+| TCP `55358` | VirtualGlove Controller to console | Paired game registry reads, saves, and restoration |
+| TCP `55357` | VirtualGlove Controller to console | Temporary one-time-code pairing helper |
 
 The two UDP ports serve different purposes despite their similar numbers. The
 `port` in VirtualGlove Controller `device.json` is normally `55355`; the `port` in RetroPie
@@ -1488,7 +1487,7 @@ which erases the shape on the physical display. Transitional objects need to
 cross several columns and remain visible for more than one frame; isolated
 one-pixel changes are easily lost to persistence and viewing angle.
 
-Always judge animation timing and grayscale on the physical VirtualGlove Controller. A source
+Always judge animation timing and greyscale on the physical VirtualGlove Controller. A source
 grid or browser mock-up is useful for finding malformed frames, but it cannot
 reproduce LED bloom, exposure, or perceived persistence. A short video covering
 several complete loops is the preferred review artifact for later refinements.
@@ -1591,12 +1590,12 @@ repository templates by themselves does not migrate active configuration.
 | Gestures off shows a blinking X | Update VirtualGlove; Gestures off should show the glove attract animation and must not open the camera. |
 | Camera disappears after reboot | Check `lsusb` and `/dev/v4l/by-id/`, reconnect the camera or hub if absent, and keep Camera set to **Automatic** unless selecting a specific listed device. See [startup diagnostics](#vision-startup-and-timing). |
 | First activation is slow | Allow background preloading to finish and inspect the startup stage logs before attributing the delay to the camera. |
-| Movement triggers too late | Recalibrate neutral first and verify the hand is steady; then reduce the selected player's **Joystick dead zone** center-box size. |
-| Direction remains stuck | Recalibrate neutral, return inside the Setup center box, and verify tracking-loss release. Adjust **Joystick dead zone** if the resting box is too small. |
-| Pairing suddenly fails after a Setup change | A rotated token invalidates the old pairing; run the pairing flow again. |
+| Movement triggers too late | Recalibrate neutral first and verify the hand is steady; then reduce the selected player's **Joystick dead zone** centre-box size. |
+| Direction remains stuck | Recalibrate neutral, return inside the Setup centre box, and verify tracking-loss release. Adjust **Joystick dead zone** if the resting box is too small. |
+| Pairing suddenly fails | Run the pairing flow again so both devices receive the same current key. |
 | EmulationStation pauses or another USB device behaves unexpectedly at boot | Verify receiver startup is controlled by the 45-second timer and the service is not independently enabled at boot. |
 
-## Configuration file catalog
+## Configuration file catalogue
 
 | Repository file | Active or installed copy | Used by |
 | --- | --- | --- |
@@ -1752,9 +1751,9 @@ See the installation guide for the investigation status and Arduino guidance.
 
 ## Saved neutral-hand calibration
 
-The worker saves its completed neutral reference in `data/calibration.json`. It includes palm position, apparent size, wrist angle, and normal X/Y positional jitter; it is not a personally trained gesture model. The jitter estimate can raise the shared movement thresholds above their baseline, but never makes them more sensitive. Glove Academy, gameplay, profile changes, camera reconnects, and worker restarts reuse this reference. **Center hand** explicitly replaces it after sampling completes; an interrupted calibration preserves the previous saved reference. Recalibrate after moving your camera or changing your seating or standing position.
+The worker saves its completed neutral reference in `data/calibration.json`. It includes palm position, apparent size, wrist angle, and normal X/Y positional jitter; it is not a personally trained gesture model. The jitter estimate can raise the shared movement thresholds above their baseline, but never makes them more sensitive. Glove Academy, gameplay, profile changes, camera reconnects, and worker restarts reuse this reference. **Centre hand** explicitly replaces it after sampling completes; an interrupted calibration preserves the previous saved reference. Recalibrate after moving your camera or changing your seating or standing position.
 
-On first use, or if the saved file is missing or invalid, the worker samples an initial reference automatically. Calibration requires 24 complete observations at 70% hand confidence or better. It averages palm center and apparent size, uses a circular mean for wrist angle, and records the 95th-percentile X/Y deviation as normal jitter. Hold a relaxed open hand still at the intended neutral point and distance. Repeating from the same physical setup should produce a close reference, not identical floating-point values, because camera landmarks vary from frame to frame.
+On first use, or if the saved file is missing or invalid, the worker samples an initial reference automatically. Calibration requires 24 complete observations at 70% hand confidence or better. It averages palm centre and apparent size, uses a circular mean for wrist angle, and records the 95th-percentile X/Y deviation as normal jitter. Hold a relaxed open hand still at the intended neutral point and distance. Repeating from the same physical setup should produce a close reference, not identical floating-point values, because camera landmarks vary from frame to frame.
 
 The release-owned `config/profiles.json` contains the portable starting point:
 movement thresholds, coordinate range, stabilization, finger, roll, depth,
@@ -1784,21 +1783,88 @@ need both the option and its value, such as `--port 55355`.
 ### Install or inspect a machine
 
 Run `sudo python3 scripts/setup-machine.py MACHINE [OPTIONS]` from the project
-directory on the target Linux machine. This is the recommended installer for
-both VirtualGlove Controller and RetroPie. `--check` performs read-only checks; using `sudo`
-also lets those checks read protected token files.
+directory on the target Linux machine. It supports the VirtualGlove Controller,
+RetroPie, Recalbox, and Batocera. The published entry script supplies the correct
+privilege model: normal user plus `sudo` where needed on Debian systems, and the
+existing `root` login on Recalbox or Batocera. `--check` performs read-only checks.
 
 | Argument or flag | Default | Meaning |
 | --- | --- | --- |
-| `MACHINE` | Required | `retropie` or `uno-q`; selects the machine to install or inspect. |
-| `--peer HOST` | None | Required for a new RetroPie launcher configuration; supplies the VirtualGlove Controller hostname or IPv4 address. Existing launcher settings are preserved. On VirtualGlove Controller, it prints guidance but does not change the saved receiver address. |
+| `MACHINE` | Required | `retropie`, `recalbox`, `batocera`, or `uno-q`; selects the machine to install or inspect. |
+| `--peer HOST` | None | Required for a new console launcher configuration; supplies the VirtualGlove Controller hostname or IPv4 address. Existing launcher settings are preserved. On VirtualGlove Controller, it prints guidance but does not change the saved receiver address. |
 | `--check` | Off | Checks the existing installation without installing, restarting, or changing it. |
+| `--list-player1-devices` | Off | Recalbox/Batocera only. Lists configured, connected gamepads with stable selection IDs and installs nothing. |
+| `--player1-device ID` | Automatic only when exactly one pad is available | Recalbox/Batocera only. Selects or replaces the physical controller merged into NES Player 1. Use an ID from `--list-player1-devices`. |
 | `--wifi-status-only` | Off | With `uno-q`, install/update only the unprivileged Wi-Fi status sampler. Cannot be combined with `--check`. Normal setup and Wi-Fi deployment include it automatically. |
 | `-h`, `--help` | — | Prints usage and exits. |
 
 Exit codes are `0` for success, `1` for an installation/check failure, and `2`
 for outstanding user action. Argument errors also use argparse's exit code `2`.
 The current check always asks for human gameplay confirmation.
+
+### Configure Controller Router
+
+The `virtualglove-controller-router` tool is installed on supported Linux
+consoles. Its
+`setup` command opens an interactive local assignment screen with no additional
+terminal-interface dependency. It detects the platform automatically, displays
+connection state, tests controls, assigns Players 1–4, and confirms save or
+rollback operations. Lower-level commands are `list`, `show`, `configure`,
+`check`, `apply`, and `rollback`. `--platform` can override automatic detection.
+`configure` accepts `--document PATH`; `apply` updates the platform's managed
+Libretro Player assignments. RetroPie resolves the final system configuration
+from its launch hook, Batocera persists managed RetroArch keys in
+`batocera.conf`, and Recalbox writes the managed block to
+`/recalbox/share/roms/.retroarch.cfg`. Recalbox's
+`retroarchcustom.cfg.overrides.cfg` is regenerated output and is not a durable
+configuration target. RetroPie keeps Router disabled until an
+authenticated Setup save or an explicit `apply`. Recalbox and Batocera migrate
+their existing version-1 Player 1 record automatically.
+
+When Libretro gameplay becomes active, Router begins its physical output
+neutral, resolves the current sources and indexes, and then admits physical
+controls immediately. For supported NES joystick cores it also releases stored
+VirtualGlove state and requires a fresh neutral observation before accepting
+gestures. Camera-position axes remain exclusive to Nestopia (VirtualGlove)'s
+native-state interface.
+
+RetroPie installs the command at
+`/opt/virtualglove/bin/virtualglove-controller-router`. Read-only platform
+layouts retain their launcher at
+`/recalbox/share/system/virtualglove/scripts/virtualglove-controller-router` or
+`/userdata/system/virtualglove/scripts/virtualglove-controller-router`, so the
+tool survives Recalbox and Batocera reboots and upgrades. Invoke these two
+persistent-share launchers with `sh`, because the shares do not permit direct
+program execution.
+
+The version-2 `controller-router.json` document contains `platform`, `players`,
+and `virtualglove_player`. Each player entry contains a slot from 1–4 and stable
+physical source records. Sources contain the friendly identity and authoritative
+last-known EmulationStation mapping, never `eventN`, `jsN`, or a saved RetroArch
+index. While idle and before each supported launch, Router validates the live
+EmulationStation entry and automatically refreshes its translator if the
+mapping changed. The stable player assignment does not change. Setup labels
+this state **Mapping refreshed**. An incomplete or ambiguous live mapping makes
+only that source unavailable rather than guessing or reusing unsafe button
+numbers. A
+source may appear in only one player. `virtualglove_player` is `null` or one
+slot from 1–4. Enabled outputs are the slots with at least one physical source
+or the assigned VirtualGlove slot.
+
+Remote Setup uses `/inputs` on TCP 55358 with `virtualglove-inputs/1`. Saves
+carry the revision returned by `read`; stale revisions and changes during a
+running Libretro game are rejected. `rollback` restores the previous
+complete document atomically.
+
+The development cabinet's receipt-gated migration helper remains under
+`retropie/arcade-cabinet-merger/`. Its accepted migration imported both I-PAC
+interfaces, both 8BitDo controllers, and VirtualGlove into Router. `rollback`
+still restores the previous service and RetroArch state if the reference path
+is needed.
+
+Structured game entries may add `"four_score": "force"`. This sets FCEUmm's
+User 5 device to its 4-Player Adaptor value (`769`) for a compatible altered
+ROM. Leave the field absent for normal CRC-based automatic detection.
 
 ### Run the RetroPie receiver
 
@@ -1891,7 +1957,7 @@ smoothing, prediction, or a queue.
 ### Run the paired Games service
 
 The RetroPie installer starts this service automatically. Its installed command
-is `virtualglove-games`; developers can also run `python3 -m powerglove_vision.game_registry`.
+is `virtualglove-games`; developers can also run `python3 -m virtualglove.game_registry`.
 
 | Flag | Default | Purpose |
 | --- | --- | --- |
@@ -1984,7 +2050,8 @@ before using it. Normal VirtualGlove Controller use should start through App Lab
 Run `python3 scripts/measure-vision-status.py` from the development checkout.
 The command performs GET requests only. It does not open the camera, arm the
 controller, change profiles, or record images. Set the intended state through
-Dashboard before starting. See the [baseline procedure](direction-response-benchmark.md#collect-a-live-status-baseline)
+Dashboard before starting. See
+[Read-only live observation](ENGINEERING_TOOLKIT.md#read-only-live-observation)
 for interpretation and the separate receiver, core, and display measurements.
 
 | Flag | Default | Meaning |
@@ -2012,7 +2079,7 @@ maintainer's board and is not appropriate for other installations.
 
 | Script or setting | Arguments and defaults | Effect |
 | --- | --- | --- |
-| `scripts/deploy-uno-q-wifi.sh` | Optional positional `USER@HOST`; `-h` or `--help`; optional `UNO_Q_SSH_IDENTITY` private-key path | Transfers the Linux application, preserves `data/`, restarts the container, and checks web routes. Does not update RetroPie or flash the matrix sketch. |
+| `scripts/deploy-uno-q-wifi.sh` | Optional positional `USER@HOST`; `-h` or `--help`; optional `UNO_Q_SSH_IDENTITY` private-key path | Transfers the Linux application, preserves `data/`, restarts the container, and checks web routes. Privileged host maintenance runs only when `sudo -n` is already authorized; otherwise the script skips it without opening an invisible password prompt and prints the commands to run directly on the UNO Q. Does not update a console. |
 | `UNO_Q_SSH_TARGET` | Environment variable; overridden by a positional destination | Sets the SSH destination. Without either setting, deployment falls back to the maintainer's board. |
 | `UNO_Q_APP_DIR` | Environment variable; default `/home/arduino/ArduinoApps/virtualglove` | Remote deployment directory. Changing it does not change the host helpers' fixed path or the machine installer's path requirement. |
 | `scripts/install-uno-q-shutdown-helper.sh` | Optional positional `USER@HOST`; `-h` or `--help` | Installs the fixed shutdown watcher, service, and readiness rule. Uses the positional destination, then `UNO_Q_SSH_TARGET`, then the maintainer's fallback. The application directory is fixed. |
@@ -2029,30 +2096,42 @@ they may still perform their normal work.
 | Script | Arguments and flags | Result or requirement |
 | --- | --- | --- |
 | `scripts/build-app-lab-package.sh` | No flags or positional arguments | Builds `output/app-lab/VirtualGlove-Uno-Q.zip`; requires Bash, rsync, zip, and the existing public PDFs. |
+| `scripts/build-enclosure-packages.py` | No flags or positional arguments | Validates `hardware/enclosures/enclosure-files.json` and deterministically rebuilds the UNO Q Case, Dock V1, and Dock V2 print-file bundles. |
+| `website/build.py` | No flags or positional arguments | Reads `config/release.json`, renders and validates the four static public pages, and creates `output/website/VirtualGlove-Website.zip` for manual upload. |
 | `scripts/verify-app-lab-package.py` | Optional `ARCHIVE` path; `-h`, `--help` | Checks the supplied ZIP or the default ZIP above; prints its SHA-256. Returns `0` on success, `1` on verification failure. |
 | `scripts/check-documentation.py` | `--require-pdfs`; `-h`, `--help` | Checks Markdown, links, and coverage. The optional flag also inspects the PDF set and needs `pypdf`. Returns `0` on success, `1` on failure. |
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
 | `scripts/build-docs-pdf.py` | No flags or positional arguments | Rebuilds all registered PDF editions; requires ReportLab. Use only when ready to regenerate the PDFs. |
 | `scripts/build-nestopia-powerglove.sh` | Optional build-directory positional argument | Clones a pinned official Nestopia revision, applies the isolated native-compatibility patch, and builds the separately named VirtualGlove native core. It does not install the core by itself. |
+| `scripts/verify-retropie-native-core.py` | Required `--manifest` and exactly one of `--target` or `--machine`; optional `--runtime`, `--cpuinfo`, `--core`, `--load`, or `--resolve-core` | Resolves the package from RetroArch's actual ELF ABI before the kernel name, distinguishes ARMv6, ARMv7, and 32-bit ARMv8, and verifies the binary, matching GPL source archive, checksums, ELF identity, libretro API, and `Nestopia PowerGlove` identity. |
+| `scripts/build-recalbox-nestopia-powerglove.sh` | `RECALBOX_SOURCE TARGET [DESTINATION]` | Uses Recalbox's official container and Buildroot Nestopia recipe with a source override. Accepts all seven Recalbox 10.x targets, requires an exact release tag, and accumulates target/version artifacts in one manifest. |
+| `scripts/build-recalbox-native-matrix.sh` | `RECALBOX_SOURCE [DESTINATION]` | Builds all seven targets from one exact Recalbox release tree. Use the single-target builder for a public target that remains on a different Recalbox release. |
+| `.github/workflows/recalbox-native-cores.yml` | Manual `recalbox_version` input | Builds the seven targets as isolated parallel jobs and retains each core, corresponding source archive, and target-specific manifest for review. It never publishes or deploys them. |
+| `scripts/build-batocera-nestopia-powerglove.sh` | `BATOCERA_SOURCE TARGET [DESTINATION]` | Initializes Batocera's stock Nestopia package for the named target, then builds the pinned VirtualGlove core with that target's exact compiler and sysroot. It rejects target names that have not been mapped to a verified Nestopia platform. |
+| `scripts/build-batocera-native-matrix.sh` | `BATOCERA_SOURCE [DESTINATION]` | Builds all 15 Batocera 43.1 targets and safely resumes by skipping only artifacts that pass manifest, source, checksum, and ELF verification. |
+| `.github/workflows/batocera-native-cores.yml` | Manual exact reviewed Batocera source ref | Builds the 15 targets as isolated parallel jobs, verifies every artifact, and retains the binary, corresponding source, and manifest for review. It never publishes or deploys them. |
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
-| `scripts/install-nestopia-powerglove.sh` | Optional build-directory positional argument | Run with `sudo` on RetroPie after exact-ROM validation. Builds and installs only `lr-nestopia-powerglove`, plus its upstream GPLv2 license and distribution note; stock Nestopia remains untouched. The normal RetroPie installer offers this step when a registered Super Glove Ball ROM is found. |
+| `scripts/install-nestopia-powerglove.sh` | No flags or positional arguments | Run with `sudo` on RetroPie after exact-ROM validation. Resolves and load-checks the packaged core matching RetroArch's ABI, backs up a changed installed core, and replaces it atomically with its GPLv2 license and distribution note. A missing or incompatible package leaves the previous core untouched and FCEUmm available. Stock Nestopia remains untouched. |
+| `scripts/install-recalbox-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Development-only replacement path after the base Recalbox installation. Rejects a running game, verifies the core against the packaged architecture manifest, load-checks it, installs it atomically, refreshes the runtime overlays, and optionally selects only the exact ROM. Normal releases already carry verified target binaries when available. |
+| `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build in the same Recalbox major series. It verifies the exact target, size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. Cross-major fallback is rejected. |
+| `scripts/verify-batocera-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build for the exact Batocera architecture. It verifies corresponding source, checksums, source revisions, build image, ELF identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. |
+| `scripts/install-batocera-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Run as root on Batocera after the base VirtualGlove installation. Load-checks the target-built libretro core before atomic persistent installation, refreshes its reversible core overlays, and optionally selects the exact ROM. |
 | `scripts/install-powerglove-dot.sh` | Optional RetroPie prefix positional argument | Builds and installs the project-owned, ROM-free `lr-powerglove-dot` calibration core. The release installer offers it independently of Super Glove Ball and adds its fixed launcher to Ports. |
 | `scripts/configure-super-glove-ball-core.py` | `--rom PATH --mode MODE [--apply]`, where MODE is `native` or `fceumm` | Previews or atomically selects the custom core for one Super Glove Ball ROM. `--mode fceumm` is the explicit rollback. |
+| `scripts/configure-recalbox-super-glove-ball-core.py` | Optional system-list paths; optional `--rom PATH`; `--mode {native,fceumm}`; `--auto-select`; `--registry PATH`; `--rom-root PATH`; `--selection-only`; `--apply` | Adds the separate core to a temporary Recalbox NES system list and preserves unrelated keys while writing exact-ROM `.recalbox.conf` sidecars. Automatic mode selects only registered Super Glove Ball filenames without an existing core choice. Selection-only mode lets startup treat discovery errors as non-blocking after the required core registration succeeds. |
+| `scripts/configure-batocera-super-glove-ball-core.py` | Optional `--rom PATH`; `--mode {native,fceumm}`; `--auto-select`; optional config, registry, ROM-root, core, and info paths; `--apply` | Preserves unrelated `batocera.conf` entries while changing only exact-ROM emulator/core keys. Automatic mode selects registered Super Glove Ball filenames only when they have no existing explicit core choice. Native mode requires the custom core and info record to be mounted first. |
 | `scripts/run-nestopia-powerglove-trace.py` | Core, exact ROM, trace/state/scratch paths | Runs controlled native phases, records the ROM digest and packet evidence, and can save temporary validation frames. |
 | `scripts/benchmark-direction-response.py` | Paths to both cores and the exact Super Glove Ball ROM, scratch path, optional FCEUmm reference ROM, frame count, and JSON output | Runs matched-savestate activation and release comparisons for the same ROM in native and FCEUmm modes. The optional reference lane uses Gun Smoke. ROMs and scratch output remain outside the project. |
-| `scripts/record-vision-benchmark.py` | Optional camera, output, size, and frame-rate flags | Records a fixed 30-second, local-only cue sequence for near/far recognition, X/Y travel, jitter, depth, and recovery comparisons. It is never run by installation or used for training. |
 | `scripts/guided-vision-benchmark.py` | Optional camera, output, bind address, port, size, frame rate, protocol, reader, buffer count, manual exposure, and manual gain | Serves a temporary live-preview page for user-paced, per-step recording, including a focused fast-sweep protocol. Each selected step has a two-second countdown; pauses are not recorded. Production-matched Direct V4L2 capture retries brief invalid frames, records the applied capture settings, restores camera automation, and releases the camera on completion. Output stays local and is not training data. |
 | `scripts/benchmark-vision-replay.py` | Local clip, required JSON output, optional Tasks model path, and research lane parameters | Replays the same full frames through MediaPipe Hands at 1, 2, 3, or 4 threads and through optional Tasks Video, at 640×480 and full-field 512×384, with preview closed and open. Reports p50/p95 inference, continuity, cue recognition, neutral false activations, coordinate jitter, preview cost, tracking paths, and cue-labelled losses. Three threads is retained only as a reproducible scheduling comparison; the Controller setting remains four. The research-only directional recovery parameter compares immediate reset with at most one carried search frame; its default is zero. |
 | `scripts/benchmark-post-inference.py` | Optional `--iterations` (default 100000), `--slow-publisher-ms` (default 5), and `--output` | Runs camera-free established-session signed UDP and Dashboard-housekeeping lanes in off/on/off order. Reports p50/p95/p99/max send, housekeeping, and full-iteration times; a slow newest-only status consumer proves Dashboard backpressure cannot queue controller input. |
 | `scripts/benchmark-native-motion-curve.py` | Version-2 vision replay JSON, optional lane index, and required new output path | Compares the former overshooting experiment, capped error curve, actual bounded speed curve, and unsmoothed coordinates. Sweeps 27 bounded candidates and reports jitter, lag, medium response, fast pickup, reversals, overshoot, continuity, and available source age without controlling a game. |
 | `scripts/benchmark-camera-pipeline.py` | Required `--camera DEVICE` and `--worker-stopped`; optional `--source-root PATH`, `--seconds 5..600`, `--buffers 1 2`, `--capture-isolation thread process`, `--inference-threads 1..4`, `--aggregate-only`, `--skip-replay`, `--tracking-evidence`, and `--output PATH` | Linux-only, output-paused capture/recognition diagnostic. Requires exclusive camera ownership and can compare selected V4L2 buffer counts, the current capture thread, or a benchmark-only latest-frame capture process. Aggregate mode reports driver dequeue age, decode, recognition pickup, graph, post-graph, Linux task scheduling, sequence cadence, skips, stalls, and compact correlated tail events without retaining frames. Detector context separates the frame before detection, camera age entering it, detector cost, skipped frames, and recovered coordinate age. Lightweight tracking evidence attributes palm and landmark paths. Three-thread inference and process-isolated capture remain research comparisons; neither changes the production setting. It does not change camera controls or player settings. |
-| `scripts/benchmark-palm-anchors.py` | Version-2 replay JSON and required new output path | Compares the five-point baseline, four-knuckle centroid, palm-polygon center, and weighted wrist/knuckle center for pose shift, travel retention, continuity, and reacquisition. It reports evidence but does not change the live anchor. |
+| `scripts/benchmark-palm-anchors.py` | Version-2 replay JSON and required new output path | Compares the five-point baseline, four-knuckle centroid, palm-polygon centre, and weighted wrist/knuckle centre for pose shift, travel retention, continuity, and reacquisition. It reports evidence but does not change the live anchor. |
 | `scripts/benchmark-frame-preprocessing.py` | Camera or clip input and required new output path | Output-paused comparison of mirrored-frame preparation and reusable buffers. It cannot change handedness or preview conventions. |
 | `scripts/benchmark-staggered-trackers.py` | Camera or clip input and required new output path | Isolated two-tracker newest-sequence experiment. It never arms controller output and is not a gameplay backend. |
 | `scripts/benchmark-tasks-live-stream.py` | Camera or clip input, Tasks model, delegate choice, and required new output path | Isolated MediaPipe Tasks live-stream CPU/GPU probe with one result in flight and newest-sequence accounting. GPU support and performance must be demonstrated on the target; this is not a production mode. |
 | `scripts/analyze-motion-trace.py` | Required trace path; optional `--output NEW-PATH` | Reads one finite controller motion trace and reports recognition source age, selected-versus-filtered error, movement-class settling, fallback reasons, and tracking losses. Without `--output`, JSON is printed; an existing output file is never overwritten. |
-| `scripts/compare-motion-matrix.py` | Required directory and `--output NEW-PATH` | Compares `min*-boost*.trace.json` files using the shared analyzer. Use only for windows with the same movement sequence and camera conditions; the output file must not already exist. |
-| `scripts/analyze-motion-samples.py` | Required `--samples-dir PATH` and `--output NEW-PATH` | Summarizes saved aggregate status samples and models ideal native-coordinate steps through the actual smoothing engine. It does not replay input or measure physical latency; the output file must not already exist. |
 | `scripts/calibrate-reach.py` | One required step: `begin`, `center`, `left`, `right`, `up`, `down`, `apply`, or `cancel` | Internal operator helper for the guided comfortable-reach procedure. Run one step at a time inside the Controller container as described above; it pauses output and preserves a private backup. |
 | `scripts/measure-dot-input.py` | Optional `--state PATH`, `--seconds NUMBER`, and `--interval NUMBER`; required `--output NEW-PATH` | Reads the cabinet's native-state record without changing it and reports dot validity, loss/recovery, distinct publications, and coordinate range. Defaults are the installed state path, 30 seconds, and 60 polls per second. |
 | `scripts/configure-uno-q-avahi.py` | Optional `--config PATH` and `--interfaces NAME...` | Internal host-installer helper. It restricts Avahi to validated physical interfaces, preserves a backup, and defaults to detecting interfaces from Linux sysfs; ordinary users should rerun installation instead. |
@@ -2424,7 +2503,7 @@ unless you intend to shut down the VirtualGlove Controller.
 
 ### RetroPie updates
 
-1. On RetroPie, back up customized files under `/etc/virtualglove/`, especially `games.json` and `launcher.json`, using your normal private backup method.
+1. On RetroPie, back up customised files under `/etc/virtualglove/`, especially `games.json` and `launcher.json`, using your normal private backup method.
 2. Open the original source checkout, normally `~/VirtualGlove`. The installed copy under `/opt/virtualglove-src` is not a Git checkout.
 3. Run the commands below. Review `git status --short` before pulling; if Git reports a conflict, resolve it before running the installer.
 4. Resolve any **FAIL** in the installer report, then launch a registered game and check its profile and controls. The installer preserves existing settings and tokens.
@@ -2499,8 +2578,9 @@ For stage timings and further checks, see
 ### Password pairing fails
 
 - Prepare a new attempt and use its new matrix PIN.
-- Confirm the RetroPie username and password can log in through SSH.
-- The account must be allowed to run `sudo` with that password.
+- Confirm the selected console's username and password can log in through SSH.
+- RetroPie normally uses `pi`, which must be allowed to run `sudo`; Recalbox and
+  Batocera normally use `root` and do not use `sudo` for this pairing step.
 - Prefer the one-time-code method if password SSH is disabled.
 
 ### Controller does not appear on RetroPie
@@ -2646,10 +2726,17 @@ personal tuning and neutral calibration remain available.
 
 
 
-## Versioned two-script installation
+## Versioned multi-platform installation
 
-The normal entry points are `scripts/install-uno-q.sh` and
-`scripts/install-retropie.sh`. Each resolves a published release tag, downloads
+`config/release.json` is the maintained release-facts record used by the
+documentation and website checks. It identifies the project version, current
+candidate, oldest supported in-place upgrade, supported platforms, and retired
+features that must not reappear in current instructions. `pyproject.toml`
+remains the Python package version and is required to match that record.
+
+The normal entry points are `scripts/install-uno-q.sh`,
+`scripts/install-retropie.sh`, `scripts/install-recalbox.sh`, and
+`scripts/install-batocera.sh`. Each resolves a published release tag, downloads
 its matching package and shared `install-package.py`, verifies SHA-256 checksums,
 and invokes the shared `setup-machine.py` with sudo. Downloads use GitHub HTTPS;
 checksums detect damaged or mismatched assets, not a compromised release account.
@@ -2661,33 +2748,37 @@ Drafts and prereleases are excluded from automatic selection. A failed `curl`
 download prevents the chained `bash` command from running; saving the script
 first also leaves terminal input available for prompts.
 
-UNO Q download commands must begin with `cd /home/arduino`. Its terminal can
-open in the read-only `/` directory, where `curl` cannot create
-`install-uno-q.sh`. RetroPie commands may use that account's writable home
-directory instead.
+Run the initial download from a known writable location: `/home/arduino` on the
+UNO Q, the login user's `$HOME` on RetroPie, `/recalbox/share/system` on
+Recalbox, or `/userdata/system` on Batocera. The UNO Q terminal can open in the
+read-only `/` directory, where `curl` cannot create `install-uno-q.sh`.
+LaunchBox packages must be extracted first; PowerShell must use `Set-Location`
+to enter the extracted `VirtualGlove` directory before running
+`launchbox\install-launchbox.ps1`.
 
 To pin a published release, append `--version TAG` to the saved script command,
-for example `bash install-uno-q.sh --version v0.3.0`. To test a published development
+for example `bash install-uno-q.sh --version v0.5.0-rc.1`. To test a published development
 prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replace
 these example tags with actual published tags, and use the matching option on
-RetroPie. No GitHub release is created by running an installer.
+the selected Linux console. No GitHub release is created by running an installer.
 
-| Option | Behavior |
+| Option | Behaviour |
 | --- | --- |
 | `--version TAG` | Use one exact published release on both machines. Without a tag, select the latest stable GitHub release. |
 | `--development TAG` | Explicitly use a published development prerelease, such as `dev-COMMIT`. This is a release tag, not a branch name. |
-| `--peer HOST` | VirtualGlove Controller hostname or IPv4 address for a new RetroPie installation; prompted if omitted in an interactive terminal. Existing destinations are preserved. |
-| `--hostname NAME` | UNO Q first installation only. Interactive setup suggests `virtualglove`; supply a different single DNS label if desired. The installer lowercases it, accepts an optional `.local` suffix, checks visible LAN ownership, updates the static and running host identity, and backs up the changed host files. It is rejected on RetroPie and on Controller upgrades. |
+| `--peer HOST` | VirtualGlove Controller hostname or IPv4 address for a new console installation; prompted if omitted in an interactive terminal. Existing destinations are preserved. |
+| `--hostname NAME` | UNO Q first installation only. Interactive setup suggests `virtualglove`; supply a different single DNS label if desired. The installer lowercases it, accepts an optional `.local` suffix, checks visible LAN ownership, updates the static and running host identity, and backs up the changed host files. It is rejected on console installers and on Controller upgrades. |
 | `--check` | Use the installed shared checker. No download, package installation, service restart, or helper release. Sudo may be needed to inspect protected settings. |
 | `--help` | Show the entry point options without installing. |
 
 Supported baseline: an already provisioned VirtualGlove Controller with App Lab CLI **0.13.0**,
-Arduino sketch platform **1.0.0**, the shipped pinned libraries, and a Debian-based
-RetroPie installation with Python **3.7 or newer**. The UNO installer rejects other
+Arduino sketch platform **1.0.0**, the shipped pinned libraries, and RetroPie with
+Python **3.7 or newer**, Recalbox 10.x, or Batocera 38+. The UNO installer rejects other
 App Lab CLI versions until compatibility has been validated. It does not upgrade
 the board OS or App Lab. Allow at least 3 GiB of free space in the Arduino home partition (VirtualGlove Controller) or
-`/var/tmp` (RetroPie), and 512 MiB on the system partition for package operations
-and backups. Larger updates may need more space.
+`/var/tmp` (RetroPie), `/recalbox/share` (Recalbox), or `/userdata` (Batocera),
+and 512 MiB in the platform's backup area for package operations and backups.
+Larger updates may need more space.
 
 UNO installation stages files in `/home/arduino/ArduinoApps/virtualglove`,
 verifies and flashes the package's precompiled Matrix image through the factory
@@ -2713,8 +2804,38 @@ exist, launch and exit FCEUmm once and rerun. Neither installer supplies ROMs,
 changes cabinet input mergers, nor adds a new RetroPie shutdown mechanism;
 existing operating-system shutdown controls remain available.
 
+Recalbox installs under `/recalbox/share/system/virtualglove`, adds one
+idempotent call to the persistent `custom.sh`, and observes RetroArch through
+`/proc` because Recalbox does not expose Batocera's game-event interface.
+Batocera installs under `/userdata/system/virtualglove` and uses its supported
+user-service and `gameStart`/`gameStop` script locations. Both save versioned
+Player 1–4 assignments, stable identities, and authoritative EmulationStation
+mappings in `data/controller-router.json`. Their boot service creates only the
+enabled **VirtualGlove Merged Player 1–4** outputs, keeps them neutral outside
+Libretro gameplay, and resolves current joypad indexes instead of persisting
+enumeration numbers. Physical input has per-axis priority, buttons
+combine, and only Player 1's physical hotkey can assert the dedicated Hotkey
+Enable button. A disconnect releases only that physical source without
+disabling VirtualGlove; the saved controller reconnects automatically. ROMs,
+saves, frontend control, and unrelated settings are preserved. Their FCEUmm and
+stock Nestopia paths support every joystick profile. Batocera additionally
+supports the separately named `nestopia_powerglove` core for native Super Glove
+Ball. Recalbox requires an exact target match, prefers an exact release build,
+and otherwise accepts the newest packaged build from the same major series only
+after its on-console load test passes. Batocera packages 15 architecture-specific
+43.1 builds with corresponding source. It prefers an exact release build, otherwise
+tries the newest packaged build for the exact architecture, and always requires
+an on-console load and identity check before exposure. Reversible overlay mounts
+expose the persistent binary and a copied Nestopia info record through Batocera's
+read-only `/usr` paths without replacing stock Nestopia. Exact registered Super
+Glove Ball ROMs are selected automatically only when no explicit per-ROM core is
+present. Selecting FCEUmm for the same ROM is the explicit rollback.
+
 Updates replace managed files and save replaced versions under
-`/var/backups/virtualglove/TIMESTAMP/`, with a `RESTORE.txt`. Backups created
+`/var/backups/virtualglove/TIMESTAMP/` on Debian hosts,
+`/recalbox/share/system/virtualglove-backups/TIMESTAMP/` on Recalbox, or
+`/userdata/system/virtualglove-backups/TIMESTAMP/` on Batocera, with a
+`RESTORE.txt`. Backups created
 by the package installer are root-only. Resolve failures before continuing;
 the installer stops rather than claiming success. Rerunning is supported.
 A failed firmware update may require rerunning the previous release through
@@ -2763,13 +2884,16 @@ the Engineering Toolkit ZIP; use a complete Git checkout for those tasks.
 Generate the public PDFs and App Lab ZIP, then build the release assets:
 
 ```sh
+python3 scripts/build-enclosure-packages.py
+python3 website/build.py
 python3 scripts/build-docs-pdf.py
 bash scripts/build-app-lab-package.sh
 python3 scripts/build-install-packages.py --version dev-COMMIT
 ```
 
-`output/install/` contains the Controller and RetroPie ZIPs, the optional
-Engineering Toolkit ZIP, the two entry scripts, their shared package installer,
+`output/install/` contains the Controller, RetroPie, Recalbox, Batocera, and
+LaunchBox packages, the optional Engineering Toolkit ZIP, the Linux entry scripts, their shared package installer,
+the three design-specific enclosure bundles, the public website upload ZIP,
 checksum companions, and `SHA256SUMS`. Package identity and safe paths are
 validated at build time and installation time. Private runtime files are
 excluded.
@@ -2785,17 +2909,26 @@ Publishing, tagging, or deploying firmware is not implied by building packages.
 
 Automated tests cover isolated fresh-directory installs and repeat updates,
 archive rejection, download failure, and settings preservation. These are not
-fresh-device tests. The new package installer was also run on the existing
-RetroPie cabinet: receiver, launch hooks, emulator, and Glove Zap checks passed
-with no technical failures. The VirtualGlove Controller full installer still needs an interactive
-sudo run. A provisioned spare VirtualGlove Controller and RetroPie system, real pairing,
-live gameplay, and a cold boot are required before declaring the installers
-validated for release. Run read-only checks on both devices after installation;
-no automated check proves that a hand gesture controls a game correctly.
+fresh-device tests. Current physical evidence is recorded separately from
+package coverage:
+
+| Platform | Physical validation completed | Still platform-specific |
+| --- | --- | --- |
+| Controller and RetroPie | Fresh install and v0.4.2 upgrade paths, FCEUmm games, native Super Glove Ball, pairing, and preserved player/device data | Repeat after relevant installer, transport, or core changes. |
+| Recalbox 10.1 `rpizero2` on Raspberry Pi 3 | Super Mario Bros. through FCEUmm, native Super Glove Ball, simultaneous physical-joypad use, and reboot persistence | The other six packaged targets still require their own hardware checks. |
+| Batocera 43u.1 x86-64 | Installation, persistent startup integration, architecture resolution, native-core verification/load test, and secure pairing | FCEUmm and native Super Glove Ball physical gameplay remain to be completed on this machine; the other packaged architectures also require target hardware checks. |
+| LaunchBox on Windows x86-64 | Installation and wrapped launch, Super Mario Bros. through the Network RetroPad, native Super Glove Ball, Start-path correction, directional holds/releases, and physical-gamepad availability | Repeat after relevant Windows, RetroArch, wrapper, firewall, or native-core changes. |
+
+Recalbox 10.1 packages contain manifest-verified binaries and complete source
+archives for all seven supported targets. Batocera 43.1 packages contain the
+same evidence for 15 architectures. Packaging and a successful load test do not
+substitute for gameplay on each hardware target. Run read-only checks after
+installation, then test a real registered game; no automated check proves that
+a hand gesture controlled it.
 
 ### Shared installer and application sources
 
-Both installer entry points are generated from `scripts/templates/install.sh.in`. Run
+The four Linux installer entry points are generated from `scripts/templates/install.sh.in`. Run
 `python3 scripts/build-installer-scripts.py` after editing that template; use `--check`
 to detect drift without changing files.
 
@@ -2821,14 +2954,22 @@ excluded from managed ownership. `config/profiles.json` is deliberately managed
 and replaced from the release; its previous copy is retained in the update backup.
 
 On the first manifest-enabled update, incoming package paths are installed using
-the existing backup-and-replace behavior. Unknown files absent from the package
+the existing backup-and-replace behaviour. Unknown files absent from the package
 are left alone: the installer does not infer an old inventory from the directory.
-Subsequent updates back up and remove obsolete files only when their bytes and
-permissions still match the previous manifest. Local changes, including permission
-changes, are retained and reported, whether or not the new package contains that
-path. Their old baseline remains recorded so later updates cannot silently adopt
-or delete them. Restore the previous installed version of a locally modified file
-before retrying if you want the installer to replace it with the new release.
+On later updates, application-owned files are authoritative release content.
+Locally changed owned files are backed up and replaced; obsolete owned files are
+backed up and removed, including permission-only changes. Private paths and unknown
+files remain untouched. This prevents a mixed-version runtime while retaining a
+recoverable copy of every displaced managed file.
+
+The v0.4.2-to-v0.5.0 upgrade has one additional bounded migration because the
+internal Python namespace changed. Before applying any payload writes, the
+installer verifies that every file in the retired package is owned by the v0.4.2
+manifest. Only managed files and generated `.pyc` cache files may be present.
+Managed source, including a locally changed copy, is backed up and retired through
+the normal transaction; generated bytecode is removed, and the empty directory is
+deleted. Unknown content aborts the upgrade before mutation. Private data and host
+configuration are outside this package tree and remain untouched.
 
 Updates take an exclusive lock, validate all paths before writing, back up changed
 and removed files, and publish the new manifest last. A failed write rolls back
@@ -2839,7 +2980,8 @@ payload staging (for example, host setup or App Lab startup) does not undo a
 successfully committed payload; use the reported backup or previous release.
 
 The normal installer `--check` reports missing or modified managed files and an
-unfinished transaction without changing anything. For payload-only checks:
+unfinished transaction without changing anything. In 0.5.0 it also reports any
+retired Python package left behind by a v0.4.2 upgrade. For payload-only checks:
 
 ```sh
 python3 scripts/installation-manifest.py /home/arduino/ArduinoApps/virtualglove --check
@@ -2862,8 +3004,9 @@ script; normal users should use the two standard installers.
 ## Optional native latency diagnostics
 
 These developer tools do not change recognition settings or production packet
-and native-state formats. See the [complete session procedure](direction-response-benchmark.md#native-latency-and-stationary-jitter-session)
-for camera placement, interpretation, process activation, and rollback.
+and native-state formats. See
+[Tracing a running two-device system](ENGINEERING_TOOLKIT.md#tracing-a-running-two-device-system)
+for activation, interpretation, and cleanup.
 
 | Interface | Default | Meaning |
 | --- | --- | --- |

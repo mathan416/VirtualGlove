@@ -1,0 +1,117 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: batocera/virtualglove-core-mount
+# Purpose: Expose a separate persistent native core through Batocera's read-only core paths.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+set -u
+
+APP=/userdata/system/virtualglove
+RUNTIME_CORE="$APP/native/batocera/runtime/nestopia_powerglove_libretro.so"
+MANIFEST="$APP/native/batocera/manifest.json"
+VERIFY="$APP/scripts/verify-batocera-native-core.py"
+STATE=/run/virtualglove-core
+CORE_TARGET=/usr/lib/libretro
+INFO_TARGET=/usr/share/libretro/info
+
+mounted_at() {
+    awk -v target="$1" '$2 == target { found=1 } END { exit !found }' /proc/mounts
+}
+
+resolve_core() {
+    if [ -f "$RUNTIME_CORE" ] && [ ! -L "$RUNTIME_CORE" ]; then
+        printf '%s\n' "$RUNTIME_CORE"
+        return 0
+    fi
+    [ -f "$MANIFEST" ] && [ -x "$VERIFY" ] || return 1
+    [ -f /usr/share/batocera/batocera.arch ] || return 1
+    [ -f /usr/share/batocera/batocera.version ] || return 1
+    arch=$(cat /usr/share/batocera/batocera.arch)
+    version=$(cat /usr/share/batocera/batocera.version)
+    python3 "$VERIFY" --manifest "$MANIFEST" --arch "$arch" \
+        --version "$version" --resolve-core
+}
+
+unmount_one() {
+    mounted_at "$1" && umount "$1"
+    return 0
+}
+
+mount_overlay() {
+    name="$1"
+    lower="$2"
+    upper="$STATE/$name-upper"
+    work="$STATE/$name-work"
+    merged="$STATE/$name-merged"
+    mkdir -p "$upper" "$work" "$merged"
+    if ! mounted_at "$merged"; then
+        mount -t overlay "virtualglove-$name" \
+            -o "lowerdir=$lower,upperdir=$upper,workdir=$work" "$merged" || return 1
+    fi
+    if ! mounted_at "$lower"; then
+        mount --bind "$merged" "$lower" || return 1
+    fi
+}
+
+start_core() {
+    CORE=$(resolve_core) || {
+        echo "ACTION  No packaged Nestopia (VirtualGlove) core for this Batocera target; FCEUmm remains available." >&2
+        return 0
+    }
+    [ -f "$CORE" ] && [ ! -L "$CORE" ] || return 0
+    if [ "$CORE" != "$RUNTIME_CORE" ]; then
+        arch=$(cat /usr/share/batocera/batocera.arch)
+        version=$(cat /usr/share/batocera/batocera.version)
+        python3 "$VERIFY" --manifest "$MANIFEST" --core "$CORE" --arch "$arch" \
+            --version "$version" --load || {
+                echo "ACTION  Packaged native core did not load; FCEUmm remains available." >&2
+                return 0
+            }
+    fi
+    [ -f "$CORE_TARGET/nestopia_libretro.so" ] || {
+        echo "VirtualGlove native core: stock Nestopia is unavailable" >&2
+        return 1
+    }
+    [ -f "$INFO_TARGET/nestopia_libretro.info" ] || {
+        echo "VirtualGlove native core: stock Nestopia info is unavailable" >&2
+        return 1
+    }
+    mkdir -p "$STATE/core-upper" "$STATE/info-upper" || return 1
+    cp "$CORE" "$STATE/core-upper/nestopia_powerglove_libretro.so" || return 1
+    chmod 0644 "$STATE/core-upper/nestopia_powerglove_libretro.so" || return 1
+    cp "$INFO_TARGET/nestopia_libretro.info" \
+        "$STATE/info-upper/nestopia_powerglove_libretro.info" || return 1
+    chmod 0644 "$STATE/info-upper/nestopia_powerglove_libretro.info" || return 1
+    mount_overlay core "$CORE_TARGET" || { stop_core; return 1; }
+    mount_overlay info "$INFO_TARGET" || { stop_core; return 1; }
+    [ -f "$CORE_TARGET/nestopia_powerglove_libretro.so" ] && \
+        [ -f "$INFO_TARGET/nestopia_powerglove_libretro.info" ] || {
+            stop_core
+            return 1
+        }
+    python3 "$APP/scripts/configure-batocera-super-glove-ball-core.py" \
+        --auto-select --mode native --apply || {
+            echo "ACTION  Native core is ready, but automatic Super Glove Ball selection needs review." >&2
+            return 0
+        }
+}
+
+stop_core() {
+    unmount_one "$INFO_TARGET"
+    unmount_one "$STATE/info-merged"
+    unmount_one "$CORE_TARGET"
+    unmount_one "$STATE/core-merged"
+}
+
+case "${1:-}" in
+    start) start_core ;;
+    stop) stop_core ;;
+    restart) stop_core; start_core ;;
+    status)
+        [ -f "$CORE_TARGET/nestopia_powerglove_libretro.so" ] &&
+            [ -f "$INFO_TARGET/nestopia_powerglove_libretro.info" ]
+        ;;
+    *) echo "Usage: $0 {start|stop|restart|status}" >&2; exit 2 ;;
+esac

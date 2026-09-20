@@ -34,7 +34,12 @@ def load_manifest() -> dict:
         categories = inventory["TOOLKIT_CATEGORIES"]
         files = sorted({name for names in categories.values() for name in names})
         files.extend(["docs/ENGINEERING_TOOLKIT.md", "pyproject.toml"])
-        return {"format": 2, "categories": categories, "files": sorted(set(files))}
+        return {
+            "format": 2,
+            "categories": categories,
+            "tool_files": sorted({name for names in categories.values() for name in names}),
+            "files": sorted(set(files)),
+        }
     try:
         manifest = json.loads(MANIFEST.read_text())
     except (OSError, json.JSONDecodeError) as error:
@@ -42,6 +47,26 @@ def load_manifest() -> dict:
     if manifest.get("format") != 2 or not isinstance(manifest.get("categories"), dict):
         raise ValueError("unsupported or incomplete Engineering Toolkit manifest")
     return manifest
+
+
+def validate_inventory(manifest: dict) -> None:
+    """Require one category per tool and a complete, internally consistent file list."""
+    categorized = []
+    for category, names in manifest["categories"].items():
+        if not isinstance(category, str) or not category or not isinstance(names, (list, tuple)):
+            raise ValueError("malformed Engineering Toolkit category")
+        if not all(isinstance(name, str) and name for name in names):
+            raise ValueError(f"malformed tool path in category: {category}")
+        categorized.extend(names)
+    duplicates = sorted({name for name in categorized if categorized.count(name) > 1})
+    if duplicates:
+        raise ValueError("tools appear in more than one category: " + ", ".join(duplicates))
+    tool_files = manifest.get("tool_files")
+    if not isinstance(tool_files, list) or set(tool_files) != set(categorized):
+        raise ValueError("Engineering Toolkit tool inventory does not match its categories")
+    files = manifest.get("files")
+    if not isinstance(files, list) or not set(tool_files).issubset(files):
+        raise ValueError("Engineering Toolkit file inventory omits a supported tool")
 
 
 def validate_path(name: str) -> Path:
@@ -120,6 +145,7 @@ def main() -> int:
     """Validate the manifest, packaged source, and supported command surfaces."""
     args = parser().parse_args()
     manifest = load_manifest()
+    validate_inventory(manifest)
     commands = sorted({
         name for names in manifest["categories"].values() for name in names
         if name.endswith(".py") and name != "scripts/check-engineering-toolkit.py"

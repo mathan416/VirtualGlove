@@ -1,0 +1,391 @@
+#!/usr/bin/env python3
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+import errno
+import os
+import select
+import signal
+import sys
+import time
+
+from evdev import AbsInfo, InputDevice, UInput, ecodes, list_devices
+
+
+IPAC_NAME = "Ultimarc I-PAC Ultimate I/O"
+EIGHTBITDO_NAME = "8BitDo 8BitDo Ultimate wireless Controller for PC"
+EIGHTBITDO_X_NAME = "8BitDo Ultimate Wireless / Pro 2 Wired Controller"
+VIRTUALGLOVE_NAME = "VirtualGlove"
+OUTPUT_NAMES = ("Arcade Merged Player 1", "Arcade Merged Player 2")
+
+OUTPUT_KEYS = (
+    ecodes.BTN_SOUTH,
+    ecodes.BTN_EAST,
+    ecodes.BTN_C,
+    ecodes.BTN_NORTH,
+    ecodes.BTN_WEST,
+    ecodes.BTN_Z,
+    ecodes.BTN_TL,
+    ecodes.BTN_TR,
+    ecodes.BTN_TL2,
+    ecodes.BTN_TR2,
+    ecodes.BTN_SELECT,
+    ecodes.BTN_START,
+    ecodes.BTN_MODE,
+    ecodes.BTN_THUMBL,
+    ecodes.BTN_THUMBR,
+)
+
+STICK_AXIS = AbsInfo(127, 0, 255, 0, 15, 0)
+TRIGGER_AXIS = AbsInfo(0, 0, 255, 0, 15, 0)
+HAT_AXIS = AbsInfo(0, -1, 1, 0, 0, 0)
+OUTPUT_ABS = {
+    ecodes.ABS_X: STICK_AXIS,
+    ecodes.ABS_Y: STICK_AXIS,
+    ecodes.ABS_Z: STICK_AXIS,
+    ecodes.ABS_RZ: STICK_AXIS,
+    ecodes.ABS_GAS: TRIGGER_AXIS,
+    ecodes.ABS_BRAKE: TRIGGER_AXIS,
+    ecodes.ABS_HAT0X: HAT_AXIS,
+    ecodes.ABS_HAT0Y: HAT_AXIS,
+}
+AXIS_NEUTRAL = {
+    ecodes.ABS_X: 127,
+    ecodes.ABS_Y: 127,
+    ecodes.ABS_Z: 127,
+    ecodes.ABS_RZ: 127,
+    ecodes.ABS_GAS: 0,
+    ecodes.ABS_BRAKE: 0,
+    ecodes.ABS_HAT0X: 0,
+    ecodes.ABS_HAT0Y: 0,
+}
+
+# I-PAC raw button order is physical BUTTON1, BUTTON2, ... .  Coin and Start
+# differ between the two I-PAC interfaces, so those entries are per-player.
+IPAC_ACTION_KEYS = {
+    # Present the panel in RetroPad's B/A/Y/X order.  This makes physical
+    # BUTTON1..4 match the existing 8BitDo/MAME action order.
+    288: ecodes.BTN_EAST,
+    289: ecodes.BTN_SOUTH,
+    290: ecodes.BTN_WEST,
+    291: ecodes.BTN_NORTH,
+    292: ecodes.BTN_TL,
+    293: ecodes.BTN_TR,
+    296: ecodes.BTN_TL2,
+    297: ecodes.BTN_TR2,
+    298: ecodes.BTN_MODE,
+}
+IPAC_PLAYER_KEYS = (
+    {294: ecodes.BTN_START, 295: ecodes.BTN_SELECT},
+    {294: ecodes.BTN_SELECT, 295: ecodes.BTN_START},
+)
+
+# The 8BitDo already reports Linux's standard gamepad event codes.  Its extra
+# trigger-happy inputs are deliberately ignored.
+EIGHTBITDO_KEYS = {code: code for code in OUTPUT_KEYS}
+EIGHTBITDO_ABS = {code: code for code in OUTPUT_ABS}
+VIRTUALGLOVE_KEYS = {
+    ecodes.BTN_SOUTH: ecodes.BTN_SOUTH,
+    ecodes.BTN_EAST: ecodes.BTN_EAST,
+    ecodes.BTN_START: ecodes.BTN_START,
+    ecodes.BTN_SELECT: ecodes.BTN_SELECT,
+    ecodes.BTN_TR2: ecodes.BTN_TR2,
+}
+VIRTUALGLOVE_DPAD = {
+    ecodes.BTN_DPAD_LEFT: (ecodes.ABS_HAT0X, -1),
+    ecodes.BTN_DPAD_RIGHT: (ecodes.ABS_HAT0X, 1),
+    ecodes.BTN_DPAD_UP: (ecodes.ABS_HAT0Y, -1),
+    ecodes.BTN_DPAD_DOWN: (ecodes.ABS_HAT0Y, 1),
+}
+VIRTUALGLOVE_ABS = {
+    ecodes.ABS_X: ecodes.ABS_X,
+    ecodes.ABS_Y: ecodes.ABS_Y,
+    ecodes.ABS_RX: ecodes.ABS_Z,
+    ecodes.ABS_RY: ecodes.ABS_RZ,
+}
+
+
+def log(message):
+    print(message, flush=True)
+
+
+class PlayerOutput:
+    def __init__(self, player):
+        self.player = player
+        capabilities = {
+            ecodes.EV_KEY: list(OUTPUT_KEYS),
+            ecodes.EV_ABS: list(OUTPUT_ABS.items()),
+        }
+        self.device = UInput(
+            capabilities,
+            name=OUTPUT_NAMES[player],
+            vendor=0x1209,
+            product=0xA100 + player,
+            version=0x0001,
+            bustype=ecodes.BUS_USB,
+        )
+        self.key_sources = {code: set() for code in OUTPUT_KEYS}
+        self.axis_values = {}
+        self.axis_updates = {}
+        self.output_axes = dict(AXIS_NEUTRAL)
+        log("created {} at {}".format(OUTPUT_NAMES[player], self.device.device.path))
+
+    def set_key(self, source, code, value):
+        holders = self.key_sources[code]
+        before = bool(holders)
+        if value:
+            holders.add(source)
+        else:
+            holders.discard(source)
+        after = bool(holders)
+        if before != after:
+            self.device.write(ecodes.EV_KEY, code, 1 if after else 0)
+            return True
+        return False
+
+    def set_axis(self, source, code, value):
+        self.axis_values[(source, code)] = value
+        self.axis_updates[(source, code)] = time.monotonic()
+        return self.recompute_axis(code)
+
+    def recompute_axis(self, code):
+        neutral = AXIS_NEUTRAL[code]
+        candidates = []
+        for (source, axis), value in self.axis_values.items():
+            if axis == code and value != neutral:
+                candidates.append((self.axis_updates[(source, axis)], value))
+        value = max(candidates)[1] if candidates else neutral
+        if self.output_axes[code] != value:
+            self.output_axes[code] = value
+            self.device.write(ecodes.EV_ABS, code, value)
+            return True
+        return False
+
+    def release_source(self, source):
+        wrote = False
+        for code in OUTPUT_KEYS:
+            wrote = self.set_key(source, code, 0) or wrote
+        affected = set()
+        for key in list(self.axis_values):
+            if key[0] == source:
+                affected.add(key[1])
+                self.axis_values.pop(key, None)
+                self.axis_updates.pop(key, None)
+        for code in affected:
+            wrote = self.recompute_axis(code) or wrote
+        if wrote:
+            self.device.syn()
+
+    def close(self):
+        self.device.close()
+
+
+class Source:
+    def __init__(self, label, kind, player, device):
+        self.label = label
+        self.kind = kind
+        self.player = player
+        self.device = device
+        self.dpad_pressed = set()
+
+
+class Merger:
+    def __init__(self):
+        self.outputs = (PlayerOutput(0), PlayerOutput(1))
+        self.sources = {}
+        self.running = True
+
+    @staticmethod
+    def discover():
+        found = {"ipac": [], "8bitdo": [], "virtualglove": []}
+        for path in list_devices():
+            try:
+                device = InputDevice(path)
+            except OSError:
+                continue
+            if device.name == IPAC_NAME and "/input" in (device.phys or ""):
+                caps = device.capabilities()
+                if ecodes.EV_KEY in caps and ecodes.EV_ABS in caps:
+                    found["ipac"].append((device.phys or "", path))
+            elif device.name == EIGHTBITDO_NAME:
+                found["8bitdo"].append((device.phys or "", path, "8bitdo_d"))
+            elif device.name == EIGHTBITDO_X_NAME:
+                found["8bitdo"].append((device.phys or "", path, "8bitdo_x"))
+            elif device.name == VIRTUALGLOVE_NAME:
+                found["virtualglove"].append((device.phys or "", path))
+            device.close()
+        for kind in found:
+            found[kind].sort()
+        return found
+
+    def refresh_sources(self):
+        discovered = self.discover()
+        wanted = {}
+        for player, (_phys, path) in enumerate(discovered["ipac"][:2]):
+            label = "ipac-p{}".format(player + 1)
+            wanted[label] = ("ipac", player, path)
+        for player, (_phys, path, kind) in enumerate(discovered["8bitdo"][:2]):
+            label = "8bitdo-p{}".format(player + 1)
+            wanted[label] = (kind, player, path)
+        if discovered["virtualglove"]:
+            _phys, path = discovered["virtualglove"][0]
+            wanted["virtualglove-p1"] = ("virtualglove", 0, path)
+
+        for label in list(self.sources):
+            source = self.sources[label]
+            desired = wanted.get(label)
+            if desired is None or desired[2] != source.device.path:
+                self.disconnect(label)
+
+        for label, (kind, player, path) in wanted.items():
+            if label in self.sources:
+                continue
+            try:
+                device = InputDevice(path)
+                self.sources[label] = Source(label, kind, player, device)
+                log("connected {}: {} {}".format(label, path, device.phys))
+            except OSError as error:
+                log("cannot connect {}: {}".format(label, error))
+
+    def disconnect(self, label):
+        source = self.sources.pop(label, None)
+        if source is None:
+            return
+        self.outputs[source.player].release_source(label)
+        try:
+            source.device.close()
+        except OSError:
+            pass
+        log("disconnected {}".format(label))
+
+    def handle(self, source):
+        try:
+            # evdev returns an iterator; a hot-unplug can raise ENODEV while
+            # that iterator is consumed, so materialize it inside the try.
+            events = list(source.device.read())
+        except OSError as error:
+            if error.errno not in (errno.ENODEV, errno.EIO):
+                log("read error from {}: {}".format(source.label, error))
+            self.disconnect(source.label)
+            return
+
+        output = self.outputs[source.player]
+        wrote = False
+        for event in events:
+            if source.kind == "ipac":
+                if event.type == ecodes.EV_KEY:
+                    keymap = dict(IPAC_ACTION_KEYS)
+                    keymap.update(IPAC_PLAYER_KEYS[source.player])
+                    output_code = keymap.get(event.code)
+                    if output_code is not None:
+                        wrote = output.set_key(source.label, output_code, event.value) or wrote
+                elif event.type == ecodes.EV_ABS and event.code in (
+                    ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y
+                ):
+                    wrote = output.set_axis(source.label, event.code, event.value) or wrote
+            elif source.kind == "8bitdo_d":
+                if event.type == ecodes.EV_KEY:
+                    output_code = EIGHTBITDO_KEYS.get(event.code)
+                    if output_code is not None:
+                        wrote = output.set_key(source.label, output_code, event.value) or wrote
+                elif event.type == ecodes.EV_ABS:
+                    output_code = EIGHTBITDO_ABS.get(event.code)
+                    if output_code is not None:
+                        wrote = output.set_axis(source.label, output_code, event.value) or wrote
+            elif source.kind == "virtualglove":
+                if event.type == ecodes.EV_KEY:
+                    output_code = VIRTUALGLOVE_KEYS.get(event.code)
+                    if output_code is not None:
+                        wrote = output.set_key(source.label, output_code, event.value) or wrote
+                    elif event.code in VIRTUALGLOVE_DPAD:
+                        axis, _direction = VIRTUALGLOVE_DPAD[event.code]
+                        if event.value:
+                            source.dpad_pressed.add(event.code)
+                        else:
+                            source.dpad_pressed.discard(event.code)
+                        negative = any(
+                            VIRTUALGLOVE_DPAD[code] == (axis, -1)
+                            for code in source.dpad_pressed
+                        )
+                        positive = any(
+                            VIRTUALGLOVE_DPAD[code] == (axis, 1)
+                            for code in source.dpad_pressed
+                        )
+                        value = (-1 if negative else 0) + (1 if positive else 0)
+                        wrote = output.set_axis(source.label, axis, value) or wrote
+                elif event.type == ecodes.EV_ABS and event.code in VIRTUALGLOVE_ABS:
+                    output_code = VIRTUALGLOVE_ABS[event.code]
+                    value = int(round((event.value + 32767) * 255.0 / 65534.0))
+                    value = max(0, min(255, value))
+                    wrote = output.set_axis(source.label, output_code, value) or wrote
+            else:
+                if event.type == ecodes.EV_KEY:
+                    output_code = EIGHTBITDO_KEYS.get(event.code)
+                    if output_code is not None:
+                        wrote = output.set_key(source.label, output_code, event.value) or wrote
+                elif event.type == ecodes.EV_ABS:
+                    stick_map = {
+                        ecodes.ABS_X: ecodes.ABS_X,
+                        ecodes.ABS_Y: ecodes.ABS_Y,
+                        ecodes.ABS_RX: ecodes.ABS_Z,
+                        ecodes.ABS_RY: ecodes.ABS_RZ,
+                    }
+                    if event.code in stick_map:
+                        # XInput sticks use -32768..32767; the merged device
+                        # deliberately mirrors the D-mode 0..255 layout.
+                        value = int(round((event.value + 32768) * 255.0 / 65535.0))
+                        value = max(0, min(255, value))
+                        wrote = output.set_axis(
+                            source.label, stick_map[event.code], value
+                        ) or wrote
+                    elif event.code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                        wrote = output.set_axis(
+                            source.label, event.code, event.value
+                        ) or wrote
+                    elif event.code == ecodes.ABS_Z:
+                        wrote = output.set_key(
+                            source.label, ecodes.BTN_TL2, event.value > 30
+                        ) or wrote
+                    elif event.code == ecodes.ABS_RZ:
+                        wrote = output.set_key(
+                            source.label, ecodes.BTN_TR2, event.value > 30
+                        ) or wrote
+        if wrote:
+            output.device.syn()
+
+    def run(self):
+        while self.running:
+            self.refresh_sources()
+            devices = [source.device for source in self.sources.values()]
+            try:
+                ready, _, _ = select.select(devices, [], [], 1.0) if devices else ([], [], [])
+            except (OSError, ValueError):
+                ready = []
+            for device in ready:
+                for source in list(self.sources.values()):
+                    if source.device.fd == device.fd:
+                        self.handle(source)
+                        break
+            if not devices:
+                time.sleep(1.0)
+
+        for label in list(self.sources):
+            self.disconnect(label)
+        for output in self.outputs:
+            output.close()
+
+
+def main():
+    merger = Merger()
+
+    def stop(_signum, _frame):
+        merger.running = False
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    merger.run()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

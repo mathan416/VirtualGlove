@@ -20,7 +20,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from powerglove_vision.native_state import (
+from virtualglove.native_state import (
     DEFAULT_PATH, PROFILE_SUPER_GLOVE_BALL, decode_record, monotonic_ns,
 )
 

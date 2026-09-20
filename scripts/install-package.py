@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Restart Controller Router safely across RetroPie upgrades.
 #   2026-09-11 - Made virtualglove the canonical App Lab directory and added recoverable legacy migration.
 #   2026-09-11 - Prevented renamed and legacy App Lab projects from overlapping on upgrade.
 #   2026-09-11 - Added safe, optional first-install Controller naming.
@@ -13,7 +14,7 @@
 #   2026-09-11 - Install checksum-verified precompiled Matrix firmware without a compiler.
 #   2026-09-11 - Prevented the verified setup loader from writing cache files into release staging.
 #   2026-09-05 - Required the complete renewable game-session implementation.
-#   2026-09-04 - Added versioned two-machine installation.
+#   2026-09-04 - Added versioned multi-machine installation.
 # Full history: docs/CHANGELOG.md and Git history.
 
 """Install a downloaded, checksum-verified package on its intended Linux host."""
@@ -31,11 +32,14 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 import zipfile
 
 APP = Path("/home/arduino/ArduinoApps/virtualglove")
 RETROPIE_LAUNCHER = Path("/etc/virtualglove/launcher.json")
+RECALBOX_LAUNCHER = Path("/recalbox/share/system/virtualglove/data/launcher.json")
+BATOCERA_LAUNCHER = Path("/userdata/system/virtualglove/data/launcher.json")
 LEGACY_RUNTIME_MEMBERS = {
     "retropie/powerglove-receiver.service",
     "retropie/powerglove-receiver.timer",
@@ -55,7 +59,7 @@ LEGACY_RUNTIME_MEMBERS = {
 
 
 def retropie_launcher_exists(current=RETROPIE_LAUNCHER):
-    """Recognize an existing supported VirtualGlove installation."""
+    """Recognise an existing supported VirtualGlove installation."""
     return current.is_file()
 
 
@@ -143,12 +147,12 @@ def unpack(archive, destination, machine, version):
         required = [
             "scripts/setup-machine.py",
             "scripts/installation-manifest.py",
-            "src/powerglove_vision/receiver.py",
-            "src/powerglove_vision/gesture.py",
-            "src/powerglove_vision/tracker.py",
-            "src/powerglove_vision/tuning.py",
-            "src/powerglove_vision/vision_app.py",
-            "src/powerglove_vision/profile_control.py",
+            "src/virtualglove/receiver.py",
+            "src/virtualglove/gesture.py",
+            "src/virtualglove/tracker.py",
+            "src/virtualglove/tuning.py",
+            "src/virtualglove/vision_app.py",
+            "src/virtualglove/profile_control.py",
             "config/games.json",
             "config/profiles.json",
             "THIRD_PARTY_NOTICES.md",
@@ -164,11 +168,38 @@ def unpack(archive, destination, machine, version):
                       "uno-q/virtualglove-system-shutdown.service",
                       "uno-q/virtualglove-camera-recovery.py", "uno-q/virtualglove-camera-recovery.conf",
                       "uno-q/virtualglove-camera-recovery.path", "uno-q/virtualglove-camera-recovery.service"]
-                     if machine == "uno-q" else [
+                     if machine == "uno-q" else ([
+                         "src/virtualglove/console_monitor.py",
+                         "src/virtualglove/merged_gamepad.py",
+                         "src/virtualglove/controller_router.py",
+                         "recalbox/virtualglove-service",
+                         "recalbox/virtualglove-core-mount",
+                         "scripts/install-recalbox-nestopia-powerglove.sh",
+                         "scripts/configure-recalbox-super-glove-ball-core.py",
+                         "scripts/verify-recalbox-native-core.py",
+                         "native/recalbox/manifest.json",
+                         "native/nestopia-powerglove/nestopia-powerglove.patch",
+                         "python/ssh_pair.py",
+                     ] if machine == "recalbox" else ([
+                         "src/virtualglove/merged_gamepad.py",
+                         "src/virtualglove/controller_router.py",
+                         "src/virtualglove/retropie_hook.py",
+                         "recalbox/virtualglove-service",
+                         "batocera/VirtualGlove",
+                         "batocera/virtualglove-game",
+                         "batocera/virtualglove-core-mount",
+                         "scripts/install-batocera-nestopia-powerglove.sh",
+                         "scripts/configure-batocera-super-glove-ball-core.py",
+                         "scripts/verify-batocera-native-core.py",
+                         "native/batocera/manifest.json",
+                         "native/nestopia-powerglove/nestopia-powerglove.patch",
+                         "python/ssh_pair.py",
+                     ] if machine == "batocera" else [
                          "retropie/virtualglove-receiver.service",
                          "retropie/virtualglove-receiver.timer",
+                         "retropie/virtualglove-controller-router.service",
                          "retropie/virtualglove-games.service",
-                         "src/powerglove_vision/retropie_hook.py",
+                         "src/virtualglove/retropie_hook.py",
                          "retropie/bin/virtualglove-retropie-hook",
                          "retropie/bin/virtualglove-receiver",
                          "retropie/bin/virtualglove-games",
@@ -178,19 +209,126 @@ def unpack(archive, destination, machine, version):
                          "retropie/runcommand-onstart-virtualglove.sh",
                          "retropie/runcommand-onend-virtualglove.sh",
                          "scripts/install-nestopia-powerglove.sh",
+                         "scripts/verify-retropie-native-core.py",
                          "scripts/install-powerglove-dot.sh",
                          "scripts/configure-super-glove-ball-core.py",
+                         "native/retropie/manifest.json",
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "native/powerglove-dot/powerglove_dot.cpp",
-                         "src/powerglove_vision/dot_launcher.py",
+                         "src/virtualglove/dot_launcher.py",
                          "retropie/bin/virtualglove-dot",
-                     ])
+                     ])))
+        if machine == "retropie":
+            manifest_member = "VirtualGlove/native/retropie/manifest.json"
+            if manifest_member not in seen:
+                raise ValueError("Incomplete package: missing native/retropie/manifest.json")
+            native = json.loads(package.read(manifest_member))
+            if native.get("format") != 1 or not isinstance(native.get("cores"), dict):
+                raise ValueError("Incomplete package: malformed RetroPie native-core manifest")
+            valid_targets = {"armv6", "armv7", "armv8_32", "aarch64", "x86_64"}
+            if set(native["cores"]) != valid_targets:
+                raise ValueError("Incomplete package: incomplete RetroPie native-core matrix")
+            for target, entry in native["cores"].items():
+                if not isinstance(entry, dict):
+                    raise ValueError("Incomplete package: malformed RetroPie native-core target")
+                required_fields = {
+                    "build_environment", "cpu_arch", "elf_class", "elf_machine",
+                    "file", "float_abi", "max_glibc_symbol", "nestopia_revision",
+                    "patch_sha256", "sha256", "size", "source_file",
+                    "source_sha256", "source_size", "validation",
+                }
+                expected_elf = {
+                    "armv6": (32, "arm"), "armv7": (32, "arm"),
+                    "armv8_32": (32, "arm"), "aarch64": (64, "aarch64"),
+                    "x86_64": (64, "x86_64"),
+                }[target]
+                if (set(entry) != required_fields
+                        or (entry.get("elf_class"), entry.get("elf_machine")) != expected_elf
+                        or not isinstance(entry.get("size"), int) or entry["size"] <= 0
+                        or not isinstance(entry.get("source_size"), int)
+                        or entry["source_size"] <= 0
+                        or any(not isinstance(entry.get(field), str)
+                               or not re.fullmatch(r"[0-9a-f]{64}", entry[field])
+                               for field in ("sha256", "source_sha256", "patch_sha256"))
+                        or not isinstance(entry.get("nestopia_revision"), str)
+                        or not re.fullmatch(r"[0-9a-f]{40}", entry["nestopia_revision"])):
+                    raise ValueError("Incomplete package: malformed RetroPie native-core entry")
+                for field in ("file", "source_file"):
+                    relative = entry.get(field)
+                    path = PurePosixPath(relative) if isinstance(relative, str) else None
+                    if (path is None or path.is_absolute() or ".." in path.parts
+                            or path.parts[:1] != (target,)):
+                        raise ValueError("Incomplete package: unsafe RetroPie native-core path")
+                    required.append("native/retropie/" + str(path))
+        if machine == "recalbox":
+            native = json.loads(package.read("VirtualGlove/native/recalbox/manifest.json"))
+            if native.get("format") != 2 or not isinstance(native.get("cores"), dict):
+                raise ValueError("Incomplete package: malformed Recalbox native-core manifest")
+            valid_targets = {"rpizero2", "rpi3", "rpi4_64", "rpi5_64",
+                             "rg353x", "odroidgo2", "x86_64"}
+            for target, versions in native["cores"].items():
+                if target not in valid_targets or not isinstance(versions, dict):
+                    raise ValueError("Incomplete package: malformed Recalbox native-core target")
+                for native_version, entry in versions.items():
+                    if (not re.fullmatch(r"10(?:\.[0-9]+)+", native_version)
+                            or not isinstance(entry, dict)):
+                        raise ValueError("Incomplete package: malformed Recalbox native-core version")
+                    for field in ("file", "source_file"):
+                        relative = entry.get(field)
+                        path = PurePosixPath(relative) if isinstance(relative, str) else None
+                        if (path is None or path.is_absolute() or ".." in path.parts
+                                or path.parts[:2] != (target, native_version)):
+                            raise ValueError("Incomplete package: unsafe Recalbox native-core path")
+                        required.append("native/recalbox/" + str(path))
+        if machine == "batocera":
+            native = json.loads(package.read("VirtualGlove/native/batocera/manifest.json"))
+            if native.get("format") != 2 or not isinstance(native.get("cores"), dict):
+                raise ValueError("Incomplete package: malformed Batocera native-core manifest")
+            valid_targets = {"bcm2835", "bcm2836", "bcm2837", "bcm2711", "bcm2712",
+                             "x86_64", "rk3326", "rk3399", "rk3568", "rk3588", "s905",
+                             "s905gen2", "s905gen3", "s922x", "sm8250"}
+            for target, versions in native["cores"].items():
+                if target not in valid_targets or not isinstance(versions, dict):
+                    raise ValueError("Incomplete package: malformed Batocera native-core target")
+                for native_version, entry in versions.items():
+                    if (not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", native_version)
+                            or not isinstance(entry, dict)):
+                        raise ValueError("Incomplete package: malformed Batocera native-core version")
+                    required_fields = {
+                        "file", "sha256", "size", "elf_class", "elf_machine",
+                        "source_file", "source_sha256", "source_size",
+                        "batocera_version", "batocera_revision", "nestopia_revision",
+                        "patch_sha256", "build_image",
+                    }
+                    if (set(entry) != required_fields
+                            or entry.get("batocera_version") != native_version
+                            or not isinstance(entry.get("size"), int) or entry["size"] <= 0
+                            or not isinstance(entry.get("source_size"), int)
+                            or entry["source_size"] <= 0
+                            or entry.get("elf_class") not in (32, 64)
+                            or entry.get("elf_machine") not in ("arm", "aarch64", "x86_64")
+                            or any(not isinstance(entry.get(field), str)
+                                   or not re.fullmatch(r"[0-9a-f]{64}", entry[field])
+                                   for field in ("sha256", "source_sha256", "patch_sha256"))
+                            or any(not isinstance(entry.get(field), str)
+                                   or not re.fullmatch(r"[0-9a-f]{40}", entry[field])
+                                   for field in ("batocera_revision", "nestopia_revision"))
+                            or not isinstance(entry.get("build_image"), str)
+                            or "@sha256:" not in entry["build_image"]):
+                        raise ValueError("Incomplete package: malformed Batocera native-core entry")
+                    for field in ("file", "source_file"):
+                        relative = entry.get(field)
+                        path = PurePosixPath(relative) if isinstance(relative, str) else None
+                        if (path is None or path.is_absolute() or ".." in path.parts
+                                or path.parts[:2] != (target, native_version)):
+                            raise ValueError("Incomplete package: unsafe Batocera native-core path")
+                        required.append("native/batocera/" + str(path))
         for relative in required:
             if "VirtualGlove/" + relative not in seen:
                 raise ValueError("Incomplete package: " + relative)
         if machine == "uno-q":
             firmware = json.loads(package.read("VirtualGlove/firmware/matrix/manifest.json"))
-            build = json.loads(package.read("VirtualGlove/src/powerglove_vision/_build_info.json"))
+            build = json.loads(package.read("VirtualGlove/src/virtualglove/_build_info.json"))
             if not isinstance(firmware, dict) or not isinstance(build, dict):
                 raise ValueError("Invalid Matrix firmware or application identity")
             if firmware.get("firmware_source_id") != build.get("firmware_expected"):
@@ -313,15 +451,20 @@ def preflight(machine):
     """Check target identity and supported prerequisites before any host changes."""
     if sys.platform != "linux" or os.geteuid() != 0 or sys.version_info < (3, 7):
         raise ValueError("Installation requires Linux, Python 3.7+, and sudo")
-    commands = ("apt-get", "systemctl", "hostnamectl") if machine == "uno-q" else ("apt-get", "systemctl")
+    commands = (("apt-get", "systemctl", "hostnamectl") if machine == "uno-q" else
+                (("apt-get", "systemctl") if machine == "retropie" else ("python3",)))
     for command in commands:
         if not shutil.which(command):
             raise ValueError("Missing system command: " + command)
-    staging = pwd.getpwnam("arduino").pw_dir if machine == "uno-q" else "/var/tmp"
+    staging = (pwd.getpwnam("arduino").pw_dir if machine == "uno-q" else
+               ("/recalbox/share" if machine == "recalbox" else
+                ("/userdata" if machine == "batocera" else "/var/tmp")))
     if shutil.disk_usage(staging).free < 3 * 1024 ** 3:
         raise ValueError("At least 3 GiB free space is required on " + str(staging))
-    if shutil.disk_usage("/var/backups").free < 512 * 1024 ** 2:
-        raise ValueError("At least 512 MiB free space is required for system packages and backups")
+    backup_root = ({"recalbox": "/recalbox/share", "batocera": "/userdata"}.get(
+        machine, "/var/backups"))
+    if shutil.disk_usage(backup_root).free < 512 * 1024 ** 2:
+        raise ValueError("At least 512 MiB free space is required for installation and backups")
     if machine == "uno-q":
         compatible = Path("/proc/device-tree/compatible").read_bytes()
         if b"arduino,imola" not in compatible:
@@ -347,7 +490,7 @@ def preflight(machine):
                          status.get("tuning", {}).get("active") or status.get("profile", "off") != "off"):
             if not confirm("VirtualGlove is active. Interrupt this session and install?"):
                 raise ValueError("No changes made; active session preserved")
-    else:
+    elif machine == "retropie":
         if not Path("/opt/retropie/configs/all").is_dir():
             raise ValueError("Install and configure RetroPie first")
         running = subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL)
@@ -356,6 +499,86 @@ def preflight(machine):
                 raise ValueError("No changes made; close RetroArch and retry")
             if subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL).returncode != 1:
                 raise ValueError("RetroArch is still running; no changes made")
+    elif machine == "recalbox":
+        if not Path("/recalbox/recalbox.version").is_file():
+            raise ValueError("Install and start Recalbox first")
+        if not Path("/recalbox/recalbox.version").read_text().strip().startswith("10."):
+            raise ValueError("This release supports Recalbox 10.x")
+        if subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL).returncode == 0:
+            raise ValueError("Close the running game before installing VirtualGlove")
+    else:
+        version = Path("/usr/share/batocera/batocera.version")
+        match = re.search(r"\d+", version.read_text()) if version.is_file() else None
+        if not match or int(match.group()) < 38:
+            raise ValueError("Batocera 38 or newer is required")
+        if not shutil.which("batocera-services"):
+            raise ValueError("Missing system command: batocera-services")
+        if subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL).returncode == 0:
+            raise ValueError("Close the running game before installing VirtualGlove")
+
+
+def stop_managed_runtime(machine, setup):
+    """Stop console publishers before replacing any managed runtime files."""
+    if machine == "uno-q":
+        return None
+    present = False
+    if machine == "retropie":
+        units = ("virtualglove-receiver.timer", "virtualglove-receiver.service",
+                 "virtualglove-games.service", "virtualglove-controller-router.service")
+        present = any(Path("/etc/systemd/system", unit).exists() for unit in units)
+        for unit in units:
+            subprocess.run(["systemctl", "stop", unit], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif machine == "recalbox":
+        service = Path("/recalbox/share/system/virtualglove/recalbox/virtualglove-service")
+        present = service.is_file()
+        if present:
+            subprocess.run(["sh", str(service), "stop"], check=True)
+    else:
+        service = Path("/userdata/system/services/VirtualGlove")
+        present = service.is_file()
+        if present:
+            subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
+    deadline = time.monotonic() + 5
+    while setup.managed_runtime_processes() and time.monotonic() < deadline:
+        time.sleep(0.1)
+    remaining = setup.managed_runtime_processes()
+    if remaining:
+        raise ValueError("Could not stop existing VirtualGlove runtime processes: " +
+                         ", ".join(map(str, remaining)))
+    return machine if present else None
+
+
+def restart_managed_runtime(machine):
+    """Best-effort recovery when an upgrade fails after stopping an old runtime."""
+    if machine == "retropie":
+        subprocess.run(["systemctl", "start", "virtualglove-games.service"], check=False)
+        if Path("/etc/virtualglove/controller-router.json").is_file():
+            subprocess.run(["systemctl", "start", "virtualglove-controller-router.service"],
+                           check=False)
+        subprocess.run(["systemctl", "start", "virtualglove-receiver.timer"], check=False)
+        token = Path("/etc/virtualglove/token")
+        if token.is_file() and len(token.read_text().strip()) >= 16:
+            subprocess.run(["systemctl", "start", "virtualglove-receiver.service"], check=False)
+    elif machine == "recalbox":
+        service = Path("/recalbox/share/system/virtualglove/recalbox/virtualglove-service")
+        if service.is_file():
+            subprocess.run(["sh", str(service), "start"], check=False)
+    elif machine == "batocera":
+        subprocess.run(["batocera-services", "start", "VirtualGlove"], check=False)
+
+
+def rotate_console_backups(source, setup, machine, keep=5):
+    """Bound completed console-upgrade backups without touching named recovery sets."""
+    if machine == "uno-q":
+        return
+    script = source / "scripts/rotate-deployment-backups.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(setup.BACKUPS.parent), "--keep", str(keep)],
+        check=False,
+    )
+    if result.returncode:
+        print("ACTION  Console backup rotation did not complete; existing backups were retained.")
 
 
 def stage_unoq(source, setup):
@@ -405,29 +628,45 @@ def stage_unoq(source, setup):
 def main(argv=None):
     """Install validated release files, complete host setup, then report next steps."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("machine", choices=("uno-q", "retropie"))
+    parser.add_argument("machine", choices=("uno-q", "retropie", "recalbox", "batocera"))
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--peer")
     parser.add_argument("--hostname")
+    parser.add_argument("--player1-device")
+    parser.add_argument("--list-player1-devices", action="store_true")
     args = parser.parse_args(argv)
     setup = None
     try:
         if args.machine != "uno-q" and args.hostname is not None:
             raise ValueError("--hostname applies only to the VirtualGlove Controller installer")
+        if ((args.player1_device or args.list_player1_devices) and
+                args.machine not in ("recalbox", "batocera")):
+            raise ValueError("Player 1 selection applies only to Recalbox and Batocera")
         existing_install = APP.exists() if args.machine == "uno-q" else False
         selected_hostname = (select_controller_hostname(args.hostname, existing_install)
                              if args.machine == "uno-q" else None)
         preflight(args.machine)
+        temporary_root = (pwd.getpwnam("arduino").pw_dir if args.machine == "uno-q" else
+                          ({"retropie": "/var/tmp", "recalbox": "/recalbox/share/system",
+                            "batocera": "/userdata/system"}[args.machine]))
         with tempfile.TemporaryDirectory(prefix="virtualglove-install-",
-                                         dir=pwd.getpwnam("arduino").pw_dir if args.machine == "uno-q" else "/var/tmp") as temporary:
+                                         dir=temporary_root) as temporary:
             source = unpack(args.archive, Path(temporary), args.machine, args.version)
             setup = load_setup(source)
             if args.peer:
                 setup.valid_host(args.peer)
-            if args.machine == "retropie" and not retropie_launcher_exists() and not args.peer:
+            if args.list_player1_devices:
+                if args.machine not in ("recalbox", "batocera"):
+                    raise ValueError("--list-player1-devices applies only to Recalbox and Batocera")
+                setup.list_player1_devices(args.machine)
+                return 0
+            launcher_exists = (retropie_launcher_exists() if args.machine == "retropie" else
+                               (RECALBOX_LAUNCHER.is_file() if args.machine == "recalbox" else
+                                (BATOCERA_LAUNCHER.is_file() if args.machine == "batocera" else True)))
+            if args.machine in ("retropie", "recalbox", "batocera") and not launcher_exists and not args.peer:
                 if not sys.stdin.isatty():
-                    raise ValueError("First RetroPie installation requires --peer UNO-Q-NAME.local")
+                    raise ValueError("First console installation requires --peer UNO-Q-NAME.local")
                 args.peer = setup.valid_host(input("UNO Q hostname or IP address: ").strip())
             setup.BACKUPS.mkdir(parents=True, mode=0o700)
             setup.BACKUPS.chmod(0o700)
@@ -437,24 +676,46 @@ def main(argv=None):
                 "Copy only the files you need back to those paths, retaining ownership/permissions.\n"
                 "Private settings were preserved in place. To recover code/firmware, rerun the previous release installer.\n"
                 "Then reload systemd and rerun the installer --check. Do not copy the entire backup over /.\n")
-            if args.machine == "uno-q":
-                active_hostname = configure_controller_hostname(setup, selected_hostname)
-                stage_unoq(source, setup)
-                setup.install_unoq(args.peer)
-                setup.wait_unoq()
-            else:
-                setup.install_retropie(args.peer)
-                setup.configure_games(confirm)
+            stopped_runtime = stop_managed_runtime(args.machine, setup)
+            try:
+                if args.machine == "uno-q":
+                    active_hostname = configure_controller_hostname(setup, selected_hostname)
+                    stage_unoq(source, setup)
+                    setup.install_unoq(args.peer)
+                    setup.wait_unoq()
+                elif args.machine == "retropie":
+                    setup.install_retropie(args.peer)
+                    setup.configure_games(confirm)
+                elif args.machine == "recalbox":
+                    setup.install_recalbox(args.peer, args.player1_device)
+                else:
+                    setup.install_batocera(args.peer, args.player1_device)
+            except BaseException:
+                if stopped_runtime:
+                    restart_managed_runtime(stopped_runtime)
+                raise
             report = setup.Report()
-            (setup.check_unoq if args.machine == "uno-q" else setup.check_retropie)(report)
+            {"uno-q": setup.check_unoq, "retropie": setup.check_retropie,
+             "recalbox": setup.check_recalbox,
+             "batocera": setup.check_batocera}[args.machine](report)
             if args.machine == "uno-q":
                 print_controller_urls(active_hostname)
             else:
-                token = Path("/etc/virtualglove/token")
+                token = ({"retropie": Path("/etc/virtualglove/token"),
+                          "recalbox": Path("/recalbox/share/system/virtualglove/data/token"),
+                          "batocera": Path("/userdata/system/virtualglove/data/token")}[args.machine])
                 if not token.is_file() or len(token.read_text().strip()) < 16:
-                    print("NEXT  Pair using sudo /opt/virtualglove/bin/virtualglove-pair.")
-                print("NEXT  Confirm VirtualGlove is selected in RetroArch Port 1 and test gameplay.")
-            return report.finish()
+                    if args.machine == "retropie":
+                        print("NEXT  Pair using sudo /opt/virtualglove/bin/virtualglove-pair.")
+                    else:
+                        command = ("sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair"
+                                   if args.machine == "recalbox" else
+                                   "/userdata/system/services/VirtualGlove pair")
+                        print("NEXT  On this console, run " + command + ", then use the one-time code in Controller Setup.")
+                print("NEXT  Test VirtualGlove and the physical Player 1 joypad together in FCEUmm.")
+            result = report.finish()
+            rotate_console_backups(source, setup, args.machine)
+            return result
     except (OSError, ValueError, KeyError, argparse.ArgumentTypeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
         print("FAIL  Installation stopped: " + str(error), file=sys.stderr)
         if setup:

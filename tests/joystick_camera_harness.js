@@ -23,7 +23,7 @@ const settle=()=>new Promise(r=>setImmediate(r));
 async function poll(){now+=500;await intervals.find(x=>x.ms===500).f();await settle();}
 async function heartbeat(){now+=2000;await intervals.find(x=>x.ms===2000).f();await settle();}
 const image=$('joystick-camera'),button=$('joystick-camera-toggle'),left=()=> $('joystick-directions').querySelector('[data-direction=left]').textContent;
-await settle();assert.equal(button.textContent,'Turn on camera');assert.equal($('joystick-center').disabled,true);assert(image.hidden&&!image.src);assert.equal(calls.filter(x=>x.path==='/api/practice').length,0);assert.equal(calls.filter(x=>x.path==='/status').length,0);
+await settle();assert.equal(button.textContent,'Turn on camera');assert.equal($('joystick-center').disabled,true);assert(image.hidden&&!image.src);assert($('joystick-camera-help').hidden);assert.equal(calls.filter(x=>x.path==='/api/practice').length,0);assert.equal(calls.filter(x=>x.path==='/status').length,0);
 if(scenario==='pagehide-pending'){
  delay=true;const opening=button.onclick();await settle();events.pagehide();resolveEnable();await opening;await settle();assert(image.hidden&&!image.src);assert.equal(button.textContent,'Turn on camera');assert(calls.some(x=>x.path==='/api/practice'&&!x.data.enabled&&x.keepalive));process.stdout.write('pending cleanup passed');return;
 }
@@ -32,15 +32,16 @@ await button.onclick();await settle();
 if(scenario==='acquire-failure'){assert(image.hidden&&!image.src);assert.equal(left(),'Left: off');fail=false;await heartbeat();}
 if(scenario==='rejected'){assert.equal(button.textContent,'Turn on camera');assert(image.hidden&&!image.src);assert.equal(left(),'Left: off');assert.equal(other,true);process.stdout.write('other lease is insufficient');return;}
 assert.equal(button.textContent,'Turn off camera');assert(image.hidden&&!image.src);assert(!$('joystick-live').textContent.includes('test active'));
+assert.equal($('joystick-camera-help').hidden,false);
 vision='active';await poll();assert(!image.hidden&&image.src.startsWith('/stream'));assert.equal(left(),'Left: pressed');
 const id=calls.find(x=>x.path==='/api/practice').data.session;await heartbeat();assert(calls.filter(x=>x.path==='/api/practice'&&x.data.enabled).length>=2);assert(calls.filter(x=>x.path==='/api/practice').every(x=>x.data.session===id));
 if(scenario==='center'){
  const center=$('joystick-center'),size=$('joystick-size');image.onload();assert.equal(center.disabled,false);size.value='.4';size.oninput();
- await center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1);assert.equal(button.disabled,true);assert.equal(center.textContent,'Centering…');
+ await center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1);assert.equal(button.disabled,true);assert.equal(center.textContent,'Centring…');
  center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1,'centering is single-flight');
- statusPatch={calibrating:true,calibrated:false};await poll();assert.equal(center.textContent,'Centering…');assert($('joystick-center-status').textContent.includes('relaxed open hand'));
+ statusPatch={calibrating:true,calibrated:false};await poll();assert.equal(center.textContent,'Centring…');assert($('joystick-center-status').textContent.includes('relaxed open hand'));
  generation++;statusPatch={calibrating:false,calibrated:true,player:{active,generation,needs_center:false},joystick_grid:{anchor:{x:.4,y:.55},center:{x:.4,y:.55},half_size:.3,minimum_size:.3}};await poll();
- assert.equal(center.textContent,'Center saved ✓');assert.equal(center.disabled,false);assert.equal(button.disabled,false);assert.equal(Number(size.value),.4);assert($('joystick-value').textContent.includes('Unsaved preview'));assert(!image.hidden);assert($('joystick-center-status').textContent.includes('grid now uses this position'));
+ assert.equal(center.textContent,'Centre saved ✓');assert.equal(center.disabled,false);assert.equal(button.disabled,false);assert.equal(Number(size.value),.4);assert($('joystick-value').textContent.includes('Unsaved preview'));assert(!image.hidden);assert($('joystick-center-status').textContent.includes('grid now uses this position'));
  statusPatch={};
 }
 if(scenario==='grid'){
@@ -119,8 +120,8 @@ if(scenario==='save'){
 }
 if(scenario==='pagehide'){events.pagehide();await settle();assert(image.hidden&&!image.src);assert.equal(left(),'Left: off');assert(calls.some(x=>x.path==='/api/practice'&&!x.data.enabled&&x.keepalive));assert.equal(other,true);process.stdout.write('pagehide passed');return;}
 if(scenario==='release-failure')releaseFail=true;
-await button.onclick();await settle();assert.equal(button.textContent,'Turn on camera');assert(image.hidden&&!image.src);assert($('joystick-camera-stage').hidden);assert(Object.prototype.hasOwnProperty.call($('joystick-grid').attrs,'hidden'));assert.equal(left(),'Left: off');assert($('joystick-live').textContent.includes('off'));
-if(releaseFail){releaseFail=false;await heartbeat();assert.equal(own,false);}
+await button.onclick();await settle();assert.equal(button.textContent,'Turn on camera');assert(image.hidden&&!image.src);assert($('joystick-camera-stage').hidden);assert(Object.prototype.hasOwnProperty.call($('joystick-grid').attrs,'hidden'));assert.equal(left(),'Left: off');assert($('joystick-camera-help').hidden);if(releaseFail)assert($('joystick-live').textContent.includes('shutdown'));else assert.equal($('joystick-live').textContent,'');
+if(releaseFail){releaseFail=false;await heartbeat();assert.equal(own,false);assert.equal($('joystick-live').textContent,'');}
 await poll();assert(image.hidden&&!image.src);assert.equal(other,true);assert(calls.some(x=>x.path==='/api/practice'&&!x.data.enabled));
 assert(calls.every(x=>x.path!=='/api/controller'&&x.path!=='/api/config'));
 assert.equal(calls.filter(x=>x.path==='/calibrate').length,scenario==='center'?1:0);

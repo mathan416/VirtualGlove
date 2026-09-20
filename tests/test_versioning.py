@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from powerglove_vision import versioning
+from virtualglove import versioning
 
 
 class VersionTests(unittest.TestCase):
@@ -34,7 +34,7 @@ class VersionTests(unittest.TestCase):
     def test_exported_exact_identity_uses_candidate_manifest(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            module = root / 'src/powerglove_vision/versioning.py'
+            module = root / 'src/virtualglove/versioning.py'
             module.parent.mkdir(parents=True)
             module.with_name('_build_info.json').write_text(json.dumps({
                 'version':'0.3.2','branch':'main','commit':'a'*40,'firmware_expected':'b'*64}))
@@ -51,7 +51,7 @@ class VersionTests(unittest.TestCase):
 
     def test_exported_app_uses_stamp_without_git(self):
         with tempfile.TemporaryDirectory() as d:
-            module = Path(d) / "src/powerglove_vision/versioning.py"
+            module = Path(d) / "src/virtualglove/versioning.py"
             module.parent.mkdir(parents=True)
             for branch, expected in [("main", "0.2.5"), ("dev", "0.2.5-dev")]:
                 module.with_name("_build_info.json").write_text(json.dumps({"version": "0.2.5", "branch": branch}))

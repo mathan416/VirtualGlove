@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "target": "launchbox-x86_64",
+  "architecture": "x86_64",
+  "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+  "base_patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+  "windows_patch_sha256": "88c7bae02bfdb1cda8866dadb676710889da7910a8ac695a2a9eb4b62b72e4e7",
+  "core_sha256": "5828d3885a79dba494dcb772a6693093a069a9ac76e758df5392c3da05834299",
+  "core_size": 8274545,
+  "source_sha256": "a1c3e574b8b65195dab63d3865bf70d3371a44a059ea7d08ef67b3c6595f5033",
+  "source_size": 1083750
+}

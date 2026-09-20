@@ -12,7 +12,10 @@
 
 """Exercise failure paths without camera, bridge, or administrator access."""
 import json
+import re
 import runpy
+import signal
+import subprocess
 import sys
 import tempfile
 import time
@@ -21,13 +24,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from concurrent.futures import Future
 from unittest.mock import Mock, patch
-from powerglove_vision import receiver, vision_app
-from powerglove_vision.transport import validate_state
-from powerglove_vision.controller_protocol import ReceiverSessions, decode_message, encode_message
-from powerglove_vision.gesture import GestureEngine, HeldGesture, GestureConfig
-from powerglove_vision.model import Calibration, ControllerState, HandObservation
-from powerglove_vision.matrix import UnoQMatrix, MatrixStatus
-from powerglove_vision.tuning import TuningManager
+from virtualglove import receiver, vision_app
+from virtualglove.transport import validate_state
+from virtualglove.controller_protocol import ReceiverSessions, decode_message, encode_message
+from virtualglove.gesture import GestureEngine, HeldGesture, GestureConfig
+from virtualglove.model import Calibration, ControllerState, HandObservation
+from virtualglove.matrix import UnoQMatrix, MatrixStatus
+from virtualglove.tuning import TuningManager
 
 ROOT = Path(__file__).resolve().parents[1]
 CAL = Calibration(.5, .5, .2, 0)
@@ -41,6 +44,42 @@ def packet(**extra):
 
 
 class AuditRegressionTests(unittest.TestCase):
+    def test_code_review_map_matches_the_tracked_checkout(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/build-code-review-map.py"), "--check"],
+            cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_sigterm_is_one_shot_before_normal_cleanup(self):
+        with patch.object(vision_app.signal, "signal") as install, \
+             self.assertRaises(KeyboardInterrupt):
+            vision_app._shutdown_on_signal(signal.SIGTERM, None)
+        install.assert_called_once_with(signal.SIGTERM, signal.SIG_IGN)
+
+    def test_retired_python_and_product_names_are_absent_from_tracked_files(self):
+        tracked = subprocess.check_output(
+            ["git", "ls-files", "-z"], cwd=ROOT
+        ).decode().split("\0")
+        old_brand, vision = "power" + "glove", "vision"
+        retired = re.compile(
+            old_brand + r"[_ -]?" + vision + "|" +
+            vision + r"[_ -]?" + old_brand,
+            re.IGNORECASE,
+        )
+        matches = []
+        for relative in filter(None, tracked):
+            path = ROOT / relative
+            if not path.is_file():
+                continue
+            try:
+                content = path.read_text()
+            except UnicodeDecodeError:
+                continue
+            if retired.search(relative) or retired.search(content):
+                matches.append(relative)
+        self.assertEqual(matches, [])
+
     def test_help_audit_ignores_nested_documentation_support_files(self):
         audit = runpy.run_path(str(ROOT / 'scripts/check-documentation.py'))
         errors = []
@@ -49,6 +88,53 @@ class AuditRegressionTests(unittest.TestCase):
             errors,
         )
         self.assertEqual(errors, [])
+
+    def test_documentation_audit_rejects_american_public_spelling(self):
+        audit = runpy.run_path(str(ROOT / 'scripts/check-documentation.py'))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prose = root / 'guide.md'
+            prose.write_text('The interface recognizes this behavior.\n')
+            with patch.dict(audit['check_canadian_english'].__globals__, {'ROOT': root}):
+                errors = []
+                audit['check_canadian_english']([Path('guide.md')], errors)
+            self.assertTrue(errors)
+
+            prose.write_text(
+                'The interface recognises this behaviour.\n'
+                '`recognized` and `center` remain protocol fields.\n'
+                '```json\n{"recognized": true, "center": 0.5}\n```\n'
+            )
+            with patch.dict(audit['check_canadian_english'].__globals__, {'ROOT': root}):
+                errors = []
+                audit['check_canadian_english']([Path('guide.md')], errors)
+            self.assertEqual(errors, [])
+
+    def test_public_web_copy_uses_canadian_english(self):
+        from virtualglove.academy_web import LEARN
+        from virtualglove.dashboard_web import DASHBOARD
+        from virtualglove.joystick_web import JOYSTICK_CONTENT, JOYSTICK_SCRIPT
+        from virtualglove.player_web import PLAYER_CONTENT, PLAYER_SCRIPT
+        from virtualglove.setup_web import SETUP_CONTENT, SETUP_SCRIPT
+        from virtualglove.tuning_web import TUNE_CONTENT, TUNE_SCRIPT
+
+        parts = (
+            LEARN, DASHBOARD,
+            JOYSTICK_CONTENT, JOYSTICK_SCRIPT,
+            PLAYER_CONTENT, PLAYER_SCRIPT,
+            SETUP_CONTENT, SETUP_SCRIPT,
+            TUNE_CONTENT, TUNE_SCRIPT,
+        )
+        public_copy = "\n".join(
+            part.decode() if isinstance(part, bytes) else part for part in parts
+        )
+        for phrase in (
+            "Center hand", "Center your hand", "Center saved", "Centering…",
+            "Personalize", "Personalization", "Exposure behavior",
+            "Actual camera behavior", "Help center",
+        ):
+            self.assertNotIn(phrase, public_copy)
+        self.assertIn("Centre hand", public_copy)
 
     def test_malformed_packets_are_rejected_before_device_access(self):
         invalid = [[], None, "text", packet(axes=[]), packet(buttons={'a':1}),
@@ -103,11 +189,11 @@ class AuditRegressionTests(unittest.TestCase):
         for method, value in [('set_status',MatrixStatus.LOADING), ('set_profile','program_h')]:
             rpc = Mock(side_effect=[OSError('temporary failure'),None])
             matrix = UnoQMatrix(call=rpc)
-            with patch('powerglove_vision.matrix.time.monotonic',return_value=10):
+            with patch('virtualglove.matrix.time.monotonic',return_value=10):
                 self.assertFalse(getattr(matrix,method)(value))
                 self.assertFalse(getattr(matrix,method)(value))
             self.assertEqual(rpc.call_count,1)
-            with patch('powerglove_vision.matrix.time.monotonic',return_value=11):
+            with patch('virtualglove.matrix.time.monotonic',return_value=11):
                 self.assertTrue(getattr(matrix,method)(value))
                 self.assertTrue(getattr(matrix,method)(value))
             self.assertEqual(rpc.call_count,2)
@@ -272,8 +358,15 @@ class AuditRegressionTests(unittest.TestCase):
         self.assertIn('scripts/benchmark-vision-replay.py', development)
         self.assertIn('scripts/run-nestopia-powerglove-trace.py', development)
         self.assertFalse(any(name.startswith(('output/install/','assets/matrix/')) for name in selected))
-        self.assertFalse(any(name.endswith('.zip') for name in selected))
+        self.assertEqual(
+            sorted(name for name in selected if name.endswith('.zip')),
+            [
+                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip',
+                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip',
+                'hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip',
+            ],
+        )
         generators=runpy.run_path(str(ROOT/'scripts/build-installer-scripts.py'))
-        for machine in ('uno-q','retropie'):
+        for machine in ('uno-q','retropie','recalbox','batocera'):
             self.assertEqual(generators['render'](machine),
                              (ROOT/f'scripts/install-{machine}.sh').read_text())

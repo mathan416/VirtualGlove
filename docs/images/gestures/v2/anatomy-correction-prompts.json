@@ -18,7 +18,7 @@
     {
       "name": "wrist-roll-left",
       "path": "/Users/mathan/.codex/generated_images/01a06a71-88ec-7bc2-990a-15d4cb995cac/exec-e910da06-d0e3-4fbf-af05-ab76816b0c4d.png",
-      "prompt": "Background extraction ONLY. Remove checkerboard entirely and output genuine transparent alpha. Preserve exactly the corrected FOUR extended long fingers plus ONE thumb, the leftward hand tilt, cyan counterclockwise arrow, glove, colors and decorative marks. No drawn checkerboard. Do not alter anatomy."
+      "prompt": "Background extraction ONLY. Remove checkerboard entirely and output genuine transparent alpha. Preserve exactly the corrected FOUR extended long fingers plus ONE thumb, the leftward hand tilt, cyan counterclockwise arrow, glove, colours and decorative marks. No drawn checkerboard. Do not alter anatomy."
     }
   ],
   "thirdSegment": "There is a missing proximal phalanx on the bent index finger. Add ONE white glove segment connecting the index knuckle at the upper-left edge of palm to the back of the bent index finger. Fill the black gap directly below and behind the two bent index segments with the visible side of its proximal segment, outlined in navy. The index must be firmly attached to the palm, not floating alongside the middle finger. Keep the existing two bent segments and add the missing connecting third segment. Do not add fingertips or other fingers. Preserve all other artwork and real transparent alpha.",

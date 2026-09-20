@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_installation_manifest.py
-# Purpose: Verify owned-file cleanup, local change preservation, and interrupted update recovery.
+# Purpose: Verify owned-file replacement, cleanup, private preservation, and recovery.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -65,15 +65,21 @@ class ManifestTests(unittest.TestCase):
         self.assertTrue((self.root/self.module['MANIFEST']).is_file())
         self.assertTrue(old.is_file())
 
-    def test_modified_and_mode_changed_files_stay_owned_but_are_never_pruned(self):
+    def test_modified_and_mode_changed_managed_files_are_backed_up_and_replaced(self):
         for name in ('src/old.py','src/current.py','src/mode.py'):self.put(name,'original')
         self.apply();self.put('src/old.py','custom',self.root);self.put('src/current.py','custom',self.root)
         (self.root/'src/mode.py').chmod(0o755)
         (self.source/'src/old.py').unlink();(self.source/'src/mode.py').unlink();self.put('src/current.py','new release')
-        self.assertEqual(set(self.apply()['preserved']),{'src/old.py','src/current.py','src/mode.py'})
-        self.apply()
-        self.assertEqual((self.root/'src/old.py').read_text(),'custom')
-        self.assertEqual(len(self.module['check'](self.root)),3)
+        result = self.apply()
+        self.assertEqual(set(result['backed_up_changes']),
+                         {'src/old.py','src/current.py','src/mode.py'})
+        self.assertFalse((self.root/'src/old.py').exists())
+        self.assertFalse((self.root/'src/mode.py').exists())
+        self.assertEqual((self.root/'src/current.py').read_text(),'new release')
+        self.assertEqual((self.base/'backup2/src/old.py').read_text(),'custom')
+        self.assertEqual((self.base/'backup2/src/current.py').read_text(),'custom')
+        self.assertTrue((self.base/'backup2/src/mode.py').is_file())
+        self.assertEqual(self.module['check'](self.root),[])
 
     def test_invalid_manifest_and_symlinks_fail_before_changing_payload(self):
         self.put('src/a.py','one');self.apply();self.put('src/a.py','two')

@@ -1,0 +1,24 @@
+# Project: VirtualGlove
+# File: retropie/arcade-cabinet-merger/arcade-gamepad-merger.service
+# Purpose: Keep the optional RetroPie arcade-cabinet input merger running.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-19 - Recovered the proven development-cabinet service into the project.
+# Full history: docs/CHANGELOG.md and Git history.
+
+[Unit]
+Description=Merge cabinet and 8BitDo controls into virtual player gamepads
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+ConditionPathExists=/dev/uinput
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/arcade-gamepad-merger
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

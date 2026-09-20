@@ -1,4 +1,4 @@
-# Power Glove game ROM input audit
+# Power Glove Game ROM Input Audit
 
 This audit is limited to the Power Glove game list shipped in the registry. ROMs
 were read from the user's archive folder for static inspection and were not copied

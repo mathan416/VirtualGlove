@@ -1,7 +1,7 @@
-# Troubleshooting by symptom
+# Troubleshooting by Symptom
 
 Start at the first stage that fails: camera, recognition, Controller delivery,
-RetroPie reception, emulator selection, then the displayed game. Keep a normal
+console reception, emulator selection, then the displayed game. Keep a normal
 gamepad available. Change one setting at a time so you know what fixed the issue.
 
 <img src="images/gestures/v2/pixel-pal-safety.png" alt="Pixel Pal gives a friendly stop-and-check signal" width="150">
@@ -50,7 +50,7 @@ Use the plain `/setup` address; no `?ui=2` suffix is needed. Old query-string bo
 Another device answered for the requested `.local` name. Rerun the installer
 and choose a distinct short name, such as `virtualglove-den`. Do not disconnect
 the other device merely to bypass the check: duplicate `.local` names can change
-automatically and break browser bookmarks or RetroPie delivery. Updates do not
+automatically and break browser bookmarks or console delivery. Updates do not
 ask this question and never rename an installed Controller.
 
 ### The secure page shows a privacy warning
@@ -83,7 +83,7 @@ or Ethernet link**, including supported Ethernet adapters in USB docks.
 | --- | --- | --- |
 | Green | At least one detected physical Wi-Fi/Ethernet link is up | Check console-service and authenticated-response markers next |
 | Red | Detected relevant links report disconnected | Check wireless association, Ethernet cable, dock power, and upstream data connection |
-| Grey | The host report is missing, stale, incomplete, or has no recognized interface | Check that the Controller host sampler was installed/upgraded; do not assume the cable is disconnected |
+| Grey | The host report is missing, stale, incomplete, or has no recognised interface | Check that the Controller host sampler was installed/upgraded; do not assume the cable is disconnected |
 
 Docker bridges and loopback do not make this marker green. A green link does
 not prove an IP address, Internet access, console reachability, or game delivery.
@@ -97,6 +97,11 @@ upgrade helper to update the host sampler.
 and wait for **Starting camera and gesture tracking** to finish. First startup
 can take longer than switching between active profiles.
 
+When no camera is connected, Dashboard deliberately shows **Camera unavailable**
+instead of repeatedly presenting a broken preview. This behaviour belongs to the
+Controller and is the same for RetroPie, Recalbox, Batocera, and LaunchBox; it
+is not a Recalbox-specific failure.
+
 If no camera appears, check the powered USB hub, cable, and camera connection.
 On the Controller host, `lsusb` should show the camera. If it is absent there,
 the problem is below hand recognition. The documented helper attempts one
@@ -107,7 +112,7 @@ until it reads a real frame.
 Repeated setting changes will not repair a disconnected USB device. See
 [Camera selection](CONFIGURATION_REFERENCE.md#camera-selection).
 
-## The camera works but the hand is not recognized
+## The camera works but the hand is not recognised
 
 Keep one whole hand in frame with its palm facing the camera. Light the hand
 from the camera side and avoid a bright window behind it. Try a bare hand
@@ -126,11 +131,102 @@ adding a runtime setting to `device.json`.
 ## The hand is detected but the game does not move
 
 1. Close local Play and Glove Academy; they pause cabinet input. Finish tuning, then explicitly start controller delivery if required.
-2. Check the selected player and any request to set a fresh centre. Selecting a player loads their saved centre automatically. Use **Center hand** if no centre is saved or the camera or playing position has changed.
+2. Check the selected player and any request to set a fresh centre. Selecting a player loads their saved centre automatically. Use **Centre hand** if no centre is saved or the camera or playing position has changed.
 3. Select **Start controller**. Armed means delivery is permitted when a valid game session or intentional manual profile is active; it does not mean packets are always being sent.
 4. Check Setup's console-service and authenticated-response markers. A reachable service with unconfirmed authentication suggests pairing needs attention. Neither marker proves emulator input consumption.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
 6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
+
+If Controller Router is enabled, return the hand to neutral once after the game
+appears. Router deliberately rejects directions and button gestures until that
+fresh neutral observation, while physical controls remain available
+immediately. If no physical controller responds until VirtualGlove is stopped,
+the console has an older Router build; close the game and rerun the current
+console installer.
+
+If the ROM was added after VirtualGlove was installed, refresh the frontend's
+game list before testing it. Recalbox and Batocera also need a VirtualGlove
+service restart or reboot after a newly registered Super Glove Ball ROM so the
+missing exact-ROM native choice can be created. In LaunchBox, rerun the current
+installer if an older installation still points **VirtualGlove RetroArch** at a
+batch file or leaves standard RetroArch assigned to an NES game. The current
+installer uses the Python bridge directly and migrates standard RetroArch NES
+assignments while preserving genuinely different emulator overrides.
+The bridge also ensures the managed receiver on every launch. If Dashboard
+shows **Controller connection stopped** while a LaunchBox game is active, close
+the game and LaunchBox, rerun the current installer, and relaunch the game. The
+upgrade stops duplicate receivers left by an older Python environment without
+changing ROMs, saves, pairing, or the game registry.
+
+If native hand movement reaches Super Glove Ball on LaunchBox but the V-sign
+Start gesture or thumbs-up Select gesture does not, close RetroArch and rerun
+the current installer. Current builds keep native gestures on the guarded Power
+Glove channel instead of also sending ordinary RetroPad input. Dashboard recognition plus a working physical joypad does not
+by itself prove that an older Windows receiver has this correction.
+
+On generic RetroPie, confirm the separate `VirtualGlove` input device and its
+Player 1 mapping. If optional Controller Router is enabled—or on Recalbox and
+Batocera—open its Setup card or run `virtualglove-controller-router check`.
+Confirm each saved source is connected, every enabled **VirtualGlove Merged
+Player 1–4** output exists, and the current RetroArch player indexes are assigned.
+Merged devices are intentionally neutral in EmulationStation and become active
+for physical input during Libretro gameplay. VirtualGlove gesture input remains
+limited to supported FCEUmm, stock Nestopia, and native Super Glove Ball paths.
+On Recalbox, the installer check must report **Persistent Libretro routing
+override**. Its generated `retroarchcustom.cfg.overrides.cfg` is expected to be
+rewritten at launch; do not repair that temporary file manually.
+On LaunchBox, the installer must
+report `network-retropad`, a random high loopback port, and a validated isolation
+rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
+and physical XInput remain available. If gestures are recognised but FCEUmm does
+not move, rerun the current installer to restore the managed ordinary-game
+configuration and receiver route rather than changing global RetroArch settings.
+If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
+the matching VirtualGlove Windows installer. The affected game continues in
+FCEUmm joystick mode. On Batocera, an **ACTION** result for the packaged native
+core means the architecture could not be resolved or the on-console load test
+failed; leave FCEUmm selected and do not copy a core from another target.
+Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
+before editing RetroArch settings.
+
+If a fresh Recalbox/Batocera update reports several possible initial Player 1 controllers,
+run the installer with `--list-player1-devices`, identify the intended pad, and
+repeat it with `--player1-device DEVICE-ID`. Two identical, non-serialized pads
+are not guessed. If the selected pad disconnects during play, only its held
+state releases; VirtualGlove remains available. Reconnect that saved pad, or
+explicitly select its replacement. Seeing no response from the merged device in
+EmulationStation is expected—it deliberately becomes active only in RetroArch.
+
+### Controller Router reports an unavailable controller
+
+Select **Check controllers**, then press a direction or button on every connected
+pad during the ten-second test. Each result includes the controller name, its
+stable six-character identity suffix, and its assigned player. For example,
+`Wireless Controller · cd8a4a · Player 1` identifies the saved device without
+depending on a changing Linux event number.
+
+If a controller is listed as **Unavailable**:
+
+1. Reconnect that exact controller and wait for EmulationStation to recognise it.
+2. Confirm it still appears and works in EmulationStation.
+3. Run **Check controllers** again and press one of its controls.
+4. If the old controller was replaced, close every RetroArch game, assign the
+   replacement in Controller Router, and save. Router never silently substitutes
+   a different device.
+
+A connected controller can report **Mapping refreshed** after a valid remap in
+EmulationStation. Its player assignment is retained and the refreshed mapping
+is used at the next game launch. If one controller responds while another is
+missing, Setup reports both facts rather than treating the whole test as a pass.
+
+If no physical controller is assigned to Player 1, Setup shows a red warning.
+Gameplay may still work, but the platform's RetroArch menu and exit hotkeys may
+be unavailable. Assign at least one physical controller to Player 1 unless a
+keyboard is deliberately kept available.
+
+Controller Router manages Libretro gameplay, not standalone emulator programs.
+Original controllers continue to navigate EmulationStation. Do not use the lack
+of merged-device movement in the frontend as evidence of a failure.
 
 A filename such as `Gun.Smoke (USA).7z` must keep its punctuation in the registry
 even though the displayed game name is **Gun Smoke**. See
@@ -141,16 +237,26 @@ and the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 
 Both pairing methods need the six-digit approval PIN displayed on the Controller
 matrix and the certificate-ID comparison. **Code pairing** additionally uses the
-one-time code generated on RetroPie. **Password pairing** additionally uses the
-RetroPie SSH username and password. The two codes are not interchangeable.
+one-time code generated on the selected console. **Password pairing** additionally
+uses that console's SSH username and password. The two codes are not interchangeable.
 
 If confirmation expires, select **Start a new confirmation**. The saved console
 and method stay fixed during the two-minute window; change them after it ends.
 A failed submitted request also requires fresh confirmation. Save console edits
 with **Save settings** before pairing.
-The separate RetroPie one-time code remains valid for five minutes. If more than
-one RetroPie is online, run `virtualglove-pair` on the exact console named in Setup;
-a code displayed by a different console cannot open the intended listener.
+The separate console one-time code remains valid for five minutes. Setup shows
+the correct command after RetroPie, Recalbox, Batocera, or LaunchBox is selected and saved.
+LaunchBox uses one-time-code pairing only. Run the displayed PowerShell command
+as the same Windows user who runs LaunchBox. If Windows asks about network
+access, allow the Python runtime on Private networks only. VirtualGlove's
+authenticated receiver runs in that signed-in desktop session, but ordinary
+game input reaches RetroArch through the managed loopback RetroPad and is not
+conditioned on window focus. A focus change must not release an active held
+control; tracking loss, controller timeout, game exit, or receiver shutdown does.
+If more than one console is online, run it on the exact console named in Setup;
+a code displayed by a different console cannot open the intended listener. A
+platform-mismatch error means the saved selection does not match the operating
+system detected by that console; correct and save the selection before retrying.
 When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority. A completed attempt should not leave the old PIN scrolling for the rest of its two-minute window.
 
 Use the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices); never paste
@@ -165,7 +271,7 @@ address or repair local name resolution in that case rather than pairing repeate
 ## Movement drifts or feels reversed
 
 Check the selected game profile and centre before changing sensitivity. Hold a
-relaxed hand at the intended playing position and choose **Center hand**.
+relaxed hand at the intended playing position and choose **Centre hand**.
 Support your forearm where practical. Re-centre after moving the camera.
 
 A profile such as Program D intentionally reverses controls. Native Super Glove
@@ -177,11 +283,11 @@ If ordinary movement is correct but a gesture is unreliable, use **Glove Academy
 → Tune gestures** and describe that symptom to Pixel Pal.
 
 For FCEUmm digital directions, Setup's **Joystick dead zone** adjusts how far
-the selected player moves beyond the square center box. Inside or on its boundary,
+the selected player moves beyond the square centre box. Inside or on its boundary,
 all positional directions release; beyond a side is a cardinal direction and beyond
 a corner is a diagonal. Start with **Use standard size**, then save one small change
 at a time while watching the live direction indicators. The box is anchored to
-the hand center saved by **Center hand**, and its effective width and height are
+the hand centre saved by **Centre hand**, and its effective width and height are
 at least 1.5 times the saved hand size. Near an edge it moves inward intact.
 Live hand size and resting jitter do not make it change. Slider changes preview immediately; Save applies them to
 gameplay. This setting does not
@@ -189,7 +295,7 @@ change native Super Glove Ball X/Y travel or cure processing latency. Use reach
 controls under **Glove Academy → Tune gestures → Movement reach** for native
 screen coverage and the latency procedure below for delay. Smaller reach values
 need less physical hand travel. **Latest coordinate** is the tested default;
-it is the only live native movement behavior and clamps at the saved reach
+it is the only live native movement behaviour and clamps at the saved reach
 edges. Historical bounded-curve replay is an engineering tool, not a Dashboard
 setting. If the Robo-Glove still jumps after
 the hand leaves and re-enters the picture, confirm that the Controller and
@@ -202,7 +308,7 @@ movement immediately.
 
 Practise the V sign and its release in Glove Academy. Keep your fingers clearly
 away from a menu pose while performing another action. Use **A gesture happens
-accidentally** in Tune gestures if recognition needs personalization.
+accidentally** in Tune gestures if recognition needs personalisation.
 
 Menu Guard suppresses D-pad and button output; native continuous positioning
 still follows the hand. Select **Stop controller** for a dependable pause while
@@ -215,9 +321,11 @@ stable, then compare deliberate movements and supported stationary holds. Avoid
 changing several camera, core, and display settings at once.
 
 Software status can locate processing delays but cannot measure the complete
-hand-to-screen delay. Native Super Glove Ball latency remains an active issue;
-follow the [measurement plan](direction-response-benchmark.md) before drawing
-conclusions from screenshots or timestamps on different computers.
+hand-to-screen delay. Follow the layered method in the
+[Engineering Journey](ENGINEERING_JOURNEY.md#validation-story-proving-that-movement-was-real)
+before drawing conclusions from screenshots or timestamps on different
+computers. Use the [Engineering Toolkit](ENGINEERING_TOOLKIT.md) only when the
+ordinary camera and connection checks do not identify the cause.
 
 ## My player or backup looks wrong
 
@@ -228,7 +336,7 @@ progress. Your browser usually puts it in Downloads with a player-based name,
 such as `alex-virtualglove-hand-setup.json`.
 
 Restore updates the selected player after review. An empty personal-threshold
-object can simply mean defaults are in use. Version-3 backups carry the center-box
+object can simply mean defaults are in use. Version-3 backups carry the centre-box
 size and effective gesture sensitivity; version-2 backups are migrated on import.
 See [backup locations and restore choices](CONFIGURATION_REFERENCE.md#where-player-settings-and-backup-files-live).
 

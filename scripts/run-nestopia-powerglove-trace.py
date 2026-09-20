@@ -27,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.native_state import NativeStateWriter  # noqa: E402
+from virtualglove.native_state import NativeStateWriter  # noqa: E402
 
 
 RETRO_DEVICE_ANALOG = 5
@@ -296,7 +296,9 @@ def run(args: argparse.Namespace) -> dict:
         phases = ((
             ("boot_gamepad", 420), ("start_gamepad", 1), ("glove_neutral", 240)
         ) if gamepad_startup else (
-            ("boot_neutral", 420), ("start", 18), ("after_start", 120)
+            ("boot_neutral", 420),
+            ("start_physical" if args.start_source == "gamepad" else "start", 18),
+            ("after_start", 120)
         )) + (
             ("x_min", 120),
             ("x_center", 120),
@@ -318,7 +320,7 @@ def run(args: argparse.Namespace) -> dict:
         sequence = 0
         for name, count in phases:
             frontend.phase = name
-            frontend.gamepad_start = name == "start_gamepad"
+            frontend.gamepad_start = name in ("start_gamepad", "start_physical")
             if gamepad_startup and name == "glove_neutral":
                 core.retro_set_controller_port_device(0, RETRO_DEVICE_POWERGLOVE)
             os.write(2, f"PGV phase={name} frames={count}\n".encode())
@@ -371,6 +373,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--scratch", type=Path, required=True)
     result.add_argument("--snapshot-dir", type=Path)
     result.add_argument("--startup-device", choices=("glove", "gamepad"), default="glove")
+    result.add_argument("--start-source", choices=("native", "gamepad"), default="native")
     return result
 
 

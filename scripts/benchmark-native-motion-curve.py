@@ -25,11 +25,11 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.gesture import (  # noqa: E402
+from virtualglove.gesture import (  # noqa: E402
     GestureConfig, GestureEngine, _camera_coordinate, _field_coordinate,
     load_calibration,
 )
-from powerglove_vision.model import Calibration, HandObservation  # noqa: E402
+from virtualglove.model import Calibration, HandObservation  # noqa: E402
 
 
 def percentile(values, fraction):
@@ -41,7 +41,7 @@ def percentile(values, fraction):
 
 
 def calibration_from(samples, cues):
-    """Derive the same neutral center, scale, and p95 jitter used by gameplay."""
+    """Derive the same neutral centre, scale, and p95 jitter used by gameplay."""
     neutral = next((cue for cue in cues if cue["label"] == "neutral_near"), None)
     rows = [row for row in samples if row.get("detected", True)
             and neutral
@@ -366,7 +366,7 @@ def main():
     parser.add_argument("replay", type=Path)
     parser.add_argument("--lane", type=int, default=0)
     parser.add_argument("--calibration", type=Path,
-                        help="Active versioned calibration containing center, reach, and jitter")
+                        help="Active versioned calibration containing centre, reach, and jitter")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     calibration = load_calibration(args.calibration) if args.calibration else None

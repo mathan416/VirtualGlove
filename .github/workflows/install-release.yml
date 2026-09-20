@@ -61,6 +61,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -q
           python scripts/check-source-docs.py
+          python scripts/build-enclosure-packages.py
+          python website/build.py
           python scripts/build-docs-pdf.py
           python scripts/check-documentation.py --require-pdfs
           bash scripts/build-app-lab-package.sh

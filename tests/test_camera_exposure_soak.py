@@ -27,12 +27,12 @@ spec.loader.exec_module(soak)
 
 class ExposureSoakTests(unittest.TestCase):
     def controls(self):
-        from powerglove_vision import camera_controls as controls
+        from virtualglove import camera_controls as controls
         return (controls.EXPOSURE_AUTO, controls.EXPOSURE_AUTO_PRIORITY,
                 soak.EXPOSURE_ABSOLUTE, soak.GAIN)
 
     def ioctl(self, reject=None):
-        from powerglove_vision import camera_controls as controls
+        from virtualglove import camera_controls as controls
         values = {item: 0 for item in self.controls()}
         events = []
         def call(_fd, request, data):
@@ -63,7 +63,7 @@ class ExposureSoakTests(unittest.TestCase):
             ("set", soak.EXPOSURE_ABSOLUTE, 78), ("set", soak.GAIN, 96)])
 
     def test_restore_requests_automatic_fixed_rate(self):
-        from powerglove_vision import camera_controls as controls
+        from virtualglove import camera_controls as controls
         ioctl, events = self.ioctl()
         self.assertTrue(soak.restore_automatic(7, ioctl))
         self.assertEqual(events[-2:], [

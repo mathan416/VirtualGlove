@@ -1,4 +1,4 @@
-# VirtualGlove security policy
+# Security and Privacy
 
 Use VirtualGlove on a trusted home or workshop network. This policy
 explains how to report a vulnerability and which protections the project
@@ -22,7 +22,7 @@ configuration, or working exploit instructions in a public issue.
 Include these details in the private report:
 
 - the affected commit or release;
-- the VirtualGlove Controller, RetroPie, browser, and network environment involved;
+- the VirtualGlove Controller, selected console platform, browser, and network environment involved;
 - concise reproduction steps and the observed result;
 - the security boundary that was crossed;
 - logs or screenshots after removing tokens, passwords, pairing codes, local addresses, and unrelated personal information.
@@ -38,15 +38,15 @@ The **VirtualGlove Controller** is the Arduino UNO Q device that owns the
 camera, recognition pipeline, local website, and controller sender.
 
 VirtualGlove is designed for a trusted home or workshop network. The VirtualGlove Controller
-performs hand tracking and sends virtual-controller state to RetroPie. RetroPie
-sends per-game profile changes back to the VirtualGlove Controller. Neither device should be
+performs hand tracking and sends virtual-controller state to the paired console.
+The console sends per-game profile changes back to the VirtualGlove Controller. Neither device should be
 treated as an Internet-facing service.
 
 The main protected assets are:
 
 - the shared controller token;
-- the VirtualGlove Controller and RetroPie operating systems;
-- the privileged `/dev/uinput` receiver;
+- the VirtualGlove Controller and console operating systems;
+- the console receiver and its virtual-input interface;
 - the physical pairing display and single-use PIN;
 - the fixed-purpose VirtualGlove Controller shutdown and USB-camera recovery helpers;
 - the integrity of the App Lab installation ZIP, MediaPipe wheel, bundled or downloaded model, and Arduino dependencies.
@@ -57,21 +57,26 @@ both paired hosts.
 
 ## Pairing boundaries
 
-The VirtualGlove Controller and RetroPie share one random token of at least 16 characters. The
+The VirtualGlove Controller and selected console share one random token of at least 16 characters. The
 active token belongs only in the VirtualGlove Controller's private `data/device.json` and
-RetroPie's `/etc/virtualglove/token`. It must not be committed, placed in a shell
+the console's private VirtualGlove data directory: `/etc/virtualglove` on
+RetroPie, `/recalbox/share/system/virtualglove/data` on Recalbox,
+`/userdata/system/virtualglove/data` on Batocera, or
+`%LOCALAPPDATA%\VirtualGlove\data` on LaunchBox. It must not be committed, placed in a shell
 argument, stored in `launcher.json`, or included in a screenshot or log.
 
 The supervised vision worker reads its token using `--device-config`, keeping
 the secret out of process arguments. Device settings are created and replaced
-atomically with mode `0600`. Legacy `--token` remains a compatibility option for
-manual commands; prefer `--token-file` or `--device-config` for the worker.
+atomically with restrictive permissions. Console processes use a token file;
+the token is never a command-line value.
 Browser mutation routes reject cross-site origins, and connection-setting writes
 require JSON. These browser protections do not add local-user authentication or
 change the trusted-network model.
 
 The recommended setup path uses a short-lived one-time code to authenticate
-the RetroPie pairing server over pinned TLS. Password pairing uses authenticated SSH. After the initial connection
+the selected console's pairing server over pinned TLS. Linux-console password
+pairing uses authenticated SSH; LaunchBox intentionally supports code pairing
+only. After the initial connection
 establishes trust, subsequent connections verify the saved remote host key.
 The password is not placed on the process command line.
 
@@ -101,7 +106,7 @@ the containerized website reads it instead of trusting its transient Docker
 hostname when issuing the HTTPS leaf.
 
 After installing the token, the Controller sends a signed controller hello and
-reports success only after RetroPie returns a valid matching challenge. This
+reports success only after the console returns a valid matching challenge. This
 post-write check confirms that the receiver accepts the newly shared token; it
 does not arm output or establish that an emulator consumed controller input.
 
@@ -111,12 +116,45 @@ the physical display requirement, accepting pairing credentials over ordinary
 HTTP, or extending the listener indefinitely weakens the intended boundary and
 requires explicit security review.
 
+## Console input boundaries
+
+On Recalbox and Batocera—and on RetroPie only when explicitly enabled—the
+root-owned Controller Router reads only explicitly saved EmulationStation
+mappings and the receiver's bounded local datagrams. It emits up to four
+fixed-capability devices named **VirtualGlove Merged Player 1–4**. Only Player
+1 carries a physical hotkey; VirtualGlove Select has no path to that control.
+Malformed mappings and local states are rejected, tracking timeout clears only
+the VirtualGlove source, and a physical disconnect releases only that source.
+Outputs are neutral and physical devices are not grabbed outside Libretro
+gameplay, so Router cannot duplicate EmulationStation navigation. Its
+Unix socket and versioned record remain inside the platform's private
+VirtualGlove directories. Managed physical Player indexes are applied through
+the platform's bounded Libretro configuration layer. Nestopia (VirtualGlove)
+uses a separate native-input path for gestures; it never admits VirtualGlove as
+a duplicate RetroPad source.
+
+On every supported-core transition, Router clears the stored VirtualGlove
+source and requires a new neutral D-pad/button observation before admitting
+gesture input. Physical sources are not gated. Camera position axes are not
+published through the ordinary NES joystick route, preventing pre-launch or
+off-centre camera state from becoming a game-start input.
+
+LaunchBox installs no Windows virtual-pad, keyboard-filter, or device-hiding
+driver. Ordinary games receive VirtualGlove through RetroArch's built-in Network
+RetroPad on a random high UDP port. The sender targets `127.0.0.1`, the interface
+is enabled only by the managed FCEUmm append configuration, and a managed Windows
+Firewall rule blocks LocalSubnet access to that RetroArch port. Installation
+fails closed if the rule or loopback transport does not validate. The signed
+VirtualGlove receiver remains the only LAN-facing input endpoint. Physical
+XInput and real keyboard bindings stay independent; keyboard-command conflicts
+are reported only as degradation of that manual fallback.
+
 ## Network exposure
 
 | Port | Protocol | Direction | Boundary |
 | --- | --- | --- | --- |
-| `55355` | UDP | VirtualGlove Controller to RetroPie | Authenticated virtual-controller packets |
-| `55356` | UDP | RetroPie to VirtualGlove Controller | HMAC-authenticated profile commands and acknowledgements |
+| `55355` | UDP | VirtualGlove Controller to console | Authenticated virtual-controller packets |
+| `55356` | UDP | Console to VirtualGlove Controller | HMAC-authenticated profile commands and acknowledgements |
 | `55357` | TCP/TLS | Pairing client to temporary server | Short-lived code-pairing exchange only |
 | `8088` | HTTP | Browser to VirtualGlove Controller | Local dashboard, Play, public Help guides, diagnostics, and ordinary controls; no pairing credentials accepted |
 | `8443` | HTTPS | Browser to VirtualGlove Controller | Protected setup and pairing operations |
@@ -195,19 +233,27 @@ if remote shutdown or camera recovery is not wanted.
 - The App Lab installation ZIP is generated and verified; it is not maintained as a changing source-controlled binary.
 - The custom MediaPipe wheel's provenance and checksum are recorded in `THIRD_PARTY_NOTICES.md` at the repository root.
 - Google's Hand Landmarker model is installed from the bundled copy, with its pinned download as a fallback only when that copy is absent. Both paths must match the expected SHA-256 digest before atomic installation; the package verifier also checks the bundled model and license text.
-- The optional Nestopia core is built from one pinned upstream commit and one checksum-recorded local patch. Its build rejects changes to Nestopia's original Power Glove license header, and installation keeps the upstream `COPYING` file and the local modification ledger beside the separately named core. Stock Nestopia and FCEUmm are not replaced.
+- The optional Nestopia core is built from one pinned upstream commit and checksum-recorded patches. Recalbox and Batocera manifests bind each binary to its target, release, corresponding source archive, source revisions, size, digest, and executable identity; LaunchBox binds its DLL and source to a Windows manifest. Console installers load-test the core and confirm the libretro identity before activation. Batocera and LaunchBox fail safely to FCEUmm when the native artifact is absent, changed, or unloadable. Stock Nestopia and FCEUmm are not replaced.
 - Arduino library versions are pinned in `sketch/sketch.yaml`.
 - GitHub Actions rebuilds and inspects documentation and the App Lab installation ZIP on every pull request and push to `main` or `dev`.
+- The public website is generated as static files from tracked source and
+  bounded release facts. It contains no analytics, secrets, pairing material,
+  or live Controller endpoint; its build rejects stale release and retired
+  retired guided-readiness claims before creating the manual-upload ZIP.
 
 Changing a download URL, checksum, dependency source, pairing primitive,
 network binding, file permission, or privileged service requires focused review
 and corresponding tests and documentation.
 
-## Paired game editing and gesture tuning
+## Paired games, controller routing, and gesture tuning
 
-The separate RetroPie Games service listens on TCP `55358`. Only the paired UNO
+The separate console administration service listens on TCP `55358`. Only the paired Controller
 proxy uses it; browsers call the UNO website. Requests and replies use a distinct
-HMAC-authenticated protocol. Server challenges expire after fifteen seconds and
+HMAC-authenticated protocol. `/registry` uses `virtualglove-games/1`; `/inputs`
+uses the separately domain-labelled `virtualglove-inputs/1` protocol for bounded
+inventory, read, save, check, and rollback operations. It returns friendly
+controller metadata and assignments, never device paths or pairing material.
+Server challenges expire after fifteen seconds and
 are consumed once. The shared token never goes to the browser. This protects
 message integrity; the LAN transport does not encrypt ROM filenames.
 
@@ -218,10 +264,10 @@ The service has bounded document sizes, pending challenges, and socket timeouts;
 it runs separately from controller input delivery. Its systemd unit confines writes
 to the configured registry directory and removes device access and capabilities.
 
-The new Games and Tune browser actions require JSON, an explicit action header,
+The Games, Controller Router, and Tune browser actions require JSON, an explicit action header,
 and matching Origin when supplied; cross-site browser requests are rejected.
 They retain the existing trusted-LAN administration model, not per-user accounts.
-Normal personalization contains numerical thresholds only. Measurements are held briefly
+Normal personalisation contains numerical thresholds only. Measurements are held briefly
 in memory, previews expire with the owning session, and camera images are not saved.
 Tuning suppresses controller delivery even if a game launches or another Dashboard
 requests input. Saved settings are validated and atomically replaced.
@@ -237,7 +283,7 @@ The optional Advanced diagnostic is the only Academy path that records video.
 It is explicitly started and user-paced, remains on the VirtualGlove Controller, and is deleted
 immediately after aggregate analysis or cancellation. An abandoned AVI expires
 after 30 minutes. Its downloadable JSON contains aggregate continuity, latency,
-confidence, lighting, and recognized-state names only: no frames, landmarks,
+confidence, lighting, and recognised-state names only: no frames, landmarks,
 tokens, addresses, or saved personal thresholds.
 
 ### Documentation screenshots
@@ -252,14 +298,14 @@ the interface; they are documentation examples only.
 
 Optional hand setup measures all five fingers; gesture tuning measures selected
 components. Both use three short sets of numerical samples in memory. The
-version-6 `data/gesture-tuning.json` file stores player names, one joystick center-box
+version-6 `data/gesture-tuning.json` file stores player names, one joystick centre-box
 size, gesture activation/release pairs shared across game profiles for each player, Academy progress, and a
-required-center flag and separate saved calibration, plus a bounded pending reference during a calibration
-restore. VirtualGlove 0.4.1 is the oldest supported in-place upgrade and already
+required-centre flag and separate saved calibration, plus a bounded pending reference during a calibration
+restore. VirtualGlove v0.4.2 is the oldest supported in-place upgrade to 0.5.0 and already
 uses this store format. Portable hand-setup exports use the
 `virtualglove-hand-setup` format at version 4; older formats are rejected without
 changing their source or the active player.
-Exports contain a name, center-box size, personal and complete gesture threshold
+Exports contain a name, centre-box size, personal and complete gesture threshold
 pairs, software identity, and a neutral reference. They exclude
 camera images, landmarks, Wi-Fi credentials, pairing tokens, and lesson progress.
 Restoring calibration requires an explicit same-position confirmation and strict
@@ -298,7 +344,7 @@ firewalls may prevent it, which is a safe availability failure rather than an
 authentication bypass. A copied pairing key can impersonate the console and
 must be rotated if exposed.
 
-The reverse profile path follows the same identity rule. When RetroPie cannot
+The reverse profile path follows the same identity rule. When the console cannot
 reach the configured Controller address, it broadcasts a signed discovery request
 that contains no ROM or requested profile. It accepts only a signed,
 request-matched acknowledgement, sends the profile command to that authenticated

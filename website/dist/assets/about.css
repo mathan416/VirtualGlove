@@ -1,0 +1,29 @@
+.about-feature {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  gap: 42px;
+  align-items: start;
+}
+
+.about-feature .about-photo {
+  margin: 6px 0 0;
+}
+
+.about-feature .about-story {
+  max-width: none;
+  margin: 0;
+}
+
+.about-feature .about-story h2 {
+  margin-top: 0;
+}
+
+@media (max-width: 850px) {
+  .about-feature {
+    grid-template-columns: 1fr;
+  }
+
+  .about-feature .about-photo {
+    max-width: 620px;
+  }
+}

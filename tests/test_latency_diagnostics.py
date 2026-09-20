@@ -25,10 +25,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from powerglove_vision.diagnostic_trace import DiagnosticTrace, session_key
-from powerglove_vision.transport import UdpSender
-from powerglove_vision.model import ControllerState
-from powerglove_vision.native_state import decode_record
+from virtualglove.diagnostic_trace import DiagnosticTrace, session_key
+from virtualglove.transport import UdpSender
+from virtualglove.model import ControllerState
+from virtualglove.native_state import decode_record
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,7 +94,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_preflight_selects_only_safe_status_and_applies_fixed_gates(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30.0,
             build={'commit':'a'*40}, token='must-not-survive', active_player='player-id')
         selected = {key: status.get(key) for key in preflight.STATUS_FIELDS if key in status}
@@ -109,7 +109,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_prepare_preflight_rejects_running_emulator_before_receiver_restart(self):
         status = dict(worker_running=True, camera_available=False, calibrated=False,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30,
             build={'commit':'a'*40})
         controller = {'disk_free_bytes':2**30, 'files':{'calibration_present':True}}
@@ -123,7 +123,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_preflight_rejects_wrong_camera_and_missing_native_abi(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=1280, camera_height=720, camera_format='MJPG', camera_fps=60)
         checks = preflight.evaluate(status, {'disk_free_bytes':2**30},
             {'disk_free_bytes':2**30, 'files':{}, 'native_state':{'present':False}},
@@ -136,7 +136,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_record_preflight_requires_live_calibration_not_only_a_saved_file(self):
         status = dict(worker_running=True, camera_available=True, calibrated=False,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30)
         controller = {'disk_free_bytes':2**30, 'files':{'calibration_present':True}}
         retropie = {'disk_free_bytes':2**30, 'files':{'core_sha256':'b'*64},
@@ -149,7 +149,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_record_preflight_warns_for_local_tools_but_rejects_runtime_mismatch(self):
         status = dict(worker_running=True, camera_available=True, calibrated=True,
-            tracker_backend='legacy', tracker_graph='full', native_xy_mode='latest',
+            tracker_backend='legacy', tracker_graph='full',
             camera_width=640, camera_height=480, camera_format='MJPG', camera_fps=30,
             build={'commit':'a'*40})
         controller = {'disk_free_bytes':2**30}
@@ -238,7 +238,7 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_duration_begins_with_first_event_not_trace_preparation(self):
         with tempfile.TemporaryDirectory() as folder:
-            with patch('powerglove_vision.diagnostic_trace.time.monotonic_ns',
+            with patch('virtualglove.diagnostic_trace.time.monotonic_ns',
                        side_effect=(100, 10_000, 10_001, 10_002)):
                 trace = DiagnosticTrace(Path(folder)/'trace', 'controller', seconds=2)
                 self.assertIsNone(trace.started_ns)
@@ -300,7 +300,7 @@ class DiagnosticTests(unittest.TestCase):
             sock.close()
             env = dict(os.environ, VIRTUALGLOVE_DIAGNOSTIC_TRACE=str(root/'run'),
                        VIRTUALGLOVE_DIAGNOSTIC_SECONDS='10')
-            process = subprocess.Popen([sys.executable, '-m', 'powerglove_vision.receiver',
+            process = subprocess.Popen([sys.executable, '-m', 'virtualglove.receiver',
                 '--listen', '127.0.0.1', '--port', str(port), '--token-file', str(root/'token'),
                 '--native-state', str(root/'native'), '--dry-run'], env=env,
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)

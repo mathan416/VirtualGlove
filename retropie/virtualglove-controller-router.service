@@ -1,0 +1,27 @@
+# Project: VirtualGlove
+# File: retropie/virtualglove-controller-router.service
+# Purpose: Optional FCEUmm Player 1-4 controller routing on RetroPie.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-19 - Added opt-in RetroPie Controller Router service.
+# Full history: docs/CHANGELOG.md and Git history.
+
+[Unit]
+Description=VirtualGlove Controller Router
+After=systemd-udev-settle.service
+ConditionPathExists=/etc/virtualglove/controller-router.json
+
+[Service]
+Type=simple
+User=root
+RuntimeDirectory=virtualglove
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+ExecStart=/opt/virtualglove/bin/virtualglove-controller-router serve --platform retropie --config /etc/virtualglove/controller-router.json --socket /run/virtualglove/controller-router.sock
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

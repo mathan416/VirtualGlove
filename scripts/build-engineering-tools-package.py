@@ -28,14 +28,17 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = runpy.run_path(str(Path(__file__).with_name("package-inventory.py")))
 ENGINEERING_TOOLKIT_FILES = INVENTORY["ENGINEERING_TOOLKIT_FILES"]
 TOOLKIT_CATEGORIES = INVENTORY["TOOLKIT_CATEGORIES"]
-SUPPORT_ROOTS = ("src/powerglove_vision/", "native/", "config/")
+SUPPORT_ROOTS = ("src/virtualglove/", "config/")
 SUPPORT_FILES = {
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
     "docs/ENGINEERING_TOOLKIT.md",
+    "native/nestopia-powerglove/diagnostic_trace.h",
+    "native/nestopia-powerglove/nestopia-powerglove.patch",
     "pyproject.toml",
 }
 ARCHIVE_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
+FORBIDDEN_ARCHIVE_SUFFIXES = (".so", ".dll", ".dylib", ".a", ".tar.gz")
 
 
 def write_member(
@@ -72,6 +75,15 @@ def selected_files(root: Path = ROOT) -> list[str]:
     )
     if missing:
         raise ValueError("Engineering inventory is missing: " + ", ".join(missing))
+    forbidden = [
+        name for name in selected
+        if name.endswith(FORBIDDEN_ARCHIVE_SUFFIXES)
+    ]
+    if forbidden:
+        raise ValueError(
+            "Engineering Toolkit must not contain compiled cores or platform source "
+            "archives: " + ", ".join(sorted(forbidden))
+        )
     return sorted(set(selected))
 
 
@@ -110,7 +122,7 @@ python3.12 scripts/setup-engineering-tools.py --with-mediapipe
 ```
 
 No ROMs, recordings, credentials, device settings, cached models, compiled
-    cores, or personal calibration data are included.
+cores, platform core source archives, or personal calibration data are included.
 """
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
         write_member(archive, root_name + "/README.md", readme)

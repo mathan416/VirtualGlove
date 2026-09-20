@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_runtime_assets.py
-# Purpose: Verify model download caching, checksum enforcement, and atomic installation behavior.
+# Purpose: Verify model download caching, checksum enforcement, and atomic installation behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -8,7 +8,7 @@
 #   2026-09-03 - Added with standardized source documentation.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Verify model download caching, checksum enforcement, and atomic installation behavior."""
+"""Verify model download caching, checksum enforcement, and atomic installation behaviour."""
 
 import hashlib
 import io
@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from powerglove_vision.runtime_assets import ensure_hand_landmarker_model
+from virtualglove.runtime_assets import ensure_hand_landmarker_model
 
 
 class RuntimeAssetTests(unittest.TestCase):

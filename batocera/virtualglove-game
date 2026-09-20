@@ -1,0 +1,39 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: batocera/virtualglove-game
+# Purpose: Relay Batocera gameStart/gameStop events to VirtualGlove.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+APP=/userdata/system/virtualglove
+export PYTHONPATH="$APP/src"
+SETTINGS="$APP/data/launcher.json"
+SESSION="$APP/run/active-game.json"
+
+case "${1:-}" in
+    gameStart)
+        emulator="${3:-}"
+        if [ "$emulator" = libretro ]; then
+            # Batocera regenerates retroarchcustom.cfg for every launch. Apply
+            # the merged physical-controller assignment after that generation
+            # for every ordinary Libretro core, not only FCEUmm. Native Super
+            # Glove Ball owns its input path directly and remains separate.
+            if [ "${4:-}" != nestopia_powerglove ]; then
+                /usr/bin/python3 -m virtualglove.controller_router apply \
+                    --platform batocera --config "$APP/data/controller-router.json" || exit 1
+            fi
+            case "${4:-}" in
+                nestopia_powerglove) emulator="lr-nestopia-powerglove" ;;
+                *) emulator="lr-${4:-}" ;;
+            esac
+        fi
+        exec /usr/bin/python3 -m virtualglove.retropie_hook start \
+            "${2:-}" "$emulator" "${5:-}" "" \
+            --settings "$SETTINGS" --session-file "$SESSION"
+        ;;
+    gameStop)
+        exec /usr/bin/python3 -m virtualglove.retropie_hook end \
+            --settings "$SETTINGS" --session-file "$SESSION"
+        ;;
+esac

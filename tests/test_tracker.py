@@ -22,19 +22,19 @@ import inspect
 import unittest
 from types import SimpleNamespace
 
-from powerglove_vision import tracker as tracker_module
-from powerglove_vision.tracker import (
+from virtualglove import tracker as tracker_module
+from virtualglove.tracker import (
     TRACKER_BACKEND_LABELS, TRACKING_EVIDENCE_OUTPUTS,
     _DirectionalSearchState, _TrackingTelemetry,
     _Point, _camera_curl_points, _configure_tracking_roi, _curl, _finger_bends,
-    _finger_curls, _finger_curls_from_bends, _landmarks_valid,
+    _finger_curls_from_bends, _start_curls_from_bends, _landmarks_valid,
     _inference_node_threads, _is_cpu_inference_calculator,
     _hand_presence_score_evidence,
     _palm_anchor_candidates, _palm_detector_evidence, _polygon_centroid,
     _prepare_tracker_frame, _translate_tracker_input,
 )
-from powerglove_vision.gesture import GestureEngine
-from powerglove_vision.model import HandObservation
+from virtualglove.gesture import GestureEngine
+from virtualglove.model import HandObservation
 
 
 def pose_points(closed):
@@ -44,6 +44,11 @@ def pose_points(closed):
         finger = [(0, 0, 0), (0, 1, 0), (0, 1, -1), (0, 0, -1)] if name in closed else [(0, i, 0) for i in range(4)]
         points.extend(_Point(*p) for p in finger)
     return points
+
+
+def finger_curls(points):
+    """Collapse the production joint measurements for concise assertions."""
+    return _finger_curls_from_bends(_finger_bends(points))
 
 
 class TrackerGeometryTests(unittest.TestCase):
@@ -464,36 +469,38 @@ class TrackerGeometryTests(unittest.TestCase):
         points = pose_points({'thumb', 'middle', 'pinky'})
         self.assertEqual(
             _finger_curls_from_bends(_finger_bends(points)),
-            _finger_curls(points),
+            finger_curls(points),
         )
 
     def test_base_knuckle_bend_is_detected_with_straight_outer_joints(self):
         points = pose_points(set())
         points[0] = _Point(0, -1, 0)
         points[5:9] = [_Point(0, 0, -i) for i in range(4)]
-        self.assertAlmostEqual(_finger_curls(points)['index_curl'], .75)
+        bends = _finger_bends(points)
+        self.assertAlmostEqual(_finger_curls_from_bends(bends)['index_curl'], .75)
+        self.assertEqual(_start_curls_from_bends(bends)['index_tip_curl'], 0.0)
 
     def test_single_joint_bend_is_not_diluted(self):
         points = pose_points(set())
         points[5:9] = [_Point(0, 0, 0), _Point(0, 1, 0),
                        _Point(0, 1, -1), _Point(0, 1, -2)]
-        self.assertAlmostEqual(_finger_curls(points)['index_curl'], .75)
+        self.assertAlmostEqual(finger_curls(points)['index_curl'], .75)
 
     def test_depth_fold_is_not_mistaken_for_straight(self):
         points = pose_points({'ring', 'pinky'})
         self.assertEqual(_curl(*points[13:16]), 0.0)
-        curls = _finger_curls(points)
+        curls = finger_curls(points)
         self.assertAlmostEqual(curls['ring_curl'], 0.75)
         self.assertAlmostEqual(curls['pinky_curl'], 0.75)
         self.assertEqual(curls['index_curl'], 0.0)
 
     def test_curl_is_invariant_to_rotation_scale_and_translation(self):
         points = pose_points({'ring', 'pinky'})
-        expected = _finger_curls(points)
+        expected = finger_curls(points)
         for angle in (0.4, 1.3, 2.8):
             rotated = [_Point(2+p.x*3, 4+3*(p.y*math.cos(angle)-p.z*math.sin(angle)),
                               -5+3*(p.y*math.sin(angle)+p.z*math.cos(angle))) for p in points]
-            for name, value in _finger_curls(rotated).items():
+            for name, value in finger_curls(rotated).items():
                 self.assertAlmostEqual(value, expected[name])
 
     def test_world_points_are_used_for_both_mediapipe_apis(self):
@@ -518,7 +525,7 @@ class TrackerGeometryTests(unittest.TestCase):
             for t in (0, .03, .06):
                 engine.update(HandObservation(t, True, confidence=.95,
                                               palm_x=.5, palm_y=.5, palm_scale=.2))
-            curls = _finger_curls(pose_points(closed))
+            curls = finger_curls(pose_points(closed))
             for t in (.1, .85):
                 state = engine.update(HandObservation(t, True, palm_x=.8, palm_y=.2, palm_scale=.2, **curls))
                 self.assertFalse(any(state.dpad.values()))

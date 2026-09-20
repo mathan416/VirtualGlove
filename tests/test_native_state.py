@@ -16,7 +16,7 @@ import time
 import unittest
 from pathlib import Path
 
-from powerglove_vision.native_state import (
+from virtualglove.native_state import (
     BUTTON_CLOSED_HAND, BUTTON_INDEX_POINT, BUTTON_MENU_GUARD, BUTTON_SELECT,
     PROFILE_SUPER_GLOVE_BALL, RECORD_SIZE,
     NativeStateWriter, decode_record, encode_record,
@@ -79,4 +79,16 @@ class NativeStateTests(unittest.TestCase):
             writer = NativeStateWriter(path)
             writer.write(self.sample(), arrived_ns=1)
             self.assertEqual(decode_record(path.read_bytes())["arrived_ns"], 1)
+            writer.close()
+
+    def test_writer_recreates_a_native_record_removed_by_another_service(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "run" / "native-state"
+            writer = NativeStateWriter(path)
+            original_identity = writer.identity
+            path.unlink()
+            writer.write(self.sample())
+            self.assertTrue(path.is_file())
+            self.assertNotEqual(writer.identity, original_identity)
+            self.assertTrue(decode_record(path.read_bytes())["detected"])
             writer.close()

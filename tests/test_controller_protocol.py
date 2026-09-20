@@ -20,11 +20,11 @@ import time
 from pathlib import Path
 import unittest
 from unittest.mock import patch, Mock
-from powerglove_vision import receiver
+from virtualglove import receiver
 
-from powerglove_vision.controller_protocol import ReceiverSessions, encode_message, decode_message
-from powerglove_vision.transport import UdpSender
-from powerglove_vision.model import ControllerState
+from virtualglove.controller_protocol import ReceiverSessions, encode_message, decode_message
+from virtualglove.transport import UdpSender
+from virtualglove.model import ControllerState
 
 TOKEN = 'private-test-controller-secret'
 PEER = ('127.0.0.1',12345)
@@ -188,10 +188,57 @@ class SignedControllerTests(unittest.TestCase):
             self.assertEqual(receiver.main(), 0)
         self.assertEqual(events, ['native', 'gamepad'])
 
+    def test_windows_native_profile_bypasses_network_retropad(self):
+        sessions = ReceiverSessions(TOKEN)
+        session = 'a' * 32
+        challenge = handshake(sessions, session)
+        packet = state_packet(
+            session, challenge, buttons={"start": True},
+        )
+        sock, native = Mock(), Mock()
+        sock.recvfrom.side_effect = [(packet, PEER), KeyboardInterrupt()]
+        sock.recvmsg.side_effect = lambda size, space: (
+            lambda pair: (pair[0], [], 0, pair[1])
+        )(sock.recvfrom(size))
+        with patch.object(receiver, 'ReceiverSessions', return_value=sessions), \
+                patch.object(receiver.socket, 'socket', return_value=sock), \
+                patch.object(receiver, 'NativeStateWriter', return_value=native), \
+                patch('virtualglove.retroarch_remote.RetroArchRemoteDevice') as remote, \
+                patch('sys.argv', [
+                    'receiver', '--token', TOKEN,
+                    '--output-device', 'retroarch-remote', '--retroarch-port', '55001',
+                ]):
+            self.assertEqual(receiver.main(), 0)
+        remote.return_value.write_state.assert_not_called()
+        remote.return_value.release.assert_called()
+        native.write.assert_called_once()
+        self.assertTrue(native.write.call_args.args[0]['buttons']['start'])
+
+    def test_windows_native_profile_stays_out_of_retropad_when_record_unavailable(self):
+        sessions = ReceiverSessions(TOKEN)
+        session = 'a' * 32
+        challenge = handshake(sessions, session)
+        packet = state_packet(session, challenge, buttons={"start": True})
+        sock = Mock()
+        sock.recvfrom.side_effect = [(packet, PEER), KeyboardInterrupt()]
+        sock.recvmsg.side_effect = lambda size, space: (
+            lambda pair: (pair[0], [], 0, pair[1])
+        )(sock.recvfrom(size))
+        with patch.object(receiver, 'ReceiverSessions', return_value=sessions), \
+                patch.object(receiver.socket, 'socket', return_value=sock), \
+                patch.object(receiver, 'NativeStateWriter', side_effect=OSError('unavailable')), \
+                patch('virtualglove.retroarch_remote.RetroArchRemoteDevice') as remote, \
+                patch('sys.argv', [
+                    'receiver', '--token', TOKEN,
+                    '--output-device', 'retroarch-remote', '--retroarch-port', '55001',
+                ]):
+            self.assertEqual(receiver.main(), 0)
+        remote.return_value.write_state.assert_not_called()
+
     def test_multihomed_reply_requires_port_signature_and_fresh_request(self):
         for mode in ('valid','wrong-port','wrong-request','wrong-key'):
             sock=Mock()
-            with patch('powerglove_vision.transport.socket.socket',return_value=sock):
+            with patch('virtualglove.transport.socket.socket',return_value=sock):
                 sender=UdpSender('192.0.2.52',55355,TOKEN)
             self.addCleanup(sender.close)
             sender._peer=('192.0.2.52',55355);sender.request='b'*32;sender._hello_at=float('inf')
@@ -205,7 +252,7 @@ class SignedControllerTests(unittest.TestCase):
             root=Path(directory);(root/'token').write_text(TOKEN)
             sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);sock.bind(('127.0.0.1',0))
             port=sock.getsockname()[1];sock.close()
-            process=subprocess.Popen([sys.executable,'-m','powerglove_vision.receiver','--listen','0.0.0.0','--port',str(port),'--token-file',str(root/'token'),'--native-state',str(root/'native'),'--dry-run'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+            process=subprocess.Popen([sys.executable,'-m','virtualglove.receiver','--listen','0.0.0.0','--port',str(port),'--token-file',str(root/'token'),'--native-state',str(root/'native'),'--dry-run'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
             client=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);client.settimeout(.05)
             try:
                 deadline=time.monotonic()+3

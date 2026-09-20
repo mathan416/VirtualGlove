@@ -28,9 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from powerglove_vision.gesture import Calibration, GestureConfig, GestureEngine  # noqa: E402
-from powerglove_vision.model import HandObservation  # noqa: E402
-from powerglove_vision.native_state import NativeStateWriter  # noqa: E402
+from virtualglove.gesture import Calibration, GestureConfig, GestureEngine  # noqa: E402
+from virtualglove.model import HandObservation  # noqa: E402
+from virtualglove.native_state import NativeStateWriter  # noqa: E402
 
 
 TRACE_SPEC = importlib.util.spec_from_file_location(
@@ -169,7 +169,7 @@ def matched_branches(session: Session, saved: bytes, baseline_mask: int, changed
 
 
 def observation(timestamp: float, dx: float = 0.0, dy: float = 0.0) -> HandObservation:
-    """Create one deterministic open-hand camera observation around calibrated center."""
+    """Create one deterministic open-hand camera observation around calibrated centre."""
     return HandObservation(
         timestamp=timestamp, detected=True, confidence=1.0,
         palm_x=.5 + dx * .2, palm_y=.5 + dy * .2, palm_scale=.2,

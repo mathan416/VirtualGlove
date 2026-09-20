@@ -1,0 +1,82 @@
+#!/bin/sh
+# Project: VirtualGlove
+# File: recalbox/virtualglove-core-mount
+# Purpose: Expose the separate native core through Recalbox's read-only paths.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+
+set -u
+
+APP=/recalbox/share/system/virtualglove
+ARCH=$(cat /recalbox/recalbox.arch 2>/dev/null || true)
+VERSION=$(cat /recalbox/recalbox.version 2>/dev/null || true)
+MANIFEST="$APP/native/recalbox/manifest.json"
+CORE=$(python3 "$APP/scripts/verify-recalbox-native-core.py" \
+    --manifest "$MANIFEST" --arch "$ARCH" --version "$VERSION" \
+    --resolve-core 2>/dev/null || true)
+STATE=/run/virtualglove-core
+CORE_TARGET=/usr/lib/libretro
+SYSTEM_TARGET=/recalbox/share_init/system/.emulationstation/systemlist.xml
+SYSTEM_RUNTIME="$STATE/systemlist.xml"
+
+mounted_at() {
+    awk -v target="$1" '$2 == target { found=1 } END { exit !found }' /proc/mounts
+}
+
+mount_core_overlay() {
+    upper="$STATE/core-upper"
+    work="$STATE/core-work"
+    merged="$STATE/core-merged"
+    mkdir -p "$upper" "$work" "$merged"
+    cp "$CORE" "$upper/nestopia_powerglove_libretro.so" || return 1
+    chmod 0644 "$upper/nestopia_powerglove_libretro.so" || return 1
+    if ! mounted_at "$merged"; then
+        mount -t overlay virtualglove-recalbox-core \
+            -o "lowerdir=$CORE_TARGET,upperdir=$upper,workdir=$work" "$merged" || return 1
+    fi
+    mounted_at "$CORE_TARGET" || mount --bind "$merged" "$CORE_TARGET" || return 1
+}
+
+start_core() {
+    [ -f "$CORE" ] && [ ! -L "$CORE" ] || return 0
+    [ -f "$CORE_TARGET/nestopia_libretro.so" ] || return 1
+    if ! python3 "$APP/scripts/verify-recalbox-native-core.py" \
+        --manifest "$MANIFEST" --core "$CORE" --arch "$ARCH" \
+        --version "$VERSION" --load; then
+        echo "VirtualGlove native core is unavailable; retaining FCEUmm joystick mode" >&2
+        return 0
+    fi
+    already=0
+    mounted_at "$SYSTEM_TARGET" && already=1
+    mkdir -p "$STATE"
+    mount_core_overlay || return 1
+    python3 "$APP/scripts/configure-recalbox-super-glove-ball-core.py" \
+        --core "$CORE_TARGET/nestopia_powerglove_libretro.so" \
+        --systemlist-output "$SYSTEM_RUNTIME" --apply || return 1
+    python3 "$APP/scripts/configure-recalbox-super-glove-ball-core.py" \
+        --core "$CORE_TARGET/nestopia_powerglove_libretro.so" --selection-only \
+        --registry "$APP/data/games.json" --rom-root /recalbox/share/roms/nes \
+        --auto-select --apply || \
+        echo "VirtualGlove could not select unconfigured Super Glove Ball ROMs; existing core choices are unchanged" >&2
+    changed=1
+    if [ "$already" -eq 1 ] && cmp -s "$SYSTEM_RUNTIME" "$SYSTEM_TARGET"; then
+        changed=0
+    fi
+    if [ "$changed" -eq 1 ]; then
+        mounted_at "$SYSTEM_TARGET" && umount "$SYSTEM_TARGET"
+        mount --bind "$SYSTEM_RUNTIME" "$SYSTEM_TARGET" || return 1
+    fi
+    [ -f "$CORE_TARGET/nestopia_powerglove_libretro.so" ] || return 1
+    if [ "$changed" -eq 1 ] && /etc/init.d/S31emulationstation status >/dev/null 2>&1; then
+        /etc/init.d/S31emulationstation restart
+    fi
+}
+
+case "${1:-}" in
+    start|restart) start_core ;;
+    status)
+        [ -f "$CORE_TARGET/nestopia_powerglove_libretro.so" ] && mounted_at "$SYSTEM_TARGET"
+        ;;
+    *) echo "Usage: $0 {start|restart|status}" >&2; exit 2 ;;
+esac

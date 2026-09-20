@@ -1,4 +1,4 @@
-# Engineering journey: one week from camera to playable glove
+# Engineering Journey
 
 This document records how VirtualGlove was developed and validated from the
 first camera prototype through the current playable system. It is deliberately
@@ -6,10 +6,10 @@ chronological: each milestone describes the problem at that point, the decision
 made, the evidence gathered, and what changed next.
 
 For the system as it exists today, read [Architecture and flows](ARCHITECTURE.md).
-For exact production performance evidence, read
-[Native movement response and validation](direction-response-benchmark.md). To
-reproduce supported measurements, use the version-matched
-[Engineering Toolkit](ENGINEERING_TOOLKIT.md).
+The validation results are consolidated into this journey. To reproduce
+supported measurements, use the version-matched
+[Engineering Toolkit](ENGINEERING_TOOLKIT.md); for everyday operation, use
+[VirtualGlove Input Modes](INPUT_MODES.md).
 
 ## Skip to a milestone
 
@@ -23,7 +23,8 @@ reproduce supported measurements, use the version-matched
 8. [9–10 September — Refine camera delivery and resilience](#milestone-8-refine-camera-delivery-and-resilience-9-10-september-2026)
 9. [10 September — Establish the production pipeline boundary](#milestone-9-establish-the-production-pipeline-boundary-10-september-2026)
 10. [10–11 September — Turn the prototype into a releasable product](#milestone-10-turn-the-prototype-into-a-releasable-product-10-11-september-2026)
-11. [The resulting engineering method](#the-resulting-engineering-method)
+11. [12–20 September — Make multi-controller play predictable](#milestone-11-make-multi-controller-play-predictable-12-20-september-2026)
+12. [The resulting engineering method](#the-resulting-engineering-method)
 
 ## The week at a glance
 
@@ -39,6 +40,7 @@ reproduce supported measurements, use the version-matched
 | 9–10 September | Camera delivery and recovery | Make capture tunable and recovery prove that a real frame can be read. |
 | 10 September | Production boundary | Stop tuning thresholds that could not reduce the measured palm-detector cost. |
 | 10–11 September | Productization | Simplify controls, strengthen installation and recovery, and release as VirtualGlove. |
+| 12–20 September | Controller routing | Preserve each platform's frontend mapping, merge only during supported gameplay, and start every game from neutral. |
 
 ## Milestone 1 — Establish camera recognition and joystick output — 2–3 September 2026
 
@@ -76,7 +78,7 @@ Protocol work followed an explicit evidence order:
 
 That order prevented a convenient packet description from becoming an
 unquestioned specification. The custom core eventually carried native X/Y and
-the recognized hand actions used by the game, while an explicit FCEUmm launch
+the recognised hand actions used by the game, while an explicit FCEUmm launch
 continued to select joystick behaviour.
 
 The same period expanded Glove Academy and calibration. Neutral centre, scale,
@@ -108,7 +110,7 @@ judgement that a trace cannot: whether the robo-glove felt attached to the hand.
 
 Transport and receiver work quickly fell to roughly millisecond-scale stages.
 Camera delivery, MediaPipe inference, and the more expensive palm-detector path
-became the meaningful optimization targets.
+became the meaningful optimisation targets.
 
 ## Milestone 4 — Explore smoothing and movement response — 6–7 September 2026
 
@@ -212,7 +214,7 @@ Historical samples showed why controlled trials remained necessary:
 
 These were different movements and could not serve as a fair A/B comparison.
 They did reveal that receiver publication count was not the same as the number
-of new recognized positions or displayed frames.
+of new recognised positions or displayed frames.
 
 ## Milestone 6 — Improve fast sweeps, recovery, and transport — 8–9 September 2026
 
@@ -355,7 +357,7 @@ outside it and immediate positional release inside it. Menu Guard, holds, turbo,
 special Programs, and native X/Y kept their existing priorities. The Dashboard
 showed useful program details when statistics were hidden.
 
-Glove Academy became a family-friendly learning and personalization system with
+Glove Academy became a family-friendly learning and personalisation system with
 Pixel Pal guidance, deterministic lesson controls, dedicated gesture artwork,
 camera-quality advice, and controller output paused during practice. The dot
 test, camera wizard, hand-setup backups, and engineering package separated
@@ -371,6 +373,99 @@ evidence, and this historical journey.
 The project was then renamed VirtualGlove to distinguish the new camera-based
 system while retaining historically accurate references to the original Power
 Glove and Super Glove Ball.
+
+## Milestone 11 — Make multi-controller play predictable — 12–20 September 2026
+
+Adding Recalbox, Batocera, and a multi-controller RetroPie cabinet exposed a
+different kind of input problem. Linux event numbers, joystick numbers, and
+RetroArch player indexes can all change independently. Copying one controller's
+button numbers or saving `/dev/input/eventN` worked only until the next boot or
+different USB order.
+
+Controller Router grew from the cabinet's proven merger idea. It records stable
+hardware identities and the mappings already accepted by EmulationStation,
+then resolves the current Linux devices and RetroArch indexes when needed. The
+original pads continue to own the frontend. During Libretro play, Router
+exclusively reads assigned pads and presents canonical merged Players 1–4.
+Physical hotkeys remain physical; VirtualGlove Select cannot become Hotkey
+Enable, and gesture input remains limited to its supported NES paths.
+
+Live testing found two less obvious failures. First, a busy camera socket could
+delay physical events, so physical sources were serviced first and old camera
+history was collapsed to the newest bounded state. Second, Router remembered a
+glove state received before RetroArch started. A game could therefore open with
+a direction or gesture already held, appearing to ignore every controller until
+VirtualGlove stopped.
+
+The accepted launch boundary now clears that stored glove state. Physical
+controllers work immediately. VirtualGlove joins only after one fresh neutral
+D-pad/button observation, and ordinary NES joystick cores receive recognised
+digital controls rather than camera-position axes. The same fix applies to
+routed RetroPie, Recalbox, and Batocera; native Super Glove Ball keeps its
+separate continuous-coordinate channel.
+
+Cross-system testing then exposed a platform-specific configuration lesson.
+Recalbox rebuilds `retroarchcustom.cfg` and its `.overrides.cfg` output for every
+launch, so writing a correct merged index there worked only until the next
+game. The durable source is `/recalbox/share/roms/.retroarch.cfg`, which the
+Recalbox generator intentionally reads into every Libretro launch. Moving the
+managed block there preserved EmulationStation mappings and made the same
+physical merged player work in NES, Game Boy, ColecoVision, and Game Gear tests.
+
+## Validation story — proving that movement was real
+
+The most important question was never whether a debug counter changed. It was
+whether the Robo-Glove moved promptly, accurately, and because the newest hand
+measurement reached the game.
+
+A delay could begin in exposure, camera delivery, MediaPipe, network transport,
+receiver publication, emulator input, video presentation, or the display. A
+smooth-looking trace could hide old frames; a fast software timestamp could
+exclude the delay a player actually felt. The investigation therefore used four
+separate layers of evidence:
+
+| Layer | What it isolated | What it could not prove |
+| --- | --- | --- |
+| Same-ROM headless benchmark | Emulator and input response from an identical saved state | Camera, network, display, or human-perceived delay |
+| Calibration dot core | Native centre, reach, clamping, loss, and recovery without game logic | A commercial game's interpretation of the packet |
+| Controller and receiver telemetry | Capture, inference, sending, validation, and publication | Physical display response by itself |
+| High-frame-rate hand-and-screen video | The complete visible experience | Which internal stage caused a delay without matching telemetry |
+
+The headless comparison booted the exact Super Glove Ball ROM into play, saved
+one emulator state, and restored that state for every candidate. One run stayed
+neutral while the other changed only the input. The first video frame whose
+checksum differed was the visible response. Release was measured the same way.
+
+Three complete executions produced byte-identical reports:
+
+| Input path | First visible activation | First visible release | Meaning |
+| --- | ---: | ---: | --- |
+| Super Glove Ball / Nestopia (VirtualGlove) | Frame 3, about 50 ms at 60 Hz | Frame 3, about 50 ms | Native coordinate consumed by the game's packet path |
+| The same ROM / FCEUmm | Frame 3, about 50 ms | Frame 3, about 50 ms | Standard joypad callback; no native packet |
+| Gun.Smoke / FCEUmm reference | Frame 2, about 33 ms | Frame 2, about 33 ms | Standard joypad callback in a different game |
+
+Small positive-X native steps from 3.1% of the signed range through full travel
+also changed the image on frame 3. That established that native input preserved
+continuous position rather than disguising a D-pad behind native terminology.
+
+The comparison caught a real Y-axis endpoint error. Packet transport and
+checksums had looked healthy, but the visible glove wrapped incorrectly. After
+correction, minimum, centre, and maximum produced `$80`, `$00`, and `$7F`, and
+the game placed the Robo-Glove at bottom, centre, and top. This was the reason
+for keeping packet evidence and visible game meaning as separate checks.
+
+Live testing then supplied the judgement the benchmark could not. Optical flow,
+additional smoothing, prediction, larger images, and several accelerated
+inference paths were rejected because they added age, weakened continuity, or
+made the control feel detached. The production result sends the newest valid,
+reach-clamped MediaPipe position without a replay queue or smoothing tail.
+
+The remaining long tail came mainly from palm-detector reacquisition rather
+than transport. Good lighting, a suitable exposure, and keeping the hand in
+view improved the actual experience more reliably than another movement filter.
+The repeatable tools remain in the [Engineering Toolkit](ENGINEERING_TOOLKIT.md),
+while the operating consequences belong in
+[VirtualGlove Input Modes](INPUT_MODES.md).
 
 ## The resulting engineering method
 

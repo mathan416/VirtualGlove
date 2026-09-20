@@ -1,619 +1,731 @@
-# VirtualGlove Installation Guide
+# Installation and Setup
 
-Install VirtualGlove with one script on the **VirtualGlove Controller
-(Arduino UNO Q)** and one on RetroPie.
-The scripts prepare the software and startup helpers; you finish by pairing the
-devices, positioning the camera, and testing a game.
+This guide takes you from a prepared Arduino UNO Q and game system to your
+first working VirtualGlove game. You will install VirtualGlove on both devices,
+pair them securely, centre your hand, and test the controls.
 
-Choose **Setup → Matrix attract mode** to keep the idle animation On, Dim it,
-or turn it Off except for faint connection pixels. This does not change game
-displays, T, L, or gesture recognition. The setting saves without a tracker restart.
+VirtualGlove 0.5.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
+Windows. The normal commands below install the latest stable release. If you
+need a specific version or a development build, use the
+[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-For an existing installation, this update changes controller transport on both computers. Stop controller output, update both to matching software, then start and test input. Mixed old/new versions do not deliver input with the default settings. See [signed controller transport and upgrades](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades) for staged upgrades and rollback.
+The next release candidate is `v0.5.0-rc.1`. After it is published, install
+that exact version on both machines with the pinned-version procedure in the
+technical reference. The unversioned commands in this guide intentionally
+continue to select the latest stable release.
 
-## Install stable release v0.4.2
+## 1. Before you begin
 
-Stable release **v0.4.2** retains Programs 1–14, the Ready-to-Play
-guide, and the live joystick dead-zone camera grid. It adds source-accurate
-rapid-fire defaults and live Dashboard overrides, removes retired protocol and
-pre-0.4.1 compatibility paths, avoids repeated configuration and camera scans
-during Dashboard polling, and reduces the installed documentation footprint.
-Close games and stop controller output, then run the matching command on each
-device.
+You need:
 
-On the VirtualGlove Controller:
+- a provisioned **VirtualGlove Controller** running on an Arduino UNO Q;
+- a UVC USB camera connected through a powered USB hub;
+- a supported game system: RetroPie, Recalbox, Batocera, or LaunchBox;
+- a physical controller already working with that game system;
+- both devices on the same trusted local network with internet access; and
+- your own legally obtained NES games. VirtualGlove includes no ROMs or BIOS files.
 
-```sh
-cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-uno-q.sh
-bash install-uno-q.sh --version v0.4.2
-```
+Close RetroArch and any running game before installation. Keep both devices
+powered and connected while the installers run. First installation can take
+several minutes.
 
-On RetroPie:
+### Choose your console section
 
-```sh
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.4.2/install-retropie.sh && bash install-retropie.sh --version v0.4.2
-```
+| Platform | Where you install | How Player 1 works |
+| --- | --- | --- |
+| RetroPie | Raspberry Pi terminal | VirtualGlove normally appears beside your physical controller. Optional Controller Router can combine and assign physical controllers and VirtualGlove. |
+| Recalbox 10.x | Recalbox terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
+| Batocera 38 or newer | Batocera terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
+| LaunchBox | Windows PowerShell | Your physical XInput controller remains available while VirtualGlove supplies a managed RetroArch controller. |
 
-Verify both report `v0.4.2`, then follow the pairing/first-game checks below.
-Existing hand settings and pairing files are preserved. The Controller installer
-also updates the matrix firmware. Review [coordinated transport upgrades and
-rollback](CONFIGURATION_REFERENCE.md#signed-controller-transport-and-upgrades)
-before replacing an older installation.
+Ordinary NES games can use FCEUmm or the platform's stock Nestopia core. Super Glove Ball also supports the
+special **Nestopia (VirtualGlove)** core, which provides its native three-axis
+movement and glove actions. FCEUmm remains a complete joystick-mode fallback.
 
-VirtualGlove 0.4.1 is the oldest supported in-place upgrade. The installer
-preserves current `/etc/virtualglove` pairing, game-registry, and Controller
-settings, but no longer imports pre-0.4.1 `/etc/powerglove` installations.
-Unsupported older data is left untouched for manual recovery. A fresh
-installation creates only `virtualglove-*` runtime names. Install both devices
-from the same release; signed protocol version 2 does not fall back to the
-retired unsigned transport.
+### Optional Controller Router
 
-## 1. Prepare your devices
+After pairing, Setup shows **Controller Router**. It lists only controllers
+already configured by EmulationStation. Review the suggested Player 1–4 choices,
+choose one player or Unassigned for each physical controller, choose at most one
+VirtualGlove player, then save. Opening the card never changes the console.
+Newly configured EmulationStation controllers appear automatically as
+**Unassigned**. If you remap an assigned controller in EmulationStation, Router
+keeps its player assignment and uses the validated new mapping on the next game
+launch; Setup marks it **Mapping refreshed**.
 
-You need a provisioned VirtualGlove Controller, a working RetroPie system, a UVC USB camera,
-a powered USB hub, and a physical controller for RetroArch setup. Put both devices
-on the same trusted local network with internet access. Supply your own games;
-no ROMs or BIOS files are included.
+Recalbox and Batocera automatically carry their released Player 1 selection into
+the new format. A normal RetroPie install keeps its separate `VirtualGlove`
+gamepad until Router is explicitly saved and applied. Original physical
+controllers remain the frontend controllers; merged outputs stay neutral in
+EmulationStation and become active during Libretro gameplay.
 
-For a new Controller, use Arduino App Lab to complete board setup and networking.
-Record the RetroPie's hostname and the UNO Q's current App Lab address. The
-VirtualGlove installer will offer the Controller's permanent friendly name.
-Connect the camera through the powered hub.
-You do not need to import VirtualGlove through App Lab, install Arduino build
-tools, or build a ZIP. The release contains a verified precompiled Matrix image;
-the installer checks it and loads it using the UNO Q's factory flashing tools.
+| Input | Where it works after Router is enabled |
+| --- | --- |
+| Assigned physical controllers | Their selected merged Player 1-4 slot in any RetroArch/Libretro game. Several physical controllers may share one player. |
+| VirtualGlove joystick gestures | Its selected player in supported FCEUmm and stock Nestopia NES games. |
+| VirtualGlove native gestures | Super Glove Ball in Nestopia (VirtualGlove), through the separate native-input path. |
+| Original physical controllers | Console menus and EmulationStation. Router temporarily takes ownership during Libretro gameplay to prevent doubled input. |
+| Standalone, non-Libretro emulators | Not managed by Controller Router. They retain the platform's normal controller setup. |
 
-Open a terminal on each device, either locally or over SSH. For the Controller:
+Assigning a physical controller in Router does not reconfigure its buttons.
+Router uses the mapping already saved by EmulationStation and adopts a valid
+later remap at the next game launch. Player 1 is special: only a physical
+controller assigned to Player 1 carries the platform's menu and exit hotkey.
+VirtualGlove Select never becomes a hotkey.
+
+At each Libretro game launch, physical controllers work immediately. Router
+discards any glove state seen in the frontend. In a game that accepts
+VirtualGlove gestures, rest the hand at neutral once; VirtualGlove then joins
+the selected merged player. This startup handshake prevents a held frontend
+gesture from becoming an accidental first game input.
+
+Use **Check controllers** and press a direction or button on each pad during the
+ten-second test. The result names each responding or unavailable controller,
+shows its stable identity suffix and assigned player, and keeps an unavailable
+warning visible even when another pad responds. Close any running RetroArch
+game before changing assignments. **Restore previous assignments** provides an
+atomic rollback after a save.
+
+The same assignments can be managed locally without pairing. Open the console
+terminal and run the platform's persistent command:
+
+- RetroPie: `sudo /opt/virtualglove/bin/virtualglove-controller-router setup`
+- Recalbox: `sh /recalbox/share/system/virtualglove/scripts/virtualglove-controller-router setup`
+- Batocera: `sh /userdata/system/virtualglove/scripts/virtualglove-controller-router setup`
+
+The terminal screen detects the platform, shows controller connection state,
+tests live controls, assigns Players 1–4, and provides save and rollback actions.
+This local tool changes controller assignments only; secure
+Controller-to-console pairing remains a separate Setup step.
+
+### Open a Controller terminal
+
+For a new UNO Q, first complete Arduino App Lab setup and connect it to your
+network. App Lab shows its current name or IP address. From another computer,
+open a terminal and connect with:
 
 ```sh
 ssh arduino@UNO-Q-NAME.local
 ```
 
-For this initial connection, use the UNO Q name or IP address shown by App Lab.
-It may still have its factory name. Use your normal account;
-the scripts request your sudo password when administrator access is needed.
-They do not store it. Close games before installing. Leave the devices powered
-and connected while installation runs; first setup can take several minutes.
+Use the password you created during board setup. The installer may request it
+again when administrator access is needed, but it does not save the password.
 
-The commands below automatically select the latest published stable release from
-GitHub. You do not need to enter a release tag or set shell variables. Run both
-installers during the same setup session and compare the reported release names;
-if a new release appeared between runs, rerun the older installation.
-Development prereleases are available separately in the technical reference.
-The latest release must include the installer assets before these commands work.
+## 2. Install the VirtualGlove Controller
 
-## 2. Run the VirtualGlove Controller installer
-
-Run this single line in the Controller terminal:
+In the UNO Q terminal, copy and run these two lines:
 
 ```sh
 cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh
-bash install-uno-q.sh
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh && bash install-uno-q.sh
 ```
 
-The Controller terminal may open in `/`, where a normal user cannot save files.
-The command first moves to the Arduino user's writable home directory so the
-installer can be downloaded safely.
+The installer verifies the release, installs VirtualGlove, loads the matching
+Matrix firmware, and configures automatic startup. It also installs the guarded
+camera-recovery and shutdown helpers used by the Controller.
 
-The script verifies its download, installs VirtualGlove, and configures automatic
-startup. It also installs:
+### Questions the installer asks
 
-- the precompiled Matrix firmware and early-start hourglass;
-- the Shutdown button's system helper;
-- guarded camera recovery;
-- `uhubctl` for hubs that advertise safe per-port power control.
+On a first installation, the installer shows the UNO Q's current name and
+suggests **virtualglove**. Press Enter to use `virtualglove.local`, or enter a
+different short name such as `games-room`. Confirm the displayed address before
+continuing. Updates keep the established name and do not ask again.
 
-On a fresh Controller, the installer shows the current board name and suggests
-**virtualglove**. Press Enter to use `virtualglove.local`, or enter a different
-short name such as `games-room`. Confirm the displayed `.local` address before
-installation continues. The installer checks for a visible name conflict on
-the current LAN and stops safely if another device is already using it.
+The camera can be connected before or after installation. Camera recovery is
+configured automatically when a supported camera is available.
 
-This question appears only for a first installation. An update never changes an
-established hostname. A non-interactive installation also keeps the existing
-board name unless `--hostname NAME` is supplied explicitly.
+### What is preserved
 
-The terminal connection used for installation can remain open after the rename.
-For future browser and SSH connections, use the chosen `.local` name or one of
-the IP addresses printed at the end of installation.
+Rerunning the installer updates VirtualGlove without erasing players,
+calibration, gesture tuning, dead-zone settings, camera choices, pairing, or
+device configuration. The installer prints the location of any backup it
+creates.
 
-Camera recovery is standard and is not presented as an optional prompt. The
-camera may be connected after installation, and no separate helper command is
-needed. Updates preserve pairing, calibration, and personal tuning. They back up
-and replace the supplied `config/profiles.json` baseline so current shared
-recognition defaults take effect. The installer never copies a maintainer's
-neutral-hand coordinates because those measurements depend on the player's
-camera, distance, and position.
+### Controller checkpoint
 
-During an update, a pending Dashboard shutdown request stops setup before host
-helpers are installed. Complete or clear that shutdown request, bring the
-Controller back online, and rerun the same installer.
+Open the Dashboard address printed by the installer, normally:
 
-If the script reports a failure, stop and follow its message. If `curl` is missing,
-install it with `sudo apt-get install curl ca-certificates`, then retry. The
-installer checks compatibility before changing the application.
+`http://virtualglove.local:8088/dashboard`
 
-The ordinary installer also includes first-setup and maintenance support:
-camera recovery, pairing and health checks, the optional calibration dot and its
-read-only report, aggregate vision status, movement-reach tools, and emulator
-configuration. Research replays, protocol traces, soak tests, GPU experiments,
-and benchmark drivers remain in the source repository and separate Engineering
-Tools download. They are not needed to install, calibrate, play, back up a hand
-setup, or update the system.
+The Dashboard should load. With gestures off, a closed camera is normal. Open
+**Play** or **Glove Academy** to confirm that the camera can show your whole
+hand, then return to Dashboard with controller output stopped.
 
-**Checkpoint:** Open the Dashboard address printed by the installer, normally
-`http://virtualglove.local:8088/dashboard`, in your browser.
-Dashboard should load. With gestures off, a closed camera is normal. Open
-**Play** or **Glove Academy** to check that your camera view and whole hand
-appear, then return to Dashboard with controller transmission stopped.
-
-For a first setup, keep the camera choices simple:
-
-- Leave **Camera** on Automatic unless more than one camera is connected.
-- Leave **Camera reader** on Recommended — OpenCV.
-- Leave frame rate and exposure on Automatic.
-- If movement is delayed or tracking drops, run **Find the best camera
-  settings** in Setup. Pixel Pal compares only choices supported by that camera
-  and does not save a recommendation until you accept it.
-
-Direct V4L2, manual exposure, gain, and buffer comparisons are advanced tools,
-not required setup steps. The [Camera Guide](CAMERA_GUIDE.md) explains what they
-change in plain language and how to stop or recover a camera test safely.
+For the simplest first setup, leave **Camera**, frame rate, exposure, and camera
+reader on their recommended automatic settings. If tracking is delayed or
+unstable, use **Find the best camera settings** in Setup. The
+[Camera Guide](CAMERA_GUIDE.md) explains the advanced choices.
 
 ![Advanced camera settings with Automatic, a discovered camera, and optional manual exposure](images/setup-camera.png)
 
-## 3. Run the RetroPie installer
+## 3. Install the console
 
-Run this single line in the RetroPie terminal:
+Choose only the section for your game system. Close RetroArch first. On a new
+installation, the console installer asks for the Controller name or IP address;
+enter the name selected above, normally `virtualglove.local`.
+
+Each section uses the same latest-release installer as future updates. The
+installer preserves ROMs, saves, pairing, game registrations, and unrelated
+controller settings.
+
+### RetroPie
+
+#### Before you start
+
+Confirm that a physical controller works in EmulationStation and that RetroPie
+has internet access. Connect to RetroPie as its normal user, without starting a
+root shell.
+
+#### Install
+
+Run this command in the RetroPie terminal:
 
 ```sh
+cd "$HOME"
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-retropie.sh && bash install-retropie.sh
 ```
 
-**Older RetroPie images:** Raspberry Pi OS Buster's Raspbian packages moved to
-the legacy archive. The installer detects the obsolete repository and stops
-before changing VirtualGlove. Follow [Buster package source moved](TROUBLESHOOTING.md#buster-package-source-moved),
-run `sudo apt-get update`, then rerun the same installer. A current RetroPie
-image is preferable because Buster no longer receives normal security support.
+#### Questions the installer asks
 
-For a new installation, the script asks for your Controller hostname or IP
-address. Enter the `.local` name printed by the Controller installer—normally
-`virtualglove.local`. There are no placeholders to replace in the command. An
-upgrade that finds `/etc/virtualglove/launcher.json` preserves that destination
-and does not ask for it again. Pre-0.4.1 `/etc/powerglove` settings are no
-longer imported automatically.
+- Enter the Controller name or address on a first installation.
+- If a required emulator is missing, the installer offers to add it through
+  RetroPie Setup.
+- If Super Glove Ball is registered, the installer can add the optional
+  `lr-nestopia-powerglove` core packaged for RetroArch's actual processor ABI.
+  It verifies and load-checks the core first; declining or an incompatible core
+  leaves FCEUmm available.
+- The optional **VirtualGlove Calibration Test** can be added to the Ports menu
+  now or on a later installer run.
 
-The script installs the receiver, controller mapping, game-launch integration,
-and automatic startup. Existing cabinet hooks and controller assignments remain.
-It offers missing emulator installation through RetroPie Setup and checks
-registered games, including Bad Street Brawler's Glove Zap configuration.
+If an older Buster-based RetroPie reports that its Raspbian repository has no
+Release file, stop and follow
+[Buster package source moved](TROUBLESHOOTING.md#buster-package-source-moved),
+then run the installer again.
 
-Follow any emulator or game ACTION messages. Missing games do not prevent the
-base installation. If asked to launch and exit FCEUmm once, do that and rerun the
-installer. If you use another emulator, the installer asks before selecting
-FCEUmm for Bad Street Brawler.
+#### What the installer configures
 
-If a registered Super Glove Ball ROM is present, the installer also offers the
-optional `lr-nestopia-powerglove` core. Accepting installs Git and the standard
-build tools, downloads the pinned GPLv2 Nestopia source, applies the included
-patch, builds on that RetroPie, and registers a second emulator entry. It does
-not change the ROM's saved emulator: FCEUmm remains selected until you choose
-`lr-nestopia-powerglove` from RetroPie's per-ROM launch menu. Declining is safe
-and leaves the tested joystick fallback unchanged. The build needs internet
-access and may take several minutes; no ROM is read or copied by the build.
+VirtualGlove appears as a separate game controller. Your physical controller
+remains available for menus and gameplay. Registered games tell VirtualGlove
+which profile to use, and game exit safely releases all controls.
 
-The installer separately offers **VirtualGlove Calibration Test**. Accept it to
-build the small project-owned `lr-powerglove-dot` core and add a ROM-free entry
-to RetroPie's **Ports** list. This choice is optional and can be accepted on a
-later installer run. It does not select an emulator for any NES game.
+The VirtualGlove development arcade cabinet uses optional Controller Router to
+combine its two I-PAC interfaces, supported 8BitDo controllers, and
+VirtualGlove into shared arcade-player devices. Its original cabinet merger is
+retained as a tested rollback reference, but is no longer the active path.
+Router is not enabled by the normal RetroPie installer. Most RetroPie systems
+should keep the separate-controller arrangement above. See [VirtualGlove Input
+Modes](INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet)
+for the two designs and when each is appropriate.
 
-**Checkpoint:** The report confirms that receiver startup is configured.
-Pairing and live gameplay checks will still be listed as actions.
+For Super Glove Ball, FCEUmm is the safe fallback. To use native glove control,
+choose `lr-nestopia-powerglove` for that ROM from RetroPie's launch menu.
+
+#### Checkpoint
+
+The final report should confirm that the receiver starts automatically. It is
+normal to see `ACTION` for pairing or physical gameplay checks that still need
+you.
+
+#### First game and updates
+
+After pairing, test an ordinary registered game with FCEUmm. If Router is
+enabled, confirm the physical controller works immediately, rest the hand at
+neutral once, and then confirm VirtualGlove works without stopping or restarting
+it. Test Super Glove Ball separately
+if you installed its native core. To update later, close the game and rerun the
+same install command.
+
+<!-- PAGEBREAK -->
+
+### Recalbox 10.x
+
+#### Before you start
+
+Confirm that your intended physical Player 1 controller works in
+EmulationStation. Connect to Recalbox over SSH as `root`; do not add `sudo` to
+the commands below.
+
+#### Install
+
+Run this command in the Recalbox terminal:
+
+```sh
+cd /recalbox/share/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-recalbox.sh && bash install-recalbox.sh
+```
+
+#### Questions the installer asks
+
+- Enter the Controller name or address on a first installation.
+- If exactly one configured controller is available, it is selected as physical
+  Player 1 automatically.
+- If several controllers are available, choose the one you want VirtualGlove
+  to share with. The installer displays the available choices.
+
+#### What the installer configures
+
+Recalbox initially enables **VirtualGlove Merged Player 1**, preserving the
+selected physical controller and VirtualGlove arrangement. After pairing, the
+**Controller Router** card in Setup can enable merged Players 1–4, assign
+several configured physical controllers to one player, or move the one
+VirtualGlove to another player. Original controllers continue to operate
+EmulationStation without duplicate menu movement. During any Libretro game,
+assigned physical controllers use the merged players. VirtualGlove gestures
+join only compatible NES joystick games or the separate native Super Glove
+Ball path. Unrelated settings are preserved.
+
+Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
+core when a compatible core is available and you have not already made an
+explicit per-game choice. FCEUmm remains available if the native core cannot be
+used.
+
+#### Checkpoint
+
+The final report should confirm automatic startup, the initial physical Player
+1 controller, and the Controller Router output. Pairing, extra player
+assignments, and live gameplay may still appear as `ACTION` items.
+
+#### First game and updates
+
+After pairing, test an ordinary registered game with FCEUmm. Confirm that hand
+controls and the physical controller both operate Player 1. Then test one
+non-NES Libretro game with the physical controller; VirtualGlove gestures are
+not expected in that game. Finally, test Super Glove Ball if it is installed.
+To update later, close the game and rerun the same install command.
+
+<!-- PAGEBREAK -->
+
+### Batocera 38 and newer
+
+#### Before you start
+
+Confirm that your intended physical Player 1 controller works in
+EmulationStation. Connect to Batocera over SSH as `root`; do not add `sudo` to
+the commands below.
+
+#### Install
+
+Run this command in the Batocera terminal:
+
+```sh
+cd /userdata/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-batocera.sh && bash install-batocera.sh
+```
+
+#### Questions the installer asks
+
+- Enter the Controller name or address on a first installation.
+- If exactly one configured controller is available, it is selected as physical
+  Player 1 automatically.
+- If several controllers are available, choose the one you want VirtualGlove
+  to share with. The installer displays the available choices.
+
+#### What the installer configures
+
+Batocera initially enables **VirtualGlove Merged Player 1**, preserving the
+selected physical controller and VirtualGlove arrangement. After pairing, the
+**Controller Router** card in Setup can enable merged Players 1–4, assign
+several configured physical controllers to one player, or move the one
+VirtualGlove to another player. Original controllers continue to operate
+EmulationStation without duplicate menu movement. During any Libretro game,
+assigned physical controllers use the merged players. VirtualGlove gestures
+join only compatible NES joystick games or the separate native Super Glove
+Ball path. Unrelated settings are preserved.
+
+Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
+core when a compatible core is available and you have not already made an
+explicit per-game choice. FCEUmm remains available if the native core cannot be
+used.
+
+#### Checkpoint
+
+The final report should confirm automatic startup, the initial physical Player
+1 controller, and the Controller Router output. Pairing, extra player
+assignments, and live gameplay may still appear as `ACTION` items.
+
+#### First game and updates
+
+After pairing, test an ordinary registered game with FCEUmm. Confirm that hand
+controls and the physical controller both operate Player 1. Then test one
+non-NES Libretro game with the physical controller; VirtualGlove gestures are
+not expected in that game. Finally, test Super Glove Ball if it is installed.
+To update later, close the game and rerun the same install command.
+
+<!-- PAGEBREAK -->
+
+### LaunchBox on Windows x86-64
+
+#### Before you start
+
+Install 64-bit Python with its `py` launcher and 64-bit RetroArch with FCEUmm.
+Confirm that your physical XInput controller works in RetroArch. Close
+LaunchBox, Big Box, and RetroArch before installation.
+
+Download `VirtualGlove-LaunchBox.zip` from the latest VirtualGlove release and
+extract it to a temporary folder. The archive contains a folder named
+`VirtualGlove`. Open PowerShell as Administrator, using the same Windows
+account that runs LaunchBox.
+
+#### Install
+
+Move into the extracted `VirtualGlove` folder, then run the installer. Replace
+the example extraction, LaunchBox, RetroArch, and Controller locations with
+the locations on your computer:
+
+```powershell
+Set-Location "$env:USERPROFILE\Downloads\VirtualGlove"
+powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
+  -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch" `
+  -ControllerHost "virtualglove.local"
+```
+
+Change the two folders and Controller name to match your system.
+
+#### Questions the installer asks
+
+- Confirm the LaunchBox and RetroArch folders if your installation uses
+  different locations.
+- Allow the authenticated VirtualGlove receiver on Private networks if Windows
+  asks. Do not enable it for Public networks.
+
+#### What the installer configures
+
+LaunchBox gains a **VirtualGlove RetroArch** emulator for NES games. Ordinary
+games use FCEUmm with VirtualGlove's managed RetroArch controller. Your physical
+XInput controller and real keyboard remain available. Super Glove Ball uses
+Nestopia (VirtualGlove) when its exact filename is registered.
+
+Existing NES games assigned to standard RetroArch are moved to VirtualGlove
+RetroArch. Games explicitly assigned to another emulator remain unchanged.
+ROMs, saves, pairing, and unrelated LaunchBox settings are preserved.
+
+#### Checkpoint
+
+The installer should confirm the VirtualGlove RetroArch entry and its managed
+receiver. LaunchBox does not have a separate check-only command, so the first
+registered game is the final test.
+
+#### First game and updates
+
+After pairing, launch an ordinary registered game from LaunchBox. Confirm that
+VirtualGlove directions and buttons work while the physical XInput controller
+still controls Player 1. Test Super Glove Ball separately. To update later,
+close LaunchBox, Big Box, and RetroArch, extract the new package, and rerun the
+same installer.
+
+<!-- PAGEBREAK -->
+
+### Add NES ROMs after VirtualGlove is installed
+
+Adding a ROM does not require reinstalling VirtualGlove:
+
+1. Copy or import the `.nes`, `.zip`, or `.7z` game and refresh the platform's
+   game list.
+2. Open **Setup -> Games** on the Controller. Add the exact filename and choose
+   its profile if it is not already listed, then select **Validate** and
+   **Save**. Matching is exact and case-insensitive, and includes the extension.
+3. Follow the platform note below.
+
+| Platform | After adding the ROM |
+| --- | --- |
+| RetroPie | Copy games into `~/RetroPie/roms/nes` and restart EmulationStation or refresh its game list. Select `lr-nestopia-powerglove` from the per-ROM launch menu only when you want native Super Glove Ball. |
+| Recalbox | Copy games into `/recalbox/share/roms/nes` and update the game list. Restart the VirtualGlove service or reboot after registering Super Glove Ball so its automatic core choice is refreshed. |
+| Batocera | Copy games into `/userdata/roms/nes` and update the game list. Restart the VirtualGlove service or reboot after registering Super Glove Ball so its automatic core choice is refreshed. |
+| LaunchBox | Import the game into **Nintendo Entertainment System**. New games inherit **VirtualGlove RetroArch**. The launcher checks the registry on every start, so no service restart is needed. |
+
+An existing explicit per-game emulator choice is preserved. Registering a game
+changes only VirtualGlove's profile and launch behaviour; it does not copy,
+rename, or modify the ROM.
+
+<!-- PAGEBREAK -->
 
 ## 4. Pair the devices
 
-The **Controller status** panel at the top of Setup shows the four Off-mode checks in pixel order: app, console service, authenticated response, and Networking. Green means confirmed, red means disconnected or not confirmed, and grey means unknown. Networking reflects a physical Wi-Fi or Ethernet link, including USB dock Ethernet; it is independent of the console checks. These checks do not prove that the game received input.
+Pairing securely gives the Controller and console the same private credential.
+It does not start controller output.
 
-Both pairing methods below require the six-digit approval PIN shown on the Controller matrix and the certificate-ID comparison. The RetroPie one-time code or SSH password is an additional credential. A first visit may show a privacy warning because this is a private local Controller, not a public website.
-
-Pairing gives both devices the same private token. Use the recommended
-one-time-code method after both installers finish.
-
-1. Open the secure Setup address printed by the Controller installer, normally `https://virtualglove.local:8443/setup`. Under **Connect to RetroPie**, enter your console address and select **Save connection**. Pairing uses this saved address; unsaved edits must be saved first.
-2. Continue to **Pair this Controller** in the same card, choose **One-time code (recommended)**, and select **Continue**. Use **Change** beside the saved console to edit its address before starting.
-3. In **Confirm your Controller**, compare the `ID` on the physical matrix with the beginning of the browser certificate's SHA-256 fingerprint. Expand **How to compare the certificate** for guidance. If they differ, stop pairing.
-4. If they match, check the confirmation box, enter the six-digit **Controller approval PIN** shown after `PN` on the matrix, and select **Continue**.
-5. On the RetroPie console shown in Setup, run `sudo /opt/virtualglove/bin/virtualglove-pair` and leave it running. Enter its 20-character code in **RetroPie one-time code**, then select **Pair with RetroPie** within five minutes. This single-use code is separate from the Controller approval PIN. If you have more than one RetroPie, confirm the terminal prompt belongs to the console named in Setup.
-6. Selecting **Pair with RetroPie** brings **Pairing in progress** into view while the request runs, followed by **Pairing complete** or an error with retry instructions. On success, the receiver was restarted and answered an authenticated controller handshake using the newly installed token; you can open Dashboard when ready. On RetroPie, `sudo systemctl status virtualglove-receiver.service` should report active. Pairing does not arm controller output or prove that a game received input.
-
-### Optional: remove the browser privacy warning
-
-After the Matrix ID matches the browser certificate, return to **Trust this
-Controller** and download the trust certificate. Install it as a trusted root on
-that phone or computer, then close and reopen the browser. This is required only
-once per browser device and survives ordinary VirtualGlove upgrades and website
-certificate renewals. Setup contains current instructions for Apple, Windows,
-and Android devices. Never install the certificate if the Matrix comparison
-does not match.
-
-After pairing, always complete the game check below. **Pairing complete** proves
-that the receiver accepted the shared key; the game check proves that your own
-camera, Controller, network, receiver, emulator, and game work together.
+1. Open the secure Setup address, normally
+   `https://virtualglove.local:8443/setup`. A first visit may show a privacy
+   warning because the Controller is a private local device.
+2. Under **Connection and startup**, choose RetroPie, Recalbox, Batocera, or
+   LaunchBox. Enter the console hostname or IP address, then select
+   **Save connection**. Pairing stays unavailable until both fields are saved.
+3. Select **Check console address**. This confirms that the saved name or address
+   can be reached; you can run the check again whenever needed.
+4. Under **Pair this Controller**, choose **One-time code (recommended)** and
+   select **Continue**.
+5. Compare the Matrix `ID` with the beginning of the browser certificate's
+   SHA-256 fingerprint. If they differ, stop. If they match, confirm the match,
+   enter the six-digit Matrix approval PIN, and continue.
+6. Run the one-time pairing command shown by Setup on the selected console.
+   Enter its 20-character code in the browser within five minutes, then select
+   **Pair with console**.
+7. Wait for **Pairing complete**. This confirms an authenticated connection; a
+   game test is still required.
 
 ![Guided pairing starts with the saved console and a choice of one-time code or SSH password.](images/setup-pairing-method.png)
 
 ![Controller confirmation with certificate comparison, matrix approval PIN, and remaining time.](images/setup-pairing-confirm.png)
 
-![Pairing in progress while the request waits for RetroPie.](images/setup-pairing-progress.png)
+![Pairing in progress while the request waits for the selected console.](images/setup-pairing-progress.png)
 
 ![Pairing complete, with the next step on Dashboard.](images/setup-pairing-complete.png)
 
-The Controller confirmation window lasts two minutes. The console address and
-pairing method stay fixed during that window. If it expires, the PIN and password
-are cleared; select **Start a new confirmation**. You can change methods after
-the window ends. A submitted failure also requires fresh confirmation before
-retrying. Existing server PIN attempt limits still apply. If the window expires
-while you obtain a RetroPie code, repeat confirmation and obtain a new code if
-needed; neither credential has an unlimited lifetime.
+The confirmation window lasts two minutes. If it expires or pairing fails,
+select **Start a new confirmation** and obtain a new console code.
 
-<!-- PAGEBREAK -->
+### Optional: pair with your console password
 
-### Alternative: pair with your RetroPie password
+RetroPie, Recalbox, and Batocera can instead use **SSH password** in the pairing
+card. Complete the same certificate and Matrix PIN checks, then enter the
+console's SSH username and password. The Controller uses the password only for
+that attempt and does not save it.
 
-Use this route only if RetroPie accepts SSH password login and your account
-can run `sudo` with that password.
+LaunchBox uses one-time-code pairing only and never requests a Windows password.
+If neither method works, see
+[Pairing and token management](CONFIGURATION_REFERENCE.md#pairing-and-token-management).
 
-1. Save the console address in **Connect to RetroPie**.
-2. In **Choose a pairing method**, select **SSH password**, then **Continue**.
-3. Complete the same certificate comparison and Controller approval PIN step.
-4. In **Pair with RetroPie**, enter your RetroPie username and password, then select **Pair with RetroPie**.
-5. **Pairing in progress** stays visible while the request runs; SSH pairing can take a few minutes. Wait for **Pairing complete**, which includes an authenticated receiver-token check, then check the receiver service or open Dashboard. Errors are brought into view with retry instructions.
+### Optional: trust the Controller certificate
 
-The password field is unavailable until certificate confirmation is complete.
-The password is used for pairing and is not saved by the Controller. Returning
-to **Review Controller confirmation**, a failure, expiry, or leaving the page
-clears it. If neither route works, use the
-[token-management reference](CONFIGURATION_REFERENCE.md#pairing-and-token-management).
-
-When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority.
-
-### Optional first-game check
-
-Select **Get ready to play** on Setup or Dashboard. The guide helps you confirm
-the active player and console, practice safely, center the hand, and try the ten
-essential controls before launching a registered game. It saves progress per
-player without changing Glove Academy lessons. Each visit checks live readiness
-again. Finish practice explicitly before enabling game controls; **Ready to play**
-confirms the reported connection and game mode, not game-side input receipt.
-If you close the guide early, reopen it to resume or use **Leave guide — keep
-controls stopped** to exit the output pause explicitly.
-
-### Connection settings and recovery
-
-**Connect to RetroPie** saves the console address and startup game profile, then
-continues directly into secure pairing.
-Port, camera, and pairing-key replacement are under **Advanced connection settings**.
-**Check console address** only checks name resolution. If loading fails, use
-**Reload saved settings**; if a save fails, correct or retry it without losing
-fields. Controller Start/Stop and shutdown are on **Dashboard**; Setup keeps
-the read-only tracking and output status indicators.
-
-Use your console's `.local` name when possible. If that name stops resolving—or
-if DHCP changes a saved numeric address—VirtualGlove can look for the already
-paired console on the same local network. Only the secure greeting is broadcast;
-hand movements and button states are not. The console must prove that it has the
-existing pairing key before delivery resumes. Networks that isolate devices,
-separate them into VLANs, or block local broadcasts still require a working name,
-a current address, or a router DHCP reservation.
-
-Connection saves restart tracking. The separate **Save attract mode** action
-changes only the idle matrix display. Hand setup, players, and backups are in
-**Glove Academy**. Existing private settings and calibration remain preserved
-through the normal installation/upgrade process; the four-pixel display needs its matching matrix firmware. Extending the fourth pixel to Ethernet only needs the updated Controller app and host sampler. Normal installation
-and Wi-Fi deployment also install its unprivileged host status sampler. The receiver timeout correction takes effect after updating
-RetroPie as well as the Controller application.
+After confirming that the Matrix ID matches the browser certificate, Setup can
+download a trust certificate for that phone or computer. Installing it removes
+future privacy warnings. Never install it if the IDs do not match.
 
 ## 5. Calibrate and test a game
 
-1. On Dashboard, select a profile, wait for the camera, and show your hand. On first use, the app collects a neutral reference automatically. Use **Center hand** if your resting position produces unwanted movement or your camera/playing position changed. Hold a relaxed, open hand still at the intended center and distance until the button reports completion.
-2. Select **Start controller**. This allows controller packets to reach RetroPie and creates the virtual input device.
-3. On RetroPie, run `grep -A8 -B2 'VirtualGlove' /proc/bus/input/devices`. Look for the device name **VirtualGlove**. If it is missing, check pairing and the receiver service before changing emulator settings.
+### Centre your hand
 
-For a visual calibration check, open **Ports → VirtualGlove Calibration Test**.
-The utility selects native coordinate delivery only while it is open. The
-yellow dot should follow the hand; the green marker means the receiver has a
-fresh calibrated sample. A red X means tracking, calibration, pairing, or the
-sample's freshness is not ready. Adjust center or **Movement reach** on the
-Controller, then reopen or return to the test. Exit normally to release the
-test profile.
-4. Use your physical controller to open RetroArch. Go to **Settings > Input > RetroPad Binds > Port 1 Controls** and select **VirtualGlove**. Menu labels can vary with the RetroArch version.
-5. Check the D-pad, A, B, Start, and Select assignments. The installer provides an automatic mapping; adjust bindings only if needed, then save the controller profile or RetroArch configuration.
-6. Test movement and buttons in a game. If your cabinet merges multiple controllers, also configure that merger to accept the virtual device.
+1. Open Dashboard and choose the correct player.
+2. Position the camera so your whole hand remains visible throughout the area
+   where you intend to move.
+3. Hold a relaxed open hand at a comfortable centre and distance.
+4. Select **Centre hand** and remain still until it reports completion.
 
-For the first test, confirm the selected Program's control style rather than
-assuming every numeric profile uses ordinary hand-position movement:
+Centre again after moving the camera, changing playing position, or switching
+to a player who has not been calibrated. The saved centre belongs to the player
+and does not chase the hand during play.
 
-| Programs | What to expect |
-| --- | --- |
-| 1, 2, 11, 12 | Position-based D-pad with additional finger combinations; Program 2 also reports centering. |
-| 3, 5, 6, 8 | Side movement plus push/pull depth controls. |
-| 4, 10 | Finger and wrist poses replace ordinary positional steering. |
-| 7 | Open-hand dodging/ducking plus positioned fist punches. |
-| 9 | Make a fist once to arm Rad Racer controls; this Program has no rapid fire. |
-| 13 | VirtualGlove supplies A/B while the merged physical Player 1 controller supplies movement. |
-| 14 | Camera and VirtualGlove output intentionally stay off; use the physical Player 1 controller. |
+### Test an ordinary game
 
-Rapid A/B defaults on only for explicitly documented pulsed buttons: Program 7
-A, Program B A, Program H A/B, and Bad Street Brawler B. Every other profile
-defaults off. The registry retains Mattel's explicit off entries for Blaster
-Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission. Use the [complete Programs 1-14 gesture cards and
-official game index](GAMEPLAY_GUIDE.md#quick-selector-programs-1-14) when confirming a
-compound action.
+1. On Dashboard, select **Start controller**.
+2. Launch a registered NES game that uses FCEUmm.
+3. Confirm the expected profile appears on Dashboard and the Matrix.
+4. Test Left, Right, Up, Down, A, B, Start, and Select.
+5. Confirm the physical controller still works for Player 1.
+6. Return the hand to centre and confirm movement stops.
+7. Exit the game and confirm gesture output stops.
 
-An update preserves any Rapid A/B choices already saved for a registered game.
-Those choices continue to override its profile defaults. To adopt the corrected
-defaults for that game, launch it and choose **Use profile defaults** on
-Dashboard. Rapid A/B controls button repetition only; profile-owned fast turns,
-pulsed movement, turbo movement, and compound actions do not change.
+If Controller Router is enabled, also test every assigned physical controller.
+On Recalbox and Batocera, or a routed RetroPie system, launch a non-NES Libretro
+game and confirm the physical assignments still work. This proves the Router's
+all-Libretro physical path. It does not mean VirtualGlove gestures are expected
+outside their supported NES and native Super Glove Ball paths.
 
-<!-- PAGEBREAK -->
+Different Programs deliberately use different gestures. If a control does not
+behave as expected, check the selected Program in the
+[Gameplay Guide](GAMEPLAY_GUIDE.md) before changing calibration.
 
-**Checkpoint:** A gesture changes the intended control in the running game.
-Seeing the device name or a running service alone is not an end-to-end test.
-Bad Street Brawler's Glove Zap uses simultaneous Left + Right through the
-standard gamepad path. The RetroPie installer checks the game-specific FCEUmm option. Follow any
-remaining ACTION message and rerun the installer after resolving it. See [Glove Zap setup](CONFIGURATION_REFERENCE.md#bad-street-brawler-glove-zap).
-No extra-trigger assignment or receiver change is required.
+**Checkpoint:** A gesture must change the intended control inside the running
+game. A running service or visible controller name alone is not an end-to-end
+test.
 
-A calibration uses 24 geometrically valid hand observations. The Controller
-installer includes the validated MediaPipe Hands 0.10.35 ARM64 runtime and
-headless OpenCV 4.11; it does not download an older fallback or unused JAX
-components. MediaPipe's
-displayed score describes handedness certainty rather than position confidence,
-so it is not used as a false quality gate. Repeating calibration from the same
-position should give closely comparable center, scale, wrist, and jitter values,
-but natural landmark variation prevents an exact numeric match. Calibration is
-shared by every profile. Closing Dashboard
-after this check stops its 5 fps diagnostic preview work without stopping hand
-tracking or controller delivery.
+### Test Super Glove Ball
 
-For Super Glove Ball testing, enter RetroPie's launch menu while starting the
-ROM and choose either `lr-fceumm` or `lr-nestopia-powerglove`. FCEUmm uses the
-ordinary D-pad and buttons for the whole session. The native core uses absolute
-X/Y/Z plus open-hand, fist, and index-point packets. Native movement uses
-**Latest coordinate** with MediaPipe Hands and the same saved center and reach.
-It validates the palm geometry and clamps it to
-that reach before mapping, so movement beyond an edge stays at the edge and a
-recovered hand normally starts from its first fresh coordinate. Latest holds
-only a contradictory or unusually distant non-forward reacquisition for one
-additional fresh result. Adjust native travel separately under **Glove
-Academy → Tune gestures → Movement reach**. Full-game cabinet play has
-confirmed grab/throw, index fire, and fist-plus-forward Power Punch. Continuous
-movement is playable, with further latency refinement still planned. Wrist
-rotation and remaining unused native packet fields stay neutral. Shared recognition remains
-available to every FCEUmm profile. A per-ROM selection
-is remembered, so choose FCEUmm again whenever you want the complete fallback.
+- With FCEUmm, test the ordinary joystick profile first.
+- With Nestopia (VirtualGlove), test Start, hand movement, forward and backward
+  depth, grab and throw, index-point fire, and Power Punch.
+- On RetroPie, choose the native core from the ROM's launch menu. Recalbox,
+  Batocera, and LaunchBox select it automatically for an exact registered ROM
+  unless you have made another explicit choice.
 
-Setup → **Camera** offers Automatic, 30 fps, and 60 fps. Automatic is the 0.4.0
-default: it tries the tested 30-fps path and then accepts the camera driver's
-usable rate if necessary. The active rate is shown while tracking runs. Other UVC
-cameras do not need to support both explicit rates. See the
-[Camera guide](CAMERA_GUIDE.md) before changing the reader, exposure, or gain.
-Dashboard's optional **Show statistics** switch is off by default; leave it off
-for the lightest gameplay page and enable it only when reading diagnostics.
-Controller transmission remains ahead of Dashboard housekeeping either way;
-opening the preview does not select a different MediaPipe preparation path.
-
+If the native core is unavailable or unsuitable, return that ROM to FCEUmm;
+the rest of VirtualGlove remains installed.
 
 ## 6. Confirm startup and finish
 
-- Launch a registered game and check the expected profile on Dashboard and the matrix.
-- Exit the game and confirm that gestures turn off.
-- Reboot both devices normally. Confirm that Dashboard returns and the matrix
-  progresses through startup to the selected mode. The early-start helper is
-  enabled automatically for this boot.
-- Check that your saved tuning and calibration remain available.
-- Select **Start controller** when ready and verify movement and buttons in the game.
+1. Reboot the Controller and console normally.
+2. Confirm that Dashboard returns and the console reconnects without pairing
+   again.
+3. Confirm the selected player, centre, tuning, camera choices, and game
+   registrations remain available.
+4. Launch the ordinary FCEUmm test game again and confirm both VirtualGlove and
+   the physical controller work.
+5. If installed, test Super Glove Ball again.
 
-The installers never reboot or request a shutdown automatically. They check
-that the Controller shutdown helper is ready. The tested Arduino UNO Q hardware restarts after a halt;
-a disconnected website or blank matrix is not proof that power can be removed.
+The Controller remembers whether you selected **Start controller** or **Stop
+controller**, but controls are delivered only during a recognised game session
+or an intentional manual profile. Unknown games and game exit release all
+controls safely.
 
 ## Updates and checks
 
-Updates keep an inventory of installed application files. After the first inventory
-is created, unchanged obsolete files are backed up and removed; your own changes
-are kept and reported. If an update is interrupted, follow its recovery instructions
-before trying again.
+To update, close running games and repeat the same install command on the
+Controller and console. Use the same release on both devices. The installers
+stop managed VirtualGlove processes before replacing application files and
+preserve private settings and user data.
 
-To update, repeat the same single-line commands on both machines. Each selects
-the latest published stable release. Changed managed files are backed up, and the installer prints their
-location. It asks before interrupting an active Controller session. Close RetroArch
-before updating RetroPie. `config/profiles.json` is intentionally replaced;
-saved personal tuning remains in `data/gesture-tuning.json`.
+### Fresh installation checklist
 
-For checks only, use the script you already downloaded:
+1. Install the Controller from `/home/arduino`, then open its printed Dashboard
+   address.
+2. Confirm a physical controller already works on the console before installing
+   its VirtualGlove integration.
+3. Install the same VirtualGlove release on the selected console platform.
+4. Save the platform and console address in Setup, check the address, and pair
+   the two devices.
+5. Centre the selected player and test one ordinary registered NES game with
+   both VirtualGlove and the physical controller.
+6. If installed, test native Super Glove Ball separately, then reboot both
+   devices and repeat the game and exit checks.
 
-```sh
-# On the VirtualGlove Controller:
-bash install-uno-q.sh --check
-# On RetroPie:
-bash install-retropie.sh --check
-```
+### Upgrade from v0.4.2 to v0.5.0
 
-Checks do not download, install, restart, or change anything. They may request
-sudo access to inspect protected settings.
+Version 0.5.0 includes a managed upgrade from the released v0.4.2 installation.
+Update the Controller and console from the same v0.5.0 release. The installers
+back up and remove retired application files while preserving:
 
-| Report | Meaning |
+- players, calibration, tuning, and dead-zone settings;
+- camera and device configuration;
+- pairing and the saved console address;
+- game registrations and rapid-fire choices;
+- ROMs, saves, controller assignments, and installed native cores.
+
+Keep the printed backup location until you have completed the reboot and game
+checks above. If the installer reports an unknown or locally modified retired
+file, follow its message rather than deleting the installation manifest or
+forcing the upgrade. The
+[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation)
+describes staged upgrades and recovery.
+
+Use this order for the release upgrade:
+
+1. Close every running game. On LaunchBox, also close LaunchBox, Big Box, and
+   RetroArch.
+2. Install v0.5.0 on the Controller, then install the same release on the
+   console. Run each command from the writable folder shown in its platform
+   section; do not mix stable and release-candidate files.
+3. Keep every backup location printed by the installers until acceptance is
+   complete.
+4. Reboot the Controller and console. Confirm pairing, players, calibration,
+   game registrations, and Controller Router assignments were retained.
+5. Test physical controls, VirtualGlove controls, the platform exit hotkey, and
+   native Super Glove Ball when its core is installed.
+
+### Read the installer report
+
+| Result | What it means |
 | --- | --- |
-| PASS | The named check succeeded. |
-| FAIL | Resolve the problem before proceeding, then rerun the installer or checks. |
-| ACTION | Complete the named step, such as pairing, adding games, or checking gameplay. |
+| `PASS` | That check succeeded. |
+| `ACTION` | Installation succeeded, but you still need to complete the named step, such as pairing or testing a game. |
+| `FAIL` | Resolve the reported problem before continuing, then run the installer again. |
 
-A successful technical installation can still report ACTION for the physical
-checks. Those checks need you and your cabinet.
-
-If movement feels delayed after installation, use the
-[read-only latency baseline](direction-response-benchmark.md#collect-a-live-status-baseline)
-before changing sensitivity or video settings. It separates Controller timing
-from the receiver, emulator, and display checks and does not enable controls.
-
-For a specific version or a development prerelease, use the
-[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-two-script-installation).
-It also explains compatibility, package building, backups, and recovery.
+A technical `PASS` cannot prove that your camera sees your hand or that a game
+responded. Complete the physical game checks before considering installation
+finished.
 
 ## If something does not work
 
-- **Download fails:** confirm that the latest stable release includes installer assets,
-  check internet access, and retry. A failed verification installs nothing.
-- **Unsupported board software:** complete App Lab provisioning or use a compatible
-  project release. Do not bypass the installer's compatibility check.
-- **Website does not open:** try the Controller's current IP address instead of its
-  hostname. Use HTTP on port 8088 and HTTPS on port 8443.
-- **Camera missing:** open Glove Academy and wait for the camera view. The Controller
-  host helper automatically enrolls the single UVC camera and its parent hub on
-  first successful use, even if no camera was connected during installation.
-  After enrollment it makes one guarded recovery attempt during a sustained
-  outage. Supported hubs power-cycle only the camera port; non-networking hubs
-  may use the identity-checked whole-hub fallback. Success requires a real camera frame, not
-  merely a device returning to USB.
-  If it remains missing, reconnect or power-cycle the camera and check the powered
-  hub and cable. A network-bearing hub is never reset as a unit.
-- **No controller in RetroArch:** finish pairing, select Start controller, and
-  select VirtualGlove for Port 1 using your physical controller.
-- **Partial installation:** correct the reported problem and rerun the same
-  release. Keep the printed backup location for recovery.
+### The download fails
 
-For diagnostic commands or manual repair, use the
-[configuration reference](CONFIGURATION_REFERENCE.md#installation-troubleshooting-commands).
+Confirm internet access and retry the same command. A failed download or
+checksum installs nothing. If the latest stable release does not contain the
+required installer asset, wait for the completed release rather than using a
+file from a different version.
 
-## Read the matrix and open the web pages
+### Dashboard or Setup does not open
 
-| Display | See it | Meaning |
-| --- | --- | --- |
-| Arduino boot logo | <img src="images/matrix/Boot.jpg" alt="Boot matrix display" width="104"> | System startup, before the app display. |
-| System heart | <img src="images/matrix/Heart.jpg" alt="Heart matrix display" width="104"> | System startup is progressing. |
-| Pulsing hourglass | <img src="images/matrix/Hourglass.jpg" alt="Hourglass matrix display" width="104"> | VirtualGlove is starting. |
-| Lightning and animated glove | <img src="images/matrix/idle-glove.png" alt="Simulated glove matrix display" width="104"> | Gestures are off. The revised animation requires updated matrix firmware. |
-| Scanning `L` | <img src="images/matrix/L.jpg" alt="L matrix display" width="104"> | Play or Glove Academy practice is active; controller output is paused. |
-| Scanning `T` | <img src="images/matrix/T.jpg" alt="T matrix display" width="104"> | Tune gestures is active; controller output is paused. |
-| `1`–`14` | Numeric program code | The corresponding original Programs 1–14 profile is selected. Older firmware safely leaves this display blank. |
-| `A`–`I` | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | The corresponding profile is selected; Program A is shown. |
-| `BS` | <img src="images/matrix/BS.jpg" alt="BS matrix display" width="104"> | Bad Street Brawler is selected. |
-| `GB` | <img src="images/matrix/GB.jpg" alt="GB matrix display" width="104"> | Super Glove Ball is selected. |
-| Blank matrix | <img src="images/matrix/Blank.jpg" alt="Blank matrix display" width="104"> | No LEDs are illuminated. Check board power and Dashboard; blank does not confirm shutdown. |
-| Pulsing profile code | <img src="images/matrix/A.jpg" alt="A matrix display" width="104"> | A calibrated hand is being tracked. Confirm controller output separately. |
-| Blinking X | <img src="images/matrix/X.jpg" alt="X matrix display" width="104"> | The app has requested an error display. Check Dashboard for the cause. |
+Try the Controller's IP address instead of its `.local` name:
 
-See the [Matrix display guide](MATRIX_GUIDE.md) for the complete animations and
-startup sequence. An animation does not prove that shutdown has finished.
+- Dashboard: `http://CONTROLLER-IP:8088/dashboard`
+- secure Setup: `https://CONTROLLER-IP:8443/setup`
 
-| Page | Address |
+Confirm the Controller and browser are on the same local network. The Matrix
+hourglass means VirtualGlove is still starting; a blinking X means Dashboard
+has an error to report.
+
+### The camera is unavailable
+
+Open **Play** or **Glove Academy** and wait for the camera view. Reconnect the
+camera, powered hub, and cable if it remains unavailable. The recovery helper
+enrolls a supported camera after its first successful frame, even when no camera
+was connected during installation. Do not change advanced camera settings until
+the automatic configuration has been tested.
+
+### Pairing fails or expires
+
+Confirm the saved platform and address, run **Check console address**, and start
+a new Controller confirmation. Obtain a new console code; expired PINs and
+one-time codes cannot be reused. LaunchBox does not support SSH-password
+pairing. Never copy pairing credentials between consoles manually.
+
+### The game launches but hand controls do not work
+
+Check these in order:
+
+1. Dashboard shows **Start controller** as active.
+2. The game filename is registered under **Setup -> Games**.
+3. Dashboard shows the expected active game and profile.
+4. The camera sees a calibrated hand.
+5. The platform uses the VirtualGlove controller arrangement described in its
+   install section.
+
+If Controller Router is enabled, rest the hand at its saved neutral position
+once after launch. Physical controls should work immediately; you must not need
+to stop VirtualGlove to make a physical Start press work. If stopping
+VirtualGlove is required, close the game and rerun the current console installer
+to update Router. Do not replace the entire RetroArch configuration to repair
+one binding.
+
+### The wrong physical controller is Player 1
+
+On RetroPie, Recalbox, or Batocera with Controller Router enabled, close every
+RetroArch game and use Setup's **Controller Router** card. Assign the controller
+to the intended player, save, and run the ten-second controller check. A red
+Player 1 warning means no physical Player 1 controller can carry the platform
+hotkey. On ordinary RetroPie without Router, or on LaunchBox, use the platform's
+normal controller assignment while keeping VirtualGlove's managed entry intact.
+
+### Super Glove Ball uses the wrong core
+
+Confirm that the exact ROM filename is registered for Super Glove Ball. On
+RetroPie, choose `lr-nestopia-powerglove` from the per-ROM launch menu. On
+Recalbox, Batocera, or LaunchBox, restart the platform integration after adding
+the ROM and confirm that no explicit per-game emulator choice overrides the
+automatic selection. FCEUmm remains a safe fallback.
+
+### Installation stops partway through
+
+Correct the reported problem and rerun the same installer. Keep the backup path
+printed by the installer. For service commands, logs, manual repairs, or package
+details, use the [Troubleshooting Guide](TROUBLESHOOTING.md) and
+[installation troubleshooting commands](CONFIGURATION_REFERENCE.md#installation-troubleshooting-commands).
+
+## Matrix and web-page quick reference
+
+These are the Matrix states most useful during installation:
+
+| Display | Meaning |
+| --- | --- |
+| System heart or pulsing hourglass | The Controller is starting. |
+| Animated glove | Gestures are off and the Controller is idle. |
+| Scanning `L` | Play or Glove Academy practice is active; game output is paused. |
+| `1`-`14`, `A`-`I`, `BS`, or `GB` | The corresponding game profile is selected. |
+| Pulsing profile code | A calibrated hand is being tracked. |
+| Blinking X | Open Dashboard to read the reported problem. |
+| Blank | Check Controller power and Dashboard; blank does not confirm shutdown. |
+
+See the [Matrix Guide](MATRIX_GUIDE.md) for every animation and display state.
+
+| Page | Normal address |
 | --- | --- |
 | Dashboard | `http://UNO-Q-NAME.local:8088/dashboard` |
 | Play | `http://UNO-Q-NAME.local:8088/play` |
 | Glove Academy | `http://UNO-Q-NAME.local:8088/learn` |
-| Games (lower Setup section) | `http://UNO-Q-NAME.local:8088/setup#games-section` |
-| Help and printable manuals | `http://UNO-Q-NAME.local:8088/help` |
-| Connection settings | `http://UNO-Q-NAME.local:8088/setup` |
+| Setup and Games | `http://UNO-Q-NAME.local:8088/setup` |
 | Secure pairing | `https://UNO-Q-NAME.local:8443/setup` |
+| Help and printable manuals | `http://UNO-Q-NAME.local:8088/help` |
 
-Add and manage players in **Setup → Players**. Choose the active player on Dashboard or in Glove Academy before practicing or playing. Progress and hand
-sensitivity persist across restarts and normal upgrades. Selecting a player immediately loads their sensitivity, progress, and saved center. Use **Center hand** for a new player or after moving the camera or changing playing position. Restoring a hand-setup backup requires centering unless you explicitly
-reuse its calibration with the same camera and playing positions. Backups include
-name, center-box size, personal and effective gesture sensitivity, source software
-identity, and calibration. VirtualGlove backup version 4 is the only supported
-portable format; older formats are rejected without changing the active player.
-The web footer reports
-exact software and running firmware identities; older firmware may report unavailable.
-
-Choose each player in turn and select **Back up hand setup** to download a
-separate file named for that player, such as
-`alex-virtualglove-hand-setup.json`. Your browser saves it on the computer, phone,
-or tablet you are using, usually in **Downloads** or the folder you choose. To restore, select
-the player you want to update, choose **Restore hand setup**, and pick that
-player's saved file from your device. Review it before confirming; restore
-updates the selected player, rather than adding a new one.
-
-Completing all sixteen lessons replaces the lesson panel with
-the **Glove Master** award. **Start again** restores the lessons.
-
-![Setup connection settings and pairing; use HTTPS to enable pairing](images/setup-page.png)
-
-Help serves the public manuals, illustrations, and PDFs locally. **This console**
-shows addresses derived from your current browser connection and public device
-settings. It never displays the token. The standalone Quick Reference is
-excluded from the public package; the live cabinet page supplies local details.
-
-
-## Play Checklist
-
-1. Power the RetroPie and VirtualGlove Controller; leave the camera connected to the powered hub.
-2. Open `http://UNO-Q-NAME.local:8088/dashboard`.
-3. Select the active profile on the Dashboard, then confirm the expected profile and a detected hand. The saved startup profile remains on Setup.
-4. On first use, or after changing your camera or playing position, select **Center hand** while holding a comfortable neutral pose. Otherwise reuse the saved calibration.
-5. Select **Start controller** when you are ready to arm gesture control.
-6. Launch a registered game and confirm its profile code on the matrix. Delivery
-   begins only after RetroArch is running and its short initialization guard ends.
-7. Select **Stop controller** before adjusting the camera or leaving the cabinet.
-8. Read the shutdown limitation before disconnecting power. **Shutdown** requests a graceful halt, but the tested board restarts; an offline website is not proof that it is safe to unplug.
-
-VirtualGlove remembers the player's explicit **Start controller** or **Stop
-controller** choice across Controller application and system restarts. A remembered
-Start means **armed**, not unconditional output: controls are sent only during a
-live registered RetroArch session or after an intentional manual Dashboard profile
-selection. A registered game renews its session while RetroArch is running, so an
-Controller application restart can reconnect automatically. Game exit, an unknown game,
-or an expired session releases all controls and stops delivery without changing the
-armed preference. **Stop controller** remains sticky until explicitly started again.
-Install the same release on both devices because this behavior uses a matching Controller
-worker and RetroPie launch hook.
-
-Vision and the dashboard keep running while output is unarmed or waiting for a game,
-so setup never generates surprise game inputs.
-**Shutdown** is different: it halts Linux on the Controller. The tested board automatically restarts; remaining halted is not guaranteed.
-
-## Fresh hardware acceptance test
-
-Use this checklist for a new Controller and a newly imaged RetroPie. It deliberately
-starts without relying on settings from the development machines.
-
-1. Install the same release on both devices. The Controller camera may be absent
-   during installation; connect it afterward if needed.
-2. Run each installer's final checks. Confirm the Controller website opens and
-   RetroPie's receiver timer and game-profile hook are installed.
-3. Pair once from Setup. Confirm **Saved console**, **Console service**, and
-   **Authenticated response**, then download the privacy-safe system report.
-4. Create or rename Player 1, center the hand, set movement reach if desired, and
-   complete a few Academy lessons. Restart the Controller and confirm those choices
-   remain while controller output stays safely gated.
-5. Launch one registered FCEUmm game and Super Glove Ball with the native core.
-   Confirm Setup shows an active authenticated link; game play remains the final proof.
-6. Restart the RetroPie receiver while the devices remain paired. Confirm the input
-   link repairs without pairing again and stale input releases during the gap.
-7. Change one device's DHCP address, or temporarily make its saved name unavailable,
-   while both remain on the same ordinary LAN. Confirm signed discovery restores both
-   controller delivery and the registered-game profile without changing the saved name.
-8. Disconnect and reconnect the camera. Confirm the helper declares recovery only
-   after the worker receives a frame; USB enumeration alone is insufficient.
-9. Upgrade both devices with the same release again. Confirm the player, center,
-   reach, personalization, camera choices, Academy progress, pairing, and game registry
-   remain. Keep the printed installation backup until the next play session succeeds.
-
-Setup's **Download system report** contains versions, camera/runtime choices,
-controller/profile state, and connection-check results. It contains no video,
-pairing key, player calibration, ROM name, or network address, so it is the preferred
-starting attachment when asking for help.
-
-## Optional latency diagnostics
-
-Normal installation leaves timing traces off and does not install or select the
-separate diagnostic core. The [native test procedure](direction-response-benchmark.md#native-latency-and-stationary-jitter-session)
-explains temporary process environments, same-architecture diagnostic builds,
-private local evidence, and restoration of the normal launch configuration.
-Video analysis dependencies belong in a temporary Mac environment. Capture the
-physical hand and cabinet screen together; deployment alone is not a latency test.
-
-For a guided symptom check, see [Troubleshooting by symptom](TROUBLESHOOTING.md).
+For gestures and game controls, use the [Gameplay Guide](GAMEPLAY_GUIDE.md).
+Technical details are in [Architecture](ARCHITECTURE.md),
+[VirtualGlove Input Modes](INPUT_MODES.md), and the
+[Configuration Reference](CONFIGURATION_REFERENCE.md).

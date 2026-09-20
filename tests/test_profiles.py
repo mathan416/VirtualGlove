@@ -20,10 +20,9 @@ import time
 import unittest
 from pathlib import Path
 
-from powerglove_vision.profile_control import (
+from virtualglove.profile_control import (
     ActiveGameLease,
     load_registry,
-    select_profile,
     select_profile_settings,
     sign_message,
     send_request,
@@ -31,7 +30,7 @@ from powerglove_vision.profile_control import (
     ProfileCommandServer,
     ProfileRequest,
 )
-from powerglove_vision.vision_app import _consume_game_lease, _controller_context_active
+from virtualglove.vision_app import _consume_game_lease, _controller_context_active
 
 
 class ProfileTests(unittest.TestCase):
@@ -46,9 +45,10 @@ class ProfileTests(unittest.TestCase):
             path = Path(directory) / "games.json"
             path.write_text(json.dumps({"games": {"Joust (USA).nes": "program_b"}}))
             registry = load_registry(path)
-        self.assertEqual(select_profile(registry, "nes", "/roms/JOUST (USA).NES"), "program_b")
-        self.assertIsNone(select_profile(registry, "snes", "/roms/JOUST (USA).NES"))
-        self.assertIsNone(select_profile(registry, "nes", "/roms/Other.nes"))
+        self.assertEqual(select_profile_settings(registry, "nes", "/roms/JOUST (USA).NES"),
+                         {"profile": "program_b"})
+        self.assertIsNone(select_profile_settings(registry, "snes", "/roms/JOUST (USA).NES"))
+        self.assertIsNone(select_profile_settings(registry, "nes", "/roms/Other.nes"))
 
     def test_registry_rejects_unknown_profile(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -70,10 +70,19 @@ class ProfileTests(unittest.TestCase):
             select_profile_settings(registry, "nes", "Blaster Master (USA).nes"),
             {"profile": "program_1", "rapid_a": False},
         )
-        self.assertEqual(
-            select_profile(registry, "nes", "Blaster Master (USA).nes"),
-            "program_1",
-        )
+
+    def test_structured_registry_accepts_only_explicit_four_score_force(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "games.json"
+            path.write_text(json.dumps({"games": {"Nintendo World Cup (USA).nes": {
+                "profile": "program_1", "four_score": "force"}}}))
+            registry = load_registry(path)
+            self.assertEqual(select_profile_settings(
+                registry, "nes", "Nintendo World Cup (USA).nes")["four_score"], "force")
+            path.write_text(json.dumps({"games": {"Example.nes": {
+                "profile": "program_1", "four_score": "auto"}}}))
+            with self.assertRaises(ValueError):
+                load_registry(path)
 
     def test_structured_registry_rejects_unknown_or_non_boolean_settings(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -230,9 +239,31 @@ class ProfileTests(unittest.TestCase):
         registry = load_registry(Path(__file__).resolve().parents[1] / "config/games.json")
         for name, expected in (("Joust (USA)", "program_b"),
                                ("Gyruss (USA)", "program_c"),
-                               ("Sesame Street 123 (USA)", "program_f")):
+                               ("Sesame Street 123 (USA)", "program_f"),
+                               ("Super Mario Bros. (Europe) (Rev A)", "program_12")):
             for extension in (".nes", ".zip", ".7z"):
-                self.assertEqual(select_profile(registry, "nes", name + extension), expected)
+                settings = select_profile_settings(registry, "nes", name + extension)
+                self.assertEqual(settings["profile"] if settings else None, expected)
+
+    def test_shipped_registry_covers_collection_aliases_and_combo_carts(self):
+        registry = load_registry(Path(__file__).resolve().parents[1] / "config/games.json")
+        expected = {
+            "Legend of Zelda II, The - The Adventure of Link (USA).7z": "program_1",
+            "Life Force - Salamander (Europe).zip": "program_5",
+            "Xevious - The Avenger (USA).7z": "program_5",
+            "Sesame Street ABC & 123 (USA).7z": "program_f",
+            "Super Mario Bros. + Duck Hunt (USA).7z": "program_12",
+            "Super Mario Bros. + Duck Hunt + World Class Track Meet (USA) (Rev A).7z": "program_12",
+            "Super Mario Bros. + Tetris + Nintendo World Cup (Europe) (Rev A).7z": "program_12",
+        }
+        for name, profile in expected.items():
+            settings = select_profile_settings(registry, "nes", name)
+            self.assertEqual(settings["profile"] if settings else None, profile)
+
+        blaster = select_profile_settings(registry, "nes", "Blaster Master (Europe).zip")
+        self.assertEqual(blaster, {"profile": "program_1", "rapid_a": False})
+        racket = select_profile_settings(registry, "nes", "Racket Attack (Europe).zip")
+        self.assertEqual(racket, {"profile": "program_1", "rapid_a": False, "rapid_b": False})
 
     def test_command_server_acknowledges_profile(self):
         token = "a-long-test-token"

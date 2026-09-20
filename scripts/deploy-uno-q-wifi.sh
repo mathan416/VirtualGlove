@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-09-16 - Skip privileged maintenance safely when sudo needs an unseen password and print the follow-up commands.
 #   2026-09-11 - Adopted the virtualglove App Lab directory with one-time local data migration.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
 #   2026-09-11 - Verify the Engineering Toolkit guide and PDF during deployment.
@@ -110,6 +111,17 @@ if [[ "${UNO_HEALTH_AUTHORITY}" == *:* && "${UNO_HEALTH_AUTHORITY}" != \[*\] ]];
 fi
 readonly UNO_CONNECTION UNO_HEALTH_HOST UNO_HEALTH_AUTHORITY
 
+# Never open a hidden sudo password prompt during a remote deployment. Host
+# helpers and firmware are maintained only when sudo is already non-interactive;
+# otherwise the application still deploys and the exact follow-up is printed.
+PRIVILEGED_READY=false
+if ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" 'sudo -n true' >/dev/null 2>&1; then
+  PRIVILEGED_READY=true
+else
+  echo "Privileged host maintenance needs the UNO Q sudo password; deploying the application without prompting."
+fi
+readonly PRIVILEGED_READY
+
 echo "Uploading VirtualGlove over Wi-Fi..."
 python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" \
   --include-engineering --precompiled-matrix
@@ -130,13 +142,17 @@ echo "Configuring persistent local hostname resolution..."
 ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only && { test ! -S /run/avahi-daemon/socket || python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}'; }"
 
-echo "Updating VirtualGlove host-service names..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "sudo python3 '${REMOTE_APP_DIR}/scripts/setup-machine.py' uno-q --runtime-names-only"
+if [[ "${PRIVILEGED_READY}" == true ]]; then
+  echo "Updating VirtualGlove host-service names..."
+  ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+    "sudo -n python3 '${REMOTE_APP_DIR}/scripts/setup-machine.py' uno-q --runtime-names-only"
 
-echo "Flashing the compiled VirtualGlove Matrix firmware..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "sudo python3 '${REMOTE_APP_DIR}/scripts/flash-matrix-firmware.py' '${REMOTE_APP_DIR}/firmware/matrix'"
+  echo "Flashing the compiled VirtualGlove Matrix firmware..."
+  ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+    "sudo -n python3 '${REMOTE_APP_DIR}/scripts/flash-matrix-firmware.py' '${REMOTE_APP_DIR}/firmware/matrix'"
+else
+  echo "Skipping host-service reinstall and Matrix flash; both require an interactive sudo password."
+fi
 
 echo "Checking the host helpers..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -174,11 +190,11 @@ curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
   "http://${UNO_HEALTH_AUTHORITY}:8088/learn" >/dev/null
 curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
   "http://${UNO_HEALTH_AUTHORITY}:8088/help" >/dev/null
-for HELP_SLUG in build-your-own native-emulation troubleshooting cabinet installation gameplay camera configuration security components contributing changelog input-audit native-super-glove-ball direction-response engineering-journey engineering-toolkit; do
+for HELP_SLUG in build-your-own input-modes troubleshooting cabinet installation gameplay camera configuration security components contributing changelog input-audit engineering-journey engineering-toolkit; do
   curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
     "http://${UNO_HEALTH_AUTHORITY}:8088/help/${HELP_SLUG}" >/dev/null
 done
-for PDF_SLUG in build-your-own native-emulation troubleshooting overview installation gameplay camera configuration security components contributing changelog input-audit native-super-glove-ball direction-response engineering-journey engineering-toolkit; do
+for PDF_SLUG in build-your-own input-modes troubleshooting overview installation gameplay camera configuration security components contributing changelog input-audit engineering-journey engineering-toolkit; do
   curl --location --max-redirs 3 --fail --silent --show-error --max-time 15 \
     "http://${UNO_HEALTH_AUTHORITY}:8088/help-pdf/${PDF_SLUG}.pdf" >/dev/null
 done
@@ -248,3 +264,9 @@ echo "  Learn:  http://${UNO_HOST}:8088/learn"
 echo "  Dashboard:  http://${UNO_HOST}:8088/dashboard"
 echo "  Help:   http://${UNO_HOST}:8088/help"
 echo "  Setup:  https://${UNO_HOST}:8443/setup"
+if [[ "${PRIVILEGED_READY}" != true ]]; then
+  echo "Run this directly in an UNO Q terminal only if host helpers or Matrix firmware changed:"
+  echo "  cd '${REMOTE_APP_DIR}'"
+  echo "  sudo python3 scripts/setup-machine.py uno-q --runtime-names-only"
+  echo "  sudo python3 scripts/flash-matrix-firmware.py firmware/matrix"
+fi

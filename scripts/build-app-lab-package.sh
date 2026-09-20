@@ -30,6 +30,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "${OUTPUT_DIR}" "${PACKAGE_TMP}/VirtualGlove"
+python3 "${SCRIPT_DIR}/build-enclosure-packages.py"
 python3 "${SCRIPT_DIR}/build-matrix-firmware.py"
 python3 "${SCRIPT_DIR}/application-payload.py" "${PACKAGE_TMP}/VirtualGlove" --precompiled-matrix
 

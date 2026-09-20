@@ -543,7 +543,7 @@ class ProcessLatestCapture:
     """Expose a process-isolated camera through the LatestFrameCapture contract."""
 
     def __init__(self, path, buffers, np):
-        from powerglove_vision.realtime import CapturedFrame
+        from virtualglove.realtime import CapturedFrame
         self._captured_frame = CapturedFrame
         self._np = np
         context = multiprocessing.get_context('spawn')
@@ -653,7 +653,7 @@ def wrap_tracker(tracker):
 
 def camera_lane(path, buffers, seconds, tracker, engine, isolation='thread'):
     """Measure one exclusive live-camera lane with selected capture isolation."""
-    from powerglove_vision.realtime import LatestFrameCapture
+    from virtualglove.realtime import LatestFrameCapture
     import cv2
     import numpy as np
     if isolation == 'process':
@@ -827,9 +827,9 @@ def main():
                         help='Acknowledge exclusive camera ownership; caller restores the worker')
     args = parser.parse_args()
     sys.path.insert(0, str(args.source_root / 'src'))
-    from powerglove_vision.tracker import MediaPipeTracker
-    from powerglove_vision.gesture import GestureEngine
-    from powerglove_vision.model import Calibration
+    from virtualglove.tracker import MediaPipeTracker
+    from virtualglove.gesture import GestureEngine
+    from virtualglove.model import Calibration
     import cv2
     import mediapipe as mp
     tracker = MediaPipeTracker(inference_threads=args.inference_threads,

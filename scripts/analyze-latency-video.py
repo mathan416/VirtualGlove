@@ -170,14 +170,14 @@ def build_contact_sheet(paths, destination, columns=4):
 
 
 def main():
-    """Index a video or analyze explicit reviewed annotations and extract evidence."""
+    """Index a video or analyse explicit reviewed annotations and extract evidence."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--video', type=Path, required=True)
     parser.add_argument('--annotations', type=Path)
     parser.add_argument('--frames', help='Comma-separated zero-based frames to inspect without measuring')
-    parser.add_argument('--around', help='Comma-separated center frames for a frame-by-frame review strip')
+    parser.add_argument('--around', help='Comma-separated centre frames for a frame-by-frame review strip')
     parser.add_argument('--radius', type=int, default=4,
-                        help='Frames on each side of every --around center (default: 4)')
+                        help='Frames on each side of every --around centre (default: 4)')
     parser.add_argument('--protocol', choices=('smoke', 'full'), default='full',
                         help='Trial placeholders to put in a new annotation template')
     parser.add_argument('--overview-frames', type=int, default=24,

@@ -16,14 +16,14 @@
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision.matrix import MatrixStatus, UnoQMatrix, status_from_worker
+from virtualglove.matrix import MatrixStatus, UnoQMatrix, status_from_worker
 
 
 class MatrixTests(unittest.TestCase):
     def test_attract_is_separate_cached_and_idle_probe_only(self):
         calls = []
         matrix = UnoQMatrix(call=lambda *args: calls.append(args))
-        with patch('powerglove_vision.matrix.threading.Thread') as thread:
+        with patch('virtualglove.matrix.threading.Thread') as thread:
             matrix.set_attract({'matrix_attract':'off'}, idle=False)
             matrix.set_status(MatrixStatus.TUNING)
             matrix.set_attract({'matrix_attract':'off'}, idle=False)
@@ -38,9 +38,9 @@ class MatrixTests(unittest.TestCase):
     def test_setup_health_is_cached_shared_and_expires(self):
         matrix = UnoQMatrix(call=lambda *args: None)
         settings = {'receiver': 'cabinet.local', 'token': 'private-token'}
-        with patch('powerglove_vision.matrix.time.monotonic', return_value=100), \
-             patch('powerglove_vision.wifi_status.read_network_status', return_value='connected'), \
-             patch('powerglove_vision.matrix.threading.Thread') as thread:
+        with patch('virtualglove.matrix.time.monotonic', return_value=100), \
+             patch('virtualglove.wifi_status.read_network_status', return_value='connected'), \
+             patch('virtualglove.matrix.threading.Thread') as thread:
             initial = matrix.connection_status(settings, refresh=True)
             self.assertIsNone(initial['console_service'])
             self.assertEqual(initial['networking'], 'connected')
@@ -62,8 +62,8 @@ class MatrixTests(unittest.TestCase):
         settings = {'receiver': 'cabinet.local', 'token': 'private-token'}
         matrix._probe_key = ('cabinet.local', 'private-token')
         matrix._probe_result, matrix._probe_at = 1, 100
-        with patch('powerglove_vision.matrix.time.monotonic', return_value=101), \
-             patch('powerglove_vision.wifi_status.read_network_status', return_value='disconnected'):
+        with patch('virtualglove.matrix.time.monotonic', return_value=101), \
+             patch('virtualglove.wifi_status.read_network_status', return_value='disconnected'):
             health = matrix.connection_status(settings)
             self.assertTrue(health['console_service'])
             self.assertFalse(health['console_authenticated'])
@@ -73,15 +73,15 @@ class MatrixTests(unittest.TestCase):
         matrix = UnoQMatrix(call=lambda *args: None)
         key = ('cabinet.local','private-token')
         matrix._probe_key = key
-        with patch('powerglove_vision.resolver.resolve_ipv4', return_value='10.0.0.2'), \
-             patch('powerglove_vision.matrix.socket.create_connection'), \
-             patch('powerglove_vision.game_registry.registry_request', return_value={}) as request:
+        with patch('virtualglove.resolver.resolve_ipv4', return_value='10.0.0.2'), \
+             patch('virtualglove.matrix.socket.create_connection'), \
+             patch('virtualglove.game_registry.registry_request', return_value={}) as request:
             matrix._probe_console(key)
             self.assertEqual(matrix._probe_result,3)
             request.side_effect=ValueError('wrong token')
             matrix._probe_console(key)
             self.assertEqual(matrix._probe_result,1)
-        with patch('powerglove_vision.resolver.resolve_ipv4', side_effect=OSError):
+        with patch('virtualglove.resolver.resolve_ipv4', side_effect=OSError):
             matrix._probe_console(key)
             self.assertEqual(matrix._probe_result,0)
 

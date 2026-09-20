@@ -15,6 +15,7 @@
 """Check the reproducible native research spike without building over the network."""
 
 from pathlib import Path
+import hashlib
 import shutil
 import subprocess
 import tempfile
@@ -49,7 +50,8 @@ class NativeCoreTests(unittest.TestCase):
         self.assertNotIn("/opt/retropie/libretrocores", script)
         self.assertNotIn("reset --hard", script)
         self.assertIn('cat-file -e "$revision^{commit}"', script)
-        self.assertIn('make -C "$source_dir/libretro" -j"${JOBS:-2}" >&2', script)
+        self.assertIn('make -C "$source_dir/libretro" -j"${JOBS:-2}"', script)
+        self.assertIn("VIRTUALGLOVE_LIBRETRO_PLATFORM", script)
         self.assertIn("The patch changed Nestopia's original copyright/license header", script)
         self.assertIn("NstInpPowerGlove.cpp", script)
 
@@ -66,7 +68,7 @@ class NativeCoreTests(unittest.TestCase):
             "glove.y = 128",
             "Nestopia's 128-glove.y packet",
             "host value directly compensates",
-            "PowerGloveVisionNativeEnabled() ? 10U : 12U",
+            "VirtualGloveNativeEnabled() ? 10U : 12U",
             "glove.distance = 0",
             "glove.wrist = 0",
             "GESTURE_OPEN",
@@ -82,6 +84,9 @@ class NativeCoreTests(unittest.TestCase):
             "packet boundary falling-strobe",
             "packet clock=%lu bytes=",
             'library_name     = "Nestopia PowerGlove"',
+            "if (port == 0)",
+            "Api::Input::POWERGLOVE",
+            "return true;",
         ):
             self.assertIn(evidence, patch)
 
@@ -117,12 +122,20 @@ class NativeCoreTests(unittest.TestCase):
     def test_distribution_keeps_gpl_notice_with_installed_core(self):
         installer = (ROOT / "scripts/install-nestopia-powerglove.sh").read_text()
         notice = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
-        self.assertIn('destination/source/COPYING', installer)
+        self.assertIn('nestopia-powerglove-source.tar.gz', installer)
+        self.assertIn('tar -xzf "$source_archive"', installer)
         self.assertIn('target/COPYING', installer)
-        self.assertIn('POWERGLOVE-VISION-NOTICES.md', installer)
+        self.assertIn('VIRTUALGLOVE-NOTICES.md', installer)
         self.assertIn("GNU General Public License, version 2", notice)
-        self.assertIn("not a compiled core", notice)
-        self.assertIn("1ed4eb4bc803a4d445b6e5a1c7b22ccb00cf8a18d465954730282212b8334c06", notice)
+        self.assertIn(
+            "each bundled binary is accompanied by its exact complete corresponding source",
+            notice,
+        )
+        self.assertIn("Recalbox 10.1 `rpizero2`", notice)
+        patch_digest = hashlib.sha256(
+            (ROOT / "native/nestopia-powerglove/nestopia-powerglove.patch").read_bytes()
+        ).hexdigest()
+        self.assertIn(patch_digest, notice)
         self.assertIn("Martin Freij", notice)
         self.assertIn("leaves it", notice)
         self.assertIn("byte-for-byte unchanged", notice)

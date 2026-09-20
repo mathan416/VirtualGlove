@@ -21,7 +21,9 @@ import io
 import json
 import os
 from pathlib import Path
+import runpy
 import stat
+import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -35,7 +37,23 @@ spec.loader.exec_module(installer)
 
 
 class PackageContentTests(unittest.TestCase):
-    def test_retropie_upgrade_recognizes_current_launcher_only(self):
+    def test_completed_console_upgrade_rotates_only_routine_backups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            script = source / "scripts/rotate-deployment-backups.py"
+            script.parent.mkdir(parents=True)
+            script.write_text("# test\n")
+            setup = SimpleNamespace(BACKUPS=root / "backups/20260920-120000-1")
+            with patch.object(installer.subprocess, "run",
+                              return_value=SimpleNamespace(returncode=0)) as command:
+                installer.rotate_console_backups(source, setup, "recalbox")
+                installer.rotate_console_backups(source, setup, "uno-q")
+            command.assert_called_once_with(
+                [installer.sys.executable, str(script), str(root / "backups"),
+                 "--keep", "5"], check=False)
+
+    def test_retropie_upgrade_recognises_current_launcher_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             current = root / "etc/virtualglove/launcher.json"
@@ -231,20 +249,23 @@ class ArchiveTests(unittest.TestCase):
                 dict(format=1, machine=machine, version='dev-test')))
             for name in ('scripts/setup-machine.py', 'scripts/installation-manifest.py',
                          'scripts/install-nestopia-powerglove.sh',
+                         'scripts/verify-retropie-native-core.py',
                          'scripts/install-powerglove-dot.sh',
                          'scripts/configure-super-glove-ball-core.py',
-                         'src/powerglove_vision/receiver.py',
-                         'src/powerglove_vision/gesture.py',
-                         'src/powerglove_vision/tracker.py',
-                         'src/powerglove_vision/tuning.py',
-                         'src/powerglove_vision/vision_app.py',
-                         'src/powerglove_vision/profile_control.py',
-                         'src/powerglove_vision/retropie_hook.py',
+                         'src/virtualglove/receiver.py',
+                         'src/virtualglove/gesture.py',
+                         'src/virtualglove/tracker.py',
+                         'src/virtualglove/tuning.py',
+                         'src/virtualglove/vision_app.py',
+                         'src/virtualglove/profile_control.py',
+                         'src/virtualglove/retropie_hook.py',
+                         'src/virtualglove/controller_router.py',
                          'config/games.json', 'config/profiles.json',
                          'THIRD_PARTY_NOTICES.md',
                          'retropie/virtualglove-receiver.service',
                          'retropie/virtualglove-receiver.timer',
                          'retropie/virtualglove-games.service',
+                         'retropie/virtualglove-controller-router.service',
                          'retropie/bin/virtualglove-retropie-hook',
                          'retropie/bin/virtualglove-receiver',
                          'retropie/bin/virtualglove-games',
@@ -252,12 +273,103 @@ class ArchiveTests(unittest.TestCase):
                          'retropie/bin/virtualglove-profile',
                          'retropie/bin/virtualglove-bsb-zap',
                          'retropie/bin/virtualglove-dot',
+                         'retropie/bin/virtualglove-controller-router',
                          'retropie/runcommand-onstart-virtualglove.sh',
                          'retropie/runcommand-onend-virtualglove.sh',
                          'native/nestopia-powerglove/nestopia-powerglove.patch',
                          'native/powerglove-dot/powerglove_dot.cpp',
-                         'src/powerglove_vision/dot_launcher.py'):
+                         'src/virtualglove/dot_launcher.py'):
                 output.writestr('VirtualGlove/' + name, 'test')
+            if machine == 'retropie':
+                cores = {}
+                for target in ('armv6', 'armv7', 'armv8_32', 'aarch64', 'x86_64'):
+                    core = target + '/nestopia_powerglove_libretro.so'
+                    source = target + '/nestopia-powerglove-source.tar.gz'
+                    output.writestr('VirtualGlove/native/retropie/' + core, 'core')
+                    output.writestr('VirtualGlove/native/retropie/' + source, 'source')
+                    elf_class, elf_machine = ((64, target) if target in ('aarch64', 'x86_64')
+                                              else (32, 'arm'))
+                    cores[target] = {
+                        'build_environment': 'test',
+                        'cpu_arch': target,
+                        'elf_class': elf_class,
+                        'elf_machine': elf_machine,
+                        'file': core,
+                        'float_abi': 'test',
+                        'max_glibc_symbol': '2.27',
+                        'nestopia_revision': '0' * 40,
+                        'patch_sha256': '1' * 64,
+                        'sha256': '2' * 64,
+                        'size': 4,
+                        'source_file': source,
+                        'source_sha256': '3' * 64,
+                        'source_size': 6,
+                        'validation': 'test',
+                    }
+                output.writestr('VirtualGlove/native/retropie/manifest.json', json.dumps({
+                    'format': 1,
+                    'cores': cores,
+                }))
+            console_members = {
+                'recalbox': (
+                    'src/virtualglove/console_monitor.py',
+                    'src/virtualglove/merged_gamepad.py',
+                    'recalbox/virtualglove-service',
+                    'recalbox/virtualglove-core-mount',
+                    'scripts/build-recalbox-nestopia-powerglove.sh',
+                    'scripts/build-recalbox-native-matrix.sh',
+                    'scripts/install-recalbox-nestopia-powerglove.sh',
+                    'scripts/configure-recalbox-super-glove-ball-core.py',
+                    'scripts/verify-recalbox-native-core.py',
+                    'native/recalbox/rpizero2/10.1/nestopia_powerglove_libretro.so',
+                    'native/recalbox/rpizero2/10.1/nestopia-powerglove-source.tar.gz',
+                    'python/ssh_pair.py',
+                ),
+                'batocera': (
+                    'src/virtualglove/merged_gamepad.py',
+                    'recalbox/virtualglove-service',
+                    'batocera/VirtualGlove',
+                    'batocera/virtualglove-game',
+                    'batocera/virtualglove-core-mount',
+                    'scripts/build-batocera-nestopia-powerglove.sh',
+                    'scripts/build-batocera-native-matrix.sh',
+                    'scripts/install-batocera-nestopia-powerglove.sh',
+                    'scripts/configure-batocera-super-glove-ball-core.py',
+                    'scripts/verify-batocera-native-core.py',
+                    'native/batocera/bcm2835/43.1/nestopia_powerglove_libretro.so',
+                    'native/batocera/bcm2835/43.1/nestopia-powerglove-source.tar.gz',
+                    'python/ssh_pair.py',
+                ),
+            }
+            for name in console_members.get(machine, ()):
+                output.writestr('VirtualGlove/' + name, 'test')
+            if machine == 'recalbox':
+                output.writestr('VirtualGlove/native/recalbox/manifest.json', json.dumps({
+                    'format': 2,
+                    'cores': {'rpizero2': {'10.1': {
+                        'file': 'rpizero2/10.1/nestopia_powerglove_libretro.so',
+                        'source_file': 'rpizero2/10.1/nestopia-powerglove-source.tar.gz',
+                    }}},
+                }))
+            if machine == 'batocera':
+                output.writestr('VirtualGlove/native/batocera/manifest.json', json.dumps({
+                    'format': 2,
+                    'cores': {'bcm2835': {'43.1': {
+                        'file': 'bcm2835/43.1/nestopia_powerglove_libretro.so',
+                        'source_file': 'bcm2835/43.1/nestopia-powerglove-source.tar.gz',
+                        'sha256': '0' * 64,
+                        'source_sha256': '1' * 64,
+                        'patch_sha256': '2' * 64,
+                        'size': 4,
+                        'source_size': 4,
+                        'elf_class': 32,
+                        'elf_machine': 'arm',
+                        'batocera_version': '43.1',
+                        'batocera_revision': '3' * 40,
+                        'nestopia_revision': '4' * 40,
+                        'build_image': 'example@sha256:' + '5' * 64,
+                    }}},
+                }))
             if extra:
                 output.writestr(*extra)
         return archive
@@ -277,6 +389,15 @@ class ArchiveTests(unittest.TestCase):
             for machine, version in [('uno-q', 'dev-test'), ('retropie', 'v-other')]:
                 with self.assertRaisesRegex(ValueError, 'does not match'):
                     installer.unpack(archive, Path(directory) / 'bad', machine, version)
+
+    def test_recalbox_and_batocera_packages_have_complete_identity(self):
+        for machine in ('recalbox', 'batocera'):
+            with self.subTest(machine=machine), tempfile.TemporaryDirectory() as directory:
+                archive = self.package(directory, machine=machine)
+                source = installer.unpack(
+                    archive, Path(directory) / 'extract', machine, 'dev-test')
+                self.assertTrue((source / 'src/virtualglove/merged_gamepad.py').is_file())
+                self.assertTrue((source / machine).is_dir())
 
     def test_loading_and_staging_extracted_setup_creates_no_generated_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -367,8 +488,6 @@ class ArchiveTests(unittest.TestCase):
                     'down', '--remove-orphans')
                 command.assert_any_call(*expected)
                 self.assertLess(calls.index(expected), upgrade_start)
-                self.assertFalse(any('powerglove-vision' in str(part)
-                                     for call in calls for part in call))
                 self.assertTrue(list((root / 'backups').rglob('app.yaml')))
 
     def test_unmanaged_old_sketch_files_are_not_silently_deleted(self):
@@ -389,6 +508,95 @@ class ArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'Unmanaged files remain'):
                     installer.stage_unoq(source, setup)
             self.assertEqual((app / 'sketch/local-note.txt').read_text(), 'keep')
+
+
+class NamespaceUpgradeTests(unittest.TestCase):
+    def setUp(self):
+        self.manifest = runpy.run_path(str(ROOT / 'scripts/installation-manifest.py'))
+        self.old_package = 'power' + 'glove_vision'
+
+    def released_042_install(self, root):
+        old = root / 'src' / self.old_package
+        old.mkdir(parents=True)
+        files = {
+            'src/' + self.old_package + '/__init__.py': b'old package\n',
+            'src/' + self.old_package + '/receiver.py': b'old receiver\n',
+            'scripts/setup-machine.py': b'old installer\n',
+        }
+        records = {}
+        for name, content in files.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+            records[name] = self.manifest['fingerprint'](path)
+        (old / '__pycache__').mkdir()
+        (old / '__pycache__/receiver.cpython-311.pyc').write_bytes(b'generated cache')
+        (root / 'data').mkdir()
+        (root / 'data/device.json').write_text('private pairing and calibration')
+        (root / '.virtualglove-install.json').write_text(json.dumps({
+            'format': 1, 'root': str(root), 'release': 'v0.4.2', 'files': records,
+        }, indent=2))
+        return files
+
+    def current_source(self, directory):
+        source = Path(directory) / 'release'
+        (source / 'src/virtualglove').mkdir(parents=True)
+        (source / 'src/virtualglove/__init__.py').write_text('current package\n')
+        (source / 'scripts').mkdir()
+        (source / 'scripts/setup-machine.py').write_text('current installer\n')
+        (source / 'install-release.json').write_text(json.dumps({
+            'format': 1, 'machine': 'retropie', 'version': 'v0.5.0',
+        }))
+        return source
+
+    def test_042_upgrade_retires_namespace_and_preserves_private_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            old_files = self.released_042_install(root)
+            source = self.current_source(directory)
+            backup = directory / 'backup'
+            result = self.manifest['apply'](source, root, backup)
+            self.assertFalse((root / 'src' / self.old_package).exists())
+            self.assertEqual(self.manifest['check'](root), [])
+            self.assertTrue((root / 'src/virtualglove/__init__.py').is_file())
+            self.assertEqual((root / 'data/device.json').read_text(),
+                             'private pairing and calibration')
+            retired_files = {name for name in old_files if self.old_package in name}
+            self.assertTrue(retired_files.issubset(set(result['removed'])))
+            for name in retired_files:
+                self.assertTrue((backup / name).is_file())
+            installed = json.loads((root / '.virtualglove-install.json').read_text())
+            self.assertEqual(installed['release'], 'v0.5.0')
+            self.assertFalse(any(self.old_package in name for name in installed['files']))
+
+    def test_042_upgrade_backs_up_and_removes_modified_managed_retired_code(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            self.released_042_install(root)
+            modified = root / 'src' / self.old_package / 'receiver.py'
+            modified.write_text('local modification\n')
+            source = self.current_source(directory)
+            backup = directory / 'backup'
+            result = self.manifest['apply'](source, root, backup)
+            retired = 'src/' + self.old_package + '/receiver.py'
+            self.assertIn(retired, result['backed_up_changes'])
+            self.assertEqual((backup / retired).read_text(), 'local modification\n')
+            self.assertFalse((root / 'src' / self.old_package).exists())
+            self.assertTrue((root / 'src/virtualglove').is_dir())
+
+    def test_untracked_retired_tree_requires_manual_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory).resolve()
+            root = directory / 'installed'
+            old = root / 'src' / self.old_package
+            old.mkdir(parents=True)
+            (old / '__init__.py').write_text('untracked old package\n')
+            source = self.current_source(directory)
+            with self.assertRaisesRegex(ValueError, 'without an installation manifest'):
+                self.manifest['apply'](source, root, directory / 'backup')
+            self.assertTrue((old / '__init__.py').is_file())
 
 
 class BootstrapTests(unittest.TestCase):
@@ -511,6 +719,56 @@ class PreflightTests(unittest.TestCase):
                     installer.preflight('uno-q')
 
 
+class RuntimeLifecycleTests(unittest.TestCase):
+    def test_retropie_publishers_stop_before_managed_files_are_replaced(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[]))
+        with patch('pathlib.Path.exists', return_value=True), \
+                patch.object(installer.subprocess, 'run') as run:
+            self.assertEqual(installer.stop_managed_runtime('retropie', setup),
+                             'retropie')
+        commands = [tuple(item.args[0]) for item in run.call_args_list]
+        self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.timer'), commands)
+        self.assertIn(('systemctl', 'stop', 'virtualglove-receiver.service'), commands)
+        self.assertIn(('systemctl', 'stop', 'virtualglove-games.service'), commands)
+        self.assertIn(('systemctl', 'stop', 'virtualglove-controller-router.service'), commands)
+
+    def test_retropie_receiver_cannot_remove_router_runtime_directory(self):
+        receiver = (ROOT / 'retropie/virtualglove-receiver.service').read_text()
+        router = (ROOT / 'retropie/virtualglove-controller-router.service').read_text()
+        self.assertNotIn('RuntimeDirectory=virtualglove', receiver)
+        self.assertIn('After=network-online.target virtualglove-controller-router.service', receiver)
+        self.assertIn('RuntimeDirectory=virtualglove', router)
+        self.assertIn('RuntimeDirectoryPreserve=yes', router)
+
+    def test_retropie_recovery_starts_router_before_receiver(self):
+        with patch.object(Path, 'is_file', return_value=True), \
+                patch.object(Path, 'read_text', return_value='x' * 32), \
+                patch.object(installer.subprocess, 'run') as run:
+            installer.restart_managed_runtime('retropie')
+        commands = [tuple(item.args[0]) for item in run.call_args_list]
+        self.assertLess(
+            commands.index(('systemctl', 'start', 'virtualglove-controller-router.service')),
+            commands.index(('systemctl', 'start', 'virtualglove-receiver.service')),
+        )
+
+    def test_batocera_service_stops_before_managed_files_are_replaced(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[]))
+        with patch('pathlib.Path.is_file', return_value=True), \
+                patch.object(installer.subprocess, 'run') as run:
+            self.assertEqual(installer.stop_managed_runtime('batocera', setup),
+                             'batocera')
+        run.assert_called_once_with(
+            ['batocera-services', 'stop', 'VirtualGlove'], check=False)
+
+    def test_upgrade_refuses_to_replace_files_while_publishers_remain(self):
+        setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[321]))
+        with patch('pathlib.Path.is_file', return_value=False), \
+                patch.object(installer.time, 'monotonic', side_effect=[0, 6]), \
+                patch.object(installer.time, 'sleep'):
+            with self.assertRaisesRegex(ValueError, 'Could not stop existing'):
+                installer.stop_managed_runtime('batocera', setup)
+
+
 class GameSetupTests(unittest.TestCase):
     def test_optional_dot_test_builds_and_adds_rom_free_ports_entry(self):
         setup = installer.load_setup(ROOT)
@@ -598,17 +856,14 @@ class GameSetupTests(unittest.TestCase):
                     native.parent.mkdir(parents=True, exist_ok=True)
                     native.write_bytes(b"native")
 
-            real_temporary_directory = tempfile.TemporaryDirectory
             with patch.object(setup, "Path", side_effect=mapped), \
                  patch.object(setup, "BACKUPS", root / "backups"), \
                  patch.object(setup, "registered_roms", return_value=[(rom, "super_glove_ball")]), \
-                 patch.object(setup.tempfile, "TemporaryDirectory",
-                              side_effect=lambda **kwargs: real_temporary_directory(
-                                  prefix=kwargs.get("prefix"), dir=str(root))), \
                  patch.object(setup, "run", side_effect=command) as run:
                 setup.configure_games(lambda message: "lr-nestopia-powerglove" in message)
 
-            run.assert_any_call("apt-get", "install", "-y", "git", "build-essential")
+            self.assertFalse(any(call.args[:2] == ("apt-get", "install")
+                                 for call in run.call_args_list))
             self.assertIn("lr-nestopia-powerglove", system.read_text())
             games = prefix / "configs/all/emulators.cfg"
             self.assertFalse(games.exists())
@@ -616,6 +871,87 @@ class GameSetupTests(unittest.TestCase):
                 (prefix / "configs/nes/powerglove-native.cfg").read_text(),
                 'input_libretro_device_p1 = "517"\nvideo_threaded = "false"\n',
             )
+
+    def test_existing_native_core_is_refreshed_without_reasking(self):
+        setup = installer.load_setup(ROOT)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith("/opt/retropie"):
+                    return root / str(path).lstrip("/")
+                return path
+
+            prefix = mapped("/opt/retropie")
+            fceumm = prefix / "libretrocores/lr-fceumm/fceumm_libretro.so"
+            native = prefix / "libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so"
+            retroarch = prefix / "emulators/retroarch/bin/retroarch"
+            system = prefix / "configs/nes/emulators.cfg"
+            for path, contents in ((fceumm, b"fceumm"), (native, b"old-native"),
+                                   (retroarch, b"retroarch")):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(contents)
+            system.parent.mkdir(parents=True, exist_ok=True)
+            system.write_text(
+                'default = "lr-fceumm"\n'
+                'lr-fceumm = "/retroarch -L ' + str(fceumm) + ' %ROM%"\n'
+            )
+            rom = root / "home/pi/RetroPie/roms/nes/Super Glove Ball (USA).nes"
+            rom.parent.mkdir(parents=True)
+            rom.write_bytes(b"test-only")
+            prompts = []
+
+            def command(*args):
+                if args[0] == "bash" and "install-nestopia-powerglove.sh" in str(args[1]):
+                    native.write_bytes(b"new-native")
+
+            with patch.object(setup, "Path", side_effect=mapped), \
+                 patch.object(setup, "BACKUPS", root / "backups"), \
+                 patch.object(setup, "registered_roms", return_value=[(rom, "super_glove_ball")]), \
+                 patch.object(setup, "run", side_effect=command) as run:
+                setup.configure_games(lambda message: prompts.append(message) or False)
+
+            self.assertEqual(native.read_bytes(), b"new-native")
+            self.assertTrue(any("install-nestopia-powerglove.sh" in str(call.args[1])
+                                for call in run.call_args_list))
+            self.assertFalse(any("lr-nestopia-powerglove" in message for message in prompts))
+
+    def test_incompatible_native_upgrade_preserves_existing_core_and_fceumm(self):
+        setup = installer.load_setup(ROOT)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+
+            def mapped(value):
+                path = Path(value)
+                if str(path).startswith("/opt/retropie"):
+                    return root / str(path).lstrip("/")
+                return path
+
+            prefix = mapped("/opt/retropie")
+            fceumm = prefix / "libretrocores/lr-fceumm/fceumm_libretro.so"
+            native = prefix / "libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so"
+            for path in (fceumm, prefix / "emulators/retroarch/bin/retroarch", native):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"existing")
+            system = prefix / "configs/nes/emulators.cfg"
+            system.parent.mkdir(parents=True, exist_ok=True)
+            system.write_text(
+                'default = "lr-fceumm"\n'
+                'lr-fceumm = "/retroarch -L ' + str(fceumm) + ' %ROM%"\n'
+            )
+            rom = root / "home/pi/RetroPie/roms/nes/Super Glove Ball (USA).nes"
+            rom.parent.mkdir(parents=True)
+            rom.write_bytes(b"test-only")
+            with patch.object(setup, "Path", side_effect=mapped), \
+                 patch.object(setup, "BACKUPS", root / "backups"), \
+                 patch.object(setup, "registered_roms", return_value=[(rom, "super_glove_ball")]), \
+                 patch.object(setup, "run", side_effect=subprocess.CalledProcessError(
+                     3, ["install-nestopia-powerglove.sh"])):
+                setup.configure_games(lambda _message: False)
+
+            self.assertEqual(native.read_bytes(), b"existing")
+            self.assertIn('default = "lr-fceumm"', system.read_text())
 
     def test_helper_failure_is_not_silently_accepted(self):
         setup = installer.load_setup(ROOT)

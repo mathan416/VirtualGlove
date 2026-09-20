@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_resolver.py
-# Purpose: Verify local name resolution, cache refresh and safe failure behavior.
+# Purpose: Verify local name resolution, cache refresh and safe failure behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -12,7 +12,7 @@
 import socket
 import unittest
 from unittest.mock import patch
-from powerglove_vision import resolver
+from virtualglove import resolver
 
 
 class ResolverTests(unittest.TestCase):

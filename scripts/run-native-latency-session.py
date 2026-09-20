@@ -62,7 +62,7 @@ def collect_window(url, output, label, phase, seconds, test='native', cue_stream
                 record_cue(cue_stream, "move", window=label, trial=trial + 1,
                            direction=label, size=size.lower())
             time.sleep(max(0, started + trial * interval + interval / 2 - time.monotonic()))
-            print('Return to center and hold', flush=True)
+            print('Return to centre and hold', flush=True)
             if cue_stream:
                 record_cue(cue_stream, "return", window=label, trial=trial + 1)
     else:

@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Project: VirtualGlove
+# File: scripts/install-recalbox.sh
+# Purpose: Download and verify the release, then install recalbox integration.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-11 - Added first-install Controller naming and an unattended hostname option.
+#   2026-09-04 - Added versioned multi-machine installation.
+# Full history: docs/CHANGELOG.md and Git history.
+
+set -eu
+command -v python3 >/dev/null || { echo "Install Python 3.7 or newer using your OS package manager, then retry." >&2; exit 1; }
+# Keep stdin attached to the terminal for installer and sudo prompts.
+exec python3 -c '
+import argparse, hashlib, json, os, pathlib, re, subprocess, sys, tempfile, urllib.request
+p = argparse.ArgumentParser(description="Install VirtualGlove on recalbox.")
+v = p.add_mutually_exclusive_group()
+v.add_argument("--version", help="Published release tag; defaults to latest stable release")
+v.add_argument("--development", metavar="TAG", help="Explicit prerelease tag built from the development branch")
+p.add_argument("--check", action="store_true", help="Check installed software without downloads or changes")
+p.add_argument("--peer", help="UNO Q hostname, required for a new console installation")
+p.add_argument("--hostname", help="Controller name for a first UNO Q installation (for example, virtualglove)")
+p.add_argument("--list-player1-devices", action="store_true", help="List configured Recalbox/Batocera gamepads")
+p.add_argument("--player1-device", help="Stable gamepad ID reported by --list-player1-devices")
+a = p.parse_args()
+try:
+    if sys.version_info < (3, 7) or sys.platform != "linux":
+        raise ValueError("Run this installer on the target Linux device with Python 3.7 or newer")
+    if a.check:
+        source = pathlib.Path("/recalbox/share/system/virtualglove/scripts/setup-machine.py")
+        if not source.is_file():
+            raise ValueError("VirtualGlove is not installed at its standard location")
+        cmd = ["python3", str(source), "recalbox", "--check"]
+        sys.exit(subprocess.call(cmd if os.geteuid() == 0 else ["sudo"] + cmd))
+    root_console = "recalbox" in ("recalbox", "batocera")
+    if root_console and os.geteuid() != 0:
+        raise ValueError("Connect to the console as root, then run this installer")
+    if not root_console and os.geteuid() == 0:
+        raise ValueError("Run as your normal login user, without sudo. The installer will request sudo when needed.")
+    if "recalbox" != "uno-q" and a.hostname:
+        raise ValueError("--hostname is available only with install-uno-q.sh")
+    if "recalbox" not in ("recalbox", "batocera") and (a.list_player1_devices or a.player1_device):
+        raise ValueError("Player 1 selection is available only with Recalbox and Batocera installers")
+    tag = a.version or a.development
+    def download(url, path):
+        with urllib.request.urlopen(url, timeout=60) as response, path.open("wb") as output:
+            while True:
+                block = response.read(1024 * 1024)
+                if not block:
+                    break
+                output.write(block)
+    if tag is None:
+        with urllib.request.urlopen("https://api.github.com/repos/mathan416/VirtualGlove/releases/latest", timeout=30) as response:
+            tag = json.load(response)["tag_name"]
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", tag):
+        raise ValueError("Use a published release tag, not a branch, URL, or path")
+    base = "https://github.com/mathan416/VirtualGlove/releases/download/" + tag + "/"
+    temporary_root = ({"recalbox": "/recalbox/share/system",
+                       "batocera": "/userdata/system"}.get("recalbox"))
+    with tempfile.TemporaryDirectory(prefix="virtualglove-download-",
+                                     dir=temporary_root) as temporary:
+        directory = pathlib.Path(temporary)
+        download(base + "SHA256SUMS", directory / "SHA256SUMS")
+        sums = {}
+        for line in (directory / "SHA256SUMS").read_text().splitlines():
+            digest, name = line.split()
+            if not re.fullmatch(r"[0-9a-f]{64}", digest) or name in sums:
+                raise ValueError("Invalid release checksum list")
+            sums[name] = digest
+        for name in ("install-package.py", "VirtualGlove-Recalbox.zip"):
+            print("Downloading " + name + " (" + tag + ")", flush=True)
+            download(base + name, directory / name)
+            digest = hashlib.sha256()
+            with (directory / name).open("rb") as source:
+                for block in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(block)
+            if digest.hexdigest() != sums.get(name):
+                raise ValueError("Checksum mismatch: " + name + "; nothing installed")
+        cmd = ([] if os.geteuid() == 0 else ["sudo"]) + ["python3", str(directory / "install-package.py"), "recalbox",
+               "--archive", str(directory / "VirtualGlove-Recalbox.zip"), "--version", tag]
+        if a.peer:
+            cmd += ["--peer", a.peer]
+        if a.hostname:
+            cmd += ["--hostname", a.hostname]
+        if a.list_player1_devices:
+            cmd += ["--list-player1-devices"]
+        if a.player1_device:
+            cmd += ["--player1-device", a.player1_device]
+        sys.exit(subprocess.call(cmd))
+except (OSError, ValueError, KeyError) as error:
+    print("FAIL  " + str(error) + ". Check the release exists and your network connection; retry safely.", file=sys.stderr)
+    sys.exit(1)
+' "$@"

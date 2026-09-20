@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from powerglove_vision.tuning import TuningManager
+from virtualglove.tuning import TuningManager
 
 
 class PlayerTests(unittest.TestCase):
@@ -33,13 +33,28 @@ class PlayerTests(unittest.TestCase):
         return self.manager.player_command(dict(action=action, player=state["active"], generation=state["generation"], **extra))
 
     def test_current_settings_survive_a_successful_write(self):
-        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
         self.assertEqual(self.manager.saved["index"]["on"], .6)
         self.command("rename", name="Alex")
         restored = TuningManager(self.path)
         self.assertEqual(restored.player_snapshot()["players"][0]["name"], "Alex")
         self.assertEqual(restored.saved, self.manager.saved)
-        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
+
+    def test_version_six_ready_progress_is_removed_without_losing_player_data(self):
+        saved = json.loads(self.path.read_text())
+        saved["version"] = 6
+        saved["players"]["default"]["ready_progress"] = {
+            "course": 1, "completed": ["neutral", "left"], "completed_at": None,
+        }
+        self.path.write_text(json.dumps(saved))
+        manager = TuningManager(self.path)
+        self.assertIsNone(manager.player_snapshot()["error"])
+        self.assertEqual(manager.saved["index"]["on"], .6)
+        migrated = json.loads(self.path.read_text())
+        self.assertEqual(migrated["version"], 7)
+        self.assertNotIn("ready_progress", migrated["players"]["default"])
+        self.assertEqual(migrated["players"]["default"]["name"], "Player 1")
 
     def test_version_two_player_data_is_rejected_without_mutation(self):
         saved={'version':2,'active':'default','generation':4,'players':{'default':{
@@ -82,8 +97,8 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(TuningManager(self.path).needs_center())
 
     def test_complete_backup_roundtrip_reuses_confirmed_calibration(self):
-        from powerglove_vision.gesture import save_calibration, load_calibration
-        from powerglove_vision.model import Calibration
+        from virtualglove.gesture import save_calibration, load_calibration
+        from virtualglove.model import Calibration
         reference=Calibration(.4,.6,.2,.3,.01,.02)
         path=self.path.with_name('calibration.json')
         save_calibration(path,reference)
@@ -106,10 +121,10 @@ class PlayerTests(unittest.TestCase):
         backup=self.command('export')['backup']
         backup['calibration']={'version':2,'neutral':dict(palm_x=.5,palm_y=.5,palm_scale=.2,roll=0)}
         self.command('restore',backup=backup,reuse_calibration=True)
-        with patch('powerglove_vision.tuning.save_calibration',side_effect=OSError('disk full')):
+        with patch('virtualglove.tuning.save_calibration',side_effect=OSError('disk full')):
             with self.assertRaises(OSError):self.manager.apply_calibration_restore()
         self.assertTrue(TuningManager(self.path).player_snapshot()['restoring_calibration'])
-        with patch('powerglove_vision.game_registry.atomic_write',side_effect=OSError('disk full')):
+        with patch('virtualglove.game_registry.atomic_write',side_effect=OSError('disk full')):
             with self.assertRaises(OSError):self.manager.apply_calibration_restore()
         self.assertTrue(self.manager.needs_center())
         self.command('create',name='Other')
@@ -161,7 +176,7 @@ class PlayerTests(unittest.TestCase):
         self.assertEqual(self.path.read_bytes(), before)
 
     def test_player_selection_automatically_restores_its_isolated_center(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         first=Calibration(.3,.4,.2,0)
         second=Calibration(.6,.5,.3,0)
         self.manager.begin_center();self.manager.finish_center(first)
@@ -177,7 +192,7 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(restarted.needs_center())
 
     def test_latest_player_selection_replaces_pending_center(self):
-        from powerglove_vision.model import Calibration
+        from virtualglove.model import Calibration
         first=Calibration(.3,.4,.2,0)
         second=Calibration(.6,.5,.3,0)
         self.manager.begin_center();self.manager.finish_center(first)
@@ -189,7 +204,7 @@ class PlayerTests(unittest.TestCase):
         self.assertFalse(self.manager.needs_center())
 
     def test_effective_thresholds_are_complete_and_import_is_explicit(self):
-        from powerglove_vision.tuning import CHANNELS
+        from virtualglove.tuning import CHANNELS
         backup=self.command('export')['backup']
         self.assertEqual(set(backup['effective_thresholds']),set(CHANNELS))
         self.assertEqual(set(backup['source']),{'version','commit'})
@@ -198,7 +213,7 @@ class PlayerTests(unittest.TestCase):
         self.command('restore',backup=backup,use_effective_thresholds=True)
         self.assertEqual(self.manager.saved,backup['effective_thresholds'])
         # Explicit saved values survive different future default thresholds.
-        from powerglove_vision.gesture import GestureConfig
+        from virtualglove.gesture import GestureConfig
         effective=self.manager.configuration(GestureConfig())
         self.assertEqual(effective.pair('index'),tuple(backup['effective_thresholds']['index'][k] for k in ('on','off')))
 
@@ -224,7 +239,7 @@ class PlayerTests(unittest.TestCase):
         backup=self.command("export")["backup"]
         for bad in (dict(backup,token="private"),dict(backup,calibration={}),dict(backup,thresholds={"index":{"on":float('nan'),"off":.1}}),{}):
             with self.assertRaises(ValueError):self.command("restore",backup=bad)
-        with patch('powerglove_vision.game_registry.atomic_write',side_effect=OSError):
+        with patch('virtualglove.game_registry.atomic_write',side_effect=OSError):
             with self.assertRaises(OSError):self.command("create",name="Unwritten")
         self.assertEqual(self.path.read_bytes(),original)
         self.assertEqual(len(self.manager.player_snapshot()["players"]),1)

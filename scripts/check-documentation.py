@@ -27,6 +27,7 @@ import hashlib
 import json
 import re
 import subprocess
+import zipfile
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -36,6 +37,7 @@ MARKDOWN_LINK = re.compile(r"!?\[[^]]*\]\(([^)]+)\)")
 HTML_LINK = re.compile(r"(?:href|src)=[\"']([^\"']+)[\"']", re.IGNORECASE)
 HELP_FILE = re.compile(r'[\"\x27]file[\"\x27]\s*:\s*[\"\x27]([^\"\x27]+\.md)[\"\x27]')
 CONFIGURATION_FILES = (
+    "config/release.json",
     "config/device.example.json",
     "config/games.json",
     "config/launcher.example.json",
@@ -55,9 +57,11 @@ CONFIGURATION_FILES = (
 PDF_EDITIONS = {
     "THIRD_PARTY_NOTICES.md": "VirtualGlove-Third-Party-Notices.pdf",
     "docs/BUILD_YOUR_OWN.md": "VirtualGlove-Build-Your-Own.pdf",
-    "docs/NATIVE_EMULATION_EXPLAINED.md": "VirtualGlove-Native-Emulation.pdf",
+    "docs/INPUT_MODES.md": "VirtualGlove-Input-Modes.pdf",
     "docs/TROUBLESHOOTING.md": "VirtualGlove-Troubleshooting.pdf",
     "docs/CAMERA_GUIDE.md": "VirtualGlove-Camera-Guide.pdf",
+    "docs/ENCLOSURE_QUICK_REFERENCE.md": "VirtualGlove-Enclosure-Quick-Reference.pdf",
+    "docs/ENCLOSURE_GUIDE.md": "VirtualGlove-Enclosure-Guide.pdf",
     "docs/ENGINEERING_JOURNEY.md": "VirtualGlove-Engineering-Journey.pdf",
     "docs/ENGINEERING_TOOLKIT.md": "VirtualGlove-Engineering-Toolkit.pdf",
 
@@ -72,9 +76,107 @@ PDF_EDITIONS = {
     "docs/CONTRIBUTING.md": "VirtualGlove-Contributing.pdf",
     "docs/GAMEPLAY_GUIDE.md": "VirtualGlove-Gameplay-Guide.pdf",
     "docs/power-glove-rom-input-audit.md": "VirtualGlove-Input-Audit.pdf",
-    "docs/super-glove-ball-native.md": "VirtualGlove-Super-Glove-Ball-Native.pdf",
-    "docs/direction-response-benchmark.md": "VirtualGlove-Direction-Response.pdf",
 }
+ARCHIVED_DOCUMENTS = {
+    Path("docs/NATIVE_EMULATION_EXPLAINED.md"),
+    Path("docs/super-glove-ball-native.md"),
+    Path("docs/direction-response-benchmark.md"),
+}
+
+AMERICAN_PUBLIC_SPELLING = re.compile(
+    r"\b(?:behaviors?|behavioral|colors?|colored|coloring|centers?|centered|centering|"
+    r"recognizes?|recognized|recognizing|customizes?|customized|customizing|"
+    r"organizes?|organized|organizing|optimizations?|optimizes?|optimized|optimizing|"
+    r"analyzes?|analyzed|analyzing|personalizes?|personalized|personalizing|"
+    r"personalization|defense|offense|catalog|dialogs?|grays?|grayscale|"
+    r"fulfills?|fulfilled|fulfilling)\b",
+    re.IGNORECASE,
+)
+
+
+def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
+    """Keep current release, upgrade, platform, and retired-feature claims aligned."""
+    try:
+        facts = json.loads((ROOT / "config/release.json").read_text())
+        project_version = str(facts["project_version"])
+        candidate = str(facts["candidate_tag"])
+        oldest = str(facts["oldest_supported_upgrade"])
+        platforms = list(facts["supported_platforms"])
+        removed = set(facts["removed_features"])
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        errors.append(f"cannot read release facts: {exc}")
+        return
+    project = (ROOT / "pyproject.toml").read_text()
+    match = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
+    if not match or match.group(1) != project_version:
+        errors.append("pyproject version does not match config/release.json")
+    readme = (ROOT / "README.md").read_text()
+    install = (ROOT / "docs/INSTALL_README.md").read_text()
+    for label, source in (("README", readme), ("Installation Guide", install)):
+        if project_version not in source or candidate not in source:
+            errors.append(f"{label} does not identify the current version and candidate")
+        for platform in platforms:
+            short = platform.split(" on ", 1)[0].split(" ", 1)[0]
+            if short not in source:
+                errors.append(f"{label} is missing supported platform {short}")
+    if oldest not in install or oldest not in (ROOT / "docs/SECURITY.md").read_text():
+        errors.append("current upgrade documentation does not match the supported baseline")
+    current_sources = [path for path in markdown if path != Path("docs/CHANGELOG.md")]
+    if "ready-to-play" in removed:
+        retired = re.compile(r"(?:Get ready to play|href=[\"']/ready|`/ready`)", re.IGNORECASE)
+        for path in current_sources:
+            if retired.search((ROOT / path).read_text()):
+                errors.append(f"retired Ready-to-Play feature appears in current documentation: {path}")
+    required_install_text = (
+        'cd /home/arduino', 'cd "$HOME"', 'cd /recalbox/share/system',
+        'cd /userdata/system', 'Set-Location "$env:USERPROFILE\\Downloads\\VirtualGlove"',
+    )
+    for value in required_install_text:
+        if value not in install:
+            errors.append(f"Installation Guide is missing copyable working-directory step: {value}")
+
+
+def check_enclosure_packages(errors: list[str]) -> None:
+    """Require every print file to be classified and every design ZIP to be bounded."""
+    root = ROOT / "hardware/enclosures"
+    try:
+        data = json.loads((root / "enclosure-files.json").read_text())
+        shared = data["shared"]
+        branding = data["branding"]
+        designs = data["designs"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        errors.append(f"cannot read enclosure manifest: {exc}")
+        return
+    classified = {
+        value for value in shared.values() if str(value).startswith("stl/")
+    }
+    for group in branding.values():
+        classified.update(group)
+    for design in designs.values():
+        classified.update(design["structural"])
+    present = {
+        "stl/" + path.name for path in (root / "stl").iterdir()
+        if path.suffix.lower() in (".stl", ".3mf")
+    }
+    for name in sorted(present - classified):
+        errors.append(f"enclosure print file is not classified: {name}")
+    for name in sorted(classified - present):
+        errors.append(f"classified enclosure print file is missing: {name}")
+    for design in designs.values():
+        path = root / "bundles" / design["archive"]
+        if not path.is_file():
+            errors.append(f"missing enclosure bundle: {path.relative_to(ROOT)}")
+            continue
+        with zipfile.ZipFile(path) as package:
+            names = set(package.namelist())
+        if "PARTS.txt" not in names:
+            errors.append(f"enclosure bundle has no PARTS.txt: {path.name}")
+        if any("target-badge" in name for name in names):
+            errors.append(f"large decorative badge must not be in lid bundle: {path.name}")
+        expected_structural = {"structural/" + Path(name).name
+                               for name in design["structural"]}
+        if not expected_structural <= names:
+            errors.append(f"enclosure bundle has incomplete structural set: {path.name}")
 
 
 def check_native_component_record(errors: list[str]) -> None:
@@ -166,6 +268,21 @@ def tracked_markdown() -> list[Path]:
     return sorted(Path(name) for name in output if name and (ROOT / name).is_file())
 
 
+def check_canadian_english(markdown: list[Path], errors: list[str]) -> None:
+    """Reject American spellings in published prose while preserving technical names."""
+    for path in markdown:
+        source = (ROOT / path).read_text()
+        source = re.sub(r"```.*?```", " ", source, flags=re.DOTALL)
+        source = re.sub(r"`[^`\n]*`", " ", source)
+        source = re.sub(r"<[^>]+>", " ", source)
+        match = AMERICAN_PUBLIC_SPELLING.search(source)
+        if match:
+            line = source.count("\n", 0, match.start()) + 1
+            errors.append(
+                f"American spelling in public prose: {path}:{line}: {match.group(0)}"
+            )
+
+
 def local_targets(path: Path) -> list[Path]:
     """Extract repository-local Markdown and HTML link targets from one document."""
     text = (ROOT / path).read_text()
@@ -207,12 +324,13 @@ def check_pdfs(errors: list[str]) -> None:
 
 def check_help_coverage(markdown: list[Path], errors: list[str]) -> None:
     """Require every portable guide to appear in the built-in Help library."""
-    source = (ROOT / "src" / "powerglove_vision" / "help_content.py").read_text()
+    source = (ROOT / "src" / "virtualglove" / "help_content.py").read_text()
     help_files = set(HELP_FILE.findall(source))
     portable_guides = {
         path.name
         for path in markdown
-        if path.parent == Path("docs") and path.name != "cheatsheet.md"
+        if (path.parent == Path("docs") and path.name != "cheatsheet.md"
+            and path not in ARCHIVED_DOCUMENTS)
     }
     for name in sorted(portable_guides - help_files):
         errors.append(f"public guide is missing from the Help library: docs/{name}")
@@ -231,6 +349,13 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     title_aliases = {
         "1943 - The Battle of Midway": "1943",
         "Iron Tank - The Invasion of Normandy": "Iron Tank",
+        "Legend of Zelda II, The - The Adventure of Link": "Zelda II - The Adventure of Link",
+        "Life Force - Salamander": "Life Force",
+        "Sesame Street ABC & 123": "Sesame Street 1-2-3",
+        "Super Mario Bros. + Duck Hunt": "Super Mario Bros.",
+        "Super Mario Bros. + Duck Hunt + World Class Track Meet": "Super Mario Bros.",
+        "Super Mario Bros. + Tetris + Nintendo World Cup": "Super Mario Bros.",
+        "Xevious - The Avenger": "Xevious",
     }
     def normalize_title(value):
         """Normalize registered ROM filenames to handbook game titles."""
@@ -244,13 +369,13 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         "## How rapid fire behaves",
         "## Program cards 1–14",
         "### Program 1 - positional control",
-        "### Program 2 - positional control with centering feedback",
+        "### Program 2 - positional control with centring feedback",
         "### Program 3 - depth and side movement",
         "### Program 4 - Iron Tank tread control",
         "### Program 5 - aircraft control",
         "### Program 6 - Double Dragon combinations",
-        "### Program 7 - Punch-Out!! offense and defense",
-        "### Program 8 - baseball offense and defense",
+        "### Program 7 - Punch-Out!! offence and defence",
+        "### Program 8 - baseball offence and defence",
         "### Program 9 - Rad Racer",
         "### Program 10 - R.C. Pro-Am",
         "### Program 11 - rapid turn alternative",
@@ -302,8 +427,8 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     compound_art = {
         "images/gestures/v2/push-closed-fist.png": "closed-fist push",
         "images/gestures/v2/pull-closed-fist.png": "closed-fist pull",
-        "images/gestures/v2/push-closed-fist-right.png": "right-of-center fist push",
-        "images/gestures/v2/push-closed-fist-left.png": "left-of-center fist push",
+        "images/gestures/v2/push-closed-fist-right.png": "right-of-centre fist push",
+        "images/gestures/v2/push-closed-fist-left.png": "left-of-centre fist push",
     }
     for image, label in compound_art.items():
         if image not in gameplay:
@@ -332,7 +457,7 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         if profile_row not in gameplay:
             errors.append(f"cartridge Program {letter.upper()} profile preview is missing")
     for profile in (
-        "2 - Centering coach", "11 - Fast turn", "13 - Finger buttons",
+        "2 - Centring coach", "11 - Fast turn", "13 - Finger buttons",
         "A - Pinball", "D - Mirror world", "H - General play",
     ):
         if f"| **{profile}** |" not in gameplay:
@@ -373,6 +498,9 @@ def main() -> int:
 
     check_help_coverage(markdown, errors)
     check_gameplay_coverage(errors)
+    check_release_facts(markdown, errors)
+    check_canadian_english(markdown, errors)
+    check_enclosure_packages(errors)
 
     reference = (ROOT / "docs" / "CONFIGURATION_REFERENCE.md").read_text()
     for name in CONFIGURATION_FILES:
@@ -384,7 +512,9 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             errors.append(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
 
-    markdown_sources = {str(path) for path in markdown}
+    markdown_sources = {
+        str(path) for path in markdown if path not in ARCHIVED_DOCUMENTS
+    }
     missing_sources = sorted(set(PDF_EDITIONS) - markdown_sources)
     for name in missing_sources:
         errors.append(f"PDF source is not available Markdown: {name}")

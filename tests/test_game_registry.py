@@ -17,11 +17,12 @@ from http.server import HTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
-from powerglove_vision.game_registry import (
+from virtualglove.game_registry import (
     PROTOCOL, RegistryStore, RegistryService, validate_document,
     make_registry_handler, registry_request,
 )
-from powerglove_vision.profile_control import sign_message, verify_message
+from virtualglove.profile_control import sign_message, verify_message
+from virtualglove.controller_router import RouterService, router_request
 
 ORIGINAL = '{"games":{"Joust (USA).7z":"program_b"}}'
 CHANGED = '{"games":{"Joust (USA).7z":"program_h"}}'
@@ -73,7 +74,7 @@ class RegistryTests(unittest.TestCase):
             if Path(target) == self.path:
                 raise OSError('simulated full disk')
             real_replace(source, target)
-        with patch('powerglove_vision.game_registry.os.replace', side_effect=fail_current):
+        with patch('virtualglove.game_registry.os.replace', side_effect=fail_current):
             with self.assertRaises(OSError):
                 self.store.operate('save', {'document': CHANGED, 'revision': self.store.snapshot()['revision']})
         self.assertEqual(self.path.read_text(), ORIGINAL)
@@ -122,7 +123,27 @@ class RegistryTests(unittest.TestCase):
         finally:
             server.shutdown(); server.server_close(); thread.join()
 
+    def test_inputs_endpoint_uses_separate_authenticated_protocol(self):
+        class InputStore:
+            def operate(self, operation, payload):
+                return {"operation": operation, "watch_ms": payload.get("watch_ms", 0)}
+
+        inputs = RouterService(InputStore(), self.token_path, lambda: self.now)
+        server = HTTPServer(('127.0.0.1', 0), make_registry_handler(self.service, inputs))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            settings = {'receiver': '127.0.0.1', 'token': self.token}
+            result = router_request(settings, 'check', {'watch_ms': 750},
+                                    port=server.server_address[1])
+            self.assertEqual(result, {"operation": "check", "watch_ms": 750})
+            with self.assertRaises(ValueError):
+                router_request(dict(settings, token='wrong-secret-token'), 'read',
+                               port=server.server_address[1])
+        finally:
+            server.shutdown(); server.server_close(); thread.join()
+
     def test_offline_client_preserves_actionable_error(self):
-        with patch('powerglove_vision.game_registry.urllib.request.OpenerDirector.open', side_effect=OSError):
-            with self.assertRaisesRegex(ValueError, 'update RetroPie setup'):
+        with patch('virtualglove.game_registry.urllib.request.OpenerDirector.open', side_effect=OSError):
+            with self.assertRaisesRegex(ValueError, 'update its VirtualGlove setup'):
                 registry_request({'receiver':'127.0.0.1', 'token':self.token}, 'read')

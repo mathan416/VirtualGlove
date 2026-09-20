@@ -24,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
-    versioning = runpy.run_path(str(root / "src/powerglove_vision/versioning.py"))
+    versioning = runpy.run_path(str(root / "src/virtualglove/versioning.py"))
     identity = versioning["exact_build_identity"](root)
     if identity["branch"] == "unknown":
         raise SystemExit("Cannot identify source branch; build from a Git checkout or a named CI branch.")

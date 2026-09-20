@@ -13,7 +13,7 @@ from pathlib import Path
 import struct
 import unittest
 
-from powerglove_vision.native_state import encode_record
+from virtualglove.native_state import encode_record
 
 spec = importlib.util.spec_from_file_location("dot_input", Path(__file__).resolve().parents[1] / "scripts/measure-dot-input.py")
 dot = importlib.util.module_from_spec(spec)

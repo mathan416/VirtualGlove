@@ -14,12 +14,12 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from powerglove_vision.tuning import (
+from virtualglove.tuning import (
     TuningManager, suggest, CHANNELS, REACH_DIRECTIONS, validate_overrides, tuning_recipe,
 )
-from powerglove_vision.gesture import GestureConfig, GestureEngine, SUPPORTED_PROFILES, MENU_FINGERS, finger_pose_feedback
-from powerglove_vision.model import Calibration, HandObservation
-from powerglove_vision.debug_server import SharedDebugState
+from virtualglove.gesture import GestureConfig, GestureEngine, SUPPORTED_PROFILES, MENU_FINGERS, finger_pose_feedback
+from virtualglove.model import Calibration, HandObservation
+from virtualglove.debug_server import SharedDebugState
 
 
 class TuningTests(unittest.TestCase):
@@ -180,14 +180,14 @@ class TuningTests(unittest.TestCase):
         original = self.path.read_text()
         for pair in ({'on':.2,'off':.3}, {'on':float('nan'),'off':.1}, {'on':True,'off':0}, {'on':1.1,'off':.2}):
             with self.assertRaises(ValueError): validate_overrides({'index':pair})
-        with patch('powerglove_vision.game_registry.atomic_write', side_effect=OSError):
+        with patch('virtualglove.game_registry.atomic_write', side_effect=OSError):
             with self.assertRaises(OSError): self.command('save', thresholds={'index':{'on':.8,'off':.6}})
         self.assertEqual(self.path.read_text(), original)
         self.assertEqual(self.manager.saved['index']['on'], .3)
 
     def test_reach_save_changes_only_reach_and_restores_after_restart(self):
         from dataclasses import asdict
-        from powerglove_vision.gesture import load_calibration, save_calibration
+        from virtualglove.gesture import load_calibration, save_calibration
         reference = Calibration(.5, .5, .2, .3, .01, .02, .3, .25, .4, .35)
         save_calibration(self.path.with_name('calibration.json'), reference)
         self.manager.calibration = reference
@@ -209,7 +209,7 @@ class TuningTests(unittest.TestCase):
             self.assertEqual(actual[name], original[name])
 
     def test_reach_reset_preserves_calibration_and_rejects_bad_values(self):
-        from powerglove_vision.gesture import save_calibration
+        from virtualglove.gesture import save_calibration
         reference = Calibration(.5, .5, .2, .3, .01, .02, .3, .25, .4, .35)
         save_calibration(self.path.with_name('calibration.json'), reference)
         self.manager.calibration = reference
@@ -235,12 +235,12 @@ class TuningTests(unittest.TestCase):
         )
 
     def test_failed_or_concurrent_reach_save_is_non_mutating(self):
-        from powerglove_vision.gesture import save_calibration
+        from virtualglove.gesture import save_calibration
         reference = Calibration(.5, .5, .2, 0)
         save_calibration(self.path.with_name('calibration.json'), reference)
         self.manager.calibration = reference
         values = {'left': .2, 'right': .2, 'up': .2, 'down': .2}
-        with patch('powerglove_vision.game_registry.atomic_write', side_effect=OSError('disk full')):
+        with patch('virtualglove.game_registry.atomic_write', side_effect=OSError('disk full')):
             with self.assertRaises(OSError):
                 self.command('reach_save', reach=values)
         self.assertIsNone(self.manager.players.data['calibration_restore'])
@@ -251,7 +251,7 @@ class TuningTests(unittest.TestCase):
             self.manager.command({'action': 'reach_reset', 'session': 'another-session'})
 
     def test_reach_is_isolated_per_player_and_included_in_backup(self):
-        from powerglove_vision.gesture import save_calibration
+        from virtualglove.gesture import save_calibration
         first = Calibration(.5, .5, .2, 0, reach_left=.2, reach_right=.2,
                             reach_up=.2, reach_down=.2)
         save_calibration(self.path.with_name('calibration.json'), first)
@@ -392,7 +392,7 @@ class TuningTests(unittest.TestCase):
                     self.manager.observe(hand, self.calibration, cfg, True)
                     self.assertEqual(self.manager.snapshot()['finger_feedback'], feedback)
 
-    def test_hand_setup_recognizes_personal_extension_above_default_cutoff(self):
+    def test_hand_setup_recognises_personal_extension_above_default_cutoff(self):
         phases = self.phases()
         for i, phase in enumerate(phases):
             for sample in phase:

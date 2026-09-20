@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: scripts/setup-machine.py
-# Purpose: Install or check UNO Q and RetroPie integration without replacing private settings.
+# Purpose: Install or check Controller and supported-console integration without replacing private settings.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-09-19 - Kept RetroPie Controller Router available before receiver startup.
 #   2026-09-11 - Adopted the virtualglove App Lab directory and conditional legacy repair.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
 #   2026-09-11 - Exposed the stable host name to the containerized HTTPS server.
@@ -20,11 +21,13 @@
 #   2026-09-03 - Install and check mDNS dependencies and boot service on both machines.
 #   2026-09-04 - Repaired persistent profile transport and asynchronous queue acknowledgements.
 
-"""Run on the target Linux host: setup-machine.py {retropie,uno-q} [--check]."""
+"""Install or check VirtualGlove on a supported Controller or console host."""
 import argparse
 import datetime
+import hashlib
 import json
 import os
+import platform
 import pwd
 import grp
 import re
@@ -40,6 +43,12 @@ from pathlib import Path
 SOURCE = Path(__file__).resolve().parents[1]
 UNOQ_APP = "/home/arduino/ArduinoApps/virtualglove"
 BACKUPS = Path("/var/backups/virtualglove") / datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+if Path("/recalbox/recalbox.version").is_file():
+    BACKUPS = (Path("/recalbox/share/system/virtualglove-backups") /
+               datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+elif Path("/usr/share/batocera/batocera.version").is_file():
+    BACKUPS = (Path("/userdata/system/virtualglove-backups") /
+               datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
 
 
 def installation_manifest():
@@ -51,6 +60,42 @@ def installation_manifest():
 def run(*args):
     """Run one installation step and stop on failure without invoking a shell."""
     subprocess.run(list(map(str, args)), check=True)
+
+
+def runtime_module_processes(prefixes, proc_root=Path("/proc")):
+    """Return exact managed module processes, without matching shell command text."""
+    modules = {prefix.encode() + name.encode() for prefix in prefixes for name in (
+        "merged_gamepad", "controller_router", "game_registry", "console_monitor", "receiver",
+        "vision_app", "profile_control",
+    )}
+    found = []
+    try:
+        processes = proc_root.iterdir()
+    except OSError:
+        return found
+    for process in processes:
+        if not process.name.isdigit():
+            continue
+        try:
+            arguments = (process / "cmdline").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        for index, argument in enumerate(arguments[:-1]):
+            if argument == b"-m" and arguments[index + 1] in modules:
+                found.append(int(process.name))
+                break
+    return sorted(found)
+
+
+def retired_runtime_processes(proc_root=Path("/proc")):
+    """Return only known pre-0.5.0 module processes."""
+    return runtime_module_processes(["power" + "glove_vision."], proc_root)
+
+
+def managed_runtime_processes(proc_root=Path("/proc")):
+    """Return current and retired managed runtime processes."""
+    return runtime_module_processes(
+        ["virtualglove.", "power" + "glove_vision."], proc_root)
 
 
 def write_file(path, content, mode=0o644, preserve=False):
@@ -78,6 +123,17 @@ def write_file(path, content, mode=0o644, preserve=False):
         owner = path.stat()
         os.chown(str(temporary), owner.st_uid, owner.st_gid)
     os.replace(str(temporary), str(path))
+
+
+def backup_file(path):
+    """Make one recovery copy before a runtime helper updates a managed setting."""
+    path = Path(path)
+    if not path.is_file() or path.is_symlink():
+        return
+    backup = BACKUPS / str(path).lstrip("/")
+    if not backup.exists():
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(path), str(backup))
 
 
 def hook_content(text, action):
@@ -171,21 +227,35 @@ def install_retropie(peer):
         installation_manifest()["apply"](SOURCE, destination, BACKUPS / "application-payload", names)
     for source in (SOURCE / "retropie/bin").iterdir():
         write_file(Path("/opt/virtualglove/bin") / source.name, source.read_bytes(), 0o755)
+    write_file("/usr/local/bin/virtualglove-controller-router",
+               "#!/bin/sh\nexec /opt/virtualglove/bin/virtualglove-controller-router \"$@\"\n",
+               0o755)
     for action in ("start", "end"):
         (destination / ("retropie/runcommand-on" + action + "-virtualglove.sh")).chmod(0o755)
     write_file("/etc/virtualglove/games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
     config = json.loads((SOURCE / "config/launcher.example.json").read_text())
     config["uno_q"] = peer
-    write_file(launcher, json.dumps(config, indent=2) + "\n", preserve=True)
+    config["controller_router"] = controller_router_settings("retropie")
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = config["controller_router"]
+        config = existing
+    write_file(launcher, json.dumps(config, indent=2) + "\n")
     # Never truncate an existing token. Empty means pairing is still required.
     token = Path("/etc/virtualglove/token")
     write_file(token, b"", 0o640, preserve=True)
     token.chmod(0o640)
     os.chown(str(token), 0, grp.getgrnam("input").gr_gid)
-    for unit in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service"):
+    for unit in ("virtualglove-receiver.service", "virtualglove-receiver.timer", "virtualglove-games.service",
+                 "virtualglove-controller-router.service"):
         write_file(Path("/etc/systemd/system") / unit, (SOURCE / "retropie" / unit).read_bytes())
     profile = "VirtualGlove.cfg"
-    write_file(base / "retroarch/autoconfig" / profile, (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
+    write_file(base / "retroarch/autoconfig" / profile,
+               (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
+    for player in range(1, 5):
+        profile = "VirtualGlove Merged Player %d.cfg" % player
+        write_file(base / "retroarch/autoconfig/udev" / profile,
+                   (SOURCE / "retropie/retroarch" / profile).read_bytes())
     for path, content in hooks:
         write_file(path, content, 0o755)
         path.chmod(path.stat().st_mode | 0o111)
@@ -197,6 +267,10 @@ def install_retropie(peer):
     run("systemctl", "daemon-reload")
     run("systemctl", "enable", "--now", "virtualglove-games.service")
     run("systemctl", "restart", "virtualglove-games.service")
+    router_config = Path("/etc/virtualglove/controller-router.json")
+    if router_config.is_file():
+        run("systemctl", "enable", "--now", "virtualglove-controller-router.service")
+        run("systemctl", "restart", "virtualglove-controller-router.service")
     run("systemctl", "disable", "virtualglove-receiver.service")
     if len(token.read_text().strip()) >= 16:
         run("systemctl", "restart", "virtualglove-receiver.service")
@@ -215,6 +289,54 @@ def install_wifi_status():
     run("systemctl", "daemon-reload")
     run("systemctl", "enable", "--now", "virtualglove-wifi-status.timer")
     run("systemctl", "start", "virtualglove-wifi-status.service")
+
+
+def retire_unoq_legacy_runtime_names():
+    """Disable and remove the exact host helpers shipped before VirtualGlove 0.5."""
+    system_units = (
+        "powerglove-system-shutdown.path",
+        "powerglove-camera-recovery.path",
+        "powerglove-wifi-status.timer",
+    )
+    service_units = (
+        "powerglove-system-shutdown.service",
+        "powerglove-camera-recovery.service",
+        "powerglove-wifi-status.service",
+    )
+    unit_directory = Path("/etc/systemd/system")
+    for name in system_units:
+        path = unit_directory / name
+        if path.exists() or path.is_symlink():
+            run("systemctl", "disable", "--now", name)
+    for name in service_units:
+        path = unit_directory / name
+        if path.exists() or path.is_symlink():
+            run("systemctl", "stop", name)
+
+    for path in [unit_directory / name for name in system_units + service_units] + [
+        Path("/etc/tmpfiles.d/powerglove-system-shutdown.conf"),
+        Path("/etc/tmpfiles.d/powerglove-camera-recovery.conf"),
+        Path("/usr/local/libexec/powerglove-camera-recovery"),
+        Path("/usr/local/libexec/powerglove-wifi-status"),
+    ]:
+        if path.exists() or path.is_symlink():
+            path.unlink()
+
+    user = pwd.getpwnam("arduino")
+    home = Path(user.pw_dir)
+    old_user_unit = home / ".config/systemd/user/powerglove-early-start.service"
+    if old_user_unit.exists() or old_user_unit.is_symlink():
+        run(*user_systemctl("disable", "--now", "powerglove-early-start.service"))
+        old_user_unit.unlink()
+    old_user_helper = home / ".local/lib/powerglove/uno-q-early-start.py"
+    if old_user_helper.exists() or old_user_helper.is_symlink():
+        old_user_helper.unlink()
+    old_user_directory = old_user_helper.parent
+    if old_user_directory.is_dir() and not any(old_user_directory.iterdir()):
+        old_user_directory.rmdir()
+
+    run("systemctl", "daemon-reload")
+    run(*user_systemctl("daemon-reload"))
 
 
 def install_unoq_runtime_names():
@@ -249,6 +371,7 @@ def install_unoq_runtime_names():
     run("systemctl", "enable", "--now", "virtualglove-camera-recovery.path")
     install_early_start()
     install_wifi_status()
+    retire_unoq_legacy_runtime_names()
 
 
 def install_unoq(peer):
@@ -331,6 +454,7 @@ def install_early_start():
     if trial.exists():
         run(*user_systemctl("disable", "virtualglove-early-start-trial.service"))
     run(*user_systemctl("enable", "virtualglove-early-start.service"))
+    run(*user_systemctl("reset-failed", "virtualglove-early-start.service"))
     print("PASS  Early-start helper installed for the next boot; existing sketch animation preserved.")
 
 
@@ -367,7 +491,7 @@ def registered_roms():
 
 
 def configure_games(confirm):
-    """Prepare FCEUmm games and offer the optional source-built native core."""
+    """Prepare FCEUmm games and install or refresh the optional native core."""
     prefix = Path("/opt/retropie")
     core = prefix / "libretrocores/lr-fceumm/fceumm_libretro.so"
     retroarch = prefix / "emulators/retroarch/bin/retroarch"
@@ -386,13 +510,20 @@ def configure_games(confirm):
     roms = registered_roms()
     super_glove_ball_roms = [rom for rom, profile in roms if profile == "super_glove_ball"]
     native = prefix / "libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so"
-    if super_glove_ball_roms and not native.is_file():
-        prompt = ("Build and register optional lr-nestopia-powerglove for Super Glove Ball? "
-                  "This installs build tools and downloads pinned GPLv2 source")
-        if confirm(prompt):
-            run("apt-get", "install", "-y", "git", "build-essential")
-            with tempfile.TemporaryDirectory(prefix="powerglove-nestopia-", dir="/var/tmp") as build:
-                run("bash", SOURCE / "scripts/install-nestopia-powerglove.sh", build)
+    install_native = bool(super_glove_ball_roms and native.is_file())
+    if super_glove_ball_roms and not install_native:
+        install_native = confirm(
+            "Install and register optional lr-nestopia-powerglove for Super Glove Ball? "
+            "This uses the verified core packaged for this RetroPie architecture"
+        )
+    if install_native:
+        try:
+            run("bash", SOURCE / "scripts/install-nestopia-powerglove.sh")
+        except subprocess.CalledProcessError as error:
+            if error.returncode not in (3, 4):
+                raise
+            print("ACTION  The packaged native core was not compatible. "
+                  "The existing installation was preserved and FCEUmm remains available.")
     if super_glove_ball_roms and native.is_file():
         selector = runpy.run_path(str(SOURCE / "scripts/configure-super-glove-ball-core.py"))
         system_path, system_text, option_path, option_text = selector["native_registration"](prefix)
@@ -450,6 +581,412 @@ def configure_games(confirm):
             print("ACTION  " + str(error))
 
 
+def recalbox_custom_hook(text):
+    """Add the persistent service hook without replacing user startup commands."""
+    command = 'sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service "$1"'
+    if any(command in line and not line.lstrip().startswith("#")
+           for line in text.splitlines()):
+        return text
+    block = "# VirtualGlove managed service hook\n" + command + " || true\n"
+    if text.startswith("#!"):
+        first, _, rest = text.partition("\n")
+        return first + "\n" + block + rest
+    return "#!/bin/sh\n" + block + text
+
+
+def merged_controller_module():
+    """Load the shared dependency-free merged-controller implementation."""
+    if str(SOURCE / "src") not in sys.path:
+        sys.path.insert(0, str(SOURCE / "src"))
+    from virtualglove import merged_gamepad
+    return merged_gamepad
+
+
+def controller_router_module():
+    """Load the shared Player 1-4 Controller Router implementation."""
+    if str(SOURCE / "src") not in sys.path:
+        sys.path.insert(0, str(SOURCE / "src"))
+    from virtualglove import controller_router
+    return controller_router
+
+
+def merged_controller_paths(platform):
+    """Return the platform's frontend map and saved Player 1 record paths."""
+    if platform == "recalbox":
+        return (Path("/recalbox/share/system/.emulationstation/es_input.cfg"),
+                Path("/recalbox/share/system/virtualglove/data/player1-controller.json"))
+    return (Path("/userdata/system/configs/emulationstation/es_input.cfg"),
+            Path("/userdata/system/virtualglove/data/player1-controller.json"))
+
+
+def list_player1_devices(platform):
+    """Print stable configured-gamepad identifiers for unattended installation."""
+    merged = merged_controller_module()
+    es_inputs, _config = merged_controller_paths(platform)
+    candidates = merged.controller_candidates(es_inputs)
+    if not candidates:
+        raise ValueError("no connected configured gamepads were found")
+    for item in candidates:
+        print(item["id"] + "  " + item["name"])
+
+
+def configure_merged_player1(platform, requested=None):
+    """Preserve or explicitly select the physical source for merged Player 1."""
+    merged = merged_controller_module()
+    es_inputs, config = merged_controller_paths(platform)
+    if config.is_file() and requested is None:
+        saved = merged.load_controller(config)
+        if saved["platform"] != platform:
+            raise ValueError(
+                "saved Player 1 controller belongs to " + saved["platform"] +
+                "; select this console's controller with --player1-device")
+        connected = merged.find_saved_controller(
+            saved, merged.controller_candidates(es_inputs))
+        if connected is not None and connected["mapping"] != saved["mapping"]:
+            saved["mapping"] = connected["mapping"]
+            write_file(config, json.dumps(saved, indent=2) + "\n")
+        selected = saved
+        router = controller_router_module()
+        router.migrate_player1(config, config.with_name(router.CONFIG_NAME), platform)
+        return selected
+    candidate = merged.choose_controller(
+        merged.controller_candidates(es_inputs), requested=requested)
+    data = {"format": merged.FORMAT, "platform": platform,
+            **{key: candidate.get(key, "") for key in
+               ("id", "name", "guid", "vendor", "product", "version", "uniq", "phys")},
+            "mapping": candidate["mapping"]}
+    write_file(config, json.dumps(data, indent=2) + "\n")
+    router = controller_router_module()
+    router_path = config.with_name(router.CONFIG_NAME)
+    if requested is not None or not router_path.exists():
+        routed = router.validate_config({
+            "format": router.FORMAT, "platform": platform,
+            "players": [{"player": 1, "sources": [data]}],
+            "virtualglove_player": 1,
+            "physical_scope": "all",
+        })
+        write_file(router_path, json.dumps(routed, indent=2) + "\n")
+    return data
+
+
+def controller_router_settings(platform):
+    """Return trusted console-local paths exposed through the paired inputs API."""
+    if platform == "recalbox":
+        root = Path("/recalbox/share/system/virtualglove")
+        return {"path": str(root / "data/controller-router.json"), "platform": platform,
+                "es_inputs": "/recalbox/share/system/.emulationstation/es_input.cfg",
+                "retroarch_config": "/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"}
+    if platform == "batocera":
+        root = Path("/userdata/system/virtualglove")
+        return {"path": str(root / "data/controller-router.json"), "platform": platform,
+                "es_inputs": "/userdata/system/configs/emulationstation/es_input.cfg",
+                "retroarch_config": "/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"}
+    return {"path": "/etc/virtualglove/controller-router.json", "platform": "retropie",
+            "es_inputs": "/opt/retropie/configs/all/emulationstation/es_input.cfg",
+            "retroarch_config": "/opt/retropie/configs/all/retroarch/config/FCEUmm/FCEUmm.cfg"}
+
+
+def install_recalbox(peer, player1_device=None):
+    """Install into Recalbox's persistent share without modifying its read-only OS."""
+    version_file = Path("/recalbox/recalbox.version")
+    if not version_file.is_file():
+        raise ValueError("This target is not Recalbox")
+    version = version_file.read_text().strip()
+    if not re.fullmatch(r"10(?:\.[0-9]+)+", version):
+        raise ValueError("Recalbox 10.x is required; found " + version)
+    if subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL).returncode == 0:
+        raise ValueError("Close the running game before installing VirtualGlove")
+    if not Path("/dev/uinput").exists() or not Path("/usr/lib/libretro/fceumm_libretro.so").is_file():
+        raise ValueError("Recalbox uinput and FCEUmm are required")
+
+    destination = Path("/recalbox/share/system/virtualglove")
+    architecture = Path("/recalbox/recalbox.arch").read_text().strip()
+    native_manifest = SOURCE / "native/recalbox/manifest.json"
+    native_names = [str(path.relative_to(SOURCE))
+                    for path in (SOURCE / "native/nestopia-powerglove").rglob("*")
+                    if path.is_file()]
+    if native_manifest.is_file():
+        native_names.append(str(native_manifest.relative_to(SOURCE)))
+        native_data = json.loads(native_manifest.read_text())
+        verifier = SOURCE / "scripts/verify-recalbox-native-core.py"
+        resolved = subprocess.run(
+            ["python3", str(verifier), "--manifest", str(native_manifest),
+             "--arch", architecture, "--version", version, "--resolve-core"],
+            check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True)
+        if resolved.returncode == 0 and resolved.stdout.strip():
+            candidate = Path(resolved.stdout.strip())
+            selected_version = candidate.parent.name
+            native_entry = native_data["cores"][architecture][selected_version]
+            subprocess.run(["python3", str(verifier), "--manifest", str(native_manifest),
+                            "--core", str(candidate), "--arch", architecture,
+                            "--version", version, "--load"],
+                           check=True)
+            native_names.append(str(candidate.relative_to(SOURCE)))
+            source_archive = native_manifest.parent / native_entry["source_file"]
+            native_names.append(str(source_archive.relative_to(SOURCE)))
+        else:
+            print("ACTION  No compatible native Super Glove Ball core is packaged for Recalbox " +
+                  version + " target " + architecture + "; FCEUmm remains available.")
+    names = [str(path.relative_to(SOURCE))
+             for directory in ("src", "recalbox", "config", "scripts", "python")
+             for path in (SOURCE / directory).rglob("*")
+             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"]
+    names += native_names
+    names += [name for name in ("install-release.json", "LICENSE", "THIRD_PARTY_NOTICES.md")
+              if (SOURCE / name).is_file()]
+    if SOURCE.resolve() != destination.resolve():
+        installation_manifest()["apply"](
+            SOURCE, destination, BACKUPS / "application-payload", names)
+    data = destination / "data"
+    data.mkdir(parents=True, exist_ok=True)
+    write_file(data / "games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
+    launcher = data / "launcher.json"
+    settings = json.loads((SOURCE / "config/launcher.example.json").read_text())
+    settings.update({
+        "uno_q": peer,
+        "token_file": str(data / "token"),
+        "registry": str(data / "games.json"),
+        "controller_router": controller_router_settings("recalbox"),
+    })
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = settings["controller_router"]
+        settings = existing
+    write_file(launcher, json.dumps(settings, indent=2) + "\n")
+    write_file(data / "token", b"", preserve=True)
+    configure_merged_player1("recalbox", player1_device)
+
+    service = destination / "recalbox/virtualglove-service"
+    write_file(destination / "scripts/virtualglove-controller-router",
+               (SOURCE / "scripts/virtualglove-controller-router").read_bytes(), 0o755)
+    custom = Path("/recalbox/share/system/custom.sh")
+    write_file(custom, recalbox_custom_hook(
+        custom.read_text() if custom.exists() else ""), 0o755)
+    custom.chmod(0o755)
+    backup_file("/recalbox/share/system/configs/retroarch/nes.cfg")
+    backup_file("/recalbox/share/roms/.retroarch.cfg")
+    backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
+    backup_file("/recalbox/share/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
+    run("sh", service, "restart")
+
+
+def check_recalbox(report):
+    """Check only persistent Recalbox integration and active processes."""
+    root = Path("/recalbox/share/system/virtualglove")
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
+    report.check("Recalbox 10.x detected", Path("/recalbox/recalbox.version").is_file() and
+                 Path("/recalbox/recalbox.version").read_text().strip().startswith("10."))
+    report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
+    report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
+    report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
+    report.check("Stock Nestopia core installed",
+                 Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
+    controller = root / "data/player1-controller.json"
+    try:
+        merged = merged_controller_module()
+        selected = merged.load_controller(controller)
+        report.check("Physical Player 1 selected", bool(selected.get("name")))
+        report.check("Physical Player 1 connected", merged.find_saved_controller(
+            selected, merged.input_devices()) is not None, pending=True)
+        index = merged.merged_joypad_index()
+        report.check("Merged Player 1 gamepad available", index is not None)
+        for core in ("FCEUmm", "Nestopia"):
+            nes_text = Path(
+                "/recalbox/share/system/configs/retroarch/config/%s/%s.cfg" %
+                (core, core)).read_text()
+            report.check("%s uses merged Player 1" % core, index is not None and
+                         ('input_player1_joypad_index = "%d"' % index) in nes_text)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Merged Player 1 configuration", False)
+    try:
+        router = controller_router_module()
+        routed = router.load_config(root / "data/controller-router.json")
+        players = router.enabled_players(routed)
+        indexes = router.output_indexes(players)
+        report.check("Controller Router configuration", routed["platform"] == "recalbox")
+        report.check("Controller Router outputs available", len(indexes) == len(players))
+        overrides = Path("/recalbox/share/roms/.retroarch.cfg")
+        override_text = overrides.read_text() if overrides.is_file() else ""
+        report.check("Persistent Libretro routing override",
+                     all(('input_player%d_joypad_index = "%d"' % (player, index))
+                         in override_text for player, index in indexes.items()))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Controller Router configuration", False)
+    native_manifest = root / "native/recalbox/manifest.json"
+    native = None
+    if native_manifest.is_file():
+        resolved = subprocess.run(
+            ["python3", str(root / "scripts/verify-recalbox-native-core.py"),
+             "--manifest", str(native_manifest), "--arch",
+             Path("/recalbox/recalbox.arch").read_text().strip(), "--version",
+             Path("/recalbox/recalbox.version").read_text().strip(), "--resolve-core"],
+            check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True)
+        if resolved.returncode == 0 and resolved.stdout.strip():
+            native = Path(resolved.stdout.strip())
+    report.check("Optional Nestopia (VirtualGlove) core",
+                 bool(native and native.is_file()), pending=not (native and native.is_file()))
+    report.check("Boot hook installed", "virtualglove-service" in
+                 (Path("/recalbox/share/system/custom.sh").read_text()
+                  if Path("/recalbox/share/system/custom.sh").is_file() else ""))
+    service = root / "recalbox/virtualglove-service"
+    token = root / "data/token"
+    if service.is_file():
+        paired = token.is_file() and len(token.read_text().strip()) >= 16
+        for process in ("game_registry", "console_monitor"):
+            report.check("Process running: " + process,
+                         subprocess.run(["sh", service, "status"], stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL).stdout.decode().find(
+                                            "RUNNING " + process) >= 0,
+                         pending=not paired)
+        status = subprocess.run(["sh", service, "status"], stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL).stdout.decode()
+        report.check("Process running: receiver", "RUNNING receiver" in status,
+                     pending=not paired)
+    else:
+        report.check("Recalbox VirtualGlove processes", False)
+    report.check("Complete authenticated pairing", token.is_file() and
+                 len(token.read_text().strip()) >= 16, pending=True)
+
+
+def batocera_version():
+    """Return Batocera's leading numeric release or zero when unavailable."""
+    try:
+        match = re.search(r"\d+", Path("/usr/share/batocera/batocera.version").read_text())
+        return int(match.group()) if match else 0
+    except OSError:
+        return 0
+
+
+def install_batocera(peer, player1_device=None):
+    """Install persistent Batocera service and game-event integrations."""
+    version = batocera_version()
+    if version < 38:
+        raise ValueError("Batocera 38 or newer is required")
+    if subprocess.run(["pgrep", "-x", "retroarch"], stdout=subprocess.DEVNULL).returncode == 0:
+        raise ValueError("Close the running game before installing VirtualGlove")
+    if not Path("/dev/uinput").exists() or not Path("/usr/lib/libretro/fceumm_libretro.so").is_file():
+        raise ValueError("Batocera uinput and FCEUmm are required")
+
+    destination = Path("/userdata/system/virtualglove")
+    names = [str(path.relative_to(SOURCE))
+             for directory in ("src", "recalbox", "batocera", "config", "scripts", "python",
+                               "native/batocera", "native/nestopia-powerglove")
+             for path in (SOURCE / directory).rglob("*")
+             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"]
+    names += [name for name in ("install-release.json", "LICENSE", "THIRD_PARTY_NOTICES.md")
+              if (SOURCE / name).is_file()]
+    if SOURCE.resolve() != destination.resolve():
+        installation_manifest()["apply"](
+            SOURCE, destination, BACKUPS / "application-payload", names)
+    data = destination / "data"
+    data.mkdir(parents=True, exist_ok=True)
+    write_file(data / "games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
+    launcher = data / "launcher.json"
+    settings = json.loads((SOURCE / "config/launcher.example.json").read_text())
+    settings.update({"uno_q": peer, "token_file": str(data / "token"),
+                     "registry": str(data / "games.json"),
+                     "controller_router": controller_router_settings("batocera")})
+    if launcher.exists():
+        existing = json.loads(launcher.read_text())
+        existing["controller_router"] = settings["controller_router"]
+        settings = existing
+    write_file(launcher, json.dumps(settings, indent=2) + "\n")
+    write_file(data / "token", b"", preserve=True)
+    configure_merged_player1("batocera", player1_device)
+
+    service = Path("/userdata/system/services/VirtualGlove")
+    event = Path("/userdata/system/scripts/virtualglove-game")
+    write_file(service, (destination / "batocera/VirtualGlove").read_bytes(), 0o755)
+    write_file(event, (destination / "batocera/virtualglove-game").read_bytes(), 0o755)
+    executables = [
+        service, event,
+        destination / "batocera/virtualglove-core-mount",
+        destination / "scripts/install-batocera-nestopia-powerglove.sh",
+        destination / "scripts/configure-batocera-super-glove-ball-core.py",
+        destination / "scripts/verify-batocera-native-core.py",
+    ]
+    write_file(destination / "scripts/virtualglove-controller-router",
+               (SOURCE / "scripts/virtualglove-controller-router").read_bytes(), 0o755)
+    executables.append(destination / "scripts/virtualglove-controller-router")
+    for executable in executables:
+        executable.chmod(0o755)
+    backup_file("/userdata/system/configs/retroarch/nes.cfg")
+    backup_file("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
+    backup_file("/userdata/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
+    backup_file("/userdata/system/batocera.conf")
+    run("batocera-services", "enable", "VirtualGlove")
+    subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
+    run("batocera-services", "start", "VirtualGlove")
+
+
+def check_batocera(report):
+    """Check persistent Batocera integration without inspecting private values."""
+    root = Path("/userdata/system/virtualglove")
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
+    report.check("Supported Batocera release", batocera_version() >= 38)
+    report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
+    report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
+    report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
+    report.check("Stock Nestopia core installed",
+                 Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
+    report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
+    report.check("Batocera game hook installed", Path("/userdata/system/scripts/virtualglove-game").is_file())
+    report.check("All Libretro systems use the merged controller",
+                 "## VirtualGlove Controller Router" in
+                 Path("/userdata/system/batocera.conf").read_text(errors="replace"), pending=True)
+    controller = root / "data/player1-controller.json"
+    try:
+        merged = merged_controller_module()
+        selected = merged.load_controller(controller)
+        report.check("Physical Player 1 selected", bool(selected.get("name")))
+        report.check("Physical Player 1 connected", merged.find_saved_controller(
+            selected, merged.input_devices()) is not None, pending=True)
+        index = merged.merged_joypad_index()
+        report.check("Merged Player 1 gamepad available", index is not None)
+        for core in ("FCEUmm", "Nestopia"):
+            nes_text = Path(
+                "/userdata/system/configs/retroarch/config/%s/%s.cfg" %
+                (core, core)).read_text()
+            report.check("%s uses merged Player 1" % core, index is not None and
+                         ('input_player1_joypad_index = "%d"' % index) in nes_text)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Merged Player 1 configuration", False)
+    try:
+        router = controller_router_module()
+        routed = router.load_config(root / "data/controller-router.json")
+        players = router.enabled_players(routed)
+        indexes = router.output_indexes(players)
+        report.check("Controller Router configuration", routed["platform"] == "batocera")
+        report.check("Controller Router outputs available", len(indexes) == len(players))
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        report.check("Controller Router configuration", False)
+    native = Path("/usr/lib/libretro/nestopia_powerglove_libretro.so")
+    native_info = Path("/usr/share/libretro/info/nestopia_powerglove_libretro.info")
+    report.check("Optional native Super Glove Ball core", native.is_file() and
+                 native_info.is_file(), pending=True)
+    manifest = root / "native/batocera/manifest.json"
+    resolved = None
+    if manifest.is_file() and Path("/usr/share/batocera/batocera.arch").is_file():
+        result = subprocess.run(
+            ["python3", str(root / "scripts/verify-batocera-native-core.py"),
+             "--manifest", str(manifest), "--arch",
+             Path("/usr/share/batocera/batocera.arch").read_text().strip(), "--version",
+             Path("/usr/share/batocera/batocera.version").read_text().strip(),
+             "--resolve-core"], check=False, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            resolved = Path(result.stdout.strip())
+    report.check("Packaged native core matches this Batocera target",
+                 bool(resolved and resolved.is_file()), pending=True)
+    report.command("Batocera VirtualGlove service enabled",
+                   ["batocera-services", "is-enabled", "VirtualGlove"])
+    token = root / "data/token"
+    report.check("Complete authenticated pairing", token.is_file() and
+                 len(token.read_text().strip()) >= 16, pending=True)
+
+
 class Report:
     """Collect explicit check results without printing private configuration values."""
     def __init__(self):
@@ -504,6 +1041,7 @@ def check_inventory(report, root):
 def check_retropie(report):
     """Inspect boot configuration, receiver prerequisites and launch integration."""
     check_inventory(report, Path("/opt/virtualglove-src"))
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
     report.command("Avahi running", ["systemctl", "is-active", "--quiet", "avahi-daemon"])
     report.command("mDNS hostname dependency installed", ["dpkg", "--verify", "libnss-mdns"])
@@ -515,6 +1053,12 @@ def check_retropie(report):
     paired = token.exists() and 16 <= len(token.read_text().strip()) <= 256
     report.check("Local pairing token configured (pair on the Connection page if missing)", paired, pending=True)
     if paired:
+        router = Path("/etc/virtualglove/controller-router.json")
+        if router.is_file():
+            report.command("Controller Router running", ["systemctl", "is-active", "--quiet",
+                                                          "virtualglove-controller-router.service"])
+            report.check("Controller Router receiver socket available",
+                         Path("/run/virtualglove/controller-router.sock").is_socket())
         report.command("Receiver service running", ["systemctl", "is-active", "--quiet", "virtualglove-receiver.service"])
         report.command("Games service running", ["systemctl", "is-active", "--quiet", "virtualglove-games.service"])
     for action in ("start", "end"):
@@ -533,6 +1077,20 @@ def check_retropie(report):
     native = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")
     if native.is_file():
         import runpy
+        try:
+            verifier = runpy.run_path(str(SOURCE / "scripts/verify-retropie-native-core.py"))
+            cpuinfo = Path("/proc/cpuinfo").read_text(errors="replace")
+            runtime = Path("/opt/retropie/emulators/retroarch/bin/retroarch")
+            target = verifier["detect_target"](platform.machine(), cpuinfo, runtime)
+            entry = verifier["manifest_entry"](
+                SOURCE / "native/retropie/manifest.json", target
+            )
+            raw = native.read_bytes()
+            packaged = (entry is not None and len(raw) == entry["size"]
+                        and hashlib.sha256(raw).hexdigest() == entry["sha256"])
+        except (OSError, ValueError, KeyError):
+            packaged = False
+        report.check("Native core matches this RetroArch ABI", packaged, pending=True)
         selector = runpy.run_path(str(SOURCE / "scripts/configure-super-glove-ball-core.py"))
         system = selector["settings"](Path("/opt/retropie/configs/nes/emulators.cfg"))
         option = Path("/opt/retropie/configs/nes/powerglove-native.cfg")
@@ -564,6 +1122,7 @@ def check_retropie(report):
 def check_unoq(report):
     """Check boot persistence, the app-owned resolver and public application health."""
     check_inventory(report, Path(UNOQ_APP))
+    report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
     report.command("mDNS hostname dependency installed", ["dpkg", "--verify", "libnss-mdns"])
     report.command("Avahi running", ["systemctl", "is-active", "--quiet", "avahi-daemon"])
@@ -615,7 +1174,7 @@ def check_unoq(report):
         report.check("Application HTTP status", False)
     report.check("App-owned Avahi resolver configured", "local:avahi_resolver" in (SOURCE / "app.yaml").read_text() and (SOURCE / "bricks/local/avahi_resolver/brick_compose.yaml").is_file())
     report.command("Profile UDP ingress published", ["docker", "port", "virtualglove-profile-relay-1", "55356/udp"])
-    code = ("import json; from pathlib import Path; from powerglove_vision.resolver import resolve_ipv4; "
+    code = ("import json; from pathlib import Path; from virtualglove.resolver import resolve_ipv4; "
             "d=json.loads(Path('/app/data/device.json').read_text()); resolve_ipv4(d['receiver'])")
     if status.get("connection_configured"):
         report.command("Configured receiver resolves inside app", ["docker", "exec", "-e", "PYTHONPATH=/app/src", "virtualglove-main-1", "python3", "-c", code])
@@ -635,9 +1194,14 @@ def check_unoq(report):
 def main():
     """Run installation or read-only checks with an explicit result summary."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("machine", choices=("retropie", "uno-q"))
-    parser.add_argument("--peer", type=valid_host, help="Other machine hostname; required for a new RetroPie installation")
+    parser.add_argument("machine", choices=("retropie", "recalbox", "batocera", "uno-q"))
+    parser.add_argument("--peer", type=valid_host,
+                        help="Other machine hostname; required for a new console installation")
     parser.add_argument("--check", action="store_true", help="Read-only checks; install nothing")
+    parser.add_argument("--list-player1-devices", action="store_true",
+                        help="List configured connected gamepads and install nothing")
+    parser.add_argument("--player1-device",
+                        help="Stable gamepad ID from --list-player1-devices")
     parser.add_argument("--wifi-status-only", action="store_true", help="Install/update only the UNO Q Wi-Fi status sampler")
     parser.add_argument("--runtime-names-only", action="store_true",
                         help="Migrate only UNO Q host helpers to virtualglove names")
@@ -646,9 +1210,16 @@ def main():
         parser.error("helper-only options require uno-q without --check")
     if args.wifi_status_only and args.runtime_names_only:
         parser.error("choose only one helper-only option")
-    if sys.platform != "linux" or (not args.check and os.geteuid() != 0):
+    if args.list_player1_devices and args.machine not in ("recalbox", "batocera"):
+        parser.error("--list-player1-devices applies only to Recalbox and Batocera")
+    if args.player1_device and args.machine not in ("recalbox", "batocera"):
+        parser.error("--player1-device applies only to Recalbox and Batocera")
+    if sys.platform != "linux" or (not args.check and not args.list_player1_devices and os.geteuid() != 0):
         parser.error("Run installation on the target Linux machine with sudo")
     try:
+        if args.list_player1_devices:
+            list_player1_devices(args.machine)
+            return 0
         if args.wifi_status_only:
             install_wifi_status()
             print("Wi-Fi status sampler installed; backups: " + str(BACKUPS))
@@ -658,18 +1229,34 @@ def main():
             print("VirtualGlove host helpers installed; backups: " + str(BACKUPS))
             return 0
         if not args.check:
-            required = ("src/powerglove_vision/receiver.py", "config/games.json",
-                        "retropie/virtualglove-receiver.timer") if args.machine == "retropie" else (
-                        "scripts/configure-uno-q-mdns.py", "uno-q/virtualglove-system-shutdown.path")
+            if args.machine == "retropie":
+                required = ("src/virtualglove/receiver.py", "config/games.json",
+                            "retropie/virtualglove-receiver.timer")
+            elif args.machine == "recalbox":
+                required = ("src/virtualglove/receiver.py", "config/games.json",
+                            "recalbox/virtualglove-service")
+            elif args.machine == "batocera":
+                required = ("src/virtualglove/receiver.py", "config/games.json",
+                            "recalbox/virtualglove-service", "batocera/VirtualGlove",
+                            "batocera/virtualglove-game")
+            else:
+                required = ("scripts/configure-uno-q-mdns.py", "uno-q/virtualglove-system-shutdown.path")
             for relative in required:
                 if not (SOURCE / relative).is_file():
                     raise ValueError("Incomplete project download: missing " + relative)
-            (install_retropie if args.machine == "retropie" else install_unoq)(args.peer)
+            if args.machine == "recalbox":
+                install_recalbox(args.peer, args.player1_device)
+            elif args.machine == "batocera":
+                install_batocera(args.peer, args.player1_device)
+            else:
+                {"retropie": install_retropie, "uno-q": install_unoq}[args.machine](args.peer)
+                if args.machine == "uno-q":
+                    wait_unoq()
             print("Managed-file backups, when changed: " + str(BACKUPS))
-            if args.machine == "uno-q":
-                wait_unoq()
         report = Report()
-        (check_retropie if args.machine == "retropie" else check_unoq)(report)
+        {"retropie": check_retropie, "recalbox": check_recalbox,
+         "batocera": check_batocera,
+         "uno-q": check_unoq}[args.machine](report)
         return report.finish()
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         print("FAIL  Setup stopped: " + str(error), file=sys.stderr)

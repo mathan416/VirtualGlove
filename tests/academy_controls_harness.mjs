@@ -41,6 +41,7 @@ class FakeElement {
     this.onclick = null;
     this.onchange = null;
     this.oninput = null;
+    this.clicked = false;
   }
   append(child) {
     this.children.push(child);
@@ -53,6 +54,7 @@ class FakeElement {
   setAttribute(name, value) { this.attributes.set(name, String(value)); }
   getAttribute(name) { return this.attributes.get(name) ?? null; }
   removeAttribute(name) { this.attributes.delete(name); }
+  click() { this.clicked = true; }
   querySelectorAll(selector) {
     const descendants = [];
     const visit = element => { for (const child of element.children) { descendants.push(child); visit(child); } };
@@ -79,14 +81,24 @@ const byId = id => {
 byId("learn-camera").dataset.src = "/stream";
 for (const id of ["achievement", "tune-panel", "tune-thresholds"]) byId(id).hidden = true;
 
+const createdElements = [];
 const document = {
   getElementById: byId,
-  createElement: tag => new FakeElement("", tag),
+  createElement: tag => {
+    const element = new FakeElement("", tag);
+    createdElements.push(element);
+    return element;
+  },
 };
-const window = {addEventListener() {}};
+const windowListeners = new Map();
+const window = {addEventListener(name, callback) {
+  if (!windowListeners.has(name)) windowListeners.set(name, []);
+  windowListeners.get(name).push(callback);
+}};
 let now = 1000;
 let nextTimer = 1;
 const timers = new Map();
+const intervals = [];
 const setTimeoutFake = (callback, delay = 0) => {
   const id = nextTimer++;
   timers.set(id, {callback, due: now + delay});
@@ -117,6 +129,9 @@ const baseStatus = () => ({
 });
 let currentStatus = baseStatus();
 let delayedStatus = null;
+let delayedPracticeEnable = null;
+let failNextPracticeEnable = false;
+let failNextTuningBegin = false;
 const requests = [];
 const tuningState = {
   active: true, gesture: "index", mode: "gesture", total_phases: 3, completed_phases: 3,
@@ -136,6 +151,7 @@ const tuningState = {
     dimensions: {width: 428.8, height: 398.4, aspect: 1.076}},
 };
 const response = data => ({ok: true, async json() { return structuredClone(data); }});
+const failedResponse = message => ({ok: false, async json() { return {error: message}; }});
 let playerData={active:'default',generation:0,players:[{id:'default',name:'Player 1'}],progress:{course:1,completed:[],lesson:0},needs_center:false,error:null};
 const fetch = async (url, options = {}) => {
   let body = {};
@@ -151,8 +167,18 @@ const fetch = async (url, options = {}) => {
     return response(playerData);
   }
   if (url === "/api/tuning") {
+    if (body.action === "begin" && failNextTuningBegin) {
+      failNextTuningBegin = false;
+      return failedResponse("Practice lease unavailable.");
+    }
     tuningState.gesture = body.gesture || tuningState.gesture;
     return response(tuningState);
+  }
+  if (url === "/api/practice" && body.enabled && delayedPracticeEnable)
+    return delayedPracticeEnable.promise;
+  if (url === "/api/practice" && body.enabled && failNextPracticeEnable) {
+    failNextPracticeEnable = false;
+    return failedResponse("Practice lease unavailable.");
   }
   return response({});
 };
@@ -161,8 +187,11 @@ class FakeDate extends Date { static now() { return now; } }
 const context = vm.createContext({
   console, document, window, fetch, Date: FakeDate, Math, Number, Object, String, Set,
   JSON, Promise, Error, URL, Blob, structuredClone,
-  setTimeout: setTimeoutFake, clearTimeout: clearTimeoutFake, setInterval() { return 0; },
-  crypto: {randomUUID: () => "academy-test-session"},
+  setTimeout: setTimeoutFake, clearTimeout: clearTimeoutFake,
+  setInterval(callback, delay) { intervals.push({callback, delay}); return intervals.length; },
+  // Glove Academy is commonly opened over plain HTTP, where randomUUID is
+  // unavailable in several browsers. Exercise the production fallback.
+  crypto: {},
   location: {protocol: "http:", hostname: "localhost"},
   Option: class Option extends FakeElement { constructor(text, value) { super("", "option"); this.textContent = text; this.value = value; } },
   confirm: () => true,
@@ -173,6 +202,48 @@ vm.runInContext(scripts[2], context, {filename: "rendered-academy.js"});
 vm.runInContext(scripts[3], context, {filename: "rendered-tuning.js"});
 vm.runInContext(scripts[4], context, {filename: "rendered-players.js"});
 const settle = async () => { for (let index = 0; index < 8; index++) await Promise.resolve(); };
+await settle();
+
+// Keep a complete inventory of the rendered controls. Every button must be
+// wired by the real page scripts so additions cannot silently become inert.
+const expectedButtons = [
+  "problem-setup", "problem-difficult", "problem-accidental", "problem-off-center",
+  "tune-choose", "tune-calibrate", "tune-center-done", "tune-record", "tune-suggest",
+  "tune-test", "tune-save", "tune-again", "tune-back", "tune-discard", "reach-save",
+  "reach-reset", "tune-preview", "tune-reset", "diagnostic-start", "diagnostic-record",
+  "diagnostic-cancel", "diagnostic-download", "restart-training", "previous", "next", "center",
+];
+const renderedButtons = [...html.matchAll(/<button\b[^>]*\bid=(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi)]
+  .map(match => match[1] || match[2] || match[3]).sort();
+assert.deepEqual(renderedButtons, [...expectedButtons].sort(), "rendered Academy button inventory changed");
+for (const id of expectedButtons)
+  assert.equal(typeof byId(id).onclick, "function", `${id} is not wired to a click handler`);
+assert.equal(typeof byId("tune-switch").onchange, "function", "Tune gestures switch is not wired");
+assert.equal(typeof byId("player-select").onchange, "function", "player selector is not wired");
+
+// A failed initial lease must really be retried, and page exit must always
+// send a release even if the successful start response never arrived.
+context.stopPractice();
+await settle();
+failNextPracticeEnable = true;
+await context.startPractice();
+assert.match(byId("lesson-result").textContent, /Could not start/);
+const practiceTimer = intervals.find(item => item.delay === 2000);
+assert.ok(practiceTimer, "practice lease retry timer is missing");
+await practiceTimer.callback();
+await settle();
+assert.equal(requests.filter(item => item.url === "/api/practice" && item.body.enabled).length >= 3, true);
+let resolvePracticeEnable;
+delayedPracticeEnable = {promise: new Promise(resolve => { resolvePracticeEnable = resolve; })};
+const interruptedStart = context.startPractice();
+for (const callback of windowListeners.get("pagehide") || []) callback();
+resolvePracticeEnable(response({}));
+await interruptedStart;
+await settle();
+delayedPracticeEnable = null;
+let practiceRequests = requests.filter(item => item.url === "/api/practice");
+assert.equal(practiceRequests.at(-1).body.enabled, false, "interrupted start was not safely released");
+await context.startPractice();
 await settle();
 
 const lesson = () => Number(byId("practice-lessons").dataset.lesson);
@@ -289,9 +360,21 @@ context.updateCalibration({...baseStatus(), calibrating: false, calibrated: true
 
 // Family wizard and advanced controls all reach mocked APIs without device writes.
 byId("tune-switch").checked = true;
+failNextTuningBegin = true;
+await byId("tune-switch").onchange();
+await settle();
+assert.equal(byId("tune-switch").checked, false, "failed tuning start must reset its switch");
+assert.equal(byId("tune-panel").hidden, true, "failed tuning start must hide tuning controls");
+assert.equal(byId("practice-lessons").hidden, false, "failed tuning start must restore lessons");
+assert.match(byId("tune-notice").textContent, /Practice lease unavailable/);
+byId("tune-switch").checked = true;
 await byId("tune-switch").onchange();
 await settle();
 for (const id of ["problem-setup", "problem-difficult", "problem-accidental", "problem-off-center", "tune-choose", "tune-suggest", "tune-test", "tune-save", "tune-preview", "tune-discard", "tune-reset", "diagnostic-start", "diagnostic-cancel"]) {
+  byId(id).onclick();
+  await settle();
+}
+for (const id of ["tune-center-done", "tune-again", "tune-back"]) {
   byId(id).onclick();
   await settle();
 }
@@ -312,6 +395,15 @@ await advance(1100);
 await advance(1100);
 await advance(1100);
 await diagnosticPromise;
+tuningState.diagnostic.report = {format: "virtualglove-academy-diagnostic", complete: true};
+byId("problem-setup").onclick();
+await settle();
+const downloadsBefore = createdElements.filter(item => item.tagName === "A").length;
+byId("diagnostic-download").onclick();
+const downloads = createdElements.filter(item => item.tagName === "A");
+assert.equal(downloads.length, downloadsBefore + 1, "diagnostic report did not create a download");
+assert.equal(downloads.at(-1).download, "virtualglove-academy-diagnostic.json");
+assert.equal(downloads.at(-1).clicked, true, "diagnostic report download was not activated");
 byId("tune-calibrate").onclick();
 await settle();
 context.updateCalibration({...baseStatus(), calibrating: true, calibrated: false});
@@ -321,6 +413,11 @@ await byId("tune-switch").onchange();
 await settle();
 const tuningActions = requests.filter(item => item.url === "/api/tuning").map(item => item.body.action);
 for (const action of ["begin", "choose_problem", "select", "wizard_record", "suggest", "start_test", "wizard_save", "preview", "wizard_back", "reset", "reach_save", "reach_reset", "diagnostic_begin", "diagnostic_record", "diagnostic_cancel", "end"])
-  assert.ok(tuningActions.includes(action), `missing tuning action: ${action}`);
+assert.ok(tuningActions.includes(action), `missing tuning action: ${action}`);
+
+for (const callback of windowListeners.get("pagehide") || []) callback();
+await settle();
+practiceRequests = requests.filter(item => item.url === "/api/practice");
+assert.equal(practiceRequests.at(-1).body.enabled, false, "page exit did not release practice mode");
 
 console.log("Glove Academy control harness passed");

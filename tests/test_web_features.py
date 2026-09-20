@@ -17,8 +17,8 @@ import unittest
 from http.server import HTTPServer
 from pathlib import Path
 from unittest.mock import patch
-from powerglove_vision.control_server import ControlState, make_handler, SETUP, LEARN
-from powerglove_vision.dashboard_web import DASHBOARD
+from virtualglove.control_server import ControlState, make_handler, SETUP, LEARN
+from virtualglove.dashboard_web import DASHBOARD
 
 
 class WebFeatureTests(unittest.TestCase):
@@ -45,12 +45,12 @@ class WebFeatureTests(unittest.TestCase):
     def test_mutations_require_same_origin_browser_safeguard(self):
         for path in ('/api/games','/api/tuning'):
             action=path.rsplit('/',1)[-1]
-            with patch('powerglove_vision.control_server.registry_request') as remote:
+            with patch('virtualglove.control_server.registry_request') as remote:
                 self.assertEqual(self.post(path,{'action':'save'})[0],403)
                 self.assertEqual(self.post(path,{'action':'save'},**{'X-VirtualGlove-Action':action,'Origin':'http://untrusted.local'})[0],403)
                 remote.assert_not_called()
 
-        with patch('powerglove_vision.control_server.urllib.request.urlopen') as worker:
+        with patch('virtualglove.control_server.urllib.request.urlopen') as worker:
             self.assertEqual(self.post('/api/rapid-fire', {
                 'request_id':'rapid-test', 'game':'Example.nes',
                 'rapid_a':True, 'rapid_b':False,
@@ -58,14 +58,14 @@ class WebFeatureTests(unittest.TestCase):
             worker.assert_not_called()
 
     def test_registry_validation_rejects_duplicate_keys_without_contacting_pi(self):
-        with patch('powerglove_vision.control_server.registry_request') as remote:
+        with patch('virtualglove.control_server.registry_request') as remote:
             status,result=self.post('/api/games',{'action':'validate','document':'{"games":{"a":"program_b","a":"program_c"}}'},**{'X-VirtualGlove-Action':'games'})
             self.assertEqual(status,400)
             self.assertIn('Duplicate',result['error'])
             remote.assert_not_called()
 
     def test_save_returns_verified_remote_result_without_secret(self):
-        with patch('powerglove_vision.control_server.registry_request',return_value={'document':'{"games":{}}','revision':'verified'}) as remote:
+        with patch('virtualglove.control_server.registry_request',return_value={'document':'{"games":{}}','revision':'verified'}) as remote:
             code,result=self.post('/api/games',{'action':'save','document':'{"games":{}}','revision':'old'},**{'X-VirtualGlove-Action':'games'})
             self.assertEqual(code,200)
             self.assertEqual(result['revision'],'verified')

@@ -1,3 +1,16 @@
+diff --git a/libretro/Makefile b/libretro/Makefile
+--- a/libretro/Makefile
++++ b/libretro/Makefile
+@@ -238,2 +238,9 @@ else ifeq ($(platform), rpi4_64)
++# Raspberry Pi 5 (64-bit)
++else ifeq ($(platform), rpi5_64)
++	TARGET := $(TARGET_NAME)_libretro.so
++	fpic := -fPIC
++	SHARED := -shared -Wl,-version-script=link.T -Wl,-no-undefined
++	PLATFORM_DEFINES += -mcpu=cortex-a76 -mtune=cortex-a76 -ffast-math
++
+ # Lightweight PS3 Homebrew SDK
+ else ifneq (,$(filter $(platform), ps3 psl1ght))
 diff --git a/libretro/libretro.cpp b/libretro/libretro.cpp
 index 3c7d92f..13b4fca 100644
 --- a/libretro/libretro.cpp
@@ -109,7 +122,22 @@ index 3c7d92f..13b4fca 100644
  /* A frame spans a fractional number of samples - 798.68... for NTSC,
   * 959.87... for PAL/Dendy at 48 kHz - so no whole-numbered request can
   * ever be filled exactly.  Api::Sound::Output::length[] is in/out: ask
-@@ -609,13 +695,16 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
+@@ -586,6 +672,14 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
+          Api::Input(emulator).ConnectController(port, Api::Input::UNCONNECTED);
+          break;
+       case RETRO_DEVICE_GAMEPAD:
++         /* This separately named core exists only for VirtualGlove native play.
++          * Batocera supplies its ordinary port-1 device before loading the core,
++          * so treat that default as the native peripheral on this core alone. */
++         if (port == 0)
++         {
++            Api::Input(emulator).ConnectController(port, Api::Input::POWERGLOVE);
++            break;
++         }
+          switch (port)
+          {
+             case 0:
+@@ -609,13 +703,16 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
        case RETRO_DEVICE_ZAPPER:
           Api::Input(emulator).ConnectController(port, Api::Input::ZAPPER);
           break;
@@ -188,9 +216,11 @@ index 3c7d92f..13b4fca 100644
  static bool NST_CALLBACK gamepad_callback(Api::Base::UserData data, Core::Input::Controllers::Pad& pad, unsigned int port)
  {
     bool pressed_l3        = false;
-@@ -2180,6 +2307,7 @@ bool retro_load_game(const struct retro_game_info *info)
+@@ -2180,6 +2315,9 @@ bool retro_load_game(const struct retro_game_info *info)
  
     Api::Input(emulator).AutoSelectControllers();
++   /* Keep this isolated core native even when the frontend supplies Auto. */
++   Api::Input(emulator).ConnectController(0, Api::Input::POWERGLOVE);
     Api::Input::Controllers::Pad::callback.Set(&gamepad_callback, NULL);
 +   Api::Input::Controllers::PowerGlove::callback.Set(&powerglove_callback, NULL);
     Api::Input::Controllers::Paddle::callback.Set(&arkanoid_callback, NULL);
@@ -213,7 +243,7 @@ diff --git a/source/core/input/NstInpPowerGlove.cpp b/source/core/input/NstInpPo
 index a9b01b6..52fe5e1 100644
 --- a/source/core/input/NstInpPowerGlove.cpp
 +++ b/source/core/input/NstInpPowerGlove.cpp
-@@ -24,6 +24,24 @@
+@@ -24,6 +24,26 @@
  
  #include "NstInpDevice.hpp"
  #include "NstInpPowerGlove.hpp"
@@ -223,10 +253,12 @@ index a9b01b6..52fe5e1 100644
 +
 +namespace
 +{
-+	bool PowerGloveVisionNativeEnabled()
++	bool VirtualGloveNativeEnabled()
 +	{
-+		const char* path = std::getenv("VIRTUALGLOVE_NATIVE_STATE");
-+		return path != NULL && *path != '\0';
++		// This source is linked only into the separately named VirtualGlove core.
++		// Keeping native packet timing intrinsic lets frontends such as Batocera
++		// select it without inheriting an environment variable from a service.
++		return true;
 +	}
 +
 +	bool PowerGloveTraceEnabled()
@@ -243,7 +275,7 @@ index a9b01b6..52fe5e1 100644
  			{
  				latch = 0;
 -				stream = ~0U;
-+				stream = PowerGloveVisionNativeEnabled() ? 0 : ~0U;
++				stream = VirtualGloveNativeEnabled() ? 0 : ~0U;
  				output = 0;
  				counter = 0;
  
@@ -252,7 +284,7 @@ index a9b01b6..52fe5e1 100644
  					buffer[2] = (128U - glove.y) & 0xFF;
  
 -					if (glove.distance < 0)
-+					if (PowerGloveVisionNativeEnabled())
++					if (VirtualGloveNativeEnabled())
  					{
 -						z += (z < 63);
 +						// Camera depth is already an absolute signed packet value.
@@ -335,7 +367,7 @@ index a9b01b6..52fe5e1 100644
  						output = buffer[data >> 3] ^ 0xFFU;
  					}
 -					else if (data == (12U << 3) - 1)
-+					else if (data == ((PowerGloveVisionNativeEnabled() ? 10U : 12U) << 3) - 1)
++					else if (data == ((VirtualGloveNativeEnabled() ? 10U : 12U) << 3) - 1)
  					{
  						stream = 0;
  					}
@@ -358,7 +390,7 @@ index a9b01b6..52fe5e1 100644
 +
 +				// Super Glove Ball strobes once per byte. Its exact ROM reads ten
 +				// bytes per sample, so a falling edge marks a byte boundary only.
-+				if (PowerGloveVisionNativeEnabled() && (latch & 1U) && !(data & 1U))
++				if (VirtualGloveNativeEnabled() && (latch & 1U) && !(data & 1U))
 +				{
 +					if (PowerGloveTraceEnabled())
 +						std::fprintf(stderr, "PGV packet boundary falling-strobe\n");

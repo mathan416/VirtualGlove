@@ -16,8 +16,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virtualglove"
-version = "0.4.2"
-description = "Camera-only hand controller for UNO Q and RetroPie"
+version = "0.5.0"
+description = "Camera-only hand controller for UNO Q and retro-gaming consoles"
 license = {file = "LICENSE"}
 requires-python = ">=3.7"
 classifiers = ["License :: OSI Approved :: MIT License"]
@@ -29,6 +29,7 @@ vision = [
   "opencv-python-headless>=4.8",
 ]
 receiver = ["evdev>=1.7"]
+launchbox = ["cryptography>=42"]
 engineering-analysis = [
   "av==16.1.0",
   "numpy==1.26.4",
@@ -43,14 +44,21 @@ engineering = [
   "Pillow==12.3.0",
 ]
 dev = []
+test = [
+  "numpy==1.26.4",
+  "opencv-python-headless==4.11.0.86",
+]
 
 [project.scripts]
-virtualglove-games = "powerglove_vision.game_registry:main"
-virtualglove = "powerglove_vision.vision_app:main"
-virtualglove-receiver = "powerglove_vision.receiver:main"
-virtualglove-profile = "powerglove_vision.profile_control:main"
-virtualglove-retropie-hook = "powerglove_vision.retropie_hook:main"
-virtualglove-pair = "powerglove_vision.pairing:main"
+virtualglove-games = "virtualglove.game_registry:main"
+virtualglove = "virtualglove.vision_app:main"
+virtualglove-receiver = "virtualglove.receiver:main"
+virtualglove-profile = "virtualglove.profile_control:main"
+virtualglove-retropie-hook = "virtualglove.retropie_hook:main"
+virtualglove-console-monitor = "virtualglove.console_monitor:main"
+virtualglove-pair = "virtualglove.pairing:main"
+virtualglove-launchbox = "virtualglove.launchbox_hook:main"
+virtualglove-launchbox-runtime = "virtualglove.launchbox_runtime:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

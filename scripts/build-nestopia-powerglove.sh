@@ -11,6 +11,29 @@
 # Full history: docs/CHANGELOG.md and Git history.
 set -eu
 
+usage() {
+  cat <<'EOF'
+Usage: scripts/build-nestopia-powerglove.sh [DESTINATION]
+
+Clone the pinned Nestopia source, apply the isolated VirtualGlove native-input
+patch, and build a local libretro core. The command never installs the result.
+DESTINATION defaults to build/nestopia-powerglove.
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  -*)
+    echo "error: unsupported option: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+[ "$#" -le 1 ] || { usage >&2; exit 2; }
+
 revision=5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 destination=${1:-"$root/build/nestopia-powerglove"}
@@ -34,6 +57,11 @@ git -C "$source_dir" checkout --detach "$revision"
 git -C "$source_dir" apply --check "$root/native/nestopia-powerglove/nestopia-powerglove.patch"
 git -C "$source_dir" apply "$root/native/nestopia-powerglove/nestopia-powerglove.patch"
 
+if [ "${VIRTUALGLOVE_PREPARE_ONLY:-0}" = 1 ]; then
+  printf '%s\n' "$source_dir"
+  exit 0
+fi
+
 # The affected Nestopia implementation carries a 22-line upstream copyright
 # and GPL header. Compare it directly with the pinned revision after patching;
 # VirtualGlove changes belong below that header and in CHANGES.md.
@@ -52,7 +80,14 @@ if [ "${VIRTUALGLOVE_BUILD_DIAGNOSTICS:-0}" = 1 ]; then
   cp "$root/native/nestopia-powerglove/diagnostic_trace.h" "$source_dir/libretro/pgv_diagnostic_trace.h"
   python3 "$root/scripts/instrument-native-core.py" "$source_dir/libretro/libretro.cpp"
 fi
-make -C "$source_dir/libretro" -j"${JOBS:-2}" >&2
+build_platform=${VIRTUALGLOVE_LIBRETRO_PLATFORM:-}
+if [ -n "$build_platform" ]; then
+  make -C "$source_dir/libretro" -j"${JOBS:-2}" \
+    CC="${CC:-cc}" CXX="${CXX:-c++}" AR="${AR:-ar}" \
+    platform="$build_platform" >&2
+else
+  make -C "$source_dir/libretro" -j"${JOBS:-2}" >&2
+fi
 
 core=$(find "$source_dir/libretro" -maxdepth 1 -type f \( -name 'nestopia_libretro.so' -o -name 'nestopia_libretro.dylib' \) -print | head -n 1)
 test -n "$core"

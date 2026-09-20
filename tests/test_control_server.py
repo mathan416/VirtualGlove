@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_control_server.py
-# Purpose: Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behavior.
+# Purpose: Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -25,31 +25,35 @@
 #   2026-09-03 - Verified Learn-page practice leases and Dashboard restoration.
 #   2026-09-03 - Verified shared profile labels and Python 3.7-compatible mocks.
 
-"""Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behavior."""
+"""Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behaviour."""
 
 import json
 import http.client
+import io
 import os
 import socket
 import ssl
 import tempfile
 import time
 import unittest
+from zipfile import ZipFile
 from pathlib import Path
 from unittest import mock
 
-from powerglove_vision.control_server import (
+from virtualglove.control_server import (
     CAMERA_PROFILE_MEASURE_SECONDS, CAMERA_PROFILE_READY_SECONDS,
     CAMERA_PROFILE_STAGES, DASHBOARD, LEARN, LOGO_PATH, PLAY, SETUP,
     ControlState, help_document_page, help_index_page, start_control_server,
 )
-from powerglove_vision.debug_server import SharedDebugState
-from powerglove_vision.help_content import guide_pdf, help_asset, render_markdown
-from powerglove_vision.help_content import cabinet_reference_content, request_browser_address
-from powerglove_vision.vision_app import (
+from virtualglove.debug_server import SharedDebugState
+from virtualglove.help_content import (
+    enclosure_asset, guide_pdf, help_asset, help_document_content, render_markdown,
+)
+from virtualglove.help_content import cabinet_reference_content, request_browser_address
+from virtualglove.vision_app import (
     _base_status, _effective_profile, _requested_rapid_fire,
 )
-from powerglove_vision.profile_control import ProfileRequest
+from virtualglove.profile_control import ProfileRequest
 
 
 class AutomaticGameControllerTests(unittest.TestCase):
@@ -109,7 +113,7 @@ class AutomaticGameControllerTests(unittest.TestCase):
     def test_missing_center_reports_reason_without_starting(self):
         self.publish(player={"needs_center":True})
         self.assertFalse(self.state.controller_enabled())
-        self.assertIn("Center hand",self.state.snapshot()["receiver_error"])
+        self.assertIn("Centre hand",self.state.snapshot()["receiver_error"])
 
     def test_manual_profile_status_does_not_start(self):
         self.state.update_worker({"profile_source":"Dashboard","active_profile":"program_a"})
@@ -129,7 +133,7 @@ class ControlStateTests(unittest.TestCase):
             for extra in ({}, {"X-VirtualGlove-Action":"players", "Sec-Fetch-Site":"cross-site"},
                           {"X-VirtualGlove-Action":"players", "Origin":"http://other.invalid"}):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
-                with mock.patch('powerglove_vision.control_server.urllib.request.urlopen') as forward:
+                with mock.patch('virtualglove.control_server.urllib.request.urlopen') as forward:
                     connection.request("POST", "/api/players", json.dumps({"action":"read"}),
                                        dict({"Content-Type":"application/json"}, **extra))
                     response = connection.getresponse()
@@ -150,7 +154,7 @@ class ControlStateTests(unittest.TestCase):
                 self.assertFalse(state._controller_marker.exists())
                 raise ValueError("worker unavailable")
             connection = http.client.HTTPConnection("127.0.0.1", servers.servers[0].server_address[1], timeout=2)
-            with mock.patch('powerglove_vision.control_server.urllib.request.urlopen', side_effect=fail_forward):
+            with mock.patch('virtualglove.control_server.urllib.request.urlopen', side_effect=fail_forward):
                 connection.request("POST", "/api/players", json.dumps({"action":"select", "id":"other"}),
                                    {"Content-Type":"application/json", "X-VirtualGlove-Action":"players"})
                 response = connection.getresponse()
@@ -158,7 +162,7 @@ class ControlStateTests(unittest.TestCase):
                 self.assertEqual(response.status, 400)
             connection.close()
             state.worker_status["player"] = {"needs_center": True}
-            with self.assertRaisesRegex(ValueError, "Center hand"):
+            with self.assertRaisesRegex(ValueError, "Centre hand"):
                 state.set_controller_enabled(True)
         finally:
             servers.shutdown()
@@ -167,7 +171,7 @@ class ControlStateTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.path = Path(self.temporary.name) / "device.json"
         self.path.write_text(json.dumps({
-            "receiver": "retropieconsole.local", "port": 55355,
+            "receiver": "retropieconsole.local", "platform": "retropie", "port": 55355,
             "token": "private-token", "profile": "bad_street_brawler",
             "glove_color": "none", "camera": "auto", "camera_fps": "auto",
             "camera_backend": "opencv", "camera_exposure": "auto",
@@ -187,6 +191,7 @@ class ControlStateTests(unittest.TestCase):
         self.path.unlink()
         fresh = loader()
         self.assertEqual(fresh["receiver"], "")
+        self.assertEqual(fresh["platform"], "")
         self.assertEqual(fresh["profile"], "off")
         self.state = ControlState(self.path)
         self.assertFalse(self.state.public_config()["connection_configured"])
@@ -223,6 +228,44 @@ class ControlStateTests(unittest.TestCase):
         public = self.state.public_config()
         self.assertNotIn("token", public)
         self.assertTrue(public["paired"])
+        self.assertEqual(public["platform"], "retropie")
+        self.assertTrue(public["pairing_configured"])
+
+    def test_public_config_reports_stable_controller_hostname_and_address(self):
+        self.path.with_name("controller-hostname").write_text("ArduIain\n")
+        with mock.patch("virtualglove.control_server.resolve_ipv4",
+                        return_value="10.0.2.105"):
+            public = self.state.public_config()
+        self.assertEqual(public["controller_hostname"], "arduiain.local")
+        self.assertEqual(public["controller_address"], "10.0.2.105")
+
+    def test_existing_connection_runs_but_cannot_pair_until_platform_is_saved(self):
+        existing = self.state.load_config()
+        existing.pop("platform")
+        self.path.write_text(json.dumps(existing))
+        state = ControlState(self.path, pairing_display=lambda _identity, _pin: True)
+        self.assertTrue(state.public_config()["connection_configured"])
+        self.assertFalse(state.public_config()["pairing_configured"])
+        state.set_controller_enabled(True)
+        self.assertTrue(state.controller_enabled())
+        with self.assertRaisesRegex(ValueError, "platform"):
+            state.begin_pairing("retropieconsole.local", "code", "retropie")
+
+    def test_pairing_is_bound_to_saved_platform_and_address(self):
+        state = ControlState(self.path, pairing_display=lambda _identity, _pin: True)
+        with self.assertRaisesRegex(ValueError, "platform"):
+            state.begin_pairing("retropieconsole.local", "code", "recalbox")
+        with self.assertRaisesRegex(ValueError, "saved console"):
+            state.begin_pairing("other.local", "code", "retropie")
+
+    def test_connection_save_requires_platform_with_an_address(self):
+        settings = self.state.public_config()
+        settings["platform"] = ""
+        with self.assertRaisesRegex(ValueError, "platform"):
+            self.state.save_config(settings)
+        settings["platform"] = "unsupported"
+        with self.assertRaisesRegex(ValueError, "supported console"):
+            self.state.save_config(settings)
 
     def test_system_report_is_useful_without_private_configuration(self):
         self.state.connection_probe = lambda _settings, refresh: {
@@ -283,7 +326,7 @@ class ControlStateTests(unittest.TestCase):
             "active": False, "phase": "complete", "camera": identity,
             "recommendation": {"settings": settings}, "results": [],
         }
-        with mock.patch("powerglove_vision.control_server.camera_device_identity", return_value=identity):
+        with mock.patch("virtualglove.control_server.camera_device_identity", return_value=identity):
             self.state.apply_camera_profile()
         after = self.state.load_config()
         for key, value in before.items():
@@ -388,8 +431,8 @@ class ControlStateTests(unittest.TestCase):
         self.state.update_worker({"active_profile": "program_1"})
         with mock.patch.object(self.state, "public_config",
                                side_effect=AssertionError("slow config path")), \
-                mock.patch("powerglove_vision.control_server.camera_device_identity") as identity, \
-                mock.patch("powerglove_vision.control_server.camera_device_options") as options:
+                mock.patch("virtualglove.control_server.camera_device_identity") as identity, \
+                mock.patch("virtualglove.control_server.camera_device_options") as options:
             for _ in range(100):
                 status = self.state.snapshot()
                 self.assertEqual(status["configured_profile"], "bad_street_brawler")
@@ -408,13 +451,13 @@ class ControlStateTests(unittest.TestCase):
         identity = {"key": "camera:auto", "label": "Automatic"}
         options = [{"value": "auto", "label": "Automatic"}]
         with mock.patch(
-            "powerglove_vision.control_server.camera_device_identity",
+            "virtualglove.control_server.camera_device_identity",
             return_value=identity,
         ) as identify, mock.patch(
-            "powerglove_vision.control_server.camera_device_options",
+            "virtualglove.control_server.camera_device_options",
             return_value=options,
         ) as enumerate_cameras, mock.patch(
-            "powerglove_vision.control_server.time.monotonic",
+            "virtualglove.control_server.time.monotonic",
             side_effect=[10.0, 12.0, 16.0, 17.0, 17.1],
         ):
             self.state.public_config()
@@ -428,10 +471,10 @@ class ControlStateTests(unittest.TestCase):
     def test_wifi_status_cache_expires_and_returns_defensive_copies(self):
         report = {"state": "connected", "ssid": "Cabinet"}
         with mock.patch(
-            "powerglove_vision.wifi_status.read_wifi_status",
+            "virtualglove.wifi_status.read_wifi_status",
             return_value=report,
         ) as read_status, mock.patch(
-            "powerglove_vision.control_server.time.monotonic",
+            "virtualglove.control_server.time.monotonic",
             side_effect=[10.0, 10.5, 11.1],
         ):
             first = self.state._cached_wifi_status()
@@ -479,7 +522,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertNotIn(b'id=experimental-tracking-section', SETUP)
         self.assertNotIn(b'id=directional-search', SETUP)
         self.state.save_config({
-            "receiver": "arcade.local", "port": 55357,
+            "receiver": "arcade.local", "platform": "recalbox", "port": 55357,
             "profile": "program_i", "glove_color": "white", "camera": "2",
             "camera_fps": "60",
             "camera_buffers": "1",
@@ -489,6 +532,7 @@ class ControlStateTests(unittest.TestCase):
         saved = json.loads(self.path.read_text())
         self.assertEqual(saved["token"], "private-token")
         self.assertEqual(saved["receiver"], "arcade.local")
+        self.assertEqual(saved["platform"], "recalbox")
         self.assertEqual(saved["camera_fps"], 60)
         self.assertEqual(saved["camera_backend"], "direct-v4l2")
         self.assertEqual(saved["camera_exposure"], "low-latency")
@@ -525,7 +569,7 @@ class ControlStateTests(unittest.TestCase):
         before = self.path.read_bytes()
         with self.assertRaisesRegex(ValueError, "Automatic, 30 fps, or 60 fps"):
             self.state.save_config({
-                "receiver": "arcade.local", "port": 55355,
+                "receiver": "arcade.local", "platform": "retropie", "port": 55355,
                 "profile": "program_i", "glove_color": "none",
                 "camera": "auto", "camera_fps": 24,
             })
@@ -543,7 +587,7 @@ class ControlStateTests(unittest.TestCase):
     def test_invalid_profile_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "supported gesture profile"):
             self.state.save_config({
-                "receiver": "arcade.local", "port": 55355,
+                "receiver": "arcade.local", "platform": "retropie", "port": 55355,
                 "profile": "shell_command", "glove_color": "none", "camera": "auto",
             })
 
@@ -588,6 +632,11 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b'id=player-select', DASHBOARD)
         self.assertNotIn(b'<div class=label>RetroPie receiver</div>', DASHBOARD)
 
+    def test_dashboard_replaces_a_failed_camera_stream_with_guidance(self):
+        self.assertIn(b"Camera unavailable. Connect a USB camera to use gesture controls.", DASHBOARD)
+        self.assertIn(b"s.vision_state==='error'||s.camera_available===false", DASHBOARD)
+        self.assertIn(b"$('camera').removeAttribute('src')", DASHBOARD)
+
     def test_help_index_lists_the_public_guides(self):
         page = help_index_page()
         self.assertIn(b"Help, without leaving the glove", page)
@@ -595,17 +644,35 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"/help/installation", page)
         self.assertIn(b"/help/cabinet", page)
         self.assertIn(b"This console", page)
-        self.assertIn(b"Rock Paper Scissors instructions", page)
-        self.assertIn(b"Live-confirmed native game actions", page)
+        self.assertIn(b"Illustrated gesture instructions", page)
+        self.assertIn(b"merged physical controls", page)
         self.assertNotIn(b"cheatsheet", page.lower())
         self.assertIn(b"/help-pdf/overview.pdf", page)
+        self.assertIn(b"Installation guides", page)
+        self.assertIn(b"Project information", page)
+        user_manuals = page.index(b"User manuals")
+        installation = page.index(b"Installation guides")
         technical = page.index(b"Technical documentation")
+        project = page.index(b"Project information")
+        self.assertLess(user_manuals, installation)
+        self.assertLess(installation, technical)
+        self.assertLess(technical, project)
+        self.assertLess(page.index(b"/help/gameplay", user_manuals),
+                        page.index(b"/help/input-modes", user_manuals))
+        self.assertLess(page.index(b"/help/input-modes", user_manuals),
+                        page.index(b"/help/matrix", user_manuals))
+        self.assertLess(page.index(b"/help/installation", installation),
+                        page.index(b"/help/build-your-own", installation))
+        self.assertLess(page.index(b"/help/enclosure", installation),
+                        page.index(b"/help/enclosure-quick-reference", installation))
         overview = page.index(b"/help-pdf/overview.pdf", technical)
         architecture = page.index(b"/help/architecture", technical)
+        journey = page.index(b"/help/engineering-journey", technical)
         configuration = page.index(b"/help/configuration", technical)
         input_audit = page.index(b"/help/input-audit", technical)
         self.assertLess(overview, architecture)
-        self.assertLess(architecture, configuration)
+        self.assertLess(architecture, journey)
+        self.assertLess(journey, configuration)
         self.assertLess(configuration, input_audit)
         self.assertIsNone(help_document_page("field-guide"))
 
@@ -631,7 +698,7 @@ class ControlStateTests(unittest.TestCase):
         page = help_document_page("gameplay")
         self.assertIsNotNone(page)
         assert page is not None
-        self.assertIn(b"Play with VirtualGlove", page)
+        self.assertIn(b"Game and Gesture Guide", page)
         self.assertIn(b"On this page", page)
         self.assertIn(b"/help-assets/gestures/actions/whole-hand-movement.png", page)
         self.assertIn(b"/help-assets/gestures/v2/v-sign.png", page)
@@ -747,11 +814,151 @@ class ControlStateTests(unittest.TestCase):
         self.assertTrue(document[0].startswith(b"%PDF-"))
         self.assertEqual(document[1], "VirtualGlove-Gameplay-Guide.pdf")
         self.assertEqual(
-            guide_pdf("native-super-glove-ball")[1],
-            "VirtualGlove-Super-Glove-Ball-Native.pdf",
+            guide_pdf("input-modes")[1],
+            "VirtualGlove-Input-Modes.pdf",
+        )
+        self.assertIsNone(guide_pdf("native-emulation"))
+        self.assertIsNone(guide_pdf("native-super-glove-ball"))
+        self.assertIsNone(guide_pdf("direction-response"))
+        self.assertEqual(
+            guide_pdf("enclosure-quick-reference")[1],
+            "VirtualGlove-Enclosure-Quick-Reference.pdf",
         )
         self.assertIsNone(guide_pdf("quick-reference"))
         self.assertIsNone(guide_pdf("../../data/device"))
+
+    def test_enclosure_downloads_are_bounded_to_public_print_files(self):
+        asset = enclosure_asset("stl/virtualglove-uno-base.stl")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        self.assertEqual(asset[1:], ("model/stl", "virtualglove-uno-base.stl"))
+        self.assertGreater(len(asset[0]), 1000)
+        for stl_name in (
+            "virtualglove-dock-v2-base.stl",
+            "virtualglove-dock-v2-lid.stl",
+            "virtualglove-dock-v2-lid-full-logo.stl",
+            "virtualglove-uno-lid-full-logo.stl",
+        ):
+            with self.subTest(stl_name=stl_name):
+                stl_asset = enclosure_asset(f"stl/{stl_name}")
+                self.assertIsNotNone(stl_asset)
+                assert stl_asset is not None
+                self.assertEqual(stl_asset[1], "model/stl")
+                self.assertGreater(len(stl_asset[0]), 1000)
+        for model_name in (
+            "virtualglove-lid-logo-multicolor.3mf",
+            "virtualglove-compact-full-logo-multicolor.3mf",
+            "virtualglove-full-logo-multicolor.3mf",
+        ):
+            with self.subTest(model_name=model_name):
+                model_asset = enclosure_asset(f"stl/{model_name}")
+                self.assertIsNotNone(model_asset)
+                assert model_asset is not None
+                self.assertEqual(model_asset[1], "model/3mf")
+                self.assertGreater(len(model_asset[0]), 1000)
+        for preview_name in (
+            "virtualglove-uno-case-exterior.png",
+            "virtualglove-uno-case-back.png",
+            "virtualglove-uno-case-left.png",
+            "virtualglove-uno-case-right.png",
+            "virtualglove-uno-case-exploded.png",
+            "virtualglove-controller-dock-back.png",
+            "virtualglove-controller-dock-left.png",
+            "virtualglove-controller-dock-right.png",
+            "virtualglove-controller-dock-exploded.png",
+            "virtualglove-controller-dock-v2-exterior.png",
+            "virtualglove-controller-dock-v2-back.png",
+            "virtualglove-controller-dock-v2-left.png",
+            "virtualglove-controller-dock-v2-right.png",
+            "virtualglove-controller-dock-v2-exploded.png",
+            "virtualglove-controller-dock-v2-port-access.png",
+            "virtualglove-enclosure-quick-reference.png",
+            "virtualglove-enclosure-quick-reference-parts.png",
+            "virtualglove-enclosure-quick-reference-uno.png",
+            "virtualglove-enclosure-quick-reference-dock-v1.png",
+            "virtualglove-enclosure-quick-reference-dock-v1-finish.png",
+            "virtualglove-enclosure-quick-reference-dock-v2.png",
+            "virtualglove-enclosure-quick-reference-dock-v2-finish.png",
+            "virtualglove-enclosure-quick-reference-finish.png",
+            "virtualglove-lid-logo-options.png",
+            "virtualglove-branding-insets.png",
+        ):
+            with self.subTest(preview_name=preview_name):
+                self.assertEqual(
+                    enclosure_asset(f"previews/{preview_name}")[1],
+                    "image/png",
+                )
+        self.assertIsNone(enclosure_asset("../../data/device.json"))
+        self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
+
+    def test_enclosure_print_bundles_are_downloadable(self):
+        for name in (
+            "VirtualGlove-UNO-Q-Case-Print-Files.zip",
+            "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
+            "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+        ):
+            with self.subTest(name=name):
+                asset = enclosure_asset("bundles/" + name)
+                self.assertIsNotNone(asset)
+                assert asset is not None
+                self.assertEqual(asset[1:], ("application/zip", name))
+                with ZipFile(io.BytesIO(asset[0])) as archive:
+                    self.assertIn("PARTS.txt", archive.namelist())
+                    self.assertFalse(any("target-badge" in item for item in archive.namelist()))
+
+    def test_enclosure_quick_reference_help_uses_all_visual_pages(self):
+        document = help_document_content("enclosure-quick-reference")
+        self.assertIsNotNone(document)
+        assert document is not None
+        page, _title = document
+        self.assertIn(
+            "/help-enclosure/previews/virtualglove-enclosure-quick-reference.png",
+            page,
+        )
+        for suffix in (
+            "parts", "uno", "dock-v1", "dock-v1-finish",
+            "dock-v2", "dock-v2-finish", "finish",
+        ):
+            self.assertIn(
+                f"/help-enclosure/previews/virtualglove-enclosure-quick-reference-{suffix}.png",
+                page,
+            )
+        self.assertIn("Seat the four heat-set inserts square and flush", page)
+        self.assertIn("Pixel Pal appears only where a warning", page)
+
+    def test_enclosure_multicolor_3mf_preserves_brand_materials(self):
+        asset = enclosure_asset("stl/virtualglove-lid-logo-multicolor.3mf")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        with ZipFile(io.BytesIO(asset[0])) as archive:
+            model = archive.read("3D/3dmodel.model").decode()
+        self.assertIn("#111722FF", model)
+        self.assertIn("#00D6EFFF", model)
+        self.assertIn("#FF2145FF", model)
+        self.assertIn('p1="1"', model)
+        self.assertIn('p1="2"', model)
+        self.assertIn('p1="3"', model)
+
+    def test_full_logo_3mf_preserves_anycubic_ace_assignments(self):
+        asset = enclosure_asset("stl/virtualglove-full-logo-multicolor.3mf")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        with ZipFile(io.BytesIO(asset[0])) as archive:
+            settings = archive.read("Metadata/model_settings.config").decode()
+            project = archive.read("Metadata/project_settings.config").decode()
+            model = archive.read("3D/Objects/OpenSCAD Model_1.model").decode()
+        for name, extruder in (
+            ("Dark backing", "1"),
+            ("Cyan artwork", "4"),
+            ("Red accents", "3"),
+        ):
+            self.assertRegex(
+                settings,
+                rf'key="name" value="{name}"[\s\S]*?key="extruder" value="{extruder}"',
+            )
+        for colour in ("#212721", "#6A6DCD", "#ED1C24", "#23A3C7"):
+            self.assertIn(colour, project)
+        self.assertEqual(model.count('type="model"'), 3)
 
     def test_help_routes_serve_html_markdown_and_images(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
@@ -765,17 +972,49 @@ class ControlStateTests(unittest.TestCase):
                 ("/play", "text/html"),
                 ("/help", "text/html"),
                 ("/help/build-your-own", "text/html"),
-                ("/help/native-emulation", "text/html"),
+                ("/help/input-modes", "text/html"),
                 ("/help/troubleshooting", "text/html"),
+                ("/help/enclosure-quick-reference", "text/html"),
                 ("/help-pdf/build-your-own.pdf", "application/pdf"),
-                ("/help-pdf/native-emulation.pdf", "application/pdf"),
+                ("/help-pdf/input-modes.pdf", "application/pdf"),
                 ("/help-pdf/troubleshooting.pdf", "application/pdf"),
                 ("/help-pdf/engineering-toolkit.pdf", "application/pdf"),
+                ("/help-pdf/enclosure-quick-reference.pdf", "application/pdf"),
                 ("/help/cabinet", "text/html"),
                 ("/help/gameplay", "text/html"),
                 ("/help/gameplay.md", "text/markdown"),
                 ("/help-pdf/gameplay.pdf", "application/pdf"),
                 ("/help-assets/gestures/directional-movement.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-exterior.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-uno-case-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exterior.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-port-access.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-parts.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-uno.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-lid-logo-options.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-branding-insets.png", "image/png"),
+                ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-base.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-lid.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-lid-full-logo.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-lid-logo-multicolor.3mf", "model/3mf"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 connection.request("GET", path)
@@ -805,7 +1044,7 @@ class ControlStateTests(unittest.TestCase):
             servers.shutdown()
 
     def test_learn_page_is_offline_practice_mode(self):
-        self.assertIn(b"Practice gesture recognition without a RetroPie connection", LEARN)
+        self.assertIn(b"Practice gesture recognition without a console connection", LEARN)
         self.assertIn(b"Pixel Pal will guide you through 16 fun lessons", LEARN)
         self.assertNotIn(b"General controls: index curl is A", LEARN)
         self.assertIn(b"/api/practice", LEARN)
@@ -828,7 +1067,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b".camera-centre-target", DASHBOARD)
         self.assertIn(b"cameraImageReady", DASHBOARD)
 
-    @mock.patch("powerglove_vision.control_server.urllib.request.urlopen")
+    @mock.patch("virtualglove.control_server.urllib.request.urlopen")
     def test_calibration_request_is_forwarded_to_worker(self, open_worker):
         """Both web calibration buttons must reach the private vision worker."""
         open_worker.return_value.__enter__.return_value = mock.MagicMock()
@@ -852,7 +1091,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"reset:true", DASHBOARD)
 
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             self.assertTrue(shared.request_practice("existing-learn-tab", True))
             self.assertIs(shared.take_practice_request(), True)
             self.assertFalse(shared.request_practice("", False, reset=True))
@@ -866,7 +1105,7 @@ class ControlStateTests(unittest.TestCase):
 
     def test_practice_leases_support_multiple_pages_and_clean_release(self):
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             self.assertTrue(shared.request_practice("learn-page-one", True))
             self.assertIs(shared.take_practice_request(), True)
             self.assertTrue(shared.request_practice("learn-page-two", True))
@@ -878,10 +1117,10 @@ class ControlStateTests(unittest.TestCase):
 
     def test_abandoned_practice_lease_expires(self):
         shared = SharedDebugState()
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=10.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=10.0):
             shared.request_practice("abandoned-page", True)
             self.assertIs(shared.take_practice_request(), True)
-        with mock.patch("powerglove_vision.debug_server.time.monotonic", return_value=17.0):
+        with mock.patch("virtualglove.debug_server.time.monotonic", return_value=17.0):
             self.assertIs(shared.take_practice_request(), False)
 
     def test_practice_uses_general_tracking_without_changing_selected_off_mode(self):
@@ -972,7 +1211,7 @@ class ControlStateTests(unittest.TestCase):
                         LEARN.index(b"sequence<=sequenceFloor"))
 
     def test_footer_version_and_application_start_metadata(self):
-        from powerglove_vision import __version__
+        from virtualglove import __version__
         for page in (DASHBOARD, LEARN, PLAY, SETUP):
             self.assertIn(("VirtualGlove v" + __version__).encode(), page)
         self.assertNotIn(b"id=app-started", DASHBOARD)
@@ -999,7 +1238,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"image:'v-sign.png'", LEARN)
         self.assertIn(b"image:'thumbs-up.png'", LEARN)
         self.assertIn(b"image:'thumb-curl.png'", LEARN)
-        self.assertIn(b"Glove Zap recognized!", LEARN)
+        self.assertIn(b"Glove Zap recognised!", LEARN)
         self.assertIn(b"image:'wrist-roll-left.png'", LEARN)
         self.assertIn(b"image:'wrist-roll-right.png'", LEARN)
         self.assertIn(b"image:'close-all-fingers.png'", LEARN)
@@ -1066,13 +1305,30 @@ class ControlStateTests(unittest.TestCase):
         finally:
             servers.shutdown()
 
+    def test_retired_ready_guide_routes_are_not_available(self):
+        servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
+        try:
+            port = servers.servers[0].server_address[1]
+            for method, path, body, headers in (
+                    ("GET", "/ready", None, {}),
+                    ("POST", "/api/ready", b"{}", {"Content-Type": "application/json"})):
+                with self.subTest(path=path):
+                    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+                    connection.request(method, path, body, headers)
+                    response = connection.getresponse()
+                    response.read()
+                    self.assertEqual(response.status, 404)
+                    connection.close()
+        finally:
+            servers.shutdown()
+
     def test_runtime_profile_route_forwards_valid_selection_to_worker(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
         try:
             port = servers.servers[0].server_address[1]
             reply = mock.MagicMock()
             reply.__enter__.return_value.read.return_value = b'{"active_profile":"program_h"}'
-            with mock.patch("powerglove_vision.control_server.urllib.request.urlopen", return_value=reply) as open_worker:
+            with mock.patch("virtualglove.control_server.urllib.request.urlopen", return_value=reply) as open_worker:
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
                 connection.request(
                     "POST", "/api/profile", json.dumps({"profile": "program_h"}),
@@ -1099,7 +1355,7 @@ class ControlStateTests(unittest.TestCase):
             reply = mock.MagicMock()
             reply.__enter__.return_value.read.return_value = b'{"practice_mode":true}'
             with mock.patch(
-                "powerglove_vision.control_server.urllib.request.urlopen",
+                "virtualglove.control_server.urllib.request.urlopen",
                 return_value=reply,
             ) as open_worker:
                 for payload in (
@@ -1131,7 +1387,7 @@ class ControlStateTests(unittest.TestCase):
     def test_shutdown_uses_only_the_fixed_host_trigger(self):
         marker = self.path.parent / ".shutdown-enabled"
         marker.touch()
-        with mock.patch("powerglove_vision.control_server.os.replace", wraps=os.replace) as replace:
+        with mock.patch("virtualglove.control_server.os.replace", wraps=os.replace) as replace:
             self.state.schedule_system_shutdown(delay_seconds=0)
             trigger = self.path.parent / "shutdown-request"
             for _attempt in range(50):
@@ -1277,7 +1533,7 @@ class ControlStateTests(unittest.TestCase):
 
     def test_controller_authority_download_requires_https(self):
         (self.path.parent / "controller-hostname").write_text("virtualglove\n")
-        with mock.patch("powerglove_vision.control_server.socket.gethostname",
+        with mock.patch("virtualglove.control_server.socket.gethostname",
                         return_value="transient-container-id"):
             servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
         try:
@@ -1319,17 +1575,17 @@ class ControlStateTests(unittest.TestCase):
         displayed = []
         state = ControlState(self.path, lambda identity, pin: displayed.append((identity, pin)))
         state.configure_pairing_identity("1A2B3C4")
-        result = state.begin_pairing("retropieconsole.local", "code")
+        result = state.begin_pairing("retropieconsole.local", "code", "retropie")
         self.assertEqual(result["certificate_id"], "1A2B3C4")
         self.assertEqual(displayed[0][0], "1A2B3C4")
         self.assertRegex(displayed[0][1], r"^\d{6}$")
 
         wrong_pin = "999999" if displayed[0][1] != "999999" else "000000"
         with self.assertRaisesRegex(ValueError, "rejected"):
-            state.authorize_pairing("retropieconsole.local", "code", wrong_pin)
-        state.authorize_pairing("retropieconsole.local", "code", displayed[0][1])
+            state.authorize_pairing("retropieconsole.local", "code", "retropie", wrong_pin)
+        state.authorize_pairing("retropieconsole.local", "code", "retropie", displayed[0][1])
         with self.assertRaisesRegex(ValueError, "expired"):
-            state.authorize_pairing("retropieconsole.local", "code", displayed[0][1])
+            state.authorize_pairing("retropieconsole.local", "code", "retropie", displayed[0][1])
 
     def test_connection_status_has_unknown_fallback_and_uses_shared_probe(self):
         state = ControlState(self.path)
@@ -1346,12 +1602,23 @@ class ControlStateTests(unittest.TestCase):
         state.configure_pairing_identity('0123456789abcdef')
         for method in ('code', 'ssh'):
             with self.assertRaises(ValueError):
-                state.authorize_pairing('retropie.local', method, '000000')
-            state.begin_pairing('retropie.local', method)
+                state.authorize_pairing('retropieconsole.local', method, 'retropie', '000000')
+            state.begin_pairing('retropieconsole.local', method, 'retropie')
             pin = displayed[-1]
             with self.assertRaises(ValueError):
-                state.authorize_pairing('retropie.local', 'ssh' if method == 'code' else 'code', pin)
-            state.authorize_pairing('retropie.local', method, pin)
+                state.authorize_pairing('retropieconsole.local', 'ssh' if method == 'code' else 'code', 'retropie', pin)
+            state.authorize_pairing('retropieconsole.local', method, 'retropie', pin)
+
+    def test_launchbox_allows_code_pairing_but_rejects_ssh(self):
+        displayed = []
+        state = ControlState(self.path, pairing_display=lambda identity, pin: displayed.append(pin))
+        state.save_config({'platform': 'launchbox', 'receiver': 'launchbox.local', 'profile': 'off'})
+        state.configure_pairing_identity('0123456789abcdef')
+        state.begin_pairing('launchbox.local', 'code', 'launchbox')
+        self.assertTrue(displayed)
+        state.finish_pairing_display()
+        with self.assertRaisesRegex(ValueError, 'one-time-code'):
+            state.begin_pairing('launchbox.local', 'ssh', 'launchbox')
 
     def test_https_pairing_route_requires_matrix_pin_before_token_export(self):
         displayed = []
@@ -1367,7 +1634,7 @@ class ControlStateTests(unittest.TestCase):
                 "host": "attacker.local", "code": "ABCDE-FGHIJ-23456-7ABCD",
                 "device_code": "000000",
             })
-            with mock.patch("powerglove_vision.control_server.pair_with_code") as send_token:
+            with mock.patch("virtualglove.control_server.pair_with_code") as send_token:
                 connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
                 connection.request("POST", "/api/pair/code", unauthorized, {"Content-Type": "application/json"})
                 response = connection.getresponse()
@@ -1377,7 +1644,7 @@ class ControlStateTests(unittest.TestCase):
                 connection.close()
 
             connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
-            begin = json.dumps({"host": "retropie.local", "method": "code"})
+            begin = json.dumps({"host": "retropieconsole.local", "platform": "retropie", "method": "code"})
             connection.request("POST", "/api/pair/begin", begin, {"Content-Type": "application/json"})
             response = connection.getresponse()
             response.read()
@@ -1385,17 +1652,17 @@ class ControlStateTests(unittest.TestCase):
             connection.close()
 
             payload = json.dumps({
-                "host": "retropie.local", "code": "ABCDE-FGHIJ-23456-7ABCD",
+                "host": "retropieconsole.local", "platform": "retropie", "code": "ABCDE-FGHIJ-23456-7ABCD",
                 "device_code": displayed[0][1],
             })
-            with mock.patch("powerglove_vision.control_server.pair_with_code") as send_token:
+            with mock.patch("virtualglove.control_server.pair_with_code") as send_token:
                 connection = http.client.HTTPSConnection("127.0.0.1", secure_port, context=context)
                 connection.request("POST", "/api/pair/code", payload, {"Content-Type": "application/json"})
                 response = connection.getresponse()
                 response.read()
                 self.assertEqual(response.status, 200)
                 send_token.assert_called_once_with(
-                    "retropie.local", 55357, "ABCDE-FGHIJ-23456-7ABCD", "private-token"
+                    "retropieconsole.local", 55357, "ABCDE-FGHIJ-23456-7ABCD", "private-token", "retropie"
                 )
                 connection.close()
         finally:
@@ -1414,17 +1681,17 @@ class ControlStateTests(unittest.TestCase):
             for method in ('code', 'ssh'):
                 for failed in (False, True):
                     with self.subTest(method=method, failed=failed):
-                        state.begin_pairing('retropie.local', method)
+                        state.begin_pairing('retropieconsole.local', method, 'retropie')
                         finished.reset_mock()
                         def transport(*args):
                             finished.assert_not_called()
                             if failed:
                                 raise OSError('test connection failure')
                         target = 'pair_with_code' if method == 'code' else 'pair_over_ssh'
-                        with mock.patch('powerglove_vision.control_server.' + target, side_effect=transport):
+                        with mock.patch('virtualglove.control_server.' + target, side_effect=transport):
                             connection = http.client.HTTPSConnection('127.0.0.1', port, context=ssl._create_unverified_context())
                             connection.request('POST', '/api/pair/' + method, json.dumps({
-                                'host':'retropie.local', 'device_code':displayed[-1],
+                                'host':'retropieconsole.local', 'platform':'retropie', 'device_code':displayed[-1],
                                 'code':'ABCDE-FGHIJ-23456-7ABCD', 'username':'pi', 'password':'test-only',
                             }), {'Content-Type':'application/json'})
                             response = connection.getresponse()
@@ -1432,7 +1699,7 @@ class ControlStateTests(unittest.TestCase):
                             self.assertEqual(response.status, 503 if failed else 200)
                             finished.assert_called_once_with()
                             connection.close()
-            state.begin_pairing('retropie.local', 'code')
+            state.begin_pairing('retropieconsole.local', 'code', 'retropie')
             finished.reset_mock()
             state.finish_pairing_display()
             finished.assert_not_called()  # An older request cannot clear a newer PIN.

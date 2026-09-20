@@ -19,11 +19,11 @@ import math
 import time
 from pathlib import Path
 
-from powerglove_vision.model import ControllerState
-from powerglove_vision.realtime import (
+from virtualglove.model import ControllerState
+from virtualglove.realtime import (
     DashboardCadence, LatestStatusPublisher, RollingPerformance,
 )
-from powerglove_vision.transport import UdpSender
+from virtualglove.transport import UdpSender
 
 
 class _Address:

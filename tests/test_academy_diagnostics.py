@@ -17,7 +17,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from powerglove_vision.academy_diagnostics import AcademyDiagnostics, CUES
+from virtualglove.academy_diagnostics import AcademyDiagnostics, CUES
 
 
 class _Frame:

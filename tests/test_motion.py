@@ -26,10 +26,10 @@ import tempfile
 import unittest
 from unittest import mock
 
-from powerglove_vision.gesture import GestureConfig, GestureEngine
-from powerglove_vision.model import Calibration, HandObservation
-from powerglove_vision.tracker import TrackingResult
-from powerglove_vision.vision_app import (
+from virtualglove.gesture import GestureConfig, GestureEngine
+from virtualglove.model import Calibration, HandObservation
+from virtualglove.tracker import TrackingResult
+from virtualglove.vision_app import (
     _input_mode, _native_trace_fields, _native_xy_active, _native_xy_source,
     _update_controller_state, build_parser,
 )

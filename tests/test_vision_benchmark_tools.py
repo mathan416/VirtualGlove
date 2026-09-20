@@ -40,12 +40,18 @@ def load_script(name: str):
 class VisionBenchmarkToolTests(unittest.TestCase):
     """Verify schedule compatibility and safe guided-capture completion."""
 
-    def test_fixed_and_guided_schedules_cover_the_same_actions(self) -> None:
-        """Both capture styles must label the same recognition evidence."""
-        fixed = load_script("record-vision-benchmark.py")
+    def test_guided_schedules_cover_recognition_and_tracking_evidence(self) -> None:
+        """The supported recorder must label recognition and tracking evidence."""
         guided = load_script("guided-vision-benchmark.py")
-        self.assertEqual([cue[2] for cue in fixed.CUES], [cue[0] for cue in guided.CUES])
-        self.assertEqual(fixed.CUES[-1][1], 30)
+        self.assertEqual(
+            [cue[0] for cue in guided.CUES],
+            [
+                "neutral_near", "slow_xy", "fast_xy", "short_directions",
+                "a", "b", "roll_left", "roll_right", "closed_hand", "push",
+                "pull", "tracking_recovery", "neutral_far", "a_b_far",
+                "neutral_finish",
+            ],
+        )
         self.assertEqual(sum(cue[3] for cue in guided.CUES), 52)
         self.assertEqual(
             [cue[0] for cue in guided.TRACKING_CUES],

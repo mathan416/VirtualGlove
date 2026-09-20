@@ -1,4 +1,4 @@
-# Contributing to VirtualGlove
+# Contributing
 
 Use the [Engineering Toolkit](ENGINEERING_TOOLKIT.md) for supported trace,
 replay, camera, and latency workflows from a release archive. Use a complete
@@ -59,7 +59,7 @@ the reader's configuration.
 Keep user guides focused on what people see and what they should do. Put timing,
 rendering, protocol, benchmark history, and other implementation details in the
 technical references. Technical guides may describe the project's current UNO Q,
-RetroPie system, tests, successful experiments, and rejected approaches when that
+supported console, tests, successful experiments, and rejected approaches when that
 evidence helps another developer reproduce or understand the result. Date or
 otherwise qualify measurements that may change.
 Use small contextual images in tables, place related images side by side, and
@@ -115,12 +115,18 @@ scripts/check-source-docs.py
 Run these commands from the repository root on your development computer.
 The [command reference](CONFIGURATION_REFERENCE.md#command-line-reference) explains their options.
 
-Core tests must remain independent of a physical camera, VirtualGlove Controller, and RetroPie:
+Core tests must remain independent of a physical camera, VirtualGlove Controller, and console:
 
 ```sh
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/run-tests.py --setup
+python3 scripts/run-tests.py
 python3 -m compileall -q python scripts src tests
 ```
+
+The first command creates `.venv-test` with the pinned NumPy and headless
+OpenCV versions used by local image-array tests. Later runs reuse it. The test
+runner checks those imports before discovery and prints one setup instruction
+instead of running a dependency-incomplete suite.
 
 Run the documentation and syntax checks:
 
@@ -136,6 +142,14 @@ Do not add tests that only repeat static configuration without protecting a
 meaningful contract.
 
 ## Documentation changes
+
+Use Canadian English throughout project-authored public prose, including the
+application, Help, website, guides, and release notes. Prefer forms such as
+`behaviour`, `colour`, `centre`, `labour`, `recognise`, `customise`, `organise`,
+and `personalise`. The user-facing action is **Centre hand**. Preserve exact
+technical identifiers, protocol fields, command names, filenames, legal text,
+and third-party product names when changing their spelling would break an
+interface or misquote a source.
 
 Use two spaces before top-level list markers and keep each item on one source
 line. The current Help renderer treats wrapped continuation lines as separate
@@ -162,9 +176,9 @@ PYTHONPATH=src python scripts/capture-guide-screenshots.py
 
 The development environment needs Playwright and Chrome. The script renders the
 current application templates against isolated sample responses and temporary
-player state. It never contacts a live Controller or RetroPie. Camera areas use
+player state. It never contacts a live Controller or console. Camera areas use
 a labelled placeholder and pairing inputs use non-secret examples. The capture
-covers Dashboard, Play, Academy learning and personalization, player settings
+covers Dashboard, Play, Academy learning and personalisation, player settings
 and restoration, Setup, Games, Help, attract settings, and every guided-pairing
 state. Shared filenames mean one refresh can affect several guides, so inspect
 the images before rebuilding the PDFs. The script also checks the Security
@@ -211,6 +225,8 @@ approved for publication:
 
 ```sh
 python3 scripts/build-docs-pdf.py
+python3 scripts/build-enclosure-packages.py
+python3 website/build.py
 scripts/check-documentation.py --require-pdfs
 ```
 
@@ -233,11 +249,15 @@ unblurred originals. Update image captions and inspect the corresponding PDFs.
 
 Treat Markdown as the documentation source of truth. For publication, commit
 the approved Markdown and matching regenerated PDFs together.
+Treat `website/src/` as the website source of truth. Do not edit `website/dist/`
+or the upload ZIP independently; rebuild them with `website/build.py` so the
+release label, documentation ref, installer commands, and internal links remain
+consistent with `config/release.json`.
 Inspect the affected PDF pages for clipped text, broken tables, missing images,
 and unintended page breaks before committing.
 
 The public `README.md`, guides under `docs/`, and documentation images also
-drive the Help Center hosted by the VirtualGlove Controller. After a documentation change is
+drive the Help Centre hosted by the VirtualGlove Controller. After a documentation change is
 merged or otherwise ready to deploy, synchronize and verify that copy with:
 
 ```sh
@@ -305,8 +325,8 @@ Check insufficient samples, tracking loss, overlapping ranges, and calibration
 changes. Verify preview expiry, save/reload, selected-component reset, rejection
 of unsupported stored formats without mutation, isolated player settings and progress,
 stale-tab rejection after player changes or progress resets, and controller
-suppression throughout tuning. Check that player selection automatically restores that player’s saved center,
-missing centers require centering, and hand-setting imports retain explicit calibration reuse;
+suppression throughout tuning. Check that player selection automatically restores that player’s saved centre,
+missing centres require centring, and hand-setting imports retain explicit calibration reuse;
 Start controller remains required. Verify version-4 VirtualGlove round trips and
 rejection of every older portable format without mutation,
 invalid calibration rejection, and restart recovery between both restore writes. Automatic

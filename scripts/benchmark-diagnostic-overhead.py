@@ -19,7 +19,7 @@ import tempfile
 import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src'))
-from powerglove_vision.diagnostic_trace import DiagnosticTrace, session_key
+from virtualglove.diagnostic_trace import DiagnosticTrace, session_key
 
 
 def summarize(values):

@@ -102,8 +102,15 @@ def main() -> None:
         directory = Path(temp)
         config = directory / 'check.cfg'
         config.write_text(configuration(directory, image, args.release))
-        subprocess.run([OPENOCD, '-s', '/opt/openocd/share/openocd/scripts',
-                        '-f', str(config)], check=True, timeout=20)
+        try:
+            subprocess.run([OPENOCD, '-s', '/opt/openocd/share/openocd/scripts',
+                            '-f', str(config)], check=True, timeout=20)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            # The router or another boot component may already own the SWD GPIO
+            # lines. Early release is only an optimisation; normal startup remains
+            # authoritative and must not leave a failed user unit behind.
+            print("VirtualGlove early-start unavailable; leaving normal startup in control: "
+                  + str(error))
 
 
 if __name__ == '__main__':

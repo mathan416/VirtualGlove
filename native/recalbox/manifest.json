@@ -1,0 +1,117 @@
+{
+  "cores": {
+    "odroidgo2": {
+      "10.1": {
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "odroidgo2/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "7f8b23f179b38f511d060ed73de757732100ec42a073ca4b7802a6e0bd7a25b4",
+        "size": 4642560,
+        "source_file": "odroidgo2/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "9a10425ec19f3573b383dc3fb2e9fdb1aaabe76ccf8614a7e502e29fd052b1df",
+        "source_size": 1083175
+      }
+    },
+    "rg353x": {
+      "10.1": {
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rg353x/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "b5f55883027f35a87f7f4d2885ef082f72940ed7c81b93f67743d3bae849da68",
+        "size": 4954048,
+        "source_file": "rg353x/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "d98ab338c57809b1a3d3ff1d5b3ed0d7d4e7ec027760bf270f52365b06a2298c",
+        "source_size": 1083178
+      }
+    },
+    "rpi3": {
+      "10.1": {
+        "elf_class": 32,
+        "elf_machine": "arm",
+        "file": "rpi3/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "5aa74d1e2f41b0cb2f85125feeb1b3551d828566fb3401fa0a97e72be994f829",
+        "size": 3388676,
+        "source_file": "rpi3/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "b6f9d4b7d6abb71e771d52df77e027eee2b311bec0bc20021fe285c95d5e588a",
+        "source_size": 1087439
+      }
+    },
+    "rpi4_64": {
+      "10.1": {
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rpi4_64/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "a8c0913eefabf41a2fa3dae18ed160eb0e22ecdb6de461659c9961607fb5266d",
+        "size": 4646128,
+        "source_file": "rpi4_64/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "f1001d1f7be30f452b8dc2587eb107d082db6405adef1dca5eb46479f9f24ff6",
+        "source_size": 1083179
+      }
+    },
+    "rpi5_64": {
+      "10.1": {
+        "elf_class": 64,
+        "elf_machine": "aarch64",
+        "file": "rpi5_64/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "1c6f3898caf6a0d561492292fd9dd7a95025720d2b91e28d87efe6d7eab67679",
+        "size": 4674872,
+        "source_file": "rpi5_64/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "53c744b63dcb63d331fcf7fba5d329c1b3710b8c8b78f7020d5ff52dd1f0dc44",
+        "source_size": 1083178
+      }
+    },
+    "rpizero2": {
+      "10.1": {
+        "elf_class": 32,
+        "elf_machine": "arm",
+        "file": "rpizero2/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "4814b043926547bb7ab306a3d65b8044a9cb8c28a9181d59376ccb9a4a82c876",
+        "size": 3388676,
+        "source_file": "rpizero2/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "235054b3098e4e096e64de48e7b0be808bae5fbcc30ddff1b2e4517232a5743d",
+        "source_size": 1087441
+      }
+    },
+    "x86_64": {
+      "10.1": {
+        "elf_class": 64,
+        "elf_machine": "x86_64",
+        "file": "x86_64/10.1/nestopia_powerglove_libretro.so",
+        "nestopia_revision": "5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e",
+        "patch_sha256": "272222b3f55093e901f64228e2adcd82dbedaba77360cf9bfb4c829b6652f706",
+        "recalbox_revision": "7950b828fd571a7be95cbb2190def4603de20c2d",
+        "recalbox_version": "10.1",
+        "sha256": "8c28daedbe401e4d022a3c7210258107c736a74595c462dc60659ff8b69c76f3",
+        "size": 4614408,
+        "source_file": "x86_64/10.1/nestopia-powerglove-source.tar.gz",
+        "source_sha256": "f5ac765ece81063dc75dc9505e339805ecdc101976d2c40ac2552419a9b118f2",
+        "source_size": 1083179
+      }
+    }
+  },
+  "format": 2
+}

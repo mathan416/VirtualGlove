@@ -19,9 +19,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
 
-from powerglove_vision import kiyo_camera as kiyo
-from powerglove_vision import camera_controls
-from powerglove_vision.vision_app import (
+from virtualglove import kiyo_camera as kiyo
+from virtualglove import camera_controls
+from virtualglove.vision_app import (
     _camera_rate_attempts, _first_direct_frame, _open_camera, build_parser,
 )
 
@@ -96,10 +96,10 @@ class KiyoTests(unittest.TestCase):
             camera_buffers=2, kiyo_hdr_off=False,
         )
         with patch.dict('sys.modules', {'cv2': fake_cv2}), \
-             patch('powerglove_vision.vision_app.camera_candidates',
+             patch('virtualglove.vision_app.camera_candidates',
                    return_value=['/dev/video0']), \
-             patch('powerglove_vision.vision_app.sys.platform', 'linux'), \
-             patch('powerglove_vision.process_capture.ProcessDirectV4L2Capture',
+             patch('virtualglove.vision_app.sys.platform', 'linux'), \
+             patch('virtualglove.process_capture.ProcessDirectV4L2Capture',
                    return_value=isolated) as process_capture:
             returned_cv2, returned_capture = _open_camera(args)
         self.assertIs(returned_cv2, fake_cv2)
@@ -120,10 +120,10 @@ class KiyoTests(unittest.TestCase):
             camera_buffers=1, kiyo_hdr_off=False,
         )
         with patch.dict('sys.modules', {'cv2': fake_cv2}), \
-             patch('powerglove_vision.vision_app.camera_candidates',
+             patch('virtualglove.vision_app.camera_candidates',
                    return_value=['/dev/video0']), \
-             patch('powerglove_vision.vision_app.sys.platform', 'linux'), \
-             patch('powerglove_vision.process_capture.ProcessOpenCVCapture',
+             patch('virtualglove.vision_app.sys.platform', 'linux'), \
+             patch('virtualglove.process_capture.ProcessOpenCVCapture',
                    return_value=isolated) as process_capture:
             returned_cv2, returned_capture = _open_camera(args)
         self.assertIs(returned_cv2, fake_cv2)

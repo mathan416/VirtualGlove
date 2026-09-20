@@ -13,9 +13,9 @@ Requires Playwright WebKit; never connects to real devices.
 """
 import asyncio
 from playwright.async_api import async_playwright,expect
-from powerglove_vision.academy_web import LEARN
-from powerglove_vision.dashboard_web import DASHBOARD
-from powerglove_vision.control_server import SETUP
+from virtualglove.academy_web import LEARN
+from virtualglove.dashboard_web import DASHBOARD
+from virtualglove.control_server import SETUP
 async def main():
  """Verify selector changes load the chosen player without another click."""
  async with async_playwright() as pw:

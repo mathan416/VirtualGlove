@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from powerglove_vision.camera import (
+from virtualglove.camera import (
     camera_candidates, camera_device_identity, camera_device_options,
     discover_camera_devices,
 )
