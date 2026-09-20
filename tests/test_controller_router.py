@@ -233,12 +233,65 @@ class ControllerRouterTests(unittest.TestCase):
                                   "source": source_state, "mapper": None,
                                   "grabbed": False}}
         device.sinks = {1: Mock()}
+        device.virtual_updated_at = 12.0
+        device.virtual_armed = True
         with patch.object(router.fcntl, "ioctl", side_effect=OSError), \
                 patch.object(router.os, "close"):
             device._set_active(True)
         self.assertEqual(device.descriptors, {})
         self.assertTrue(device.players[1].active)
+        self.assertFalse(device.virtual_armed)
+        self.assertEqual(device.virtual_updated_at, 0.0)
         device.sinks[1].write.assert_called()
+
+    def test_game_launch_requires_fresh_neutral_glove_before_input(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        player = router.PlayerState(1)
+        player.virtual.buttons = {"start"}
+        player.virtual.set_axis("hat_x", 1)
+        device.players = {1: player}
+        device.config = {"virtualglove_player": 1}
+        device.descriptors = {}
+        device.sinks = {1: Mock()}
+        device.virtual_updated_at = 10.0
+        device.virtual_armed = True
+
+        device._set_active(True)
+        self.assertEqual(player.desired()[0], set())
+        self.assertTrue(all(value == 0 for value in player.desired()[1].values()))
+
+        device._virtual({"buttons": {"start": True}, "dpad": {"right": True},
+                         "axes": {"x": 32767}})
+        self.assertFalse(device.virtual_armed)
+        self.assertEqual(player.desired()[0], set())
+        self.assertTrue(all(value == 0 for value in player.desired()[1].values()))
+
+        device._virtual({"buttons": {}, "dpad": {}, "axes": {"x": 16000}})
+        self.assertTrue(device.virtual_armed)
+        self.assertTrue(all(value == 0 for value in player.desired()[1].values()))
+
+        device._virtual({"buttons": {"start": True}, "dpad": {"right": True},
+                         "axes": {"x": 32767}})
+        buttons, axes = player.desired()
+        self.assertEqual(buttons, {"start"})
+        self.assertEqual(axes["hat_x"], 1)
+        self.assertEqual(axes["lx"], 0)
+
+    def test_idle_glove_observations_are_not_saved_for_next_game(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        player = router.PlayerState(1)
+        device.players = {1: player}
+        device.config = {"virtualglove_player": 1}
+        device.sinks = {1: Mock()}
+        device.virtual_updated_at = 0.0
+        device.virtual_armed = False
+
+        device._virtual({"buttons": {"a": True}, "dpad": {"left": True}})
+
+        self.assertEqual(player.virtual.buttons, set())
+        self.assertTrue(all(value == 0 for value in player.virtual.axes.values()))
+        self.assertEqual(device.virtual_updated_at, 0.0)
+        device.sinks[1].write.assert_not_called()
 
     def test_virtual_socket_drops_queued_history_and_applies_latest_state(self):
         device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)

@@ -367,6 +367,10 @@ class ControllerRouterDevice:
         self.descriptors: dict[int, dict[str, Any]] = {}
         self.socket_path, self.socket = socket_path, None
         self.virtual_updated_at = 0.0
+        # A newly launched core must begin from a fresh neutral glove state.
+        # Otherwise the last observation received while EmulationStation was
+        # active can become the game's first controller input.
+        self.virtual_armed = False
         self.config_revision = revision(self.config)
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
@@ -423,6 +427,9 @@ class ControllerRouterDevice:
                     self._drop(fd)
         for state in self.players.values():
             state.active = active
+            state.virtual.release()
+        self.virtual_updated_at = 0.0
+        self.virtual_armed = False
         self._publish()
 
     def _reload_config(self, updated: dict[str, Any]) -> None:
@@ -505,16 +512,38 @@ class ControllerRouterDevice:
         player = self.config.get("virtualglove_player")
         if not player or player not in self.players:
             return
-        state = self.players[player].virtual; state.release()
+        player_state = self.players[player]
+        state = player_state.virtual
+        if not player_state.active:
+            # Observations from Setup or EmulationStation must never be held
+            # and replayed when the next game starts.
+            state.release()
+            self.virtual_updated_at = 0.0
+            return
         buttons = incoming.get("buttons", {})
+        dpad = incoming.get("dpad", {})
+        neutral = not any(bool(buttons.get(name)) for name in (
+            "a", "b", "start", "select", "glove_zap"
+        )) and not any(bool(dpad.get(name)) for name in (
+            "left", "right", "up", "down"
+        ))
+        if not self.virtual_armed:
+            state.release()
+            if neutral:
+                self.virtual_armed = True
+                self.virtual_updated_at = time.monotonic()
+            self._publish()
+            return
+
+        state.release()
         for name in ("a", "b", "start", "select"):
             if buttons.get(name): state.buttons.add(name)
         if buttons.get("glove_zap"): state.buttons.add("r2")
-        dpad, axes = incoming.get("dpad", {}), incoming.get("axes", {})
         state.set_axis("hat_x", int(bool(dpad.get("right"))) - int(bool(dpad.get("left"))))
         state.set_axis("hat_y", int(bool(dpad.get("down"))) - int(bool(dpad.get("up"))))
-        for target, source in (("lx", "x"), ("ly", "y"), ("rx", "roll"), ("ry", "z")):
-            state.set_axis(target, max(-32767, min(32767, int(axes.get(source, 0)))))
+        # FCEUmm and stock Nestopia consume the recognized NES D-pad. Camera
+        # position axes belong to the separate native Super Glove Ball path;
+        # forwarding them here can hold an ordinary game off-centre at launch.
         self.virtual_updated_at = time.monotonic(); self._publish()
 
     def _drain_virtual(self) -> None:
