@@ -99,7 +99,7 @@ def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
     try:
         facts = json.loads((ROOT / "config/release.json").read_text())
         project_version = str(facts["project_version"])
-        candidate = str(facts["candidate_tag"])
+        release_tag = str(facts["release_tag"])
         oldest = str(facts["oldest_supported_upgrade"])
         platforms = list(facts["supported_platforms"])
         removed = set(facts["removed_features"])
@@ -113,8 +113,8 @@ def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
     readme = (ROOT / "README.md").read_text()
     install = (ROOT / "docs/INSTALL_README.md").read_text()
     for label, source in (("README", readme), ("Installation Guide", install)):
-        if project_version not in source or candidate not in source:
-            errors.append(f"{label} does not identify the current version and candidate")
+        if project_version not in source or release_tag not in source:
+            errors.append(f"{label} does not identify the current version and release")
         for platform in platforms:
             short = platform.split(" on ", 1)[0].split(" ", 1)[0]
             if short not in source:

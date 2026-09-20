@@ -2730,7 +2730,7 @@ personal tuning and neutral calibration remain available.
 
 `config/release.json` is the maintained release-facts record used by the
 documentation and website checks. It identifies the project version, current
-candidate, oldest supported in-place upgrade, supported platforms, and retired
+release tag and channel, oldest supported in-place upgrade, supported platforms, and retired
 features that must not reappear in current instructions. `pyproject.toml`
 remains the Python package version and is required to match that record.
 
@@ -2757,7 +2757,7 @@ to enter the extracted `VirtualGlove` directory before running
 `launchbox\install-launchbox.ps1`.
 
 To pin a published release, append `--version TAG` to the saved script command,
-for example `bash install-uno-q.sh --version v0.5.0-rc.1`. To test a published development
+for example `bash install-uno-q.sh --version v0.5.0`. To test a published development
 prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replace
 these example tags with actual published tags, and use the matching option on
 the selected Linux console. No GitHub release is created by running an installer.

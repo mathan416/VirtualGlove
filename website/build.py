@@ -36,13 +36,28 @@ def values() -> dict[str, str]:
     """Derive every release-sensitive site value from the checked facts file."""
     facts = json.loads((ROOT / "config/release.json").read_text())
     version = facts["project_version"]
-    tag = facts["candidate_tag"]
+    tag = facts["release_tag"]
+    stable = facts["channel"] == "stable"
     base = f"https://github.com/mathan416/VirtualGlove/releases/download/{tag}"
     return {
         "VERSION": version,
         "TAG": tag,
         "REF": tag,
-        "RELEASE_LABEL": f"Release candidate · {tag}",
+        "RELEASE_LABEL": (f"Stable release · {tag}" if stable
+                          else f"Release candidate · {tag}"),
+        "RELEASE_NOTE": (
+            f"VirtualGlove {version} is the current stable release. Install the "
+            "same release on the Controller and console."
+            if stable else
+            f"Release candidates are for testing before the final {version} release. "
+            "Install the same candidate on the Controller and console."
+        ),
+        "INSTALL_RELEASE_NOTE": (
+            f"These commands are pinned to {tag} so the Controller and console use "
+            "the same stable release."
+            if stable else
+            f"These commands are pinned to {tag} rather than the latest stable release."
+        ),
         "RELEASE_URL": f"https://github.com/mathan416/VirtualGlove/releases/tag/{tag}",
         "DOC_ROOT": f"https://github.com/mathan416/VirtualGlove/blob/{tag}",
         "RAW_ROOT": f"https://github.com/mathan416/VirtualGlove/raw/{tag}",
@@ -98,7 +113,7 @@ def validate() -> None:
     if re.search(r"Get ready to play|Ready-to-Play|/ready", combined, re.I):
         raise ValueError("Website advertises the retired Ready-to-Play feature")
     facts = json.loads((ROOT / "config/release.json").read_text())
-    if facts["candidate_tag"] not in combined or "v0.4.1" in combined:
+    if facts["release_tag"] not in combined or "v0.4.1" in combined:
         raise ValueError("Website release identity is stale")
     prose = html.unescape(re.sub(r"<[^>]+>", " ", combined))
     american_spellings = re.compile(

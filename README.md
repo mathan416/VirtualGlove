@@ -16,7 +16,7 @@ VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current project version: 0.5.0 · Next candidate: v0.5.0-rc.1**
+**Current stable release: v0.5.0**
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
@@ -85,11 +85,10 @@ both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
 
-Release-candidate testers should install `v0.5.0-rc.1` on both machines using
-the pinned-version procedure in the
+VirtualGlove `v0.5.0` is the current stable release. The unversioned commands
+below select it through GitHub's latest stable release. To reproduce one exact
+installation later, use the pinned-version procedure in the
 [technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
-The unversioned commands below deliberately continue to select the latest
-stable release.
 
 ### 1. Prepare the Controller
 
@@ -369,8 +368,8 @@ live dead-zone visualization, and source-accurate
 rapid-fire behaviour. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie.
 
-The `v0.5.0-rc.1` candidate has completed physical controller and VirtualGlove
-acceptance on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
+The `v0.5.0` release completed physical controller and VirtualGlove acceptance
+on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
 includes ordinary NES play, native Super Glove Ball, physical-controller
 coexistence, hotkeys, reboot persistence, and Controller Router remapping.
 Recalbox's all-Libretro physical path has also been exercised with Game Boy,

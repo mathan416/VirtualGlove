@@ -144,9 +144,9 @@ Release validation additionally covers source/documentation audits, JavaScript
 syntax and browser harnesses, installer/package verification, native manifests,
 PDF rendering, UNO Q behaviour, and each affected console platform.
 
-CONSERVATIVE RC1 CLEANUP AUDIT
-------------------------------
-No complete runtime module is confirmed dead at the v0.5.0-rc.1 boundary.
+CONSERVATIVE 0.5.0 CLEANUP AUDIT
+--------------------------------
+No complete runtime module is confirmed dead at the stable v0.5.0 boundary.
 Several paths can look historical but still carry upgrade, rollback, packaging,
 or active platform responsibilities and must remain through this release:
 

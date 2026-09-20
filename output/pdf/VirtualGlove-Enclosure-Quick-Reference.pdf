@@ -58,7 +58,7 @@ endobj
 9 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0-rc.1/hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0/hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 24 103 260 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -73,7 +73,7 @@ endobj
 11 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0-rc.1/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 278 103 514 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -96,7 +96,7 @@ endobj
 14 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0-rc.1/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.0/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 532 103 768 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -315,7 +315,7 @@ endobj
 endobj
 38 0 obj
 <<
-/Author (Iain Bennett) /CreationDate (D:20260920171129-04'00') /Creator (anonymous) /Keywords () /ModDate (D:20260920171129-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (Iain Bennett) /CreationDate (D:20260920172858-04'00') /Creator (anonymous) /Keywords () /ModDate (D:20260920172858-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (unspecified) /Title (VirtualGlove Enclosure Assembly Quick Reference) /Trapped /False
 >>
 endobj
@@ -392,48 +392,48 @@ xref
 0003170047 00000 n 
 0003192266 00000 n 
 0003192849 00000 n 
-0003193105 00000 n 
-0003213485 00000 n 
-0003213751 00000 n 
-0003231628 00000 n 
-0003237942 00000 n 
-0003238208 00000 n 
-0003238693 00000 n 
-0004599520 00000 n 
-0004687906 00000 n 
-0004688214 00000 n 
-0004704089 00000 n 
-0004708495 00000 n 
-0004708803 00000 n 
-0004745539 00000 n 
-0004745847 00000 n 
-0004767463 00000 n 
-0004767771 00000 n 
-0004803608 00000 n 
-0004809390 00000 n 
-0004809698 00000 n 
-0004810006 00000 n 
-0006090030 00000 n 
-0006179029 00000 n 
-0006191630 00000 n 
-0006195869 00000 n 
-0006211128 00000 n 
-0006216509 00000 n 
-0006216915 00000 n 
-0006216985 00000 n 
-0006217289 00000 n 
-0006217399 00000 n 
-0006219272 00000 n 
-0006225645 00000 n 
-0006232287 00000 n 
-0006237313 00000 n 
-0006241522 00000 n 
-0006246519 00000 n 
-0006249996 00000 n 
+0003193100 00000 n 
+0003213480 00000 n 
+0003213741 00000 n 
+0003231618 00000 n 
+0003237932 00000 n 
+0003238193 00000 n 
+0003238678 00000 n 
+0004599505 00000 n 
+0004687891 00000 n 
+0004688199 00000 n 
+0004704074 00000 n 
+0004708480 00000 n 
+0004708788 00000 n 
+0004745524 00000 n 
+0004745832 00000 n 
+0004767448 00000 n 
+0004767756 00000 n 
+0004803593 00000 n 
+0004809375 00000 n 
+0004809683 00000 n 
+0004809991 00000 n 
+0006090015 00000 n 
+0006179014 00000 n 
+0006191615 00000 n 
+0006195854 00000 n 
+0006211113 00000 n 
+0006216494 00000 n 
+0006216900 00000 n 
+0006216970 00000 n 
+0006217274 00000 n 
+0006217384 00000 n 
+0006219257 00000 n 
+0006225630 00000 n 
+0006232272 00000 n 
+0006237298 00000 n 
+0006241507 00000 n 
+0006246504 00000 n 
+0006249981 00000 n 
 trailer
 <<
 /ID 
-[<481539b9f2872f8c2b5ad6154005656e><481539b9f2872f8c2b5ad6154005656e>]
+[<a75f1012ab99c5c21c860394b5e97b01><a75f1012ab99c5c21c860394b5e97b01>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 38 0 R
@@ -441,5 +441,5 @@ trailer
 /Size 48
 >>
 startxref
-6252949
+6252934
 %%EOF

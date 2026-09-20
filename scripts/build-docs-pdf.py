@@ -1415,7 +1415,7 @@ def build_enclosure_quick_reference(output: Path) -> None:
     canvas.setTitle("VirtualGlove Enclosure Assembly Quick Reference")
     canvas.setAuthor("Iain Bennett")
     page_width, _ = landscape(letter)
-    release_tag = json.loads((ROOT / "config/release.json").read_text())["candidate_tag"]
+    release_tag = json.loads((ROOT / "config/release.json").read_text())["release_tag"]
     bundle_root = (
         "https://github.com/mathan416/VirtualGlove/raw/" + release_tag
         + "/hardware/enclosures/bundles/"

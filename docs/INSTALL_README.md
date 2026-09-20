@@ -9,10 +9,10 @@ Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-The next release candidate is `v0.5.0-rc.1`. After it is published, install
-that exact version on both machines with the pinned-version procedure in the
-technical reference. The unversioned commands in this guide intentionally
-continue to select the latest stable release.
+VirtualGlove `v0.5.0` is the current stable release. The unversioned commands
+in this guide select it through GitHub's latest stable release. Use the
+pinned-version procedure in the technical reference when you need to reproduce
+one exact version later.
 
 ## 1. Before you begin
 
