@@ -89,6 +89,10 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Completed the LaunchBox in-place namespace upgrade. Installations that used
+  the current package name with the retired Python module folder now remove
+  only that leftover managed runtime folder and command files, while preserving
+  pairing, game registration, emulator settings, ROMs, saves, and controllers.
 - Followed controller remaps made in EmulationStation automatically. Controller
   Router keeps the selected Player 1–4 assignment, refreshes the validated
   button mapping while idle or before the next game, and lists newly configured

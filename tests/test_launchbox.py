@@ -347,6 +347,9 @@ class LaunchBoxTests(unittest.TestCase):
         self.assertIn("$RemainingServices.Count -gt 0", installer)
         self.assertIn("(virtualglove|$LegacyModule)\\.(launchbox_runtime|receiver|game_registry)", installer)
         self.assertIn('-m pip uninstall --disable-pip-version-check -y $LegacyDistribution', installer)
+        self.assertIn('$LegacyModuleRoot = Join-Path $RuntimeRoot "Lib\\site-packages\\$LegacyModule"', installer)
+        self.assertIn('Remove-Item -LiteralPath $LegacyModuleRoot -Recurse -Force', installer)
+        self.assertIn('-Filter "$LegacyCommands*"', installer)
         self.assertIn('$RetiredRuntime.Count -gt 0', installer)
         retired_distribution = 'power' + 'glove-vision'
         retired_module = 'power' + 'glove_vision'
