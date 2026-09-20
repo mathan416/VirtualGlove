@@ -91,8 +91,12 @@ jobs:
           python -m json.tool config/games.json >/dev/null
           python -m json.tool config/launcher.example.json >/dev/null
           python -m json.tool config/profiles.json >/dev/null
+          python -m json.tool config/release.json >/dev/null
+          python -m json.tool hardware/enclosures/enclosure-files.json >/dev/null
       - name: Rebuild and inspect PDF editions
         run: |
+          python scripts/build-enclosure-packages.py
+          python website/build.py
           python scripts/build-docs-pdf.py
           scripts/check-documentation.py --require-pdfs
       - name: Build and verify App Lab installation ZIP

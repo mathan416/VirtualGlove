@@ -217,6 +217,8 @@ approved for publication:
 
 ```sh
 python3 scripts/build-docs-pdf.py
+python3 scripts/build-enclosure-packages.py
+python3 website/build.py
 scripts/check-documentation.py --require-pdfs
 ```
 
@@ -239,6 +241,10 @@ unblurred originals. Update image captions and inspect the corresponding PDFs.
 
 Treat Markdown as the documentation source of truth. For publication, commit
 the approved Markdown and matching regenerated PDFs together.
+Treat `website/src/` as the website source of truth. Do not edit `website/dist/`
+or the upload ZIP independently; rebuild them with `website/build.py` so the
+release label, documentation ref, installer commands, and internal links remain
+consistent with `config/release.json`.
 Inspect the affected PDF pages for clipped text, broken tables, missing images,
 and unintended page breaks before committing.
 

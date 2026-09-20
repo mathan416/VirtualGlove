@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import html
 import io
+import json
 import math
 import re
 import shutil
@@ -1268,7 +1269,7 @@ def _draw_step_panel(canvas: Canvas, *, number: int, title: str,
 
 def _draw_route_card(canvas: Canvas, *, title: str, detail: str,
                      image_name: str, page_label: str, x: float,
-                     accent: colors.Color) -> None:
+                     accent: colors.Color, url: str) -> None:
     """Point the builder to one uninterrupted enclosure procedure."""
     width, y, height = 236, 103, 335
     _draw_reference_image(canvas, image_name, x, y + 76, width, height - 76)
@@ -1280,6 +1281,7 @@ def _draw_route_card(canvas: Canvas, *, title: str, detail: str,
     canvas.drawRightString(x + width - 10, y + 52, page_label)
     _quick_paragraph(canvas, detail, x + 8, y, width - 16, 39,
                      size=7.2, leading=9, colour=MUTED)
+    canvas.linkURL(url, (x, y, x + width, y + height), relative=0, thickness=0)
 
 
 def _draw_inventory_item(canvas: Canvas, kind: str, label: str, quantity: str,
@@ -1413,6 +1415,11 @@ def build_enclosure_quick_reference(output: Path) -> None:
     canvas.setTitle("VirtualGlove Enclosure Assembly Quick Reference")
     canvas.setAuthor("Iain Bennett")
     page_width, _ = landscape(letter)
+    release_tag = json.loads((ROOT / "config/release.json").read_text())["candidate_tag"]
+    bundle_root = (
+        "https://github.com/mathan416/VirtualGlove/raw/" + release_tag
+        + "/hardware/enclosures/bundles/"
+    )
 
     _quick_reference_header(canvas, "ASSEMBLE YOUR CONTROLLER", 1, accent=RED)
     _draw_pixel_pal(canvas, "coach", 26, 438, 108, 105)
@@ -1425,18 +1432,21 @@ def build_enclosure_quick_reference(output: Path) -> None:
         canvas, title="UNO Q CASE", page_label="PAGE 3",
         detail="Compact base and lid. The Arduino hub remains outside.",
         image_name="virtualglove-uno-case-exterior.png", x=24, accent=BLUE,
+        url=bundle_root + "VirtualGlove-UNO-Q-Case-Print-Files.zip",
     )
     _draw_route_card(
         canvas, title="DOCK V1", page_label="PAGES 4-5",
         detail="Original low-profile base with an open rear hub bay.",
         image_name="virtualglove-controller-dock-exterior.png", x=278,
         accent=colors.HexColor("#7457A8"),
+        url=bundle_root + "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
     )
     _draw_route_card(
         canvas, title="DOCK V2", page_label="PAGES 6-7",
         detail="Closed enclosure with the UNO Q and hub hidden inside.",
         image_name="virtualglove-controller-dock-v2-exterior.png", x=532,
         accent=RED,
+        url=bundle_root + "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
     )
     _quick_reference_footer(canvas, "Do not power anything until the final inspection on page 8.")
     canvas.showPage()

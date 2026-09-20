@@ -868,6 +868,18 @@ these nine figures. `scripts/build-docs-pdf.py` generates the PDF set. The Help
 and package allowlists explicitly include this architecture guide. The local
 quick reference remains excluded from public deployment.
 
+The separate public project website is tracked under `website/`. Its build reads
+the bounded release facts in `config/release.json`, renders four static pages,
+validates release-sensitive commands and links, and creates a manual-upload ZIP.
+It contains no Controller configuration, pairing material, analytics, or live
+device access. The Controller's local Dashboard, Setup, and Help pages remain a
+different application surface.
+
+Enclosure print files retain their stable individual paths. The checked
+`hardware/enclosures/enclosure-files.json` manifest classifies structural,
+branding, fit-test, shared, and optional pieces; the package builder uses it to
+create one unambiguous archive for each supported enclosure design.
+
 ## Implementation map
 
 Paths below are relative to the project root. This map identifies responsibility;

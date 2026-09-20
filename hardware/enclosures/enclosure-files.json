@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "shared": {
+    "matrix_bezel": "stl/virtualglove-matrix-bezel.stl",
+    "usb_c_fit_coupon": "stl/virtualglove-usb-c-fit-coupon.stl",
+    "hub_fit_coupon": "stl/virtualglove-hub-fit-coupon.stl",
+    "source": "virtualglove-controller.scad"
+  },
+  "branding": {
+    "small_emblem": [
+      "stl/virtualglove-lid-logo-backing.stl",
+      "stl/virtualglove-lid-logo-cyan.stl",
+      "stl/virtualglove-lid-logo-red.stl",
+      "stl/virtualglove-lid-logo-multicolor.3mf"
+    ],
+    "compact_wordmark": [
+      "stl/virtualglove-compact-full-logo-backing.stl",
+      "stl/virtualglove-compact-full-logo-cyan.stl",
+      "stl/virtualglove-compact-full-logo-red.stl",
+      "stl/virtualglove-compact-full-logo-multicolor.3mf"
+    ],
+    "full_wordmark": [
+      "stl/virtualglove-full-logo-backing.stl",
+      "stl/virtualglove-full-logo-cyan.stl",
+      "stl/virtualglove-full-logo-red.stl",
+      "stl/virtualglove-full-logo-multicolor.3mf"
+    ],
+    "optional_large_badge": [
+      "stl/virtualglove-target-badge-backing.stl",
+      "stl/virtualglove-target-badge-cyan.stl",
+      "stl/virtualglove-target-badge-red.stl",
+      "stl/virtualglove-target-badge-multicolor.3mf"
+    ]
+  },
+  "designs": {
+    "uno_q_case": {
+      "title": "UNO Q Case",
+      "archive": "VirtualGlove-UNO-Q-Case-Print-Files.zip",
+      "structural": [
+        "stl/virtualglove-uno-base.stl",
+        "stl/virtualglove-uno-lid.stl",
+        "stl/virtualglove-uno-lid-full-logo.stl"
+      ],
+      "branding": ["small_emblem", "compact_wordmark"],
+      "fit_tests": ["usb_c_fit_coupon"]
+    },
+    "controller_dock_v1": {
+      "title": "Controller Dock V1",
+      "archive": "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
+      "structural": [
+        "stl/virtualglove-dock-base.stl",
+        "stl/virtualglove-dock-lid.stl",
+        "stl/virtualglove-dock-lid-full-logo.stl"
+      ],
+      "branding": ["small_emblem", "full_wordmark"],
+      "fit_tests": ["usb_c_fit_coupon", "hub_fit_coupon"]
+    },
+    "controller_dock_v2": {
+      "title": "Controller Dock V2",
+      "archive": "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+      "structural": [
+        "stl/virtualglove-dock-v2-base.stl",
+        "stl/virtualglove-dock-v2-lid.stl",
+        "stl/virtualglove-dock-v2-lid-full-logo.stl"
+      ],
+      "branding": ["small_emblem", "full_wordmark"],
+      "fit_tests": ["usb_c_fit_coupon", "hub_fit_coupon"]
+    }
+  }
+}

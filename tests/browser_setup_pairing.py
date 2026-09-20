@@ -21,6 +21,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from playwright.async_api import async_playwright, expect
 from virtualglove.control_server import SETUP
+from virtualglove.versioning import current_version
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,7 +42,7 @@ async def main():
     worker_status = dict(worker_running=True, vision_state='idle',
                          controller_enabled=False, controller_context_active=False,
                          receiver_available=False, profile='off', vision_profile='off',
-                         version='0.4.0', camera_fps=30.0,
+                         version=current_version(), camera_fps=30.0,
                          camera_fps_requested='auto')
     flags = dict(load_error=False, save_error=False, begin_error=False,
                  pair_error=False, abort_pair=False, expiry=120, pair_delay=.15)
@@ -230,7 +231,7 @@ async def main():
         await expect(page.locator('#receiver')).to_have_value('draft.local')
         await page.get_by_role('button',name='Save connection',exact=True).click()
         assert config['receiver']=='draft.local'
-        assert config['camera_fps']=='auto'
+        assert config['camera_fps']=='30'
         await expect(page.locator('#camera_fps')).to_have_value('60')
         await expect(page.locator('#pair-begin')).to_be_enabled()
         config['receiver']='RETROPIE-NAME.local';await open_page()
@@ -309,7 +310,7 @@ async def main():
         flags['expiry']=120
         config['connection_configured']=False;config['pairing_configured']=False;await open_page()
         await expect(page.locator('#pair-begin')).to_be_disabled()
-        await expect(page.locator('#pair-prerequisite')).to_contain_text('Save connection')
+        await expect(page.locator('#pair-prerequisite')).to_contain_text('Save both the platform and console address')
         config['connection_configured']=True;config['pairing_configured']=True;flags['load_error']=True
         await page.reload();await expect(page.locator('#setup-retry')).to_be_visible()
         await page.locator('#setup-retry').click();await expect(page.locator('#pair-begin')).to_be_enabled()

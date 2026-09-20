@@ -181,6 +181,7 @@ root shell.
 Run this command in the RetroPie terminal:
 
 ```sh
+cd "$HOME"
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-retropie.sh && bash install-retropie.sh
 ```
 
@@ -249,6 +250,7 @@ the commands below.
 Run this command in the Recalbox terminal:
 
 ```sh
+cd /recalbox/share/system
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-recalbox.sh && bash install-recalbox.sh
 ```
 
@@ -306,6 +308,7 @@ the commands below.
 Run this command in the Batocera terminal:
 
 ```sh
+cd /userdata/system
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-batocera.sh && bash install-batocera.sh
 ```
 
@@ -359,14 +362,18 @@ Confirm that your physical XInput controller works in RetroArch. Close
 LaunchBox, Big Box, and RetroArch before installation.
 
 Download `VirtualGlove-LaunchBox.zip` from the latest VirtualGlove release and
-extract it to a temporary folder. Open PowerShell as Administrator, using the
-same Windows account that runs LaunchBox.
+extract it to a temporary folder. The archive contains a folder named
+`VirtualGlove`. Open PowerShell as Administrator, using the same Windows
+account that runs LaunchBox.
 
 #### Install
 
-From the extracted package folder, run:
+Move into the extracted `VirtualGlove` folder, then run the installer. Replace
+the example extraction, LaunchBox, RetroArch, and Controller locations with
+the locations on your computer:
 
 ```powershell
+Set-Location "$env:USERPROFILE\Downloads\VirtualGlove"
 powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
   -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch" `
   -ControllerHost "virtualglove.local"
@@ -557,6 +564,20 @@ Controller and console. Use the same release on both devices. The installers
 stop managed VirtualGlove processes before replacing application files and
 preserve private settings and user data.
 
+### Fresh installation checklist
+
+1. Install the Controller from `/home/arduino`, then open its printed Dashboard
+   address.
+2. Confirm a physical controller already works on the console before installing
+   its VirtualGlove integration.
+3. Install the same VirtualGlove release on the selected console platform.
+4. Save the platform and console address in Setup, check the address, and pair
+   the two devices.
+5. Center the selected player and test one ordinary registered NES game with
+   both VirtualGlove and the physical controller.
+6. If installed, test native Super Glove Ball separately, then reboot both
+   devices and repeat the game and exit checks.
+
 ### Upgrade from v0.4.2 to v0.5.0
 
 Version 0.5.0 includes a managed upgrade from the released v0.4.2 installation.
@@ -575,6 +596,20 @@ file, follow its message rather than deleting the installation manifest or
 forcing the upgrade. The
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation)
 describes staged upgrades and recovery.
+
+Use this order for the release upgrade:
+
+1. Close every running game. On LaunchBox, also close LaunchBox, Big Box, and
+   RetroArch.
+2. Install v0.5.0 on the Controller, then install the same release on the
+   console. Run each command from the writable folder shown in its platform
+   section; do not mix stable and release-candidate files.
+3. Keep every backup location printed by the installers until acceptance is
+   complete.
+4. Reboot the Controller and console. Confirm pairing, players, calibration,
+   game registrations, and Controller Router assignments were retained.
+5. Test physical controls, VirtualGlove controls, the platform exit hotkey, and
+   native Super Glove Ball when its core is installed.
 
 ### Read the installer report
 

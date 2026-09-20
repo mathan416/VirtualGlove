@@ -107,7 +107,7 @@ class PlayerSettings:
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if isinstance(exc, ValueError) and str(exc) == "Unsupported player settings":
                 self.error = ("Unsupported player settings version. Upgrade from "
-                              "VirtualGlove 0.4.1 or restore a current hand-setup "
+                              "VirtualGlove 0.4.2 or restore a current hand-setup "
                               "backup; the original file has not been changed.")
             else:
                 self.error = ("Saved player settings could not be loaded. Restore a "

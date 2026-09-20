@@ -2096,6 +2096,8 @@ they may still perform their normal work.
 | Script | Arguments and flags | Result or requirement |
 | --- | --- | --- |
 | `scripts/build-app-lab-package.sh` | No flags or positional arguments | Builds `output/app-lab/VirtualGlove-Uno-Q.zip`; requires Bash, rsync, zip, and the existing public PDFs. |
+| `scripts/build-enclosure-packages.py` | No flags or positional arguments | Validates `hardware/enclosures/enclosure-files.json` and deterministically rebuilds the UNO Q Case, Dock V1, and Dock V2 print-file bundles. |
+| `website/build.py` | No flags or positional arguments | Reads `config/release.json`, renders and validates the four static public pages, and creates `output/website/VirtualGlove-Website.zip` for manual upload. |
 | `scripts/verify-app-lab-package.py` | Optional `ARCHIVE` path; `-h`, `--help` | Checks the supplied ZIP or the default ZIP above; prints its SHA-256. Returns `0` on success, `1` on verification failure. |
 | `scripts/check-documentation.py` | `--require-pdfs`; `-h`, `--help` | Checks Markdown, links, and coverage. The optional flag also inspects the PDF set and needs `pypdf`. Returns `0` on success, `1` on failure. |
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
@@ -2726,6 +2728,12 @@ personal tuning and neutral calibration remain available.
 
 ## Versioned multi-platform installation
 
+`config/release.json` is the maintained release-facts record used by the
+documentation and website checks. It identifies the project version, current
+candidate, oldest supported in-place upgrade, supported platforms, and retired
+features that must not reappear in current instructions. `pyproject.toml`
+remains the Python package version and is required to match that record.
+
 The normal entry points are `scripts/install-uno-q.sh`,
 `scripts/install-retropie.sh`, `scripts/install-recalbox.sh`, and
 `scripts/install-batocera.sh`. Each resolves a published release tag, downloads
@@ -2740,10 +2748,13 @@ Drafts and prereleases are excluded from automatic selection. A failed `curl`
 download prevents the chained `bash` command from running; saving the script
 first also leaves terminal input available for prompts.
 
-UNO Q download commands must begin with `cd /home/arduino`. Its terminal can
-open in the read-only `/` directory, where `curl` cannot create
-`install-uno-q.sh`. RetroPie commands may use that account's writable home
-directory instead.
+Run the initial download from a known writable location: `/home/arduino` on the
+UNO Q, the login user's `$HOME` on RetroPie, `/recalbox/share/system` on
+Recalbox, or `/userdata/system` on Batocera. The UNO Q terminal can open in the
+read-only `/` directory, where `curl` cannot create `install-uno-q.sh`.
+LaunchBox packages must be extracted first; PowerShell must use `Set-Location`
+to enter the extracted `VirtualGlove` directory before running
+`launchbox\install-launchbox.ps1`.
 
 To pin a published release, append `--version TAG` to the saved script command,
 for example `bash install-uno-q.sh --version v0.5.0-rc.1`. To test a published development
@@ -2873,6 +2884,8 @@ the Engineering Toolkit ZIP; use a complete Git checkout for those tasks.
 Generate the public PDFs and App Lab ZIP, then build the release assets:
 
 ```sh
+python3 scripts/build-enclosure-packages.py
+python3 website/build.py
 python3 scripts/build-docs-pdf.py
 bash scripts/build-app-lab-package.sh
 python3 scripts/build-install-packages.py --version dev-COMMIT
@@ -2880,6 +2893,7 @@ python3 scripts/build-install-packages.py --version dev-COMMIT
 
 `output/install/` contains the Controller, RetroPie, Recalbox, Batocera, and
 LaunchBox packages, the optional Engineering Toolkit ZIP, the Linux entry scripts, their shared package installer,
+the three design-specific enclosure bundles, the public website upload ZIP,
 checksum companions, and `SHA256SUMS`. Package identity and safe paths are
 validated at build time and installation time. Private runtime files are
 excluded.

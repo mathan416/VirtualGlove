@@ -17,7 +17,6 @@
 #   2026-09-05 - Added a collapsed Pixel Pal answer reveal to illustrated guides.
 #   2026-09-03 - Added the built-in Help library and Markdown reading view.
 #   2026-09-03 - Added a live, non-secret cabinet connection reference.
-#   2026-09-03 - Renamed the installation route while preserving its original alias.
 #   2026-09-03 - Rendered allowlisted inline gesture images used in guide tables.
 #   2026-09-03 - Added allowlisted PDF downloads for every public guide.
 #   2026-09-03 - Support an unconfigured first-run receiver without blocking local practice.
@@ -162,6 +161,7 @@ def enclosure_asset(relative_name: str) -> tuple[bytes, str, str] | None:
         ".png": "image/png",
         ".stl": "model/stl",
         ".3mf": "model/3mf",
+        ".zip": "application/zip",
         ".scad": "text/plain; charset=utf-8",
         ".sh": "text/x-shellscript; charset=utf-8",
     }

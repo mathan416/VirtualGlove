@@ -27,7 +27,7 @@ from virtualglove.control_server import DASHBOARD, LEARN, PLAY, SETUP
 from virtualglove.control_server import help_document_page, help_index_page
 from virtualglove.model import Calibration
 from virtualglove.tuning import TuningManager
-from virtualglove.versioning import current_identity
+from virtualglove.versioning import current_identity, current_version
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'docs/images'
@@ -67,7 +67,8 @@ async def capture():
                         worker_running=True, camera_available=True, detected=False, calibrated=True,
                         active_profile='super_glove_ball', configured_profile='super_glove_ball', profile_source='Dashboard',
                         native_xy_source='mediapipe',
-                        connection_configured=True, controller_enabled=False, version='0.4.0', build=identity,
+                        connection_configured=True, controller_enabled=False,
+                        version=current_version(), build=identity,
                         camera_fps=30.0, camera_fps_requested='auto',
                         capture_backend='opencv', capture_backend_requested='opencv',
                         capture_backend_fallback=None, camera_exposure_mode='auto',

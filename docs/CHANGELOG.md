@@ -14,6 +14,16 @@ result before naming the underlying mechanism.
 
 ### Changed
 
+- Rebuilt the public website for 0.5.0 as four tracked, static pages covering
+  the project, installation and upgrades, enclosure choices, and the creator's
+  motivation. Release-sensitive commands and links now come from one checked
+  facts record, and the build produces a verified ZIP for manual upload.
+- Made every platform installation example begin in a known writable folder,
+  including an explicit extracted-package `Set-Location` step for LaunchBox.
+  Fresh installation and v0.4.2 upgrade checks are now separate and copyable.
+- Organized the printable enclosure files through one checked manifest and
+  added complete UNO Q Case, Dock V1, and Dock V2 download bundles without
+  breaking the existing individual STL and 3MF links.
 - Corrected the full-wordmark Dock V1 and Dock V2 lid recesses to accept the
   actual 100 x 30 mm multicolour logo with printable PLA clearance. The
   smaller UNO Q Case continues to use its matching compact wordmark.

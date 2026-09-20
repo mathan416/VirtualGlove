@@ -27,6 +27,7 @@ import hashlib
 import json
 import re
 import subprocess
+import zipfile
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -36,6 +37,7 @@ MARKDOWN_LINK = re.compile(r"!?\[[^]]*\]\(([^)]+)\)")
 HTML_LINK = re.compile(r"(?:href|src)=[\"']([^\"']+)[\"']", re.IGNORECASE)
 HELP_FILE = re.compile(r'[\"\x27]file[\"\x27]\s*:\s*[\"\x27]([^\"\x27]+\.md)[\"\x27]')
 CONFIGURATION_FILES = (
+    "config/release.json",
     "config/device.example.json",
     "config/games.json",
     "config/launcher.example.json",
@@ -80,6 +82,91 @@ ARCHIVED_DOCUMENTS = {
     Path("docs/super-glove-ball-native.md"),
     Path("docs/direction-response-benchmark.md"),
 }
+
+
+def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
+    """Keep current release, upgrade, platform, and retired-feature claims aligned."""
+    try:
+        facts = json.loads((ROOT / "config/release.json").read_text())
+        project_version = str(facts["project_version"])
+        candidate = str(facts["candidate_tag"])
+        oldest = str(facts["oldest_supported_upgrade"])
+        platforms = list(facts["supported_platforms"])
+        removed = set(facts["removed_features"])
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        errors.append(f"cannot read release facts: {exc}")
+        return
+    project = (ROOT / "pyproject.toml").read_text()
+    match = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
+    if not match or match.group(1) != project_version:
+        errors.append("pyproject version does not match config/release.json")
+    readme = (ROOT / "README.md").read_text()
+    install = (ROOT / "docs/INSTALL_README.md").read_text()
+    for label, source in (("README", readme), ("Installation Guide", install)):
+        if project_version not in source or candidate not in source:
+            errors.append(f"{label} does not identify the current version and candidate")
+        for platform in platforms:
+            short = platform.split(" on ", 1)[0].split(" ", 1)[0]
+            if short not in source:
+                errors.append(f"{label} is missing supported platform {short}")
+    if oldest not in install or oldest not in (ROOT / "docs/SECURITY.md").read_text():
+        errors.append("current upgrade documentation does not match the supported baseline")
+    current_sources = [path for path in markdown if path != Path("docs/CHANGELOG.md")]
+    if "ready-to-play" in removed:
+        retired = re.compile(r"(?:Get ready to play|href=[\"']/ready|`/ready`)", re.IGNORECASE)
+        for path in current_sources:
+            if retired.search((ROOT / path).read_text()):
+                errors.append(f"retired Ready-to-Play feature appears in current documentation: {path}")
+    required_install_text = (
+        'cd /home/arduino', 'cd "$HOME"', 'cd /recalbox/share/system',
+        'cd /userdata/system', 'Set-Location "$env:USERPROFILE\\Downloads\\VirtualGlove"',
+    )
+    for value in required_install_text:
+        if value not in install:
+            errors.append(f"Installation Guide is missing copyable working-directory step: {value}")
+
+
+def check_enclosure_packages(errors: list[str]) -> None:
+    """Require every print file to be classified and every design ZIP to be bounded."""
+    root = ROOT / "hardware/enclosures"
+    try:
+        data = json.loads((root / "enclosure-files.json").read_text())
+        shared = data["shared"]
+        branding = data["branding"]
+        designs = data["designs"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        errors.append(f"cannot read enclosure manifest: {exc}")
+        return
+    classified = {
+        value for value in shared.values() if str(value).startswith("stl/")
+    }
+    for group in branding.values():
+        classified.update(group)
+    for design in designs.values():
+        classified.update(design["structural"])
+    present = {
+        "stl/" + path.name for path in (root / "stl").iterdir()
+        if path.suffix.lower() in (".stl", ".3mf")
+    }
+    for name in sorted(present - classified):
+        errors.append(f"enclosure print file is not classified: {name}")
+    for name in sorted(classified - present):
+        errors.append(f"classified enclosure print file is missing: {name}")
+    for design in designs.values():
+        path = root / "bundles" / design["archive"]
+        if not path.is_file():
+            errors.append(f"missing enclosure bundle: {path.relative_to(ROOT)}")
+            continue
+        with zipfile.ZipFile(path) as package:
+            names = set(package.namelist())
+        if "PARTS.txt" not in names:
+            errors.append(f"enclosure bundle has no PARTS.txt: {path.name}")
+        if any("target-badge" in name for name in names):
+            errors.append(f"large decorative badge must not be in lid bundle: {path.name}")
+        expected_structural = {"structural/" + Path(name).name
+                               for name in design["structural"]}
+        if not expected_structural <= names:
+            errors.append(f"enclosure bundle has incomplete structural set: {path.name}")
 
 
 def check_native_component_record(errors: list[str]) -> None:
@@ -386,6 +473,8 @@ def main() -> int:
 
     check_help_coverage(markdown, errors)
     check_gameplay_coverage(errors)
+    check_release_facts(markdown, errors)
+    check_enclosure_packages(errors)
 
     reference = (ROOT / "docs" / "CONFIGURATION_REFERENCE.md").read_text()
     for name in CONFIGURATION_FILES:

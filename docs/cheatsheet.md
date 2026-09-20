@@ -742,7 +742,7 @@ Portable backups now use VirtualGlove version 4. New exports include the center-
 personal and complete gesture sensitivity, software identity, and the player's saved calibration. Restore
 separately confirms complete sensitivity and calibration reuse. Version 4 is the
 only supported portable backup format. Current version-6 player stores are
-preserved across upgrades from VirtualGlove 0.4.1 and later.
+preserved by the supported in-place upgrade from VirtualGlove 0.4.2 to 0.5.0.
 
 Off attract mode shows four faint pixels: app, console service, authenticated
 console, and independent Wi-Fi link. Setup distinguishes disconnected Wi-Fi from

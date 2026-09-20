@@ -135,6 +135,12 @@ Windows package. The complete [Installation
 Guide](docs/INSTALL_README.md#3-install-the-console) has copyable commands,
 prerequisites, questions, and checkpoints for all four platforms.
 
+Run the Linux downloads from a writable persistent folder: `$HOME` on
+RetroPie, `/recalbox/share/system` on Recalbox, and `/userdata/system` on
+Batocera. For LaunchBox, extract the package and use `Set-Location` to enter its
+`VirtualGlove` folder before running `launchbox\install-launchbox.ps1` as
+Administrator.
+
 Each installer uses the platform's persistent storage, preserves ROMs, saves,
 the game registry, pairing, and unrelated controller configuration, and keeps a
 physical Player 1 joypad usable beside VirtualGlove. Batocera automatically
@@ -311,6 +317,11 @@ turning setup into an engineering exercise.
 Printable editions of all maintained guides are available in
 [`output/pdf/`](output/pdf/). The Controller serves the same documentation from
 its local Help page.
+
+The public website is maintained with the application under [`website/`](website/).
+Its dependency-free builder reads `config/release.json`, renders four static
+pages, validates release-sensitive links and commands, and creates
+`output/website/VirtualGlove-Website.zip` for manual upload.
 
 ## Project status
 

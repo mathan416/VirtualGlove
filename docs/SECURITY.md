@@ -236,6 +236,10 @@ if remote shutdown or camera recovery is not wanted.
 - The optional Nestopia core is built from one pinned upstream commit and checksum-recorded patches. Recalbox and Batocera manifests bind each binary to its target, release, corresponding source archive, source revisions, size, digest, and executable identity; LaunchBox binds its DLL and source to a Windows manifest. Console installers load-test the core and confirm the libretro identity before activation. Batocera and LaunchBox fail safely to FCEUmm when the native artifact is absent, changed, or unloadable. Stock Nestopia and FCEUmm are not replaced.
 - Arduino library versions are pinned in `sketch/sketch.yaml`.
 - GitHub Actions rebuilds and inspects documentation and the App Lab installation ZIP on every pull request and push to `main` or `dev`.
+- The public website is generated as static files from tracked source and
+  bounded release facts. It contains no analytics, secrets, pairing material,
+  or live Controller endpoint; its build rejects stale release and retired
+  retired guided-readiness claims before creating the manual-upload ZIP.
 
 Changing a download URL, checksum, dependency source, pairing primitive,
 network binding, file permission, or privileged service requires focused review
@@ -297,7 +301,7 @@ components. Both use three short sets of numerical samples in memory. The
 version-6 `data/gesture-tuning.json` file stores player names, one joystick center-box
 size, gesture activation/release pairs shared across game profiles for each player, Academy progress, and a
 required-center flag and separate saved calibration, plus a bounded pending reference during a calibration
-restore. VirtualGlove 0.4.1 is the oldest supported in-place upgrade and already
+restore. VirtualGlove v0.4.2 is the oldest supported in-place upgrade to 0.5.0 and already
 uses this store format. Portable hand-setup exports use the
 `virtualglove-hand-setup` format at version 4; older formats are rejected without
 changing their source or the active player.

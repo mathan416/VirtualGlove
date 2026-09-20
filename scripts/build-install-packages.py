@@ -130,6 +130,16 @@ def build(version, destination):
         version, destination / "VirtualGlove-Engineering-Tools.zip"
     )
     assets.extend((engineering, engineering.with_suffix(engineering.suffix + ".sha256")))
+    enclosure_builder = runpy.run_path(str(ROOT / "scripts/build-enclosure-packages.py"))
+    for source in enclosure_builder["build"]():
+        target = destination / source.name
+        shutil.copy2(source, target)
+        assets.append(target)
+    website_builder = runpy.run_path(str(ROOT / "website/build.py"))
+    website = website_builder["build"]()
+    website_target = destination / website.name
+    shutil.copy2(website, website_target)
+    assets.append(website_target)
     lines = []
     for path in assets:
         digest = hashlib.sha256()

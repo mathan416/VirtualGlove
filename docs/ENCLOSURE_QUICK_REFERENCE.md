@@ -94,5 +94,11 @@ Lid branding always uses one complete set: dark backing, cyan artwork, and red
 accent. The optional full-size plaque and larger emblem are separate decorative
 parts and do not fit the lid recesses.
 
-Use the [Controller Enclosure Guide](ENCLOSURE_GUIDE.md) for STL downloads,
-printer settings, fit adjustments, detailed explanations, and troubleshooting.
+Download the matching print bundle before you begin:
+
+- [UNO Q Case print files](../hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
+- [Controller Dock V1 print files](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
+- [Controller Dock V2 print files](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip)
+
+Use the [Controller Enclosure Guide](ENCLOSURE_GUIDE.md) for printer settings,
+fit adjustments, detailed explanations, and troubleshooting.

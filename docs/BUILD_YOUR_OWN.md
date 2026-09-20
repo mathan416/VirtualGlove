@@ -66,6 +66,12 @@ The example uses a board, camera, hub, power supply, and cables/mount. These
 estimates are not a complete cabinet build cost. Expensive cameras, displays,
 and enclosure work can raise the total substantially.
 
+When printing an enclosure, use the design-specific UNO Q Case, Controller Dock
+V1, or Controller Dock V2 bundle linked from the
+[Controller Enclosure Guide](ENCLOSURE_GUIDE.md). Each archive includes only the
+matching structural pieces, lid-branding choices, fit coupons, finishing part,
+and parametric source. Individual STL and 3MF links remain available.
+
 As a dated retail reference, Arduino's EU store showed the UNO Q 2GB at
 **CA$96.07 / €59.90 / £51.45 / US$69.62** on September 6, 2026, including EU VAT.
 Only the euro amount is the store quotation; the other amounts are conversions

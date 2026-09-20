@@ -891,6 +891,21 @@ class ControlStateTests(unittest.TestCase):
         self.assertIsNone(enclosure_asset("../../data/device.json"))
         self.assertIsNone(enclosure_asset("stl/not-a-real-part.stl"))
 
+    def test_enclosure_print_bundles_are_downloadable(self):
+        for name in (
+            "VirtualGlove-UNO-Q-Case-Print-Files.zip",
+            "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
+            "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+        ):
+            with self.subTest(name=name):
+                asset = enclosure_asset("bundles/" + name)
+                self.assertIsNotNone(asset)
+                assert asset is not None
+                self.assertEqual(asset[1:], ("application/zip", name))
+                with ZipFile(io.BytesIO(asset[0])) as archive:
+                    self.assertIn("PARTS.txt", archive.namelist())
+                    self.assertFalse(any("target-badge" in item for item in archive.namelist()))
+
     def test_enclosure_quick_reference_help_uses_all_visual_pages(self):
         document = help_document_content("enclosure-quick-reference")
         self.assertIsNotNone(document)

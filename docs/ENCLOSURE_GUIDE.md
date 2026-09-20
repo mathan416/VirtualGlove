@@ -84,6 +84,17 @@ and troubleshooting.
 VirtualGlove supplies the digital print files. The UNO Q, hub, fasteners,
 inserts, tools, cables, adhesive, and other physical parts are not included.
 
+For the least ambiguous download, choose the complete bundle for the enclosure
+you are printing. Existing individual STL and 3MF links remain available below:
+
+- [UNO Q Case print-file bundle](../hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
+- [Controller Dock V1 print-file bundle](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
+- [Controller Dock V2 print-file bundle](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip)
+
+Each bundle separates structural parts, matching branding, fit tests, finishing,
+and parametric source. Read its `PARTS.txt` before slicing. The optional large
+target badge is not included because it does not fit a lid recess.
+
 ### Shared hardware and tools
 
 | Item | Quantity | Purpose |

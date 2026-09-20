@@ -101,10 +101,12 @@ when disabled, unpaired, uncalibrated, timed out, or in safe practice modes.
 
 The supported console integrations are deliberately different:
 
-* RetroPie receives VirtualGlove as a Linux input device. The cabinet-specific
-  merger can combine it with the physical Player 1 controller.
-* Recalbox and Batocera use VirtualGlove Merged Player 1, preserving the
-  physical controller, its hotkey, Player 2, and unrelated RetroArch settings.
+* RetroPie receives VirtualGlove as a separate Linux input device by default.
+  Optional Controller Router can combine configured physical controllers and
+  VirtualGlove into enabled Players 1-4.
+* Recalbox and Batocera use Controller Router for enabled merged Players 1-4,
+  preserving EmulationStation mappings, the physical Player 1 hotkey, and
+  unrelated settings while carrying physical assignments through Libretro.
 * LaunchBox keeps the physical XInput controller and real keyboard available,
   while managed FCEUmm launches receive VirtualGlove through loopback Network
   RetroPad. Super Glove Ball uses the native Nestopia state path.
@@ -136,7 +138,7 @@ Controller and web application
   src/virtualglove/gesture.py            profile mappings and safe releases
   src/virtualglove/players.py            versioned per-player records
   src/virtualglove/tuning.py             calibration and tuning transactions
-  src/virtualglove/*_web.py              Dashboard, Setup, Academy, Ready, Help
+  src/virtualglove/*_web.py              Dashboard, Setup, Academy, games, tuning
   uno-q/                                 host services and recovery helpers
   sketch/                                UNO Q matrix firmware
 
@@ -153,9 +155,10 @@ RetroPie
   src/virtualglove/retropie_hook.py       registered-game launch selection
   src/virtualglove/profile_control.py     local profile requests
 
-Recalbox and Batocera
+Controller Router on RetroPie, Recalbox, and Batocera
   recalbox/ and batocera/                 persistent platform launch assets
-  src/virtualglove/merged_gamepad.py      physical + VirtualGlove Player 1
+  src/virtualglove/controller_router.py   Players 1-4 routing and management
+  src/virtualglove/merged_gamepad.py      shared input/mapping primitives
   scripts/install-recalbox.sh             Recalbox installation and upgrade
   scripts/install-batocera.sh             Batocera installation and upgrade
   native/recalbox and native/batocera     verified multi-architecture cores
@@ -218,6 +221,27 @@ Release validation additionally covers source/documentation audits, JavaScript
 syntax and browser harnesses, installer/package verification, native manifests,
 PDF rendering, UNO Q behavior, and each affected console platform.
 
+CONSERVATIVE RC1 CLEANUP AUDIT
+------------------------------
+No complete runtime module is confirmed dead at the v0.5.0-rc.1 boundary.
+Several paths can look historical but still carry upgrade, rollback, packaging,
+or active platform responsibilities and must remain through this release:
+
+* the v6 player reader, ready_progress removal, and retired Ready marker cleanup
+  migrate the oldest supported v0.4.2 installation without keeping that feature;
+* retired Python-package and old service-name cleanup removes names released
+  before v0.5.0 and is not an endorsement of those names for new installations;
+* merged_gamepad.py is shared by Controller Router and the standard RetroPie
+  backend even though the old cabinet merger service is retired;
+* Controller Router migration and rollback primitives protect already tested
+  Recalbox, Batocera, and cabinet RetroPie installations;
+* native core names and Power Glove hardware terms describe active compatibility
+  interfaces rather than obsolete VirtualGlove branding.
+
+Revisit these compatibility paths for v0.5.1 only after the v0.5.0 upgrade
+window has shipped and its rollback evidence has been archived. Until then,
+removing them would trade small source savings for avoidable release risk.
+
 DOCUMENTATION AND DELIVERY
 --------------------------
 Maintained Markdown is rendered into the built-in Help pages and the tracked PDF
@@ -226,6 +250,12 @@ extra-digit artwork used by Pixel Pal's Extra-Digit Hunt. Documentation images
 must use simulated, non-secret fixtures. scripts/application-payload.py defines
 the public Controller payload; installer manifests preserve user-owned data and
 back up modified managed files before replacement.
+
+The public static website is tracked under website/, reads bounded release facts
+from config/release.json, and produces a manual-upload ZIP. Enclosure print-file
+ownership is recorded in hardware/enclosures/enclosure-files.json; its builder
+creates separate UNO Q Case, Dock V1, and Dock V2 archives without changing the
+stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------

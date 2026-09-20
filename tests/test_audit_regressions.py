@@ -311,7 +311,14 @@ class AuditRegressionTests(unittest.TestCase):
         self.assertIn('scripts/benchmark-vision-replay.py', development)
         self.assertIn('scripts/run-nestopia-powerglove-trace.py', development)
         self.assertFalse(any(name.startswith(('output/install/','assets/matrix/')) for name in selected))
-        self.assertFalse(any(name.endswith('.zip') for name in selected))
+        self.assertEqual(
+            sorted(name for name in selected if name.endswith('.zip')),
+            [
+                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip',
+                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip',
+                'hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip',
+            ],
+        )
         generators=runpy.run_path(str(ROOT/'scripts/build-installer-scripts.py'))
         for machine in ('uno-q','retropie','recalbox','batocera'):
             self.assertEqual(generators['render'](machine),
