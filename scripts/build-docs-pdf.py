@@ -1678,7 +1678,7 @@ def main():
     build(docs / "ENGINEERING_JOURNEY.md", OUTPUT / "VirtualGlove-Engineering-Journey.pdf",
           "Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
     build(docs / "ENGINEERING_TOOLKIT.md", OUTPUT / "VirtualGlove-Engineering-Toolkit.pdf",
-          "Engineering Toolkit", "Repeatable analysis, camera, tracing, and native-research workflows.", "Engineering guide")
+          "Engineering Toolkit", "Repeatable camera, routing, tracing, analysis, and native-research workflows.", "Engineering guide")
     print(f"Built 20 PDF guides on {date.today().isoformat()}")
 
 

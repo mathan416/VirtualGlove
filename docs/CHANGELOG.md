@@ -26,6 +26,9 @@ result before naming the underlying mechanism.
 - Made every platform installation example begin in a known writable folder,
   including an explicit extracted-package `Set-Location` step for LaunchBox.
   Fresh installation and v0.4.2 upgrade checks are now separate and copyable.
+  The project README now uses the same platform commands, accounts,
+  prerequisites, install-or-upgrade wording, and first-game checks as the full
+  Installation Guide.
 - Organised the printable enclosure files through one checked manifest and
   added complete UNO Q Case, Dock V1, and Dock V2 download bundles without
   breaking the existing individual STL and 3MF links.
@@ -43,6 +46,10 @@ result before naming the underlying mechanism.
   camera delivery, native emulation, and isolated accelerator research. The
   guide now starts with questions people are likely to investigate and points
   to the smallest suitable workflow.
+- Added platform-aware input diagnostics to the Engineering Toolkit guide. It
+  now covers Controller Router checks on RetroPie, Recalbox, and Batocera,
+  LaunchBox's separate loopback RetroPad path, and the RetroPie-only boundary
+  of the existing end-to-end preflight.
 - Reduced the Engineering Toolkit source archive by excluding packaged
   Batocera, Recalbox, and Windows emulator binaries and their platform source
   archives. Native researchers still receive the editable VirtualGlove patch,

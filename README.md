@@ -118,55 +118,94 @@ Open the Dashboard address printed by the installer—normally
 automatic startup, the matrix display, guarded camera recovery, and its required
 host helpers.
 
-### 4. Install the console software
+### 4. Install or upgrade the console software
 
-Choose exactly one console installer:
+Choose only the section for your game system. Close every running RetroArch
+game first. These are both installation and upgrade instructions: rerun the
+same command or LaunchBox installer whenever a new VirtualGlove version is
+available. Existing ROMs, saves, pairing, game registrations, controller
+assignments, and unrelated emulator settings are preserved.
 
-| Console | Run on the console | Installed in |
-| --- | --- | --- |
-| RetroPie | `install-retropie.sh` as the normal user | `/opt/virtualglove-src` and `/etc/virtualglove` |
-| Recalbox | `install-recalbox.sh` as `root` | `/recalbox/share/system/virtualglove` |
-| Batocera | `install-batocera.sh` as `root` | `/userdata/system/virtualglove` |
-| LaunchBox | `install-launchbox.ps1` as the Windows player | `%LOCALAPPDATA%\VirtualGlove` |
+#### RetroPie
 
-Each Linux command downloads the latest installer from GitHub and selects the
-latest stable release automatically. LaunchBox is installed from the extracted
-Windows package. The complete [Installation
-Guide](docs/INSTALL_README.md#3-install-the-console) has copyable commands,
-prerequisites, questions, and checkpoints for all four platforms.
+Connect as the normal RetroPie user, not through a root shell, and run:
 
-Run the Linux downloads from a writable persistent folder: `$HOME` on
-RetroPie, `/recalbox/share/system` on Recalbox, and `/userdata/system` on
-Batocera. For LaunchBox, extract the package and use `Set-Location` to enter its
-`VirtualGlove` folder before running `launchbox\install-launchbox.ps1` as
-Administrator.
+```sh
+cd "$HOME"
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-retropie.sh && bash install-retropie.sh
+```
 
-Each installer uses the platform's persistent storage, preserves ROMs, saves,
-the game registry, pairing, and unrelated controller configuration, and keeps a
-physical Player 1 joypad usable beside VirtualGlove. Batocera automatically
-selects the native core only for exact registered Super Glove Ball filenames
-that do not already have an explicit core choice. A target without a loadable
-native core still receives the complete FCEUmm joystick path.
+On a first installation, enter the Controller name or address—normally
+`virtualglove.local`. The installer can add missing emulator support, the
+optional native Super Glove Ball core, and the optional calibration test. A
+normal RetroPie installation keeps VirtualGlove as a separate gamepad;
+Controller Router remains an explicit opt-in for multi-controller cabinets.
 
-The generic RetroPie installation exposes a separate **VirtualGlove** gamepad.
-The project-maintained
-[`arcade-cabinet-merger`](docs/INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet) remains as the
-development cabinet's proven reference and rollback implementation. The cabinet
-now runs the shared Controller Router, which generalizes that work without
-changing RetroPie's default.
-Recalbox and Batocera create the enabled **VirtualGlove Merged Player 1–4**
-devices and initially preserve the installer-selected Player 1 arrangement.
-Setup can then assign several configured physical sources to a player and place
-the single VirtualGlove on exactly one player. Original controllers remain the
-only active frontend controllers. LaunchBox
-keeps physical XInput plus a loopback Network RetroPad for FCEUmm games; its
-real keyboard mappings remain available as a manual fallback. Native
-Super Glove Ball uses only the guarded Power Glove state channel; it does not
-duplicate native gestures as keyboard events.
-Its installer makes **VirtualGlove RetroArch** the default NES emulator after
-backing up LaunchBox's emulator and NES game definitions. Existing NES games
-assigned to standard RetroArch and new NES imports use VirtualGlove automatically;
-games assigned to a genuinely different emulator remain explicit overrides.
+#### Recalbox 10.x
+
+Connect over SSH as `root`. Do not add `sudo`. Run:
+
+```sh
+cd /recalbox/share/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-recalbox.sh && bash install-recalbox.sh
+```
+
+On a first installation, enter the Controller name or address and select the
+physical Player 1 controller when more than one configured controller is
+available. Recalbox creates **VirtualGlove Merged Player 1** initially; after
+pairing, Setup can assign configured controllers and VirtualGlove across merged
+Players 1–4.
+
+#### Batocera 38 and newer
+
+Connect over SSH as `root`. Do not add `sudo`. Run:
+
+```sh
+cd /userdata/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-batocera.sh && bash install-batocera.sh
+```
+
+On a first installation, enter the Controller name or address and select the
+physical Player 1 controller when needed. Batocera creates **VirtualGlove
+Merged Player 1** initially and uses the same Setup-managed Player 1–4 routing
+model as Recalbox.
+
+#### LaunchBox on Windows x86-64
+
+Install 64-bit Python and 64-bit RetroArch with FCEUmm first. Confirm the
+physical XInput controller works, then close LaunchBox, Big Box, and RetroArch.
+Download `VirtualGlove-LaunchBox.zip` from the latest release and extract it.
+Open PowerShell as Administrator using the same Windows account that runs
+LaunchBox, enter the extracted `VirtualGlove` folder, and run:
+
+```powershell
+Set-Location "$env:USERPROFILE\Downloads\VirtualGlove"
+powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
+  -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch" `
+  -ControllerHost "virtualglove.local"
+```
+
+Change the extraction, LaunchBox, RetroArch, and Controller locations to match
+your computer. LaunchBox gains a **VirtualGlove RetroArch** NES emulator.
+Ordinary games use its managed loopback RetroPad while physical XInput and the
+real keyboard remain available; exact registered Super Glove Ball filenames
+can use Nestopia (VirtualGlove).
+
+#### Check the console installation
+
+The final Linux report should show no `FAIL` entries. `ACTION` is normal for
+pairing or physical gameplay checks that still require you. After pairing:
+
+1. Test an ordinary registered NES game through FCEUmm with VirtualGlove and
+   the physical controller.
+2. On Recalbox, Batocera, or routed RetroPie, test one non-NES Libretro game
+   with the physical controller.
+3. Test native Super Glove Ball separately when installed.
+4. Confirm the physical hotkey can still exit the game.
+
+The complete [Installation
+Guide](docs/INSTALL_README.md#3-install-the-console) explains every installer
+question, checkpoint, later-added ROM, update, and troubleshooting path.
 
 ### 5. Pair the devices
 

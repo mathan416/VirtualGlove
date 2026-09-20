@@ -22,6 +22,8 @@ answer and use the smallest workflow that can answer it.
 | Where is time being spent? | `measure-vision-status.py` | `prepare-end-to-end-session.py`, then the bounded latency-tracing workflow |
 | Is camera delivery the bottleneck? | `benchmark-camera-pipeline.py` | frame-preprocessing or exposure soaks |
 | Does native Super Glove Ball still behave correctly? | `build-nestopia-powerglove.sh`, then `run-nestopia-powerglove-trace.py` | the matched direction-response comparison |
+| Are merged controllers assigned, available, and neutral? | The installed `virtualglove-controller-router show` and `check` commands | A short physical control test, then bounded status or latency tracing |
+| Is LaunchBox using its intended input route? | Inspect the installed launcher settings and run the loopback RetroPad check | Hotkey inspection or a short physical acceptance run |
 | Could another recognition backend help? | Use the retained Tasks, staggered-tracker, or ncnn comparison | Treat the result as research evidence, not a production switch |
 
 Prefer offline tools first. Commands that open a camera or temporarily restart
@@ -123,10 +125,17 @@ device data.
 
 Repository-only maintenance tools are excluded: release publishing, device
 deployment, firmware stamping, package construction, PDF and screenshot
-generation, and precompiled Matrix release building. The ordinary Controller
+generation, enclosure exporting, website generation, platform-native core
+matrices, and precompiled Matrix release building. The ordinary Controller
 package already carries the verified firmware; rebuilding it requires the
 pinned Arduino CLI, Zephyr platform, and libraries from `sketch/sketch.yaml` in
 the full Git repository.
+
+Installed operational tools also remain outside the research archive. In
+particular, Controller Router configuration and LaunchBox service management
+belong to the matching console installation. The toolkit explains their
+read-only diagnostic surfaces, but does not copy a second operational router,
+receiver, installer, or Windows runtime into a research directory.
 
 ## Start with offline evidence
 
@@ -183,8 +192,9 @@ python scripts/measure-vision-status.py \
   --output status-sample.json
 ```
 
-The end-to-end preflight checks a development checkout and both devices. It
-uses SSH but does not change them:
+The current end-to-end preflight is specifically for a Controller and RetroPie.
+It checks a development checkout and both devices. It uses SSH but does not
+change them:
 
 ```sh
 python scripts/prepare-end-to-end-session.py \
@@ -196,6 +206,100 @@ python scripts/prepare-end-to-end-session.py \
 
 Use dedicated SSH identities through the corresponding identity options. Do
 not place private keys inside the toolkit directory or an evidence bundle.
+
+Do not substitute Recalbox, Batocera, or LaunchBox details into the
+`--retropie-ssh` option. Their service layouts, persistence rules, and input
+routes differ. Use the installed platform checks below, and record that the
+general RetroPie preflight was not run.
+
+## Diagnose Controller Router
+
+Controller Router is an installed console subsystem, not an offline research
+tool. Its read-only commands are nevertheless the best starting point when a
+physical controller is missing, assigned to the wrong player, or translated
+differently after an EmulationStation remap.
+
+Do not run these commands while changing assignments in Setup. Finish or cancel
+that operation first. `show` reports the saved revision, assignments, and
+inventory. `check` adds current availability and output validation without
+changing the configuration.
+
+On RetroPie:
+
+```sh
+sudo /opt/virtualglove/bin/virtualglove-controller-router show
+sudo /opt/virtualglove/bin/virtualglove-controller-router check
+```
+
+On Recalbox:
+
+```sh
+sh /recalbox/share/system/virtualglove/scripts/virtualglove-controller-router show
+sh /recalbox/share/system/virtualglove/scripts/virtualglove-controller-router check
+```
+
+On Batocera:
+
+```sh
+sh /userdata/system/virtualglove/scripts/virtualglove-controller-router show
+sh /userdata/system/virtualglove/scripts/virtualglove-controller-router check
+```
+
+The Recalbox and Batocera launchers are invoked with `sh` because their
+persistent shares do not permit direct program execution. Run the commands from
+the console itself. Do not copy the private router document into a public
+evidence bundle: friendly controller names and stable identity suffixes can
+identify a particular cabinet.
+
+For a physical acceptance check, use **Test controls** in Setup or the local
+`virtualglove-controller-router setup` screen. The test is bounded and does not
+save unless the operator explicitly chooses **Save and verify**. Capture:
+
+- platform and installed VirtualGlove version;
+- router revision and enabled player slots;
+- each assigned source's friendly name, stable identity suffix, mapping status,
+  and connection state;
+- the VirtualGlove player assignment;
+- whether the original controllers still navigate EmulationStation;
+- the emulator and core used for the game; and
+- neutral release after the game exits or a source disconnects.
+
+An unavailable saved source is evidence, not permission to substitute another
+device. Controller Router deliberately refuses to guess when identical devices
+or incomplete mappings are ambiguous.
+
+## Diagnose LaunchBox input
+
+LaunchBox does not use Controller Router. VirtualGlove reaches ordinary
+RetroArch games through a managed loopback Network RetroPad while the physical
+XInput controller remains independent. Native Super Glove Ball uses its
+separate Nestopia (VirtualGlove) path.
+
+With LaunchBox, Big Box, and RetroArch closed, inspect the installed route in
+PowerShell:
+
+```powershell
+$settings = Get-Content "$env:LOCALAPPDATA\VirtualGlove\data\launcher.json" |
+    ConvertFrom-Json
+$settings | Select-Object uno_q, input_route, retroarch_remote_port
+```
+
+`input_route` should be `network-retropad`, and the port should be in the
+dynamic range from 49152 through 65535. Then prove that the managed Python
+runtime can deliver a correctly sized neutral packet over loopback:
+
+```powershell
+& "$env:LOCALAPPDATA\VirtualGlove\runtime\Scripts\python.exe" `
+    -m virtualglove.retroarch_remote `
+    --check-loopback $settings.retroarch_remote_port
+```
+
+The check requires RetroArch to be closed so it can bind the selected port. It
+does not press a game control. The installer separately verifies that Windows
+Firewall blocks LocalSubnet access to this port; do not weaken that rule to
+make a diagnostic pass. Record the route, port, firewall result, FCEUmm or
+native-core selection, and whether VirtualGlove, the physical controller, and
+the real keyboard each work after repeated launches.
 
 ## Guided camera capture
 
@@ -258,6 +362,12 @@ sh scripts/build-fceumm-benchmark.sh build/fceumm-research
 Both builders fetch pinned upstream source. Review their output and licences;
 do not substitute their local products for platform-packaged release cores.
 
+The full repository also contains target-specific builders and verifiers for
+RetroPie, Recalbox, Batocera, and LaunchBox. Those commands produce release
+artefacts against platform toolchains, manifests, and ABI checks, so they are
+maintainer tools rather than Engineering Toolkit experiments. Use a complete
+Git checkout and the Configuration Reference when updating a platform matrix.
+
 `run-nestopia-powerglove-trace.py` loads a caller-supplied libretro core and ROM
 without installing either one. The toolkit never supplies commercial ROMs.
 Keep ROM and scratch paths outside the extracted toolkit, and remove scratch
@@ -279,6 +389,8 @@ Every retained result should record:
 
 - VirtualGlove release and toolkit version
 - Controller and console build identifiers
+- Console platform, emulator/core, active input route, and Controller Router
+  revision or LaunchBox RetroPad port when applicable
 - Camera model, reader, frame rate, buffer count, exposure, and gain
 - Python and resolved package environment record
 - Exact command and input-file digests
@@ -289,6 +401,8 @@ Every retained result should record:
 Never treat results from different clips or physical movements as a controlled
 A/B comparison. Never combine latency percentiles measured on clocks that were
 not synchronized.
+
+<!-- PAGEBREAK -->
 
 ## Cleanup and recovery
 
