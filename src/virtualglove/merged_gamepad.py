@@ -102,6 +102,14 @@ BATOCERA_HOTKEY_BINDINGS = {
     "input_screenshot_btn": "6",
     "input_ai_service_btn": "7",
 }
+RETROPIE_HOTKEY_BINDINGS = {
+    # Keep the canonical merged pad aligned with RetroPie's usual physical-pad
+    # convention: Guide/Hotkey + Start exits and Guide/Hotkey + X opens RGUI.
+    # This stays stable even when several differently mapped physical sources
+    # feed the same Router output.
+    "input_exit_emulator_btn": "11",
+    "input_menu_toggle_btn": "3",
+}
 OLD_KEYBOARD_BINDINGS = {
     "input_player1_a": "x", "input_player1_b": "z",
     "input_player1_start": "enter", "input_player1_select": "rshift",
@@ -545,6 +553,8 @@ def platform_hotkey_bindings(saved: dict, global_config: str) -> dict[str, str]:
     """Return complete platform-native hotkeys for the canonical merged pad."""
     if saved.get("platform") == "batocera":
         return dict(BATOCERA_HOTKEY_BINDINGS)
+    if saved.get("platform") == "retropie":
+        return dict(RETROPIE_HOTKEY_BINDINGS)
     return translated_hotkey_bindings(global_config, saved["mapping"])
 
 

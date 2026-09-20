@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import fcntl
 import hashlib
 import json
@@ -52,6 +53,7 @@ PROTOCOL = "virtualglove-inputs/1"
 DISCOVERY_INTERVAL_SECONDS = 1.0
 VIRTUAL_DRAIN_LIMIT = 256
 MAX_REQUEST = 262144
+CONTROL_TEST_MS = 10_000
 
 
 def detect_platform() -> str:
@@ -114,14 +116,28 @@ def mapping_revision(mapping: object) -> str:
                                      separators=(",", ":")).encode()).hexdigest()
 
 
+def session_mapping(saved: dict[str, Any], candidate: dict[str, Any]) -> list[dict]:
+    """Combine refreshed frontend controls with saved physical-only hotkeys."""
+    mapping = copy.deepcopy(candidate["mapping"])
+    saved_hotkeys = [item for item in saved.get("mapping", [])
+                     if item.get("name") == "hotkey"]
+    if saved_hotkeys and not any(item.get("name") == "hotkey" for item in mapping):
+        mapping.extend(saved_hotkeys)
+    return mapping
+
+
 def validate_config(data: object) -> dict[str, Any]:
     """Validate and normalize one complete router document."""
-    if not isinstance(data, dict) or set(data) - {"format", "platform", "players", "virtualglove_player"}:
+    if not isinstance(data, dict) or set(data) - {
+            "format", "platform", "players", "virtualglove_player", "physical_scope"}:
         raise ValueError("Invalid Controller Router configuration.")
     if data.get("format") != FORMAT:
         raise ValueError("Unsupported Controller Router configuration version.")
     if data.get("platform") not in SUPPORTED_PLATFORMS:
         raise ValueError("Choose RetroPie, Recalbox, or Batocera.")
+    physical_scope = data.get("physical_scope", "all")
+    if physical_scope not in ("nes", "all"):
+        raise ValueError("Controller Router physical scope must be NES or all Libretro systems.")
     virtual_player = data.get("virtualglove_player")
     if isinstance(virtual_player, bool) or virtual_player not in (None, 1, 2, 3, 4):
         raise ValueError("VirtualGlove must be unassigned or assigned to one player.")
@@ -152,7 +168,8 @@ def validate_config(data: object) -> dict[str, Any]:
         raise ValueError("Too many physical controller sources.")
     return {"format": FORMAT, "platform": data["platform"],
             "players": sorted(normalized, key=lambda item: item["player"]),
-            "virtualglove_player": data.get("virtualglove_player")}
+            "virtualglove_player": data.get("virtualglove_player"),
+            "physical_scope": physical_scope}
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -170,7 +187,7 @@ def migrate_player1(old_path: Path, new_path: Path, platform: str) -> dict[str, 
         raise ValueError("The existing merged controller belongs to a different platform.")
     config = validate_config({"format": FORMAT, "platform": platform,
                               "players": [{"player": 1, "sources": [old]}],
-                              "virtualglove_player": 1})
+                              "virtualglove_player": 1, "physical_scope": "all"})
     atomic_write(new_path, json.dumps(config, indent=2) + "\n")
     return config
 
@@ -229,7 +246,7 @@ def test_activity(es_inputs: Path, duration_ms: int = 500,
                   *, sys_root: Path = Path("/sys/class/input"),
                   dev_root: Path = Path("/dev/input")) -> dict[str, list[str]]:
     """Observe a short, non-grabbing controller window and return logical controls only."""
-    duration_ms = max(0, min(1000, int(duration_ms)))
+    duration_ms = max(0, min(CONTROL_TEST_MS, int(duration_ms)))
     event = struct.Struct("llHHi")
     opened: dict[int, tuple[str, list[dict[str, Any]]]] = {}
     try:
@@ -325,14 +342,15 @@ class _MapperState:
 
 
 JOYSTICK_CORE_NAMES = {"fceumm_libretro.so", "nestopia_libretro.so"}
+NATIVE_CORE_NAMES = {"nestopia_powerglove_libretro.so"}
 
 
-def joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
-    """Recognize supported joystick cores, excluding native VirtualGlove Nestopia."""
+def running_retroarch_core(proc_root: Path = Path("/proc")) -> str | None:
+    """Return the active Libretro core filename without trusting process text."""
     try:
         entries = tuple(proc_root.iterdir())
     except OSError:
-        return False
+        return None
     for entry in entries:
         if not entry.name.isdigit():
             continue
@@ -344,10 +362,24 @@ def joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
         if not args or not Path(args[0]).name.casefold().startswith("retroarch"):
             continue
         for index, value in enumerate(args[:-1]):
-            if (value in ("-L", "--libretro") and
-                    Path(args[index + 1]).name.casefold() in JOYSTICK_CORE_NAMES):
-                return True
-    return False
+            if value in ("-L", "--libretro"):
+                return Path(args[index + 1]).name.casefold()
+    return None
+
+
+def retroarch_running(proc_root: Path = Path("/proc")) -> bool:
+    """Report whether any Libretro core is active."""
+    return running_retroarch_core(proc_root) is not None
+
+
+def joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
+    """Recognize NES cores that accept VirtualGlove as a RetroPad."""
+    return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES
+
+
+def virtual_joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
+    """Exclude native Super Glove Ball from duplicate RetroPad injection."""
+    return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES
 
 
 def joystick_retroarch_configs(primary: Path) -> tuple[Path, ...]:
@@ -382,6 +414,7 @@ class ControllerRouterDevice:
         self.descriptors: dict[int, dict[str, Any]] = {}
         self.socket_path, self.socket = socket_path, None
         self.virtual_updated_at = 0.0
+        self.virtual_allowed = False
         # A newly launched core must begin from a fresh neutral glove state.
         # Otherwise the last observation received while EmulationStation was
         # active can become the game's first controller input.
@@ -423,7 +456,12 @@ class ControllerRouterDevice:
             if len(indexes) == len(self.players):
                 global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
                 global_text = global_path.read_text() if global_path.exists() else ""
-                for config_path in self.retroarch_configs:
+                config_paths = list(self.retroarch_configs)
+                if (self.config.get("physical_scope") == "all"
+                        and self.config["platform"] in ("recalbox", "batocera")
+                        and global_path not in config_paths):
+                    config_paths.append(global_path)
+                for config_path in config_paths:
                     current = config_path.read_text() if config_path.exists() else ""
                     updated = merge_retroarch_config(current, self.config, indexes, global_text)
                     atomic_write(config_path, updated, 0o644)
@@ -433,7 +471,8 @@ class ControllerRouterDevice:
         raise RuntimeError("Controller Router outputs did not appear in /sys/class/input")
 
     def _set_active(self, active: bool,
-                    candidates: list[dict[str, Any]] | None = None) -> None:
+                    candidates: list[dict[str, Any]] | None = None,
+                    virtual_allowed: bool = True) -> None:
         """Grab or release physical sources across a supported-core transition."""
         if active:
             available = candidates if candidates is not None else (
@@ -441,7 +480,7 @@ class ControllerRouterDevice:
             self.session_mapping_revisions = {}
             for _player, saved in self._saved_sources():
                 candidate = find_saved_controller(saved, available)
-                mapping = candidate["mapping"] if candidate else saved["mapping"]
+                mapping = session_mapping(saved, candidate) if candidate else saved["mapping"]
                 self.session_mapping_revisions[saved["id"]] = mapping_revision(mapping)
         else:
             self.session_mapping_revisions.clear()
@@ -455,6 +494,7 @@ class ControllerRouterDevice:
         for state in self.players.values():
             state.active = active
             state.virtual.release()
+        self.virtual_allowed = bool(active and virtual_allowed)
         self.virtual_updated_at = 0.0
         self.virtual_armed = False
         self._publish()
@@ -506,7 +546,7 @@ class ControllerRouterDevice:
         for fd, record in list(self.descriptors.items()):
             saved = saved_by_id.get(record["source_id"])
             candidate = find_saved_controller(saved, candidates) if saved else None
-            current = mapping_revision(candidate.get("mapping")) if candidate else ""
+            current = mapping_revision(session_mapping(saved, candidate)) if candidate else ""
             if not current or current != record.get("mapping_revision"):
                 self._drop(fd)
 
@@ -520,7 +560,8 @@ class ControllerRouterDevice:
             candidate = find_saved_controller(saved, candidates)
             if candidate is None:
                 continue
-            live_revision = mapping_revision(candidate["mapping"])
+            live_mapping = session_mapping(saved, candidate)
+            live_revision = mapping_revision(live_mapping)
             expected_revision = self.session_mapping_revisions.get(saved["id"])
             if self.players[player].active and live_revision != expected_revision:
                 # EmulationStation changes apply only after the running game
@@ -529,7 +570,7 @@ class ControllerRouterDevice:
             joy_fd = event_fd = None
             try:
                 joy_fd = os.open(candidate["joystick"], os.O_RDONLY | os.O_NONBLOCK)
-                mapping = translate_es_mapping(candidate["mapping"], joy_fd)
+                mapping = translate_es_mapping(live_mapping, joy_fd)
                 event_fd = os.open(candidate["event"], os.O_RDONLY | os.O_NONBLOCK)
                 source = self.players[player].physical.setdefault(saved["id"], SourceState())
                 mapper = PhysicalMapper(mapping, _MapperState(source), input_axis_ranges(event_fd, mapping))
@@ -563,7 +604,7 @@ class ControllerRouterDevice:
             return
         player_state = self.players[player]
         state = player_state.virtual
-        if not player_state.active:
+        if not player_state.active or not self.virtual_allowed:
             # Observations from Setup or EmulationStation must never be held
             # and replayed when the next game starts.
             state.release()
@@ -617,12 +658,16 @@ class ControllerRouterDevice:
                 return
 
     def _run(self) -> None:
-        """Monitor compatible NES cores, configuration, hot-plug, and source events."""
-        active = False
+        """Monitor routed games, configuration, hot-plug, and source events."""
+        active = virtual_allowed = False
         while not self.stop.is_set():
             with self.lock:
-                now_active = joystick_core_running(self.proc_root)
-                if now_active != active:
+                core = running_retroarch_core(self.proc_root)
+                all_libretro = self.config.get("physical_scope") == "all"
+                now_active = core is not None and (all_libretro or core in (
+                    JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES))
+                now_virtual_allowed = core in JOYSTICK_CORE_NAMES
+                if (now_active, now_virtual_allowed) != (active, virtual_allowed):
                     candidates = None
                     if now_active:
                         candidates = self._current_candidates()
@@ -632,7 +677,8 @@ class ControllerRouterDevice:
                                                      self.udev_root,
                                                      self.config["platform"]) != self.installed_indexes:
                         self._install_indexes()
-                    active = now_active; self._set_active(active, candidates)
+                    active, virtual_allowed = now_active, now_virtual_allowed
+                    self._set_active(active, candidates, virtual_allowed)
                 if self.virtual_updated_at and time.monotonic() - self.virtual_updated_at >= VIRTUAL_TIMEOUT_SECONDS:
                     player = self.config.get("virtualglove_player")
                     if player in self.players: self.players[player].virtual.release()
@@ -782,14 +828,24 @@ class RouterStore:
         self.path, self.backup = Path(path), Path(str(path) + ".previous")
         self.platform, self.es_inputs = platform, Path(es_inputs)
         self.retroarch_config = Path(retroarch_config) if retroarch_config else None
-        self.activity_check = activity_check or joystick_core_running
+        self.activity_check = activity_check or self._managed_game_running
         self.activate = activate
         self.lock = threading.Lock()
+
+    def _managed_game_running(self) -> bool:
+        """Block reconfiguration while this installation owns game inputs."""
+        try:
+            config = load_config(self.path) if self.path.exists() else self._default()
+        except (OSError, ValueError, json.JSONDecodeError):
+            return joystick_core_running()
+        if config.get("physical_scope") == "all":
+            return retroarch_running()
+        return joystick_core_running()
 
     def _default(self) -> dict[str, Any]:
         """Return an inactive configuration for an unconfigured platform."""
         return {"format": FORMAT, "platform": self.platform, "players": [],
-                "virtualglove_player": None}
+                "virtualglove_player": None, "physical_scope": "all"}
 
     def read(self) -> dict[str, Any]:
         """Return configuration, revision, rollback state, and inventory."""
@@ -811,7 +867,20 @@ class RouterStore:
                     # Retain the saved record only when the source is genuinely
                     # unavailable; never replace a refreshed mapping merely
                     # because its stable physical identity is unchanged.
-                    if source["id"] not in candidates:
+                    if source["id"] in candidates:
+                        # EmulationStation does not represent a cabinet's
+                        # dedicated hotkey when it is intentionally outside
+                        # the frontend controls. Preserve that one proven,
+                        # physical-only mapping across assignment saves.
+                        saved_hotkeys = [item for item in source["mapping"]
+                                         if item.get("name") == "hotkey"]
+                        discovered = candidates[source["id"]]
+                        if (saved_hotkeys and not any(item.get("name") == "hotkey"
+                                                     for item in discovered["mapping"])):
+                            discovered = copy.deepcopy(discovered)
+                            discovered["mapping"].extend(saved_hotkeys)
+                            candidates[source["id"]] = discovered
+                    else:
                         candidates[source["id"]] = find_saved_controller(source, connected) or source
         proposed_players = proposed.get("players", [])
         if not isinstance(proposed_players, list) or len(proposed_players) > 4:
@@ -828,8 +897,12 @@ class RouterStore:
             except KeyError as exc:
                 raise ValueError("A selected controller is no longer available. Refresh and try again.") from exc
             players.append({"player": entry.get("player"), "sources": sources})
+        current_scope = "all"
+        if self.path.exists():
+            current_scope = load_config(self.path).get("physical_scope", "all")
         return validate_config({"format": FORMAT, "platform": self.platform, "players": players,
-                                "virtualglove_player": proposed.get("virtualglove_player")})
+                                "virtualglove_player": proposed.get("virtualglove_player"),
+                                "physical_scope": current_scope})
 
     def operate(self, operation: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Perform one bounded revision-checked router operation."""
@@ -850,7 +923,7 @@ class RouterStore:
             if operation not in ("save", "rollback"):
                 raise ValueError("Unsupported Controller Router operation.")
             if self.activity_check():
-                raise ValueError("Close the running NES game before changing controller assignments.")
+                raise ValueError("Close the running RetroArch game before changing controller assignments.")
             if payload.get("revision") != current["revision"]:
                 raise ValueError("Controller assignments changed elsewhere. Reload before saving.")
             if operation == "rollback":
@@ -927,7 +1000,11 @@ def router_request(settings: dict[str, Any], operation: str,
                                          headers={"Content-Type": "application/json"})
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
-            with opener.open(request, timeout=4) as response:
+            wait_seconds = 4
+            if operation == "check":
+                wait_seconds = min(
+                    15, max(4, int((payload or {}).get("watch_ms", 0)) / 1000 + 2))
+            with opener.open(request, timeout=wait_seconds) as response:
                 body = response.read(MAX_REQUEST + 1)
             if len(body) > MAX_REQUEST:
                 raise ValueError("Controller Router response is too large.")
@@ -981,27 +1058,35 @@ def _assignment_label(player: int | None) -> str:
 def _wizard_screen(state: dict[str, Any], assignments: dict[str, int | None],
                    virtual_player: int | None) -> str:
     """Render one dependency-free Controller Router terminal screen."""
+    width = 78
+    border = "+" + "-" * width + "+"
+
+    def line(value: str = "") -> str:
+        """Fit one row within the fixed-width terminal frame."""
+        return "| " + value[:width - 2].ljust(width - 2) + " |"
+
     rows = []
     for index, source in enumerate(state["inventory"], 1):
-        name = source["name"][:31]
+        name = source["name"][:34]
         identity = source.get("identity_suffix", source["id"][-6:])
         connected = "Connected" if source.get("connected") else "Unavailable"
-        rows.append("| %2d  %-31s %-10s %-11s %-11s |" % (
-            index, name, identity, _assignment_label(assignments.get(source["id"])), connected))
+        rows.append(line("%2d   %-34s  %-6s  %-10s  %-11s" % (
+            index, name, identity, _assignment_label(assignments.get(source["id"])), connected)))
     if not rows:
-        rows.append("|     No configured EmulationStation controllers found.                 |")
+        rows.append(line("No configured EmulationStation controllers found."))
     lines = [
-        "+------------------ VirtualGlove Controller Router -------------------+",
-        "| Assign configured controllers to the merged NES joystick players.    |",
-        "+-----------------------------------------------------------------------+",
-        "| No. Controller                      ID         Assignment  Status      |",
-        "+-----------------------------------------------------------------------+",
+        "+" + " VirtualGlove Controller Router ".center(width, "-") + "+",
+        line("Assign configured controllers to merged RetroArch players."),
+        border,
+        line("No.  Controller                          ID      Assignment  Status"),
+        border,
         *rows,
-        "+-----------------------------------------------------------------------+",
-        "| VirtualGlove: %-54s |" % _assignment_label(virtual_player),
-        "| [1-%d] Assign controller  [V] VirtualGlove  [T] Test controls          |" % max(1, len(rows)),
-        "| [S] Save and verify      [R] Roll back     [Q] Quit                   |",
-        "+-----------------------------------------------------------------------+",
+        border,
+        line("VirtualGlove: %s" % _assignment_label(virtual_player)),
+        line("[1-%d] Assign controller   [V] VirtualGlove   [T] Test controls" %
+             max(1, len(rows))),
+        line("[S] Save and verify       [R] Roll back      [Q] Quit"),
+        border,
     ]
     return "\n".join(lines)
 
@@ -1046,8 +1131,8 @@ def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
                 output_fn("ACTION  " + str(exc))
             continue
         if choice == "t":
-            output_fn("Press a button or direction on a controller...")
-            result = store.operate("check", {"watch_ms": 1500})
+            output_fn("Press buttons or directions for the next 10 seconds...")
+            result = store.operate("check", {"watch_ms": CONTROL_TEST_MS})
             if result["activity"]:
                 names = {item["id"]: item["name"] for item in result["inventory"]}
                 for identity, controls in result["activity"].items():
@@ -1056,8 +1141,14 @@ def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
             else:
                 output_fn("ACTION  No control was pressed during the test.")
             if result["missing_sources"]:
-                output_fn("ACTION  %d assigned controller(s) are unavailable." %
-                          len(result["missing_sources"]))
+                by_id = {item["id"]: item for item in result["inventory"]}
+                for identity in result["missing_sources"]:
+                    source = by_id.get(identity, {})
+                    output_fn("ACTION  %s · %s%s is unavailable." % (
+                        source.get("name", "Configured controller"),
+                        source.get("identity_suffix", identity[-6:]),
+                        " · Player %s" % source["assigned_player"]
+                        if source.get("assigned_player") else ""))
             continue
         if choice == "r":
             if not state["has_backup"]:
@@ -1169,7 +1260,12 @@ def main() -> int:
                 time.sleep(0.05)
         indexes = output_indexes(enabled_players(config), platform=config["platform"])
         global_text = global_config.read_text() if global_config.exists() else ""
-        for config_path in joystick_retroarch_configs(retroarch):
+        config_paths = list(joystick_retroarch_configs(retroarch))
+        if (config.get("physical_scope") == "all"
+                and platform in ("recalbox", "batocera")
+                and global_config not in config_paths):
+            config_paths.append(global_config)
+        for config_path in config_paths:
             current = config_path.read_text() if config_path.exists() else ""
             updated = merge_retroarch_config(current, config, indexes, global_text)
             atomic_write(config_path, updated, 0o644)

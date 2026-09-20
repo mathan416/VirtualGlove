@@ -54,7 +54,8 @@ def proposal(es_inputs: Path) -> dict:
     if not players:
         raise ValueError("No known cabinet I-PAC or 8BitDo sources are configured and connected.")
     return validate_config({"format": FORMAT, "platform": "retropie",
-                            "players": players, "virtualglove_player": 1})
+                            "players": players, "virtualglove_player": 1,
+                            "physical_scope": "all"})
 
 
 def main() -> int:

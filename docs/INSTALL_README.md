@@ -33,7 +33,7 @@ several minutes.
 
 | Platform | Where you install | How Player 1 works |
 | --- | --- | --- |
-| RetroPie | Raspberry Pi terminal | VirtualGlove appears beside your physical controller. |
+| RetroPie | Raspberry Pi terminal | VirtualGlove normally appears beside your physical controller. Optional Controller Router can combine and assign physical controllers and VirtualGlove. |
 | Recalbox 10.x | Recalbox terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
 | Batocera 38 or newer | Batocera terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
 | LaunchBox | Windows PowerShell | Your physical XInput controller remains available while VirtualGlove supplies a managed RetroArch controller. |
@@ -56,19 +56,35 @@ launch; Setup marks it **Mapping refreshed**.
 Recalbox and Batocera automatically carry their released Player 1 selection into
 the new format. A normal RetroPie install keeps its separate `VirtualGlove`
 gamepad until Router is explicitly saved and applied. Original physical
-controllers remain the frontend controllers; merged outputs stay neutral
-outside supported NES joystick cores. Router writes separate core-specific
-overrides for FCEUmm and stock Nestopia, while Nestopia (VirtualGlove) retains
-its separate native-input path.
+controllers remain the frontend controllers; merged outputs stay neutral in
+EmulationStation and become active during Libretro gameplay.
 
-At each supported game launch, Router discards any glove state seen in the
-frontend. Physical controllers work immediately. Rest the hand at neutral once;
-VirtualGlove then joins the merged player. This startup handshake prevents a
-held frontend gesture from becoming an accidental first game input.
+| Input | Where it works after Router is enabled |
+| --- | --- |
+| Assigned physical controllers | Their selected merged Player 1-4 slot in any RetroArch/Libretro game. Several physical controllers may share one player. |
+| VirtualGlove joystick gestures | Its selected player in supported FCEUmm and stock Nestopia NES games. |
+| VirtualGlove native gestures | Super Glove Ball in Nestopia (VirtualGlove), through the separate native-input path. |
+| Original physical controllers | Console menus and EmulationStation. Router temporarily takes ownership during Libretro gameplay to prevent doubled input. |
+| Standalone, non-Libretro emulators | Not managed by Controller Router. They retain the platform's normal controller setup. |
 
-Use **Check controllers** and press a direction or button on each pad. Close any
-running NES game before changing assignments. **Restore previous assignments**
-provides an atomic rollback after a save.
+Assigning a physical controller in Router does not reconfigure its buttons.
+Router uses the mapping already saved by EmulationStation and adopts a valid
+later remap at the next game launch. Player 1 is special: only a physical
+controller assigned to Player 1 carries the platform's menu and exit hotkey.
+VirtualGlove Select never becomes a hotkey.
+
+At each Libretro game launch, physical controllers work immediately. Router
+discards any glove state seen in the frontend. In a game that accepts
+VirtualGlove gestures, rest the hand at neutral once; VirtualGlove then joins
+the selected merged player. This startup handshake prevents a held frontend
+gesture from becoming an accidental first game input.
+
+Use **Check controllers** and press a direction or button on each pad during the
+ten-second test. The result names each responding or unavailable controller,
+shows its stable identity suffix and assigned player, and keeps an unavailable
+warning visible even when another pad responds. Close any running RetroArch
+game before changing assignments. **Restore previous assignments** provides an
+atomic rollback after a save.
 
 The same assignments can be managed locally without pairing. Open the console
 terminal and run the platform's persistent command:
@@ -249,8 +265,10 @@ selected physical controller and VirtualGlove arrangement. After pairing, the
 **Controller Router** card in Setup can enable merged Players 1–4, assign
 several configured physical controllers to one player, or move the one
 VirtualGlove to another player. Original controllers continue to operate
-EmulationStation without duplicate menu movement. Unrelated settings are
-preserved.
+EmulationStation without duplicate menu movement. During any Libretro game,
+assigned physical controllers use the merged players. VirtualGlove gestures
+join only compatible NES joystick games or the separate native Super Glove
+Ball path. Unrelated settings are preserved.
 
 Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
 core when a compatible core is available and you have not already made an
@@ -266,9 +284,10 @@ assignments, and live gameplay may still appear as `ACTION` items.
 #### First game and updates
 
 After pairing, test an ordinary registered game with FCEUmm. Confirm that hand
-controls and the physical controller both operate Player 1. Then test Super
-Glove Ball if it is installed. To update later, close the game and rerun the
-same install command.
+controls and the physical controller both operate Player 1. Then test one
+non-NES Libretro game with the physical controller; VirtualGlove gestures are
+not expected in that game. Finally, test Super Glove Ball if it is installed.
+To update later, close the game and rerun the same install command.
 
 <!-- PAGEBREAK -->
 
@@ -303,8 +322,10 @@ selected physical controller and VirtualGlove arrangement. After pairing, the
 **Controller Router** card in Setup can enable merged Players 1–4, assign
 several configured physical controllers to one player, or move the one
 VirtualGlove to another player. Original controllers continue to operate
-EmulationStation without duplicate menu movement. Unrelated settings are
-preserved.
+EmulationStation without duplicate menu movement. During any Libretro game,
+assigned physical controllers use the merged players. VirtualGlove gestures
+join only compatible NES joystick games or the separate native Super Glove
+Ball path. Unrelated settings are preserved.
 
 Registered Super Glove Ball filenames use the packaged Nestopia (VirtualGlove)
 core when a compatible core is available and you have not already made an
@@ -320,9 +341,10 @@ assignments, and live gameplay may still appear as `ACTION` items.
 #### First game and updates
 
 After pairing, test an ordinary registered game with FCEUmm. Confirm that hand
-controls and the physical controller both operate Player 1. Then test Super
-Glove Ball if it is installed. To update later, close the game and rerun the
-same install command.
+controls and the physical controller both operate Player 1. Then test one
+non-NES Libretro game with the physical controller; VirtualGlove gestures are
+not expected in that game. Finally, test Super Glove Ball if it is installed.
+To update later, close the game and rerun the same install command.
 
 <!-- PAGEBREAK -->
 
@@ -488,6 +510,12 @@ game controls until you explicitly finish practice.
 6. Return the hand to center and confirm movement stops.
 7. Exit the game and confirm gesture output stops.
 
+If Controller Router is enabled, also test every assigned physical controller.
+On Recalbox and Batocera, or a routed RetroPie system, launch a non-NES Libretro
+game and confirm the physical assignments still work. This proves the Router's
+all-Libretro physical path. It does not mean VirtualGlove gestures are expected
+outside their supported NES and native Super Glove Ball paths.
+
 Different Programs deliberately use different gestures. If a control does not
 behave as expected, check the selected Program in the
 [Gameplay Guide](GAMEPLAY_GUIDE.md) before changing calibration.
@@ -617,10 +645,12 @@ one binding.
 
 ### The wrong physical controller is Player 1
 
-On Recalbox or Batocera, close the game and rerun the installer. Choose the
-correct physical Player 1 controller when prompted. On RetroPie or LaunchBox,
-use the platform's normal controller assignment while keeping VirtualGlove's
-managed entry intact.
+On RetroPie, Recalbox, or Batocera with Controller Router enabled, close every
+RetroArch game and use Setup's **Controller Router** card. Assign the controller
+to the intended player, save, and run the ten-second controller check. A red
+Player 1 warning means no physical Player 1 controller can carry the platform
+hotkey. On ordinary RetroPie without Router, or on LaunchBox, use the platform's
+normal controller assignment while keeping VirtualGlove's managed entry intact.
 
 ### Super Glove Ball uses the wrong core
 

@@ -49,11 +49,28 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn('<section id=controller-router class=card', SETUP_CONTENT)
         self.assertNotIn('id=pairing-section class=connection-pairing', SETUP_CONTENT)
 
+    def test_setup_shows_controller_hostname_and_address(self):
+        self.assertIn('id=status-controller-identity', SETUP_CONTENT)
+        self.assertIn('c.controller_hostname', SETUP_SCRIPT)
+        self.assertIn('c.controller_address', SETUP_SCRIPT)
+
     def test_router_table_has_readable_columns(self):
         self.assertIn('<th>Connection status</th><th>Player assignment</th>', ROUTER_CONTENT)
         self.assertIn('min-width:620px', ROUTER_CONTENT)
         self.assertIn('th:nth-child(1){width:52%}', ROUTER_CONTENT)
         self.assertIn('td select{min-width:150px}', ROUTER_CONTENT)
+        self.assertIn('watch_ms:10000', ROUTER_SCRIPT)
+        self.assertIn('next RetroArch launch', ROUTER_SCRIPT)
+
+    def test_terminal_router_screen_has_uniform_width_and_current_scope(self):
+        state = {"inventory": [
+            {"id": "pad-one", "name": "8BitDo Ultimate Wireless / Pro 2 Wired Controller",
+             "identity_suffix": "b68724", "connected": True},
+        ]}
+        screen = router._wizard_screen(state, {"pad-one": 1}, 1)
+        self.assertEqual({len(line) for line in screen.splitlines()}, {80})
+        self.assertIn("merged RetroArch players", screen)
+        self.assertNotIn("NES joystick players", screen)
 
     def test_router_warns_when_player1_has_no_physical_controller(self):
         self.assertIn('id=router-hotkey-warning', ROUTER_CONTENT)
@@ -61,6 +78,14 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn('menu and exit hotkeys may be unavailable', ROUTER_CONTENT)
         self.assertIn("some(item=>item.value==='1')", ROUTER_SCRIPT)
         self.assertIn("addEventListener('change'", ROUTER_SCRIPT)
+
+    def test_router_description_and_check_match_all_libretro_scope(self):
+        self.assertIn('merged RetroArch player', ROUTER_CONTENT)
+        self.assertIn('During Libretro gameplay', ROUTER_CONTENT)
+        self.assertNotIn('each NES joystick player', ROUTER_CONTENT)
+        self.assertIn("Unavailable — ${missing.join('; ')}", ROUTER_SCRIPT)
+        self.assertIn("source?.name||'Configured controller'", ROUTER_SCRIPT)
+        self.assertIn('· Player ${player}', ROUTER_SCRIPT)
 
     def test_config_supports_four_slots_and_rejects_duplicate_source(self):
         data = router.validate_config({"format": 2, "platform": "batocera",
@@ -76,6 +101,15 @@ class ControllerRouterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be unassigned"):
             router.validate_config({"format": 2, "platform": "batocera",
                                     "players": [], "virtualglove_player": True})
+
+    def test_all_libretro_physical_scope_is_available_on_supported_platforms(self):
+        config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 1, "sources": [source()]}],
+            "virtualglove_player": 1, "physical_scope": "all"})
+        self.assertEqual(config["physical_scope"], "all")
+        batocera = router.validate_config({"format": 2, "platform": "batocera",
+            "players": [], "virtualglove_player": None, "physical_scope": "all"})
+        self.assertEqual(batocera["physical_scope"], "all")
 
     def test_v1_migration_preserves_identity_mapping_and_virtual_player(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -123,6 +157,48 @@ class ControllerRouterTests(unittest.TestCase):
             self.assertIn('input_product_id = "%d"' % (0x5650 + player), text)
             self.assertIn('input_up_btn = "h0up"', text)
             self.assertEqual('input_enable_hotkey_btn' in text, player == 1)
+
+    def test_native_powerglove_core_activates_physical_router(self):
+        with tempfile.TemporaryDirectory() as directory:
+            proc = Path(directory)
+            process = proc / "42"; process.mkdir()
+            (process / "cmdline").write_bytes(
+                b"/usr/bin/retroarch\0-L\0/cores/nestopia_powerglove_libretro.so\0game.nes\0"
+            )
+            self.assertTrue(router.joystick_core_running(proc))
+
+    def test_assignment_save_preserves_supplemental_cabinet_hotkey(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            saved = source()
+            saved["mapping"].append({"name": "hotkey", "type": "button",
+                                     "code": 298, "value": 1,
+                                     "evdev_code": 298})
+            path = root / "controller-router.json"
+            path.write_text(json.dumps({"format": 2, "platform": "retropie",
+                "players": [{"player": 1, "sources": [saved]}],
+                "virtualglove_player": 1}))
+            store = router.RouterStore(path, "retropie", root / "es_input.cfg")
+            with patch("virtualglove.controller_router.controller_candidates",
+                       return_value=[source()]):
+                result = store._materialize({"format": 2, "platform": "retropie",
+                    "players": [{"player": 1, "sources": ["pad-one"]}],
+                    "virtualglove_player": 1})
+            self.assertEqual(result["players"][0]["sources"][0]["mapping"][-1],
+                             saved["mapping"][-1])
+
+    def test_runtime_mapping_combines_refreshed_controls_with_saved_hotkey(self):
+        saved = source()
+        hotkey = {"name": "hotkey", "type": "button", "code": 298,
+                  "value": 1, "evdev_code": 298}
+        saved["mapping"].append(hotkey)
+        candidate = source()
+        candidate["mapping"] = [{"name": "a", "type": "button", "code": 9,
+                                 "value": 1}]
+        merged = router.session_mapping(saved, candidate)
+        self.assertEqual(merged, [candidate["mapping"][0], hotkey])
+        self.assertEqual(candidate["mapping"], [{"name": "a", "type": "button",
+                                                  "code": 9, "value": 1}])
 
     def test_inventory_deduplicates_repeated_emulationstation_entry(self):
         duplicate = {**source(), "event": "/dev/input/event1", "joystick": "/dev/input/js1"}
@@ -246,6 +322,14 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn('input_player2_joypad_index = "5"', text)
         self.assertIn('input_player3_joypad_index = "8"', text)
         self.assertEqual(text.count("input_enable_hotkey_btn"), 1)
+
+    def test_retropie_router_preserves_standard_exit_and_menu_combinations(self):
+        config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 1, "sources": [source()]}],
+            "virtualglove_player": 1})
+        text = router.merge_retroarch_config("", config, {1: 4})
+        self.assertIn('input_exit_emulator_btn = "11"', text)
+        self.assertIn('input_menu_toggle_btn = "3"', text)
 
     def test_store_rejects_stale_updates_and_changes_during_fceumm(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -447,17 +531,27 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertEqual(device.socket.recv.call_count, router.VIRTUAL_DRAIN_LIMIT)
         device._virtual.assert_called_once()
 
-    def test_joystick_core_detection_supports_stock_nestopia_but_not_native(self):
+    def test_router_activity_covers_joystick_and_native_nes_cores(self):
         with tempfile.TemporaryDirectory() as directory:
             proc = Path(directory); (proc / "10").mkdir()
             (proc / "10/cmdline").write_bytes(b"retroarch\0-L\0/usr/lib/libretro/nestopia_libretro.so\0")
             self.assertTrue(router.joystick_core_running(proc))
             (proc / "10/cmdline").write_bytes(
                 b"retroarch\0-L\0/usr/lib/libretro/nestopia_powerglove_libretro.so\0")
-            self.assertFalse(router.joystick_core_running(proc))
+            self.assertTrue(router.joystick_core_running(proc))
+            self.assertFalse(router.virtual_joystick_core_running(proc))
             (proc / "11").mkdir()
             (proc / "11/cmdline").write_bytes(b"retroarch\0-L\0/usr/lib/libretro/fceumm_libretro.so\0")
             self.assertTrue(router.joystick_core_running(proc))
+
+    def test_non_nes_libretro_core_is_physical_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            proc = Path(directory); (proc / "10").mkdir()
+            (proc / "10/cmdline").write_bytes(
+                b"retroarch\0-L\0/usr/lib/libretro/bluemsx_libretro.so\0game.col\0")
+            self.assertTrue(router.retroarch_running(proc))
+            self.assertFalse(router.joystick_core_running(proc))
+            self.assertFalse(router.virtual_joystick_core_running(proc))
 
     def test_supported_core_configs_include_fceumm_and_stock_nestopia(self):
         root = Path("/configs/retroarch/config")

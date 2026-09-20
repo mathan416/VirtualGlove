@@ -168,8 +168,11 @@ On generic RetroPie, confirm the separate `VirtualGlove` input device and its
 Player 1 mapping. If optional Controller Router is enabled—or on Recalbox and
 Batocera—open its Setup card or run `virtualglove-controller-router check`.
 Confirm each saved source is connected, every enabled **VirtualGlove Merged
-Player 1–4** output exists, and the current FCEUmm player indexes are assigned.
-Merged devices are intentionally neutral in EmulationStation. On LaunchBox, the installer must
+Player 1–4** output exists, and the current RetroArch player indexes are assigned.
+Merged devices are intentionally neutral in EmulationStation and become active
+for physical input during Libretro gameplay. VirtualGlove gesture input remains
+limited to supported FCEUmm, stock Nestopia, and native Super Glove Ball paths.
+On LaunchBox, the installer must
 report `network-retropad`, a random high loopback port, and a validated isolation
 rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
 and physical XInput remain available. If gestures are recognized but FCEUmm does
@@ -190,6 +193,37 @@ are not guessed. If the selected pad disconnects during play, only its held
 state releases; VirtualGlove remains available. Reconnect that saved pad, or
 explicitly select its replacement. Seeing no response from the merged device in
 EmulationStation is expected—it deliberately becomes active only in RetroArch.
+
+### Controller Router reports an unavailable controller
+
+Select **Check controllers**, then press a direction or button on every connected
+pad during the ten-second test. Each result includes the controller name, its
+stable six-character identity suffix, and its assigned player. For example,
+`Wireless Controller · cd8a4a · Player 1` identifies the saved device without
+depending on a changing Linux event number.
+
+If a controller is listed as **Unavailable**:
+
+1. Reconnect that exact controller and wait for EmulationStation to recognize it.
+2. Confirm it still appears and works in EmulationStation.
+3. Run **Check controllers** again and press one of its controls.
+4. If the old controller was replaced, close every RetroArch game, assign the
+   replacement in Controller Router, and save. Router never silently substitutes
+   a different device.
+
+A connected controller can report **Mapping refreshed** after a valid remap in
+EmulationStation. Its player assignment is retained and the refreshed mapping
+is used at the next game launch. If one controller responds while another is
+missing, Setup reports both facts rather than treating the whole test as a pass.
+
+If no physical controller is assigned to Player 1, Setup shows a red warning.
+Gameplay may still work, but the platform's RetroArch menu and exit hotkeys may
+be unavailable. Assign at least one physical controller to Player 1 unless a
+keyboard is deliberately kept available.
+
+Controller Router manages Libretro gameplay, not standalone emulator programs.
+Original controllers continue to navigate EmulationStation. Do not use the lack
+of merged-device movement in the frontend as evidence of a failure.
 
 A filename such as `Gun.Smoke (USA).7z` must keep its punctuation in the registry
 even though the displayed game name is **Gun Smoke**. See

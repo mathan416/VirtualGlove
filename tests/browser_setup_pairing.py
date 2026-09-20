@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 async def main():
     """Test user-visible state transitions against controlled HTTP responses."""
     config = dict(platform='retropie', receiver='RETROPIE-NAME.local', port=55355, profile='off',
+                  controller_hostname='arduiain.local', controller_address='10.0.2.105',
                   glove_color='none', camera='auto', camera_fps='auto', matrix_attract='on',
                   camera_buffers=2, camera_backend='opencv', camera_exposure='auto',
                   camera_manual_exposure=78, camera_manual_gain=96,
@@ -182,6 +183,7 @@ async def main():
         await expect(page.locator('#connection-status-note')).to_contain_text('do not confirm that a game received input')
         await expect(page.locator('#connection-status-note')).not_to_contain_text('Green:')
         await expect(page.locator('#status-active-destination')).to_have_text('Not active')
+        await expect(page.locator('#status-controller-identity')).to_have_text('arduiain.local · 10.0.2.105')
         async with page.expect_download() as report_download:
             await page.locator('#support-report').click()
         report=await report_download.value

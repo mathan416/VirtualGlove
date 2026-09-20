@@ -225,6 +225,9 @@ def install_retropie(peer):
         installation_manifest()["apply"](SOURCE, destination, BACKUPS / "application-payload", names)
     for source in (SOURCE / "retropie/bin").iterdir():
         write_file(Path("/opt/virtualglove/bin") / source.name, source.read_bytes(), 0o755)
+    write_file("/usr/local/bin/virtualglove-controller-router",
+               "#!/bin/sh\nexec /opt/virtualglove/bin/virtualglove-controller-router \"$@\"\n",
+               0o755)
     for action in ("start", "end"):
         (destination / ("retropie/runcommand-on" + action + "-virtualglove.sh")).chmod(0o755)
     write_file("/etc/virtualglove/games.json", (SOURCE / "config/games.json").read_bytes(), preserve=True)
@@ -651,6 +654,7 @@ def configure_merged_player1(platform, requested=None):
             "format": router.FORMAT, "platform": platform,
             "players": [{"player": 1, "sources": [data]}],
             "virtualglove_player": 1,
+            "physical_scope": "all",
         })
         write_file(router_path, json.dumps(routed, indent=2) + "\n")
     return data

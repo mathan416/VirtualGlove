@@ -50,7 +50,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)
 
-    def test_router_uses_ordinary_core_overrides_without_routing_native_core(self):
+    def test_router_routes_physical_controls_globally_without_duplicate_native_input(self):
         setup = (ROOT / "scripts/setup-machine.py").read_text()
         router = (ROOT / "src/virtualglove/controller_router.py").read_text()
         for root in ("/recalbox/share/system/configs/retroarch",
@@ -59,7 +59,10 @@ class RecalboxAssetsTests(unittest.TestCase):
             self.assertIn(root + "/config/Nestopia/Nestopia.cfg", setup)
         self.assertIn('retroarch / "config/FCEUmm/FCEUmm.cfg"', router)
         self.assertIn('"fceumm_libretro.so", "nestopia_libretro.so"', router)
-        self.assertNotIn('"nestopia_powerglove_libretro.so"}', router)
+        self.assertIn('NATIVE_CORE_NAMES = {"nestopia_powerglove_libretro.so"}', router)
+        self.assertIn("return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES", router)
+        self.assertIn('platform in ("recalbox", "batocera")', router)
+        self.assertIn("config_paths.append(global_config)", router)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()
@@ -92,7 +95,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         check_handler = script.split("byId('router-check').onclick=", 1)[1].split(
             "byId('router-rollback').onclick=", 1)[0]
         self.assertNotIn("render(result)", check_handler)
-        self.assertIn("connected.get(select.dataset.source)", check_handler)
+        self.assertIn("inventory.get(select.dataset.source)", check_handler)
 
     def test_batocera_native_core_overlay_is_separate_and_reversible(self):
         text = (ROOT / "batocera/virtualglove-core-mount").read_text()

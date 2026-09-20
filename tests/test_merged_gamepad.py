@@ -393,6 +393,12 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(hotkeys["input_load_state_btn"], "3")
         self.assertNotIn("input_reset_btn", hotkeys)
 
+    def test_retropie_uses_stable_hotkeys_on_the_merged_pad(self):
+        saved = {"platform": "retropie", "mapping": self._mapping()}
+        hotkeys = merged.platform_hotkey_bindings(saved, "")
+        self.assertEqual(hotkeys["input_exit_emulator_btn"], "11")
+        self.assertEqual(hotkeys["input_menu_toggle_btn"], "3")
+
     def test_physical_device_is_grabbed_only_during_gameplay(self):
         device = merged.MergedGamepadDevice.__new__(merged.MergedGamepadDevice)
         device.descriptor = 17

@@ -109,20 +109,43 @@ class NativeStateWriter:
 
     def __init__(self, path: Path = DEFAULT_PATH) -> None:
         self.path = Path(path)
+        self.mapping = None
+        self.identity = None
+        self._open_mapping()
+        self.guard = 0
+        self.write({"sequence": 0})
+
+    def _open_mapping(self) -> None:
+        """Create and remember the currently linked native-state record."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         descriptor = os.open(self.path, os.O_CREAT | os.O_RDWR, 0o644)
         try:
             if hasattr(os, "fchmod"):
                 os.fchmod(descriptor, 0o644)
             os.ftruncate(descriptor, RECORD_SIZE)
-            self.mapping = mmap.mmap(descriptor, RECORD_SIZE, access=mmap.ACCESS_WRITE)
+            mapping = mmap.mmap(descriptor, RECORD_SIZE, access=mmap.ACCESS_WRITE)
+            status = os.fstat(descriptor)
         finally:
             os.close(descriptor)
-        self.guard = 0
-        self.write({"sequence": 0})
+        previous = self.mapping
+        self.mapping = mapping
+        self.identity = (status.st_dev, status.st_ino)
+        if previous is not None:
+            previous.close()
+
+    def _ensure_linked(self) -> None:
+        """Recover if another service lifecycle removed the shared path."""
+        try:
+            status = self.path.stat()
+            linked = (status.st_dev, status.st_ino) == self.identity
+        except OSError:
+            linked = False
+        if not linked:
+            self._open_mapping()
 
     def write(self, state: dict, arrived_ns: int | None = None) -> None:
         """Publish payload between odd/in-progress and even/complete guards."""
+        self._ensure_linked()
         odd = self.guard + 1
         if arrived_ns is None:
             arrived_ns = monotonic_ns()

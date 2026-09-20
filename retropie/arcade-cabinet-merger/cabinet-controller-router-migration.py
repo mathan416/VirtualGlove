@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 from virtualglove.controller_router import (
-    ControllerRouterDevice, atomic_write, enabled_players,
+    ControllerRouterDevice, atomic_write, enabled_players, output_name,
     joystick_core_running as fceumm_running,
     load_config, output_indexes, revision, test_activity,
 )
@@ -32,6 +32,7 @@ ROUTER_CONFIG = Path("/etc/virtualglove/controller-router.json")
 FCEUMM_CONFIG = Path("/opt/retropie/configs/all/retroarch/config/FCEUmm/FCEUmm.cfg")
 GLOBAL_CONFIG = Path("/opt/retropie/configs/nes/retroarchcustom.cfg")
 NES_CONFIG = Path("/opt/retropie/configs/nes/retroarch.cfg")
+JOYSTICK_SELECTION = Path("/opt/retropie/configs/all/joystick-selection.cfg")
 RECEIPT = Path("/etc/virtualglove/controller-router-cabinet-check.json")
 STATE = Path("/etc/virtualglove/controller-router-cabinet-migration.json")
 OLD_SERVICE = "arcade-gamepad-merger.service"
@@ -82,6 +83,16 @@ def _restore(path: Path, saved: str | dict | None, mode: int = 0o600,
             # Compatibility with migration receipts written before file
             # metadata was recorded. RetroPie owns these configuration trees.
             os.chown(str(path), parent.st_uid, parent.st_gid)
+
+
+def _merged_joystick_selection(proposal: dict) -> str:
+    """Select Router outputs globally so every assigned physical source works."""
+    lines = ["# Controller Router physical inputs for Libretro systems.",
+             'joystick_selection_by_name = "true"']
+    for player in enabled_players(proposal):
+        lines.append('input_player%d_joypad_index = "%s #1"' % (
+            player, output_name(player)))
+    return "\n".join(lines) + "\n"
 
 
 def check(proposal_path: Path, watch_ms: int) -> None:
@@ -141,6 +152,7 @@ def rollback() -> None:
     _restore(ROUTER_CONFIG, state.get("router_config"))
     _restore(FCEUMM_CONFIG, state.get("fceumm_config"), 0o644, True)
     _restore(NES_CONFIG, state.get("nes_config"), 0o644, True)
+    _restore(JOYSTICK_SELECTION, state.get("joystick_selection"), 0o644, True)
     if state.get("old_enabled"):
         _run("systemctl", "enable", OLD_SERVICE)
     if state.get("old_active"):
@@ -169,6 +181,7 @@ def apply(proposal_path: Path) -> None:
     state = {"format": 2, "router_config": _saved_text(ROUTER_CONFIG),
              "fceumm_config": _saved_file(FCEUMM_CONFIG),
              "nes_config": _saved_file(NES_CONFIG),
+             "joystick_selection": _saved_file(JOYSTICK_SELECTION),
              "old_enabled": _service_state(OLD_SERVICE, "is-enabled"),
              "old_active": _service_state(OLD_SERVICE, "is-active")}
     atomic_write(STATE, json.dumps(state, indent=2) + "\n")
@@ -186,6 +199,11 @@ def apply(proposal_path: Path) -> None:
         if len(indexes) != len(players):
             raise RuntimeError("Controller Router outputs did not become ready.")
         _run("systemctl", "disable", "--now", OLD_SERVICE)
+        selection = _saved_text(JOYSTICK_SELECTION) or ""
+        if "Arcade Merged Player" in selection:
+            atomic_write(JOYSTICK_SELECTION, _merged_joystick_selection(proposal), 0o644)
+            parent = JOYSTICK_SELECTION.parent.stat()
+            os.chown(str(JOYSTICK_SELECTION), parent.st_uid, parent.st_gid)
         _run("systemctl", "restart", "virtualglove-receiver.service")
     except Exception:
         rollback()

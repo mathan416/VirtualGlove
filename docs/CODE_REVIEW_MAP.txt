@@ -2,8 +2,8 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 670
-Python test modules: 76
+Git-visible files: 672
+Python test modules: 77
 Standalone browser checks: 5
 JavaScript browser harnesses: 8
 
@@ -116,7 +116,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 76 test modules. JavaScript
+Normal Python discovery currently contains 77 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-670 tracked or non-ignored files are present in this checkout. Ignored
+672 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -451,7 +451,8 @@ are intentionally omitted.
 |       |   |-- virtualglove-uno-case-exterior.png
 |       |   |-- virtualglove-uno-case-left.png
 |       |   |-- virtualglove-uno-case-right.png
-|       |   `-- virtualglove-uno-case.png
+|       |   |-- virtualglove-uno-case.png
+|       |   `-- virtualglove-uno-lid-logo-options.png
 |       |-- stl
 |       |   |-- virtualglove-compact-full-logo-backing.stl
 |       |   |-- virtualglove-compact-full-logo-cyan.stl
@@ -853,6 +854,7 @@ are intentionally omitted.
 |   |-- test_dot_input.py
 |   |-- test_dot_launcher.py
 |   |-- test_easter_egg.py
+|   |-- test_enclosure_geometry.py
 |   |-- test_engineering_package.py
 |   |-- test_frame_preprocessing_benchmark.py
 |   |-- test_full_vision_exposure_soak.py

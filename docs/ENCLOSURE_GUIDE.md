@@ -135,8 +135,8 @@ for a finished edge around the display; choose one emblem only if wanted.
 | --- | --- |
 | Matrix bezel | [Cyan bezel](../hardware/enclosures/stl/virtualglove-matrix-bezel.stl) |
 | Small lid emblem | Separate: [dark backing](../hardware/enclosures/stl/virtualglove-lid-logo-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-lid-logo-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-lid-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-lid-logo-multicolor.3mf) |
-| Full-wordmark lid logo | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-compact-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-compact-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-compact-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-compact-full-logo-multicolor.3mf) |
-| Optional full-size plaque | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-full-logo-multicolor.3mf) |
+| Compact-case wordmark | For the UNO Q full-wordmark lid only. Separate: [inset backing](../hardware/enclosures/stl/virtualglove-compact-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-compact-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-compact-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-compact-full-logo-multicolor.3mf) |
+| Full-size dock wordmark | Fits the full-wordmark lid for Dock V1 and Dock V2. Separate: [inset backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-full-logo-multicolor.3mf) |
 | Optional larger emblem | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-target-badge-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-target-badge-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-target-badge-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-target-badge-multicolor.3mf) |
 
 Every backing now has shallow locating pockets for its cyan and red inserts.
@@ -150,8 +150,9 @@ the larger recess; it does not simply cover the original vents.
 
 Choose exactly one lid style and its matching logo set:
 
-1. Match the **small-emblem backing** to a small-emblem lid, or the
-   **compact full-wordmark backing** to a full-wordmark lid.
+1. Match the **small-emblem backing** to a small-emblem lid. For a wordmark
+   lid, use the **compact wordmark** on the UNO Q Case or the **full-size
+   wordmark** on Dock V1 and Dock V2.
 2. Dry-fit the dark backing in the lid recess. It should sit flat without
    covering the Matrix opening or ventilation slots.
 3. Dry-fit the cyan artwork and red accent in the backing's locating pockets.
@@ -161,9 +162,10 @@ Choose exactly one lid style and its matching logo set:
 5. Fit the completed logo set into the lid recess, then fit the separate Matrix
    bezel around the display opening.
 
-The optional full-size plaque and larger emblem are separate decorative parts.
-They are not substitutes for the compact lid-logo sets and do not fit the lid
-recesses.
+The larger hand/target emblem is a separate decorative part and does not fit a
+lid recess. The 100 x 30 mm full-size wordmark fits the matching Dock V1 and
+Dock V2 lid recesses directly. It remains too wide for the compact UNO Q Case,
+which uses the 76 x 22.8 mm compact wordmark.
 
 The 3MF downloads contain the backing, cyan artwork, and red artwork in one
 file with material colours assigned. In Anycubic Slicer, verify that those
@@ -207,6 +209,26 @@ To change a dimension, download the
 and the [STL export script](../hardware/enclosures/export-stl.sh).
 
 ## Prepare and print
+
+### Current fit revision
+
+Use the current base and lid files together. The September 20 fit revision
+corrects three first-print problems found with the real UNO Q and the Arduino
+hub cable:
+
+- the four UNO Q supports now have narrow 5.4 mm tops, with wider feet only at
+  the floor, so they clear the board's bottom high-speed connectors while
+  retaining strength;
+- the lid skirt is relieved around every corner screw boss and above the broad
+  UNO Q USB-C opening, allowing the lid to sit on the case rim instead of
+  stopping on a post or thick plug; and
+- Dock V2 places the hub beside its right-side Ethernet opening, creating a
+  substantially larger bend bay at the captive-cable end, and moves the UNO Q
+  8 mm right to give the cable a gentler path into its USB-C socket.
+
+If you printed a base or lid from an earlier download, replace both structural
+pieces with the current matching files before judging the fit. Do not trim a
+corner boss or force the lid over it.
 
 ### First check-in: print the coupons
 
@@ -255,6 +277,13 @@ four mounting holes. The hub envelope is **119 x 27.8 x 16 mm** with a fixed
 175 mm cable. Arduino does not publish every plug-body and overmould dimension,
 which is why the fit coupons are part of the build rather than an optional
 extra.
+
+The UNO Q's bottom-side parts remain below 2 mm according to Arduino. The
+mounted board has 4.6 mm of clear height above the enclosure floor. Each lid
+has the same outside width and depth as its base; its skirt sits 2.75 mm in from
+the outside wall with 0.35 mm mating clearance. Four 9.2 mm skirt reliefs pass
+around the 8 mm corner bosses, leaving 0.6 mm radial clearance. These features
+let the top panel land flat on the full case rim.
 
 - [Arduino UNO Q datasheet](https://docs.arduino.cc/resources/datasheets/ABX00162-datasheet.pdf)
 - [Arduino UNO Q STEP model](https://docs.arduino.cc/resources/models/ABX00162-step.zip)
@@ -368,7 +397,8 @@ These eight steps match pages 6-7 of the Assembly Quick Reference.
 2. **Mount the UNO Q.** Place it with the USB-C socket facing the broad opening, then fasten it without bending the board.
 3. **Orient the hidden hub.** Seat it in the rear cradle with its USB-C PD and data bank facing the
    broad rear opening. Route its captive cable internally to the UNO Q without
-   twisting the socket.
+   twisting the socket. The Ethernet end sits beside the right wall; the open
+   bay at the hub's left end is reserved for the thick captive cable.
 4. **Connect the captive cable.** Route the hub lead through its internal channel to the UNO Q without pulling or twisting either connector.
 5. **Choose the camera route.** If the camera uses USB-A, connect it to the inward-facing USB-A 3.0 port now.
    Turn the flexible cable—not the plug—around the left hub end and out a rear
@@ -378,6 +408,8 @@ These eight steps match pages 6-7 of the Assembly Quick Reference.
    using Ethernet, confirm the RJ45 socket faces the right-side opening.
 7. **Dry-fit the lid.** Confirm it closes completely without touching the hub,
    plugs, cables, or board and that no cable is pinched at a routing opening.
+   Look through the open base and confirm all four skirt reliefs surround their
+   corner bosses rather than resting on them.
    Remove the lid, connect any remaining internal cable, and repeat the closure
    check. Plug rear-accessible USB-C cables in only after the lid is fastened.
 8. **Close and finish.** Add the Matrix bezel and the matching assembled lid

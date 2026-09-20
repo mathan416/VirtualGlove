@@ -46,6 +46,32 @@ Exiting the game or losing its session releases controls. **Stop controller**
 keeps delivery stopped until you explicitly start it again. Use it before
 repositioning yourself or the camera.
 
+### Share a player with physical controllers
+
+On Recalbox and Batocera, and on RetroPie when optional **Controller Router** is
+enabled, Setup can assign one or more EmulationStation-configured controllers to
+merged Players 1–4. It can also assign the one paired VirtualGlove to a selected
+player. These are related assignments, but their reach is deliberately different:
+
+| Control source | What it controls |
+| --- | --- |
+| Assigned physical controller | Its merged player in any RetroArch/Libretro game. Multiple physical pads may share one player. |
+| VirtualGlove joystick gestures | Its selected player in supported FCEUmm and stock Nestopia NES games. |
+| VirtualGlove native gestures | Super Glove Ball in Nestopia (VirtualGlove). |
+| Original physical controller | EmulationStation and console menus; Router prevents duplicate input after a Libretro game starts. |
+
+Program choice changes only VirtualGlove's gesture mapping. It does not disable
+an assigned physical controller. **Program 14** and **Gestures off** neutralize
+VirtualGlove while the physical controller remains available. Program 13 sends
+gesture A and B without a camera D-pad, which is useful when a physical
+controller supplies movement.
+
+Player 1 alone carries the physical console hotkey. VirtualGlove Select never
+becomes that hotkey. Before playing, use Setup's ten-second **Check controllers**
+test and press a control on every pad. An unavailable result names the saved
+controller, its identity suffix, and its assigned player. Close the game before
+changing assignments.
+
 ### Read the camera view
 
 The overlay labels the detected hand **Right** or **Left** and shows the tracker's
@@ -633,7 +659,7 @@ supplies movement or menu combinations. Shared gesture Start, Select, and Menu
 Guard remain available, but camera movement never sends a D-pad direction.
 Recalbox and Batocera provide this combination through Controller Router's
 enabled **VirtualGlove Merged Player 1–4** outputs; assign both sources to the
-same player in Setup. LaunchBox combines physical XInput with its loopback
+same player in Setup. Routed RetroPie uses the same model. LaunchBox combines physical XInput with its loopback
 RetroPad while retaining real keys as a backup. Generic RetroPie exposes
 VirtualGlove as a separate gamepad unless optional Controller Router is enabled.
 On a routed console, each game begins with physical controls available and
@@ -667,8 +693,9 @@ authenticated game session and physical Player 1 controller available.
 temporarily for manual menu or password entry. It preserves the visible profile
 and authenticated game session but neutralizes VirtualGlove D-pad, A, B, Start,
 and Select. No calibration or player data is erased.
-The physical pad remains in NES Player 1 automatically on Recalbox, Batocera,
-and LaunchBox. On generic RetroPie, verify its separate controller assignment.
+The physical pad remains available to its merged Libretro player on Recalbox,
+Batocera, and routed RetroPie, and remains available through XInput on LaunchBox.
+On generic RetroPie without Router, verify its separate controller assignment.
 
 **First round:**
 

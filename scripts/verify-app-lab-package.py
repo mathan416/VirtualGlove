@@ -99,6 +99,7 @@ REQUIRED_FILES = {
     "VirtualGlove/hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png",
     "VirtualGlove/hardware/enclosures/previews/virtualglove-enclosure-quick-reference-finish.png",
     "VirtualGlove/hardware/enclosures/previews/virtualglove-lid-logo-options.png",
+    "VirtualGlove/hardware/enclosures/previews/virtualglove-uno-lid-logo-options.png",
     "VirtualGlove/hardware/enclosures/previews/virtualglove-branding-insets.png",
     "VirtualGlove/hardware/enclosures/stl/virtualglove-uno-base.stl",
     "VirtualGlove/hardware/enclosures/stl/virtualglove-uno-lid.stl",

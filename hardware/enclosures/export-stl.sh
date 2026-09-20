@@ -17,22 +17,54 @@ SOURCE="${SCRIPT_DIR}/virtualglove-controller.scad"
 OUTPUT="${SCRIPT_DIR}/stl"
 OPENSCAD="${OPENSCAD:-openscad}"
 
+# OpenSCAD's current universal macOS build can select an arm64 Qt path that
+# incorrectly reports missing NEON support until the GUI has been opened.
+# Rosetta's x86_64 slice works headlessly, so use it when the requested command
+# cannot start rather than leaving the enclosure export half-finished.
+OPENSCAD_COMMAND=("${OPENSCAD}")
+MAC_OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
+if [[ "${OPENSCAD}" == "openscad" && "$(uname -s)" == "Darwin" &&
+      "$(uname -m)" == "arm64" && -x "${MAC_OPENSCAD}" ]] && \
+   /usr/bin/arch -x86_64 "${MAC_OPENSCAD}" --version >/dev/null 2>&1; then
+  echo "Using OpenSCAD's headless-safe x86_64 app slice on Apple Silicon."
+  OPENSCAD_COMMAND=(/usr/bin/arch -x86_64 "${MAC_OPENSCAD}")
+elif ! "${OPENSCAD_COMMAND[@]}" --version >/dev/null 2>&1; then
+  echo "OpenSCAD could not start. Open the app once, then rerun this exporter." >&2
+  exit 1
+fi
+
 mkdir -p "${OUTPUT}"
 
 export_part() {
   local part="$1"
   local name="$2"
+  local target="${OUTPUT}/${name}.stl"
+  local temporary="${target}.new"
   echo "Exporting ${name}..."
-  "${OPENSCAD}" -D "part=\"${part}\"" --export-format binstl \
-    -o "${OUTPUT}/${name}.stl" "${SOURCE}"
+  rm -f "${temporary}"
+  "${OPENSCAD_COMMAND[@]}" -D "part=\"${part}\"" --export-format binstl \
+    -o "${temporary}" "${SOURCE}"
+  [[ -s "${temporary}" ]] || {
+    echo "OpenSCAD did not create ${target}" >&2
+    exit 1
+  }
+  mv "${temporary}" "${target}"
 }
 
 export_3mf() {
   local part="$1"
   local name="$2"
+  local target="${OUTPUT}/${name}.3mf"
+  local temporary="${target}.new"
   echo "Exporting ${name}..."
-  "${OPENSCAD}" -D "part=\"${part}\"" --export-format 3mf \
-    -o "${OUTPUT}/${name}.3mf" "${SOURCE}"
+  rm -f "${temporary}"
+  "${OPENSCAD_COMMAND[@]}" -D "part=\"${part}\"" --export-format 3mf \
+    -o "${temporary}" "${SOURCE}"
+  [[ -s "${temporary}" ]] || {
+    echo "OpenSCAD did not create ${target}" >&2
+    exit 1
+  }
+  mv "${temporary}" "${target}"
 }
 
 export_part uno_base virtualglove-uno-base

@@ -1478,7 +1478,7 @@ def build_enclosure_quick_reference(output: Path) -> None:
             dict(number=2, title="Place the UNO Q", instruction="USB-C faces the broad case opening; the board lies flat.", pictogram="board"),
             dict(number=3, title="Fasten the board", instruction="Use four M3 x 8 mm screws. Snug, never bend the board.", pictogram="screws"),
             dict(number=4, title="Check USB-C clearance", instruction="Connect the external hub; the plug must not push sideways.", pictogram="plug"),
-            dict(number=5, title="Choose and dry-fit branding", instruction="Use one matching lid logo set. Dry-fit backing, cyan, and red pieces before glue.", image_name="virtualglove-lid-logo-options.png"),
+            dict(number=5, title="Choose and dry-fit branding", instruction="Use one matching compact-case logo set. Dry-fit backing, cyan, and red pieces before glue.", image_name="virtualglove-uno-lid-logo-options.png"),
             dict(number=6, title="Close and add feet", instruction="Fasten the lid, add four rubber feet, then inspect on page 8.", pictogram="close"),
         ],
         footer="The Arduino hub, camera, power, and optional Ethernet remain outside this compact case.",

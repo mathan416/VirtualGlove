@@ -30,6 +30,7 @@ SETUP_CONTENT = """<style>main a{color:var(--cyan)}#players{margin-bottom:14px}#
 <li id=status-tracking data-state=unknown><span class=check-dot aria-hidden=true></span><div><span class=check-label>Tracking</span><strong>Checking…</strong></div></li>
 <li id=status-output data-state=unknown><span class=check-dot aria-hidden=true></span><div><span class=check-label>Controller output</span><strong>Checking…</strong></div></li></ul>
 <p class=setup-status-note>Saved console: <strong id=status-destination>Loading…</strong></p>
+<p class=setup-status-note>This Controller: <strong id=status-controller-identity>Loading…</strong></p>
 <p class=setup-status-note>Active controller link: <strong id=status-active-destination>Not active</strong></p>
 <p class=setup-status-note id=connection-status-note>Connection checks do not confirm that a game received input.</p><div class=controls><button type=button class=secondary id=support-report>Download system report</button></div><p class=setup-status-note id=support-report-note>A privacy-safe report contains no video, pairing key, player calibration, ROM name, or network address.</p></section>
 {{PLAYER_CONTENT}}
@@ -105,6 +106,7 @@ const pairingCommands={retropie:'sudo /opt/virtualglove/bin/virtualglove-pair',r
 function syncPlatformGuidance(resetUser=false){const platform=$('platform').value,name=platformNames[platform]||'console',username=platform==='retropie'?'pi':platform&&platform!=='launchbox'?'root':'';$('pair-command').textContent=pairingCommands[platform]||'Select and save a console platform first.';$('pair-ssh-guidance').textContent=platform==='launchbox'?'LaunchBox uses one-time-code pairing; no Windows password is sent to the Controller.':platform?`${name} normally uses ${username} for SSH. Your password is used only for this pairing request and is not saved by the Controller.`:'Select and save a console platform before using SSH pairing.';const ssh=document.querySelector('input[name="pair-method"][value="ssh"]');if(ssh){ssh.disabled=platform==='launchbox';if(platform==='launchbox'&&ssh.checked)document.querySelector('input[name="pair-method"][value="code"]').checked=true}if(resetUser)$('pair-user').value=username}
 function syncCameraOptions(options,selected){const menu=$('camera'),wanted=String(selected??menu.value??'auto'),items=Array.isArray(options)?options:[];menu.replaceChildren();for(const item of items){if(!item||typeof item.value!=='string'||typeof item.label!=='string')continue;const option=document.createElement('option');option.value=item.value;option.textContent=item.label;menu.append(option)}if(!menu.options.length){const option=document.createElement('option');option.value='auto';option.textContent='Automatic — choose the connected camera';menu.append(option)}if(!Array.from(menu.options).some(option=>option.value===wanted)){const option=document.createElement('option');option.value=wanted;option.textContent=`Saved camera ${wanted} — currently unavailable`;menu.append(option)}menu.value=wanted}
 function syncExposureFields(){const manual=$('camera_exposure').value==='manual';$('camera-manual-settings').hidden=!manual;$('camera_manual_exposure').required=manual;$('camera_manual_gain').required=manual}
+function showControllerIdentity(c){$('status-controller-identity').textContent=(c.controller_hostname||'Hostname unavailable')+(c.controller_address?` · ${c.controller_address}`:' · IP address unavailable')}
 async function api(path,payload,timeoutMs=0){
   const options=payload===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)};
   if(path==='/api/attract')options.headers['X-VirtualGlove-Action']='attract';
@@ -134,6 +136,7 @@ async function load(updateFields=false,fields=settingsFields){
   }
   $('paired').textContent=c.pairing_configured?'Platform, connection, and pairing key saved. Use pairing below if the console has not received this key.':c.connection_configured?'Your existing connection remains active. Select and save its platform before pairing again.':'Select your platform and enter its address before pairing. Local play and Glove Academy work without pairing.';
   $('status-destination').textContent=(platformNames[c.platform]?platformNames[c.platform]+' · ':'')+(c.receiver||'Not configured');
+  showControllerIdentity(c);
   savedConfig=c;
   renderPairing();
   $('setup-retry').hidden=true;
@@ -151,7 +154,7 @@ function controllerOutputStatus(w){
 async function refreshStatus(){
   if(document.hidden)return;
   const [connections,worker,cameras]=await Promise.allSettled([api('/api/connection-status',undefined,3500),api('/status',undefined,3500),api('/api/config',undefined,3500)]);
-  if(cameras.status==='fulfilled')syncCameraOptions(cameras.value.camera_options,$('camera').value);
+  if(cameras.status==='fulfilled'){syncCameraOptions(cameras.value.camera_options,$('camera').value);showControllerIdentity(cameras.value)}
   if(connections.status==='fulfilled'){
     const c=connections.value,unknown=c.console_configured?'Checking…':'Not configured';
     indicator('status-app','good','Running');

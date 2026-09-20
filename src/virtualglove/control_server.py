@@ -271,6 +271,17 @@ class ControlState:
         self._wifi_status = None
         self._wifi_status_at = 0.0
 
+    def controller_network_identity(self) -> tuple[str, str]:
+        """Return the stable Controller name and its current resolved IPv4 address."""
+        hostname = controller_tls_hostname(self.config_path)
+        identity = self.config_path.parent / "controller-hostname"
+        if not identity.is_file() or identity.is_symlink():
+            return hostname, ""
+        try:
+            return hostname, resolve_ipv4(hostname)
+        except (OSError, ValueError):
+            return hostname, ""
+
     def request_statistics(self, seconds: float = 1.0) -> None:
         """Lease detailed worker telemetry while a visible Dashboard requests it."""
         with self.lock:
@@ -550,6 +561,7 @@ class ControlState:
     def public_config(self) -> dict[str, Any]:
         """Return browser-safe settings with all secrets removed."""
         config = self.load_config()
+        controller_hostname, controller_address = self.controller_network_identity()
         identity, camera_options = self._camera_details(
             str(config.get("camera", "auto"))
         )
@@ -559,6 +571,8 @@ class ControlState:
             if identity and isinstance(camera_profiles, dict) else None
         )
         return {
+            "controller_hostname": controller_hostname,
+            "controller_address": controller_address,
             "receiver": config.get("receiver", ""),
             "platform": config.get("platform", ""),
             "port": int(config.get("port", 55355)),

@@ -66,8 +66,10 @@ electronics.
 
 1. Seat the four heat-set inserts square and flush.
 2. Mount the UNO Q with USB-C facing its broad opening.
-3. Place the hub with its USB-C bank facing rear and Ethernet facing right.
-4. Route the captive lead internally to the UNO Q without straining the socket.
+3. Place the hub against the right-side Ethernet opening, with its USB-C bank
+   facing rear and the captive-cable bend bay open on the left.
+4. Route the captive lead through that open bay to the UNO Q without forcing a
+   tight bend or straining the socket.
 
 ![Controller Dock V2 steps 5 through 8](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png)
 
@@ -75,7 +77,8 @@ electronics.
    rear USB-C data port available for a USB-C camera.
 6. Keep the rear USB-C PD power input and right-side Ethernet opening clear.
 7. Dry-fit the lid. It must close without pressing on the board, hub, plugs, or
-   cables and without pinching a routed cable.
+   cables and without pinching a routed cable. Its four skirt reliefs must pass
+   around the corner screw bosses.
 8. Fasten the lid and fit the Matrix bezel, one matching logo set, and rubber feet.
 
 ## Page 8 - inspect and test

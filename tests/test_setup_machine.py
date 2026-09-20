@@ -373,7 +373,7 @@ class SetupTests(unittest.TestCase):
             root = Path(directory).resolve()
             def mapped(value):
                 path = Path(value)
-                if str(path).startswith(("/etc/", "/opt/", "/dev/")):
+                if str(path).startswith(("/etc/", "/opt/", "/dev/", "/usr/local/")):
                     return root / str(path).lstrip("/")
                 return path
             base = mapped("/opt/retropie/configs/all")
@@ -397,6 +397,10 @@ class SetupTests(unittest.TestCase):
             self.assertEqual((config / "games.json").read_text(), '{"custom":"game"}')
             self.assertTrue(mapped("/opt/virtualglove/bin/virtualglove-receiver").exists())
             self.assertTrue(mapped("/opt/virtualglove/bin/virtualglove-controller-router").exists())
+            self.assertEqual(
+                mapped("/usr/local/bin/virtualglove-controller-router").read_text(),
+                '#!/bin/sh\nexec /opt/virtualglove/bin/virtualglove-controller-router "$@"\n',
+            )
             self.assertTrue(mapped("/etc/systemd/system/virtualglove-receiver.timer").exists())
             self.assertIn("echo lighting", first)
             command.assert_any_call("apt-get", "install", "-y", "python3", "python3-evdev", "openssl", "avahi-daemon", "libnss-mdns")

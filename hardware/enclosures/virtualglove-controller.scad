@@ -20,6 +20,10 @@ uno_w = 68.58;
 uno_d = 53.34;
 uno_bottom_clearance = 2.0;
 uno_standoff_top = 7.0;
+uno_standoff_d = 5.4;       // narrow top clears UNO Q underside hardware
+uno_standoff_foot_d = 6.4;  // short foot retains strength at the floor
+uno_standoff_foot_h = 1.6;
+lid_boss_relief_d = 9.2;    // 8 mm boss plus fit clearance on both sides
 uno_holes = [
     [15.24, 53.34 - 6.40],
     [13.97, 2.54],
@@ -60,9 +64,11 @@ dock_v2_w = 160;
 dock_v2_d = 122;
 dock_v2_base_h = 33;
 dock_v2_corner = 6;
-dock_v2_uno_x = (dock_v2_w - uno_w) / 2;
+dock_v2_uno_x = (dock_v2_w - uno_w) / 2 + 8.0;
 dock_v2_uno_y = 8.5;
-hub_v2_x = (dock_v2_w - hub_l) / 2;
+// Put the RJ45 end beside its wall opening. This also leaves a useful bend
+// bay at the captive-cable end instead of trapping it against the left wall.
+hub_v2_x = dock_v2_w - wall - hub_l - 0.6;
 hub_v2_y = dock_v2_d - wall - hub_w - 0.6;
 hub_v2_bottom = 11.5;
 hub_v2_platform_t = 2.6;
@@ -94,7 +100,12 @@ module board_standoffs(origin) {
     for (hole = uno_holes)
         translate([origin[0] + hole[0], origin[1] + hole[1], floor_t])
             difference() {
-                cylinder(h = uno_standoff_top - floor_t, d = 7.0);
+                union() {
+                    cylinder(h = uno_standoff_top - floor_t,
+                             d = uno_standoff_d);
+                    cylinder(h = uno_standoff_foot_h,
+                             d = uno_standoff_foot_d);
+                }
                 translate([0, 0, 0.8]) cylinder(h = uno_standoff_top, d = 2.7);
             }
 }
@@ -116,6 +127,22 @@ module lid_screw_holes(size, height) {
         translate([p[0], p[1], -0.2]) cylinder(h = height + 0.4, d = screw_d);
         translate([p[0], p[1], -0.2]) cylinder(h = 1.35, d = 6.4);
     }
+}
+
+module lid_boss_reliefs(size, skirt_h) {
+    // The lid skirt must pass around, not through, the four insert bosses.
+    // Start at the underside of the top panel so the visible lid stays whole.
+    for (p = [[6.3, 6.3], [size[0] - 6.3, 6.3],
+              [6.3, size[1] - 6.3], [size[0] - 6.3, size[1] - 6.3]])
+        translate([p[0], p[1], top_t - 0.05])
+            cylinder(h = skirt_h + 0.1, d = lid_boss_relief_d);
+}
+
+module lid_usb_c_relief(board_y, skirt_h) {
+    // Continue the broad USB-C opening through the lid skirt. Thick moulded
+    // plugs then use the full opening and do not have to bend around the lip.
+    translate([-0.2, board_y + 20.5, top_t - 0.05])
+        cube([wall + fit + 4.0, 31.0, skirt_h + 0.1]);
 }
 
 module base_shell(size, height, corner) {
@@ -143,6 +170,7 @@ module lid_shell(size, skirt_h, corner) {
                 }
         }
         lid_screw_holes(size, top_t + skirt_h);
+        lid_boss_reliefs(size, skirt_h);
     }
 }
 
@@ -176,6 +204,12 @@ module lid_logo_recess(size, y, z_height, recess_size = [18.5, 18.5]) {
                        min(0.85, z_height) + 0.1], 2.2);
 }
 
+// The compact UNO Q enclosure cannot accept the 100 mm plaque. Its wordmark
+// uses the 76 mm insert. Both dock lids use the actual 100 x 30 mm full logo,
+// with 0.4 mm clearance on every side for an ordinary PLA print.
+compact_wordmark_recess = [76.5, 23.3];
+full_wordmark_recess = [100.8, 30.8];
+
 module uno_base() {
     difference() {
         union() {
@@ -192,10 +226,11 @@ module uno_lid(full_logo = false) {
     difference() {
         lid_shell([uno_case_w, uno_case_d], 6.0, uno_corner);
         print_face_transform(uno_case_d) {
+            lid_usb_c_relief(uno_y, 6.0);
             matrix_window([uno_x, uno_y], top_t + 0.2);
             if (full_logo)
                 lid_logo_recess([uno_case_w, uno_case_d], 41.0, top_t,
-                                [76.5, 23.3]);
+                                compact_wordmark_recess);
             else
                 lid_logo_recess([uno_case_w, uno_case_d], 54.0, top_t);
             if (full_logo)
@@ -256,10 +291,11 @@ module dock_lid(full_logo = false) {
     difference() {
         lid_shell([dock_w, dock_d], 6.0, dock_corner);
         print_face_transform(dock_d) {
+            lid_usb_c_relief(dock_uno_y, 6.0);
             matrix_window([dock_uno_x, dock_uno_y], top_t + 0.2);
             if (full_logo)
                 lid_logo_recess([dock_w, dock_d], 39.0, top_t,
-                                [76.5, 23.3]);
+                                full_wordmark_recess);
             else
                 lid_logo_recess([dock_w, dock_d], 44.0, top_t);
             if (full_logo)
@@ -313,10 +349,11 @@ module dock_v2_lid(full_logo = false) {
     difference() {
         lid_shell([dock_v2_w, dock_v2_d], 6.0, dock_v2_corner);
         print_face_transform(dock_v2_d) {
+            lid_usb_c_relief(dock_v2_uno_y, 6.0);
             matrix_window([dock_v2_uno_x, dock_v2_uno_y], top_t + 0.2);
             if (full_logo)
                 lid_logo_recess([dock_v2_w, dock_v2_d], 52.0, top_t,
-                                [76.5, 23.3]);
+                                full_wordmark_recess);
             else
                 lid_logo_recess([dock_v2_w, dock_v2_d], 44.0, top_t);
             vent_field([dock_v2_uno_x + 6, dock_v2_uno_y + 31,
@@ -710,7 +747,27 @@ module lid_logo_options_preview() {
         color("#2a2d33")
             translate([0, dock_v2_d, top_t]) rotate([180, 0, 0])
                 dock_v2_lid(true);
-        translate([(dock_v2_w - 76) / 2, 52.25,
+        translate([(dock_v2_w - 100) / 2, 52.4,
+                   top_t - branding_backing_h])
+            full_logo_multicolor();
+    }
+}
+
+module uno_lid_logo_options_preview() {
+    // The compact enclosure has its own correctly scaled wordmark option. Do
+    // not reuse the dock illustration: the dock accepts the 100 mm plaque.
+    color("#2a2d33")
+        translate([0, uno_case_d, top_t]) rotate([180, 0, 0])
+            uno_lid(false);
+    translate([(uno_case_w - 18) / 2, 54.25,
+               top_t - branding_backing_h])
+        lid_logo_multicolor();
+
+    translate([uno_case_w + 20, 0, 0]) {
+        color("#2a2d33")
+            translate([0, uno_case_d, top_t]) rotate([180, 0, 0])
+                uno_lid(true);
+        translate([(uno_case_w - 76) / 2, 41.25,
                    top_t - branding_backing_h])
             compact_full_logo_multicolor();
     }
@@ -859,6 +916,7 @@ else if (part == "lid_logo_multicolor") lid_logo_multicolor();
 else if (part == "branding_preview") branding_preview();
 else if (part == "branding_insets_preview") branding_insets_preview();
 else if (part == "lid_logo_options_preview") lid_logo_options_preview();
+else if (part == "uno_lid_logo_options_preview") uno_lid_logo_options_preview();
 else if (part == "usb_c_coupon") usb_c_fit_coupon();
 else if (part == "hub_coupon") hub_fit_coupon();
 else if (part == "dock_preview") dock_preview();

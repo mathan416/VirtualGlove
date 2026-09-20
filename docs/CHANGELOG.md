@@ -14,6 +14,9 @@ result before naming the underlying mechanism.
 
 ### Changed
 
+- Corrected the full-wordmark Dock V1 and Dock V2 lid recesses to accept the
+  actual 100 x 30 mm multicolour logo with printable PLA clearance. The
+  smaller UNO Q Case continues to use its matching compact wordmark.
 - Showed the receiver UDP port with the other Connection and startup settings
   instead of hiding it under Advanced connection.
 - Console upgrades now retain the newest five routine rollback sets while
@@ -41,6 +44,15 @@ result before naming the underlying mechanism.
   native-motion curve are their maintained replacements.
 
 ### Fixed
+
+- Corrected the printable Controller enclosures after a physical fit check.
+  Narrower UNO Q supports now clear its underside connectors, lid skirts pass
+  around the corner bosses and thick USB-C plugs, and Dock V2 provides a wider
+  left-side bend area for the hub's captive cable while keeping Ethernet
+  aligned with its side opening.
+- Made enclosure exports reliable on the affected Apple Silicon OpenSCAD build
+  by using its working headless x86-64 application slice when the arm64 Qt
+  startup incorrectly rejects NEON support.
 
 - Kept Dashboard controls recoverable when a profile change is accepted but
   never confirmed, limited broken camera-stream and registry retries, and kept

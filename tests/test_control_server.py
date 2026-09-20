@@ -231,6 +231,14 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(public["platform"], "retropie")
         self.assertTrue(public["pairing_configured"])
 
+    def test_public_config_reports_stable_controller_hostname_and_address(self):
+        self.path.with_name("controller-hostname").write_text("ArduIain\n")
+        with mock.patch("virtualglove.control_server.resolve_ipv4",
+                        return_value="10.0.2.105"):
+            public = self.state.public_config()
+        self.assertEqual(public["controller_hostname"], "arduiain.local")
+        self.assertEqual(public["controller_address"], "10.0.2.105")
+
     def test_existing_connection_runs_but_cannot_pair_until_platform_is_saved(self):
         existing = self.state.load_config()
         existing.pop("platform")

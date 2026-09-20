@@ -706,6 +706,7 @@ class RuntimeLifecycleTests(unittest.TestCase):
         self.assertNotIn('RuntimeDirectory=virtualglove', receiver)
         self.assertIn('After=network-online.target virtualglove-controller-router.service', receiver)
         self.assertIn('RuntimeDirectory=virtualglove', router)
+        self.assertIn('RuntimeDirectoryPreserve=yes', router)
 
     def test_retropie_recovery_starts_router_before_receiver(self):
         with patch.object(Path, 'is_file', return_value=True), \

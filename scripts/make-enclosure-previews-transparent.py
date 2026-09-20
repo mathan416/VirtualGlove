@@ -34,6 +34,7 @@ PREVIEW_NAMES = (
     "virtualglove-controller-dock-v2-port-access.png",
     "virtualglove-controller-dock-v2-right.png",
     "virtualglove-lid-logo-options.png",
+    "virtualglove-uno-lid-logo-options.png",
     "virtualglove-printable-branding.png",
 )
 
