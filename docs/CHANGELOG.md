@@ -14,6 +14,12 @@ result before naming the underlying mechanism.
 
 ### Changed
 
+- Showed the receiver UDP port with the other Connection and startup settings
+  instead of hiding it under Advanced connection.
+- Console upgrades now retain the newest five routine rollback sets while
+  preserving every explicitly named migration or recovery backup. This keeps
+  repeated RetroPie, Recalbox, and Batocera updates from quietly consuming
+  storage.
 - Refocused the optional Engineering Toolkit around maintained workflows for
   guided recognition capture, labelled replay, movement response, latency,
   camera delivery, native emulation, and isolated accelerator research. The
@@ -36,6 +42,22 @@ result before naming the underlying mechanism.
 
 ### Fixed
 
+- Kept Dashboard controls recoverable when a profile change is accepted but
+  never confirmed, limited broken camera-stream and registry retries, and kept
+  the real registry error visible instead of replacing it with “game not
+  found.”
+- Made Glove Academy genuinely retry a failed practice-camera lease instead of
+  only saying it would retry, and ensured leaving the page always sends a safe
+  release even when startup was interrupted.
+- Restored the lesson view cleanly when Tune gestures cannot start or stop, so
+  a failed personalization lease cannot leave its switch off with the tuning
+  panel still covering the Academy.
+- Made Get ready to play work from the Controller's normal HTTP website and
+  explain its brief safety wait instead of appearing stuck on a disabled first
+  step.
+- Kept Connection and Camera saves independent. Saving one section no longer
+  applies or discards unsaved edits in the other, and camera-only edits no
+  longer block console pairing.
 - Removed a retired native-motion command-line option from the full camera
   exposure soak and strengthened the toolkit self-check and package tests so
   duplicate inventory entries or compiled emulator artifacts cannot quietly

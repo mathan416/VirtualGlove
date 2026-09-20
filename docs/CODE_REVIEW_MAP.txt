@@ -2,10 +2,10 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 673
-Python test modules: 77
+Git-visible files: 670
+Python test modules: 76
 Standalone browser checks: 5
-JavaScript browser harnesses: 7
+JavaScript browser harnesses: 8
 
 This private map is a generated reading aid, not a completed code or security
 audit. Regenerate or verify it with:
@@ -116,7 +116,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 77 test modules. JavaScript
+Normal Python discovery currently contains 76 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-673 tracked or non-ignored files are present in this checkout. Ignored
+670 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -672,7 +672,6 @@ are intentionally omitted.
 |   |   `-- install.sh.in
 |   |-- analyze-latency-trace.py
 |   |-- analyze-latency-video.py
-|   |-- analyze-motion-samples.py
 |   |-- analyze-motion-trace.py
 |   |-- application-payload.py
 |   |-- avahi-resolver-service.py
@@ -711,7 +710,6 @@ are intentionally omitted.
 |   |-- check-documentation.py
 |   |-- check-engineering-toolkit.py
 |   |-- check-source-docs.py
-|   |-- compare-motion-matrix.py
 |   |-- configure-batocera-super-glove-ball-core.py
 |   |-- configure-bsb-zap.py
 |   |-- configure-recalbox-super-glove-ball-core.py
@@ -742,7 +740,6 @@ are intentionally omitted.
 |   |-- package-inventory.py
 |   |-- prepare-end-to-end-session.py
 |   |-- profile-relay.py
-|   |-- record-vision-benchmark.py
 |   |-- rotate-deployment-backups.py
 |   |-- run-native-latency-session.py
 |   |-- run-nestopia-powerglove-trace.py
@@ -826,6 +823,7 @@ are intentionally omitted.
 |   |-- browser_dashboard_statistics.py
 |   |-- browser_joystick_deadzone.py
 |   |-- browser_setup_pairing.py
+|   |-- dashboard_controls_harness.mjs
 |   |-- dashboard_rapid_fire_harness.cjs
 |   |-- dashboard_statistics_harness.cjs
 |   |-- easter_egg_harness.js
@@ -875,7 +873,6 @@ are intentionally omitted.
 |   |-- test_measure_vision_status.py
 |   |-- test_merged_gamepad.py
 |   |-- test_motion.py
-|   |-- test_motion_matrix.py
 |   |-- test_motion_trace.py
 |   |-- test_native_core.py
 |   |-- test_native_motion_curve.py

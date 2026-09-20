@@ -209,7 +209,7 @@ const gap=readyMatcher();feed(gap,'left','neutral',3);feed(gap,'left','left',3);
 
     def test_full_guide_workflow_and_failures(self):
         harness = Path(__file__).with_name('ready_browser_harness.js')
-        for scenario in ['normal', 'resumed', 'delayed-release', 'calibration-failure', 'switch']:
+        for scenario in ['normal', 'http', 'resumed', 'delayed-release', 'calibration-failure', 'switch']:
             with self.subTest(scenario=scenario):
                 result = subprocess.run(['node', str(harness)], input=json.dumps(dict(script=READY_SCRIPT, scenario=scenario)), text=True, capture_output=True, timeout=20)
                 self.assertEqual(result.returncode, 0, result.stderr)

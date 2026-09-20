@@ -42,6 +42,16 @@ class DeploymentBackupRotationTests(unittest.TestCase):
         self.assertEqual({path.name for path in self.root.iterdir()},
                          {path.name for path in routine[-5:] + named})
 
+    def test_console_timestamp_backups_rotate_but_migration_names_remain(self):
+        routine = [self.directory(f"202609{day:02d}-120000-{day}") for day in range(1, 9)]
+        named = [self.directory("pre-controller-router-fef9277"),
+                 self.directory("20260905-auto-core-selection")]
+        removed = self.module["rotate"](self.root, keep=5)
+        self.assertEqual([path.name for path in removed],
+                         [path.name for path in reversed(routine[:3])])
+        self.assertEqual({path.name for path in self.root.iterdir()},
+                         {path.name for path in routine[-5:] + named})
+
     def test_keep_marker_and_similar_names_are_never_removed(self):
         for day in range(1, 5):
             self.directory(f"payload-2026090{day}-120000-{day}")

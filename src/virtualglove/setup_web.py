@@ -39,7 +39,8 @@ SETUP_CONTENT = """<style>main a{color:var(--cyan)}#players{margin-bottom:14px}#
 <label>Console platform<select id=platform name=platform required><option value="">Choose a platform…</option><option value=retropie>RetroPie</option><option value=recalbox>Recalbox</option><option value=batocera>Batocera</option><option value=launchbox>LaunchBox (Windows)</option></select></label>
 <label>Console hostname or IP address<input id=receiver name=receiver placeholder=CONSOLE-NAME.local autocomplete=off required></label>
 <label>Startup game profile<select id=profile name=profile>{{PROFILE_OPTIONS}}</select></label>
-</div><details><summary>Advanced connection</summary><div class=formgrid><label>Receiver UDP port<input id=port name=port type=number min=1 max=65535 required></label></div></details>
+<label>Receiver UDP port<input id=port name=port type=number min=1 max=65535 required></label>
+</div>
 <div class=controls><button type=submit id=connection-save>Save connection</button><button class=secondary type=button id=test>Check console address</button></div><p class=setup-status-note>Checking an address confirms name resolution only—not pairing or gameplay.</p><p class=notice id=notice role=status aria-live=polite></p></fieldset><button id=setup-retry type=button hidden>Reload saved settings</button></form>
 </section>
 {{ROUTER_CONTENT}}
@@ -96,7 +97,9 @@ SETUP_SCRIPT = r"""(()=>{
 const $=id=>document.getElementById(id), secure=location.protocol==='https:';
 let prepared=null, savedConfig=null, settingsBusy=false, pairingBusy=false,cameraProfileActive=false,cameraProfileTimer=null;
 let pairStep=1, lockedUntil=0, retryConfirmation=false;
-const settingsFields=['platform','receiver','port','profile','glove_color','camera','camera_fps','camera_buffers','camera_backend','camera_exposure','camera_manual_exposure','camera_manual_gain'];
+const connectionFields=['platform','receiver','profile','port'];
+const cameraFields=['glove_color','camera','camera_fps','camera_buffers','camera_backend','camera_exposure','camera_manual_exposure','camera_manual_gain'];
+const settingsFields=[...connectionFields,...cameraFields];
 const platformNames={retropie:'RetroPie',recalbox:'Recalbox',batocera:'Batocera',launchbox:'LaunchBox (Windows)'};
 const pairingCommands={retropie:'sudo /opt/virtualglove/bin/virtualglove-pair',recalbox:'sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair',batocera:'/userdata/system/services/VirtualGlove pair',launchbox:'powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\\VirtualGlove\\launchbox\\virtualglove-pair.ps1"'};
 function syncPlatformGuidance(resetUser=false){const platform=$('platform').value,name=platformNames[platform]||'console',username=platform==='retropie'?'pi':platform&&platform!=='launchbox'?'root':'';$('pair-command').textContent=pairingCommands[platform]||'Select and save a console platform first.';$('pair-ssh-guidance').textContent=platform==='launchbox'?'LaunchBox uses one-time-code pairing; no Windows password is sent to the Controller.':platform?`${name} normally uses ${username} for SSH. Your password is used only for this pairing request and is not saved by the Controller.`:'Select and save a console platform before using SSH pairing.';const ssh=document.querySelector('input[name="pair-method"][value="ssh"]');if(ssh){ssh.disabled=platform==='launchbox';if(platform==='launchbox'&&ssh.checked)document.querySelector('input[name="pair-method"][value="code"]').checked=true}if(resetUser)$('pair-user').value=username}
@@ -118,16 +121,23 @@ async function action(button,notice,work){
   button.disabled=true;$(notice).textContent='Working…';
   try{await work()}catch(e){$(notice).textContent=e.message||'Connection lost. Try again.'}finally{button.disabled=false}
 }
-async function load(updateFields=false){
+async function load(updateFields=false,fields=settingsFields){
   const c=await api('/api/config');
   if(c.camera_manual_exposure==null)c.camera_manual_exposure=78;if(c.camera_manual_gain==null)c.camera_manual_gain=96;
-  if(updateFields){syncCameraOptions(c.camera_options,c.camera);for(const k of settingsFields)$(k).value=String(c[k]??'');syncExposureFields();syncPlatformGuidance(true);$('matrix-attract').value=c.matrix_attract||'on';$('connection-fields').disabled=false;$('camera-fields').disabled=false;}
+  if(updateFields){
+   if(fields.includes('camera'))syncCameraOptions(c.camera_options,c.camera);
+   for(const k of fields)$(k).value=String(c[k]??'');
+   if(fields.some(k=>cameraFields.includes(k)))syncExposureFields();
+   if(fields.some(k=>connectionFields.includes(k)))syncPlatformGuidance(true);
+   if(fields===settingsFields)$('matrix-attract').value=c.matrix_attract||'on';
+   $('connection-fields').disabled=false;$('camera-fields').disabled=false;
+  }
   $('paired').textContent=c.pairing_configured?'Platform, connection, and pairing key saved. Use pairing below if the console has not received this key.':c.connection_configured?'Your existing connection remains active. Select and save its platform before pairing again.':'Select your platform and enter its address before pairing. Local play and Glove Academy work without pairing.';
   $('status-destination').textContent=(platformNames[c.platform]?platformNames[c.platform]+' · ':'')+(c.receiver||'Not configured');
   savedConfig=c;
   renderPairing();
   $('setup-retry').hidden=true;
-  if(updateFields)window.dispatchEvent(new Event('virtualglove-config-loaded'));
+  if(updateFields&&fields.some(k=>connectionFields.includes(k)))window.dispatchEvent(new Event('virtualglove-config-loaded'));
 }
 async function initialLoad(){$('notice').textContent='Loading saved settings…';$('camera-notice').textContent='';try{await load(true);$('notice').textContent=''}catch(e){$('notice').textContent='Could not load saved settings. '+e.message;$('setup-retry').hidden=false}}
 $('setup-retry').onclick=initialLoad;initialLoad();
@@ -172,7 +182,8 @@ async function statusLoop(){try{await refreshStatus()}finally{setTimeout(statusL
 $('support-report').onclick=async()=>{const button=$('support-report');button.disabled=true;$('support-report-note').textContent='Preparing system report…';try{const report=await api('/api/support-report',undefined,5000),blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'}),link=document.createElement('a'),day=new Date().toISOString().slice(0,10);link.href=URL.createObjectURL(blob);link.download=`virtualglove-system-report-${day}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);$('support-report-note').textContent='System report downloaded. It contains no video, secrets, personal hand data, ROM name, or network address.'}catch(e){$('support-report-note').textContent='Could not prepare the report. '+e.message}finally{button.disabled=false}};
 function method(){return document.querySelector('input[name="pair-method"]:checked').value}
 function methodLabel(){return method()==='ssh'?'SSH password':'One-time code'}
-function dirtySettings(){return !savedConfig||settingsFields.some(k=>String($(k).value).trim()!==String(savedConfig[k]))}
+function fieldsDirty(fields){return !savedConfig||fields.some(k=>String($(k).value).trim()!==String(savedConfig[k]))}
+function connectionDirty(){return fieldsDirty(connectionFields)}
 function windowActive(){return performance.now()<lockedUntil}
 function validConfirmation(){return !!prepared&&windowActive()&&$('verified').checked&&/^[0-9]{6}$/.test($('device-code').value)}
 function clearSecrets(){for(const id of ['device-code','pair-code','pair-password'])$(id).value='';$('verified').checked=false}
@@ -180,9 +191,9 @@ function focusPairing(id){$(id).focus();$(id).scrollIntoView({block:'center'})}
 function pairNotice(message,focus=false){$('pair-notice').textContent=message;if(focus)focusPairing('pair-notice')}
 function moveTo(step){pairStep=step;renderPairing();focusPairing(step===4?'pair-success-heading':'pair-heading-'+step)}
 function renderPairing(){
- const active=windowActive(),blocked=!savedConfig?.pairing_configured||dirtySettings()||settingsBusy;
+ const active=windowActive(),blocked=!savedConfig?.pairing_configured||connectionDirty()||settingsBusy;
  $('pair-destination').textContent=(platformNames[savedConfig?.platform]?platformNames[savedConfig.platform]+' · ':'')+(savedConfig?.receiver||'Not configured');
- $('pair-prerequisite').textContent=!savedConfig?'Load your saved settings before pairing.':!savedConfig.platform?'Select your console platform and save the connection before pairing.':!savedConfig.receiver?'Enter the console address and save the connection before pairing.':!savedConfig.pairing_configured?'Save both the platform and console address before pairing.':dirtySettings()?'You have unsaved changes. Save them above before pairing.':'';
+ $('pair-prerequisite').textContent=!savedConfig?'Load your saved settings before pairing.':!savedConfig.platform?'Select your console platform and save the connection before pairing.':!savedConfig.receiver?'Enter the console address and save the connection before pairing.':!savedConfig.pairing_configured?'Save both the platform and console address before pairing.':connectionDirty()?'You have unsaved connection changes. Save them above before pairing.':'';
  $('pair-change').hidden=active||pairingBusy;
  const lockConnection=active||pairingBusy||settingsBusy;
  $('connection-fields').disabled=!savedConfig;
@@ -221,7 +232,7 @@ function expirePairing(){
  }else renderPairing();
 }
 async function beginPairing(){
- if(pairingBusy||settingsBusy||!secure||!savedConfig?.pairing_configured||dirtySettings())return;
+ if(pairingBusy||settingsBusy||!secure||!savedConfig?.pairing_configured||connectionDirty())return;
  pairingBusy=true;clearSecrets();prepared=null;renderPairing();$('pair-notice').textContent='Displaying the Controller ID and PIN…';
  const host=savedConfig.receiver,chosen=method();
  try{
@@ -237,7 +248,7 @@ $('secure-note').textContent=secure?'Pair this Controller with your saved consol
 $('pair-wizard').hidden=!secure;
 if(!secure){const target='https://'+location.hostname+':8443/setup',a=document.createElement('a');a.href=target;a.textContent='Open secure Setup';a.className='button';$('secure-note').append(' ',a);$('trust-download').href=target;$('trust-download').removeAttribute('download');$('trust-download').textContent='Open secure Setup first';$('trust-note').textContent='The trust certificate is available only through secure Setup.'}else $('trust-note').textContent='After trusting it, reopen https://'+location.hostname+':8443/setup.';
 $('pair-change').onclick=()=>{$(savedConfig?.platform?'receiver':'platform').focus()};
-for(const id of settingsFields)$(id).addEventListener('input',()=>{if(id==='camera_exposure')syncExposureFields();if(id==='platform')syncPlatformGuidance(true);if(pairStep===4){pairStep=1;clearSecrets()}renderPairing()});
+for(const id of settingsFields)$(id).addEventListener('input',()=>{if(id==='camera_exposure')syncExposureFields();if(id==='platform')syncPlatformGuidance(true);if(connectionFields.includes(id)&&pairStep===4){pairStep=1;clearSecrets()}renderPairing()});
 for(const el of document.querySelectorAll('input[name="pair-method"]'))el.onchange=()=>{clearSecrets();renderPairing()};
 $('pair-begin').onclick=beginPairing;$('pair-restart').onclick=beginPairing;
 $('pair-method-back').onclick=()=>{if(!windowActive()&&!pairingBusy){retryConfirmation=false;clearSecrets();moveTo(1)}};
@@ -246,7 +257,7 @@ for(const id of ['device-code','pair-code','pair-user','pair-password'])$(id).on
 $('pair-confirm-next').onclick=()=>{if(validConfirmation()){moveTo(3);$(method()==='ssh'?'pair-password':'pair-code').focus()}};
 $('pair-review').onclick=()=>{if(!pairingBusy){$('pair-password').value='';moveTo(2)}};
 $('pair-submit').onclick=async()=>{
- if($('pair-submit').disabled||pairingBusy||!validConfirmation()||dirtySettings())return;
+ if($('pair-submit').disabled||pairingBusy||!validConfirmation()||connectionDirty())return;
  const chosen=prepared.method;
  if(chosen==='code'&&!$('pair-code').value.trim()){pairNotice('Enter the console one-time code from the command shown above, then select Pair with console.',true);return}
  if(chosen==='ssh'&&(!$('pair-user').value.trim()||!$('pair-password').value)){pairNotice('Enter your console username and SSH password, then select Pair with console.',true);return}
@@ -296,9 +307,13 @@ $('camera-profile-start').onclick=async()=>{
 $('camera-profile-cancel').onclick=async()=>{const button=$('camera-profile-cancel');button.disabled=true;try{renderCameraProfile(await api('/api/camera-profile',{action:'stop'}));cameraProfileTimer=setTimeout(pollCameraProfile,600)}catch(e){$('camera-profile-instruction').textContent=e.message||'The camera test could not be stopped.'}finally{button.disabled=false}};
 $('camera-profile-apply').onclick=async()=>{try{await api('/api/camera-profile',{action:'apply'});$('camera-profile-recommendation').textContent='Recommended settings saved. Tracking is restarting.';$('camera-profile-apply').hidden=true;await load(true)}catch(e){$('camera-profile-recommendation').textContent=e.message||'The recommendation could not be saved.'}};
 pollCameraProfile();
-const saveSettings=e=>{e.preventDefault();if(settingsBusy||pairingBusy||windowActive())return;const noticeId=e.submitter?.id==='camera-save'?'camera-notice':'notice';$(noticeId==='notice'?'camera-notice':'notice').textContent='';settingsBusy=true;action(e.submitter,noticeId,async()=>{
- try{const payload={platform:$('platform').value,receiver:$('receiver').value.trim(),port:Number($('port').value),profile:$('profile').value,glove_color:$('glove_color').value,camera:$('camera').value.trim(),camera_fps:$('camera_fps').value,camera_buffers:$('camera_buffers').value,camera_backend:$('camera_backend').value,camera_exposure:$('camera_exposure').value,camera_manual_exposure:Number($('camera_manual_exposure').value),camera_manual_gain:Number($('camera_manual_gain').value)};
- renderPairing();await api('/api/config',payload);$(noticeId).textContent=noticeId==='camera-notice'?'Camera settings saved. Tracking is restarting.':'Connection saved. Tracking is restarting.';await load(true);
+function configPayload(changedFields){
+ const value=id=>changedFields.includes(id)?$(id).value:savedConfig?.[id];
+ return {platform:String(value('platform')??''),receiver:String(value('receiver')??'').trim(),port:Number(value('port')),profile:String(value('profile')??''),glove_color:String(value('glove_color')??'none'),camera:String(value('camera')??'auto').trim(),camera_fps:String(value('camera_fps')??'auto'),camera_buffers:String(value('camera_buffers')??'1'),camera_backend:String(value('camera_backend')??'opencv'),camera_exposure:String(value('camera_exposure')??'auto'),camera_manual_exposure:Number(value('camera_manual_exposure')),camera_manual_gain:Number(value('camera_manual_gain'))};
+}
+const saveSettings=e=>{e.preventDefault();if(settingsBusy||pairingBusy||windowActive())return;const cameraForm=e.currentTarget.id==='camera-form',fields=cameraForm?cameraFields:connectionFields,button=e.submitter||$(cameraForm?'camera-save':'connection-save'),noticeId=cameraForm?'camera-notice':'notice';$(cameraForm?'notice':'camera-notice').textContent='';settingsBusy=true;action(button,noticeId,async()=>{
+ try{const payload=configPayload(fields);
+ renderPairing();await api('/api/config',payload);$(noticeId).textContent=cameraForm?'Camera settings saved. Tracking is restarting.':'Connection saved. Tracking is restarting.';await load(true,fields);
  }finally{settingsBusy=false;renderPairing()}
 })};
 $('form').onsubmit=saveSettings;$('camera-form').onsubmit=saveSettings;

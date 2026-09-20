@@ -36,6 +36,22 @@ spec.loader.exec_module(installer)
 
 
 class PackageContentTests(unittest.TestCase):
+    def test_completed_console_upgrade_rotates_only_routine_backups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            script = source / "scripts/rotate-deployment-backups.py"
+            script.parent.mkdir(parents=True)
+            script.write_text("# test\n")
+            setup = SimpleNamespace(BACKUPS=root / "backups/20260920-120000-1")
+            with patch.object(installer.subprocess, "run",
+                              return_value=SimpleNamespace(returncode=0)) as command:
+                installer.rotate_console_backups(source, setup, "recalbox")
+                installer.rotate_console_backups(source, setup, "uno-q")
+            command.assert_called_once_with(
+                [installer.sys.executable, str(script), str(root / "backups"),
+                 "--keep", "5"], check=False)
+
     def test_retropie_upgrade_recognizes_current_launcher_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -524,6 +524,19 @@ def restart_managed_runtime(machine):
         subprocess.run(["batocera-services", "start", "VirtualGlove"], check=False)
 
 
+def rotate_console_backups(source, setup, machine, keep=5):
+    """Bound completed console-upgrade backups without touching named recovery sets."""
+    if machine == "uno-q":
+        return
+    script = source / "scripts/rotate-deployment-backups.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(setup.BACKUPS.parent), "--keep", str(keep)],
+        check=False,
+    )
+    if result.returncode:
+        print("ACTION  Console backup rotation did not complete; existing backups were retained.")
+
+
 def stage_unoq(source, setup):
     """Back up managed app files and update them without touching data or local documents."""
     user = pwd.getpwnam("arduino")
@@ -656,7 +669,9 @@ def main(argv=None):
                                    "/userdata/system/services/VirtualGlove pair")
                         print("NEXT  On this console, run " + command + ", then use the one-time code in Controller Setup.")
                 print("NEXT  Test VirtualGlove and the physical Player 1 joypad together in FCEUmm.")
-            return report.finish()
+            result = report.finish()
+            rotate_console_backups(source, setup, args.machine)
+            return result
     except (OSError, ValueError, KeyError, argparse.ArgumentTypeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
         print("FAIL  Installation stopped: " + str(error), file=sys.stderr)
         if setup:

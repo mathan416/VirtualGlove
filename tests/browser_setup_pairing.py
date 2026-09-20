@@ -121,6 +121,9 @@ async def main():
                 assert await page.evaluate('document.documentElement.scrollWidth')<=width,width
         await open_page()
         await expect(page.locator('#platform')).to_have_value('retropie')
+        await expect(page.locator('#port')).to_be_visible()
+        await expect(page.locator('#port')).to_have_value('55355')
+        assert await page.get_by_text('Advanced connection', exact=True).count() == 0
         await expect(page.locator('#pair-command')).to_have_text('sudo /opt/virtualglove/bin/virtualglove-pair')
         await expect(page.locator('#pair-user')).to_have_value('pi')
         await page.locator('#platform').select_option('recalbox')
@@ -217,12 +220,16 @@ async def main():
         assert not await page.locator('#controller-toggle, #shutdown-system, #pair-host').count()
         await expect(page.locator('#pair-password')).to_be_disabled()
         await page.locator('#receiver').fill('draft.local')
+        await page.locator('#camera_fps').select_option('60')
         await expect(page.locator('#pair-begin')).to_be_disabled()
         flags['save_error']=True
         await page.get_by_role('button',name='Save connection',exact=True).click()
         await expect(page.locator('#notice')).to_contain_text('Temporary settings failure')
         await expect(page.locator('#receiver')).to_have_value('draft.local')
         await page.get_by_role('button',name='Save connection',exact=True).click()
+        assert config['receiver']=='draft.local'
+        assert config['camera_fps']=='auto'
+        await expect(page.locator('#camera_fps')).to_have_value('60')
         await expect(page.locator('#pair-begin')).to_be_enabled()
         config['receiver']='RETROPIE-NAME.local';await open_page()
         await responsive()
@@ -305,10 +312,14 @@ async def main():
         await page.reload();await expect(page.locator('#setup-retry')).to_be_visible()
         await page.locator('#setup-retry').click();await expect(page.locator('#pair-begin')).to_be_enabled()
         save_settings=page.get_by_role('button',name='Save camera settings',exact=True)
+        await page.locator('#receiver').fill('unsaved-console.local')
         await page.locator('#camera_fps').select_option('60')
         await save_settings.click();await expect(page.locator('#camera-notice')).to_contain_text('Camera settings saved')
         await expect(save_settings).to_be_enabled()
         assert config['camera_fps']=='60'
+        assert config['receiver']=='RETROPIE-NAME.local'
+        await expect(page.locator('#receiver')).to_have_value('unsaved-console.local')
+        await expect(page.locator('#pair-begin')).to_be_disabled()
         await page.locator('#camera-notice').evaluate("node=>node.textContent=''")
         await page.locator('#camera_fps').select_option('auto')
         await save_settings.click();await expect(page.locator('#camera-notice')).to_contain_text('Camera settings saved')

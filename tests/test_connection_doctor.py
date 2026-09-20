@@ -9,6 +9,7 @@
 # Full history: docs/CHANGELOG.md and Git history.
 """Execute the Doctor's real JavaScript with isolated API/DOM fixtures in Node."""
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 import shutil
 import subprocess
@@ -54,6 +55,35 @@ process.stdout.write(JSON.stringify({downloaded,calls,probeReads,disabled:$('doc
 
 @unittest.skipUnless(shutil.which('node'), 'Node is required for JavaScript behavior checks')
 class ConnectionDoctorTests(unittest.TestCase):
+    def test_every_setup_button_has_one_control_and_a_script_owner(self):
+        """Keep newly added Setup controls from becoming inert decoration."""
+        page = SETUP.decode()
+        class Buttons(HTMLParser):
+            def __init__(self):
+                super().__init__(); self.buttons=[]; self.forms=[]
+            def handle_starttag(self, tag, attrs):
+                attributes = dict(attrs)
+                if tag == 'form': self.forms.append(attributes.get('id'))
+                if tag == 'button': self.buttons.append(
+                    (attributes.get('id'), attributes.get('type', 'submit'))
+                )
+            def handle_endtag(self, tag):
+                if tag == 'form' and self.forms: self.forms.pop()
+        parser = Buttons(); parser.feed(page)
+        identities = [identity for identity, _kind in parser.buttons if identity]
+        self.assertEqual(len(identities), len(set(identities)))
+        self.assertEqual(len(parser.buttons), 36)
+        for identity in identities:
+            with self.subTest(identity=identity):
+                self.assertGreaterEqual(page.count(identity), 2)
+        self.assertEqual(
+            [item for item in parser.buttons if item[0] is None],
+            [(None, 'submit')],
+        )
+        self.assertIn("$('attract-form').onsubmit", page)
+        self.assertIn('href=/ready', page)
+        self.assertIn('id=trust-download', page)
+
     def run_doctor(self, scenario='success'):
         result = subprocess.run(['node', '-e', HARNESS], input=json.dumps(dict(script=DOCTOR_SCRIPT, scenario=scenario)), text=True, capture_output=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -140,6 +170,12 @@ class ConnectionDoctorTests(unittest.TestCase):
         self.assertIn("$('connection-fields').disabled=!savedConfig", SETUP_SCRIPT)
         self.assertIn("'connection-save'])$(id).disabled=lockConnection", SETUP_SCRIPT)
         self.assertNotIn("$('connection-fields').disabled=!savedConfig||active", SETUP_SCRIPT)
+        self.assertIn(b'<label>Receiver UDP port<input id=port', SETUP)
+        self.assertNotIn(b'<summary>Advanced connection</summary>', SETUP)
+        self.assertIn('const connectionFields=', SETUP_SCRIPT)
+        self.assertIn("fields=cameraForm?cameraFields:connectionFields", SETUP_SCRIPT)
+        self.assertIn('connectionDirty()', SETUP_SCRIPT)
+        self.assertNotIn('dirtySettings()', SETUP_SCRIPT)
         self.assertNotIn(b'{{DOCTOR_', SETUP)
         for script in parser.scripts:
             parsed=subprocess.run(['node','--check'],input=script,text=True,capture_output=True)
