@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 671
+Git-visible files: 669
 Python test modules: 77
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-671 tracked or non-ignored files are present in this checkout. Ignored
+669 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -172,7 +172,6 @@ are intentionally omitted.
 |   |-- virtualglove-logo-web.png
 |   `-- virtualglove-logo.png
 |-- batocera
-|   |-- retroarch-nes.cfg
 |   |-- VirtualGlove
 |   |-- virtualglove-core-mount
 |   `-- virtualglove-game
@@ -635,7 +634,6 @@ are intentionally omitted.
 |   |-- main.py
 |   `-- ssh_pair.py
 |-- recalbox
-|   |-- retroarch-nes.cfg
 |   |-- virtualglove-core-mount
 |   `-- virtualglove-service
 |-- retropie

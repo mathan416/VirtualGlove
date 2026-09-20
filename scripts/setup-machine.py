@@ -743,6 +743,7 @@ def install_recalbox(peer, player1_device=None):
     custom.chmod(0o755)
     backup_file("/recalbox/share/system/configs/retroarch/nes.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
+    backup_file("/recalbox/share/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
     run("sh", service, "restart")
 
 
@@ -755,6 +756,8 @@ def check_recalbox(report):
     report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
+    report.check("Stock Nestopia core installed",
+                 Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
     controller = root / "data/player1-controller.json"
     try:
         merged = merged_controller_module()
@@ -764,9 +767,12 @@ def check_recalbox(report):
             selected, merged.input_devices()) is not None, pending=True)
         index = merged.merged_joypad_index()
         report.check("Merged Player 1 gamepad available", index is not None)
-        nes_text = Path("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg").read_text()
-        report.check("RetroArch uses merged Player 1", index is not None and
-                     ('input_player1_joypad_index = "%d"' % index) in nes_text)
+        for core in ("FCEUmm", "Nestopia"):
+            nes_text = Path(
+                "/recalbox/share/system/configs/retroarch/config/%s/%s.cfg" %
+                (core, core)).read_text()
+            report.check("%s uses merged Player 1" % core, index is not None and
+                         ('input_player1_joypad_index = "%d"' % index) in nes_text)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
     try:
@@ -880,6 +886,7 @@ def install_batocera(peer, player1_device=None):
         executable.chmod(0o755)
     backup_file("/userdata/system/configs/retroarch/nes.cfg")
     backup_file("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
+    backup_file("/userdata/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
     run("batocera-services", "enable", "VirtualGlove")
     subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
     run("batocera-services", "start", "VirtualGlove")
@@ -893,6 +900,8 @@ def check_batocera(report):
     report.check("Persistent VirtualGlove installation", (root / "src/virtualglove/receiver.py").is_file())
     report.check("Kernel virtual-input support", Path("/dev/uinput").exists())
     report.check("FCEUmm core installed", Path("/usr/lib/libretro/fceumm_libretro.so").is_file())
+    report.check("Stock Nestopia core installed",
+                 Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
     report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
     report.check("Batocera game hook installed", Path("/userdata/system/scripts/virtualglove-game").is_file())
     controller = root / "data/player1-controller.json"
@@ -904,9 +913,12 @@ def check_batocera(report):
             selected, merged.input_devices()) is not None, pending=True)
         index = merged.merged_joypad_index()
         report.check("Merged Player 1 gamepad available", index is not None)
-        nes_text = Path("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg").read_text()
-        report.check("RetroArch uses merged Player 1", index is not None and
-                     ('input_player1_joypad_index = "%d"' % index) in nes_text)
+        for core in ("FCEUmm", "Nestopia"):
+            nes_text = Path(
+                "/userdata/system/configs/retroarch/config/%s/%s.cfg" %
+                (core, core)).read_text()
+            report.check("%s uses merged Player 1" % core, index is not None and
+                         ('input_player1_joypad_index = "%d"' % index) in nes_text)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
     try:

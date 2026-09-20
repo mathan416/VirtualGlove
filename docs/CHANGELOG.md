@@ -19,9 +19,13 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Extended Controller Router to stock Nestopia as well as FCEUmm, while keeping
+  Nestopia (VirtualGlove) on its separate native-input route. Recalbox and
+  Batocera can retain their chosen ordinary NES core without losing either the
+  physical controller or VirtualGlove.
 - Added a red Controller Router warning when no physical controller is assigned
   to Player 1, because RetroArch menu and exit hotkeys may then be unavailable
-  during FCEUmm gameplay.
+  during NES joystick gameplay.
 - Improved Controller Router table spacing with clearer status and player
   assignment headings, balanced column widths, and readable small-screen
   scrolling.
@@ -38,8 +42,9 @@ controller available, and let each game use the correct input method.
   1 and Player 2 interfaces while still recognizing the same board after a USB
   port move.
 - Fixed Recalbox and Batocera merged Player 1 assignment when Linux's `jsN`
-  number differs from RetroArch's joypad order. Ordinary FCEUmm games now use
-  the same merged controller that RetroArch actually sees.
+  number differs from RetroArch's joypad order. Ordinary FCEUmm and stock
+  Nestopia games now use the same merged controller that RetroArch actually
+  sees.
 - Preserved the real button codes supplied by Recalbox and Batocera controller
   mappings. Controllers that report Start, Select, or Home outside the legacy
   joystick button range now retain their correct face-button and menu layout.

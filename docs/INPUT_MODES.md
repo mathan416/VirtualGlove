@@ -17,9 +17,9 @@ for individual programs and gestures.
 
 | You want to… | Use | Emulator |
 | --- | --- | --- |
-| Play an ordinary registered NES game | Joystick mode | FCEUmm |
-| Use Programs 1-14 or A-I | Joystick mode | FCEUmm |
-| Use gestures and a physical controller together | Joystick mode | FCEUmm |
+| Play an ordinary registered NES game | Joystick mode | FCEUmm or stock Nestopia |
+| Use Programs 1-14 or A-I | Joystick mode | FCEUmm or stock Nestopia |
+| Use gestures and a physical controller together | Joystick mode | FCEUmm or stock Nestopia |
 | Play Super Glove Ball with continuous hand position | Native Power Glove mode | Nestopia (VirtualGlove) |
 | Play Super Glove Ball as a conventional NES game | Joystick mode | FCEUmm |
 | Temporarily use only the physical controller | Gestures off or Program 14 | The game's selected emulator |
@@ -30,7 +30,7 @@ gesture recognition.
 
 ## How joystick mode works
 
-Joystick mode presents familiar RetroPad controls to FCEUmm: D-pad, A, B,
+Joystick mode presents familiar RetroPad controls to FCEUmm or stock Nestopia: D-pad, A, B,
 Start, and Select. The active profile decides which recognized movement or
 gesture produces each control. Returning the hand to its saved centre releases
 movement, and tracking loss safely releases every VirtualGlove control.
@@ -46,7 +46,7 @@ console and can be changed from the Dashboard while the game is running.
 | RetroPie — standard installation | VirtualGlove appears as a separate **VirtualGlove** gamepad. Existing physical controllers remain separate and continue to work. |
 | RetroPie — routed cabinet | Optional **Controller Router** can combine configured I-PACs, joypads, and VirtualGlove into **VirtualGlove Merged Player 1–4**. The standard installation remains unchanged until Router is explicitly saved and applied. |
 | Recalbox | **Controller Router** creates enabled merged Players 1–4. The released Player 1 selection migrates automatically, while the original controllers continue to operate EmulationStation. |
-| Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes at every FCEUmm launch. |
+| Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes at every supported NES joystick-core launch. |
 | LaunchBox | The physical XInput controller remains Player 1. VirtualGlove joins it through RetroArch's loopback Network RetroPad. The real keyboard remains available. |
 
 ### Standard RetroPie and the VirtualGlove arcade cabinet
@@ -101,7 +101,7 @@ VirtualGlove therefore creates up to four canonical gameplay devices named
 4. At game launch, the current Linux event device and current RetroArch joypad
    index are resolved again. USB enumeration may change without changing the
    selected controller.
-5. During FCEUmm gameplay only, Router takes exclusive ownership of assigned
+5. During FCEUmm or stock Nestopia gameplay, Router takes exclusive ownership of assigned
    physical event device. This prevents the original device, the platform
    hotkey service, and the merged device from interpreting the same press.
 6. Buttons remain held while any assigned source holds them. For each physical
@@ -110,8 +110,9 @@ VirtualGlove therefore creates up to four canonical gameplay devices named
 7. At game exit, every merged state is neutralized before exclusive ownership is
    released. EmulationStation then continues using the original controller.
 
-The managed Player assignments live in FCEUmm's core-specific RetroArch
-override. Nestopia (VirtualGlove) does not load that file, keeping native Super
+The managed Player assignments live in the core-specific RetroArch overrides
+for FCEUmm and stock Nestopia. Nestopia (VirtualGlove) has its own distinct core
+name and does not load either ordinary joystick route, keeping native Super
 Glove Ball outside Router and preserving its physical-controller path.
 
 The physical controller's own hotkey is mapped to a dedicated merged button.
@@ -146,7 +147,7 @@ from the same screen.
 
 The local screen does not create or replace a pairing credential. Pairing
 authorizes the VirtualGlove Controller and its web Setup page to reach the
-console; routing decides which FCEUmm player receives each already configured
+console; routing decides which NES joystick player receives each already configured
 input source.
 
 FCEUmm recognizes known Four Score games by CRC. Four merged outputs do not make
@@ -157,14 +158,14 @@ User 5 four-player adaptor; leaving the field out keeps automatic detection.
 ### What the merger does not change
 
 - It does not rewrite the controller's EmulationStation mapping.
-- It changes only enabled NES/FCEUmm Player 1–4 assignments.
+- It changes only enabled NES joystick-core Player 1–4 assignments.
 - It does not depend on the order in which USB devices appeared after boot.
 - It does not make the merged device navigate the frontend.
 - It does not let VirtualGlove gestures activate the physical hotkey.
 
 ## Test joystick mode
 
-Use a registered FCEUmm game such as Super Mario Bros.:
+Use a registered game such as Super Mario Bros. with either FCEUmm or stock Nestopia:
 
 1. Confirm that the physical controller works in EmulationStation.
 2. Launch the game and wait for the title screen.

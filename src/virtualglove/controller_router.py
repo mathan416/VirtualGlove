@@ -309,8 +309,11 @@ class _MapperState:
         self.physical_buttons, self.physical_axes = source.buttons, source.axes
 
 
-def fceumm_running(proc_root: Path = Path("/proc")) -> bool:
-    """Recognize only a RetroArch process that loaded FCEUmm."""
+JOYSTICK_CORE_NAMES = {"fceumm_libretro.so", "nestopia_libretro.so"}
+
+
+def joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
+    """Recognize supported joystick cores, excluding native VirtualGlove Nestopia."""
     try:
         entries = tuple(proc_root.iterdir())
     except OSError:
@@ -326,9 +329,19 @@ def fceumm_running(proc_root: Path = Path("/proc")) -> bool:
         if not args or not Path(args[0]).name.casefold().startswith("retroarch"):
             continue
         for index, value in enumerate(args[:-1]):
-            if value in ("-L", "--libretro") and "fceumm" in Path(args[index + 1]).name.casefold():
+            if (value in ("-L", "--libretro") and
+                    Path(args[index + 1]).name.casefold() in JOYSTICK_CORE_NAMES):
                 return True
     return False
+
+
+def joystick_retroarch_configs(primary: Path) -> tuple[Path, ...]:
+    """Return core-specific overrides for every supported joystick core."""
+    primary = Path(primary)
+    if primary.name == "FCEUmm.cfg" and primary.parent.name == "FCEUmm":
+        nestopia = primary.parent.parent / "Nestopia/Nestopia.cfg"
+        return primary, nestopia
+    return (primary,)
 
 
 class ControllerRouterDevice:
@@ -342,6 +355,7 @@ class ControllerRouterDevice:
                  udev_root: Path = Path("/run/udev/data"), dev_root: Path = Path("/dev/input")) -> None:
         self.config_path, self.config = Path(config_path), load_config(config_path)
         self.retroarch_config, self.proc_root = Path(retroarch_config), proc_root
+        self.retroarch_configs = joystick_retroarch_configs(self.retroarch_config)
         self.global_config = Path(global_config) if global_config else None
         self.sys_root, self.udev_root, self.dev_root = sys_root, udev_root, dev_root
         self.players = {player: PlayerState(player) for player in enabled_players(self.config)}
@@ -383,18 +397,19 @@ class ControllerRouterDevice:
         for _attempt in range(40):
             indexes = output_indexes(list(self.players), self.sys_root, self.udev_root)
             if len(indexes) == len(self.players):
-                current = self.retroarch_config.read_text() if self.retroarch_config.exists() else ""
                 global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
-                updated = merge_retroarch_config(current, self.config, indexes,
-                    global_path.read_text() if global_path.exists() else "")
-                atomic_write(self.retroarch_config, updated, 0o644)
+                global_text = global_path.read_text() if global_path.exists() else ""
+                for config_path in self.retroarch_configs:
+                    current = config_path.read_text() if config_path.exists() else ""
+                    updated = merge_retroarch_config(current, self.config, indexes, global_text)
+                    atomic_write(config_path, updated, 0o644)
                 self.installed_indexes = indexes
                 return
             time.sleep(0.05)
         raise RuntimeError("Controller Router outputs did not appear in /sys/class/input")
 
     def _set_active(self, active: bool) -> None:
-        """Grab or release physical sources across an FCEUmm transition."""
+        """Grab or release physical sources across a supported-core transition."""
         for fd, record in list(self.descriptors.items()):
             if record["grabbed"] != active:
                 try:
@@ -499,11 +514,11 @@ class ControllerRouterDevice:
         self.virtual_updated_at = time.monotonic(); self._publish()
 
     def _run(self) -> None:
-        """Monitor FCEUmm, configuration, hot-plug, and source events."""
+        """Monitor compatible NES cores, configuration, hot-plug, and source events."""
         active = False
         while not self.stop.is_set():
             with self.lock:
-                now_active = fceumm_running(self.proc_root)
+                now_active = joystick_core_running(self.proc_root)
                 if now_active != active:
                     if now_active and output_indexes(list(self.players), self.sys_root,
                                                      self.udev_root) != self.installed_indexes:
@@ -602,7 +617,7 @@ def _player_bindings(player: int) -> dict[str, str]:
 
 def merge_retroarch_config(text: str, config: dict[str, Any], indexes: dict[int, int],
                            global_config: str = "") -> str:
-    """Replace only the router-managed NES/FCEUmm block for enabled slots."""
+    """Replace only the router-managed joystick-core block for enabled slots."""
     begin, end = "# VirtualGlove Controller Router", "# End VirtualGlove Controller Router"
     retired_begin, retired_end = "# VirtualGlove merged Player 1", "# End VirtualGlove merged Player 1"
     output, inside = [], False
@@ -647,7 +662,7 @@ class RouterStore:
         self.path, self.backup = Path(path), Path(str(path) + ".previous")
         self.platform, self.es_inputs = platform, Path(es_inputs)
         self.retroarch_config = Path(retroarch_config) if retroarch_config else None
-        self.activity_check = activity_check or fceumm_running
+        self.activity_check = activity_check or joystick_core_running
         self.activate = activate
         self.lock = threading.Lock()
 
@@ -709,7 +724,7 @@ class RouterStore:
             if operation not in ("save", "rollback"):
                 raise ValueError("Unsupported Controller Router operation.")
             if self.activity_check():
-                raise ValueError("Close the running FCEUmm game before changing controller assignments.")
+                raise ValueError("Close the running NES game before changing controller assignments.")
             if payload.get("revision") != current["revision"]:
                 raise ValueError("Controller assignments changed elsewhere. Reload before saving.")
             if operation == "rollback":
@@ -851,7 +866,7 @@ def _wizard_screen(state: dict[str, Any], assignments: dict[str, int | None],
         rows.append("|     No configured EmulationStation controllers found.                 |")
     lines = [
         "+------------------ VirtualGlove Controller Router -------------------+",
-        "| Assign configured controllers to the merged FCEUmm players.          |",
+        "| Assign configured controllers to the merged NES joystick players.    |",
         "+-----------------------------------------------------------------------+",
         "| No. Controller                      ID         Assignment  Status      |",
         "+-----------------------------------------------------------------------+",
@@ -1023,10 +1038,11 @@ def main() -> int:
                     break
                 time.sleep(0.05)
         indexes = output_indexes(enabled_players(config))
-        current = retroarch.read_text() if retroarch.exists() else ""
-        updated = merge_retroarch_config(current, config, indexes,
-                                          global_config.read_text() if global_config.exists() else "")
-        atomic_write(retroarch, updated, 0o644)
+        global_text = global_config.read_text() if global_config.exists() else ""
+        for config_path in joystick_retroarch_configs(retroarch):
+            current = config_path.read_text() if config_path.exists() else ""
+            updated = merge_retroarch_config(current, config, indexes, global_text)
+            atomic_write(config_path, updated, 0o644)
         if platform == "retropie" and not was_active:
             subprocess.run(("systemctl", "restart", "virtualglove-receiver.service"), check=True)
         print("Controller Router assignments applied.")

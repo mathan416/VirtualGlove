@@ -33,7 +33,7 @@ several minutes.
 | Batocera 38 or newer | Batocera terminal as `root` | Controller Router initially preserves your selected physical controller and VirtualGlove as merged Player 1; Setup can later assign Players 1–4. |
 | LaunchBox | Windows PowerShell | Your physical XInput controller remains available while VirtualGlove supplies a managed RetroArch controller. |
 
-Most NES games use the included FCEUmm core. Super Glove Ball also supports the
+Ordinary NES games can use FCEUmm or the platform's stock Nestopia core. Super Glove Ball also supports the
 special **Nestopia (VirtualGlove)** core, which provides its native three-axis
 movement and glove actions. FCEUmm remains a complete joystick-mode fallback.
 
@@ -48,12 +48,12 @@ Recalbox and Batocera automatically carry their released Player 1 selection into
 the new format. A normal RetroPie install keeps its separate `VirtualGlove`
 gamepad until Router is explicitly saved and applied. Original physical
 controllers remain the frontend controllers; merged outputs stay neutral
-outside FCEUmm. Router writes a core-specific FCEUmm override, so Nestopia
-(VirtualGlove) and other NES cores retain their existing physical-controller
-path.
+outside supported NES joystick cores. Router writes separate core-specific
+overrides for FCEUmm and stock Nestopia, while Nestopia (VirtualGlove) retains
+its separate native-input path.
 
 Use **Check controllers** and press a direction or button on each pad. Close any
-running FCEUmm game before changing assignments. **Restore previous assignments**
+running NES game before changing assignments. **Restore previous assignments**
 provides an atomic rollback after a save.
 
 The same assignments can be managed locally without pairing. Open the console

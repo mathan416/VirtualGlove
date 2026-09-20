@@ -50,14 +50,16 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertNotIn("systemctl", text)
         self.assertNotIn("/etc/virtualglove", text)
 
-    def test_router_uses_fceumm_override_without_touching_native_core(self):
+    def test_router_uses_ordinary_core_overrides_without_routing_native_core(self):
         setup = (ROOT / "scripts/setup-machine.py").read_text()
         router = (ROOT / "src/virtualglove/controller_router.py").read_text()
         for root in ("/recalbox/share/system/configs/retroarch",
                      "/userdata/system/configs/retroarch"):
             self.assertIn(root + "/config/FCEUmm/FCEUmm.cfg", setup)
+            self.assertIn(root + "/config/Nestopia/Nestopia.cfg", setup)
         self.assertIn('retroarch / "config/FCEUmm/FCEUmm.cfg"', router)
-        self.assertNotIn("Nestopia", router)
+        self.assertIn('"fceumm_libretro.so", "nestopia_libretro.so"', router)
+        self.assertNotIn('"nestopia_powerglove_libretro.so"}', router)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()

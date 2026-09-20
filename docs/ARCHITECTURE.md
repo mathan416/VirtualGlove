@@ -49,7 +49,7 @@ itself establish that the camera, receiver, or game is working.
 | VirtualGlove Controller Linux application | Web server, vision-worker supervision, camera tracking, calibration, thresholds, profile mapping, network sender | RetroArch button consumption |
 | VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
 | RetroPie services | Receive controller packets, expose the standard `VirtualGlove` gamepad, signal game launches, serve paired game-registry edits | Camera processing or physical-controller remapping |
-| Controller Router | Optionally combine EmulationStation-configured physical sources and one VirtualGlove into stable Players 1–4 for FCEUmm | Raw keyboards, mice, frontend navigation, native Super Glove Ball, or LaunchBox |
+| Controller Router | Optionally combine EmulationStation-configured physical sources and one VirtualGlove into stable Players 1–4 for FCEUmm and stock Nestopia | Raw keyboards, mice, frontend navigation, native Super Glove Ball, or LaunchBox |
 | Recovered RetroPie cabinet merger | Preserve the proven I-PAC/8BitDo implementation as migration reference and rollback | New generic routing after the cabinet accepts Controller Router |
 | Recalbox integration | Run from `/recalbox/share`, migrate the released Player 1 record, and operate Controller Router without patching the read-only OS | Recalbox system-image files and frontend control |
 | Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and operate Controller Router | Batocera system-image files and frontend control |
@@ -74,14 +74,14 @@ Router translates authoritative EmulationStation mappings into canonical
 RetroPads. A versioned document assigns several physical sources to a player,
 prohibits one physical source from appearing in two players, and assigns the
 single paired VirtualGlove to zero or one player. It resolves current event,
-joystick, and RetroArch indexes at boot and before FCEUmm launch.
+joystick, and RetroArch indexes at boot and before a supported NES joystick-core launch.
 
 Buttons use source-aware hold sets. The most recently activated physical source
 owns an axis until neutral, then another still-held physical source resumes.
 Physical axes outrank VirtualGlove. Only Player 1 carries the physical hotkey;
 VirtualGlove Select and Players 2–4 cannot assert the hotkey-enabler.
 
-The merged gamepads remain neutral outside FCEUmm, so EmulationStation
+The merged gamepads remain neutral outside FCEUmm and stock Nestopia, so EmulationStation
 continues to use only the original controller. Disconnect releases only physical
 state; the saved stable identity reconnects without relying on an event number.
 
@@ -133,15 +133,16 @@ codes, two-player assumptions, and cabinet hotkeys are installation-specific.
 Controller Router is the shared successor for RetroPie, Recalbox, and Batocera.
 It generalizes the cabinet's multi-source idea to four independently enabled
 players, stable identities, EmulationStation mapping translation, launch-time
-index synchronization, exclusive FCEUmm ownership, and physical-axis priority.
+index synchronization, exclusive supported-core ownership, and physical-axis priority.
 The older cabinet program remains available only as a tested reference and
 one-command rollback until the cabinet migration is accepted.
 
-Router writes enabled Player indexes and canonical controls to FCEUmm's
-core-specific RetroArch override rather than the console-wide NES file. That
-scope is part of the native-input boundary: Nestopia (VirtualGlove) never loads
-the Router assignment, while the ordinary physical-controller configuration
-remains available to the native core.
+Router writes enabled Player indexes and canonical controls to separate FCEUmm
+and stock Nestopia core-specific RetroArch overrides rather than the
+console-wide NES file. That scope is part of the native-input boundary:
+Nestopia (VirtualGlove) has a distinct core identity and never loads the Router
+assignment, while the ordinary physical-controller configuration remains
+available to the native core.
 
 Two app-owned support containers provide the profile-control UDP relay and
 local-hostname resolution. The profile relay publishes port 55356 and forwards

@@ -1864,10 +1864,10 @@ connection state, tests controls, assigns Players 1–4, and confirms save or
 rollback operations. Lower-level commands are `list`, `show`, `configure`,
 `check`, `apply`, and `rollback`. `--platform` can override automatic detection.
 `configure` accepts `--document PATH`; `apply` updates only the managed FCEUmm
-core override. Nestopia (VirtualGlove) and unrelated NES cores never load that
-override. RetroPie keeps Router disabled until an authenticated Setup save or
-an explicit `apply`. Recalbox and Batocera migrate their existing version-1
-Player 1 record automatically.
+and stock Nestopia core overrides. Nestopia (VirtualGlove) and unrelated NES
+cores never load those overrides. RetroPie keeps Router disabled until an
+authenticated Setup save or an explicit `apply`. Recalbox and Batocera migrate
+their existing version-1 Player 1 record automatically.
 
 RetroPie installs the command at
 `/opt/virtualglove/bin/virtualglove-controller-router`. Read-only platform
@@ -1888,8 +1888,8 @@ or the assigned VirtualGlove slot.
 
 Remote Setup uses `/inputs` on TCP 55358 with `virtualglove-inputs/1`. Saves
 carry the revision returned by `read`; stale revisions and changes during a
-running FCEUmm game are rejected. `rollback` restores the previous complete
-document atomically.
+running supported NES game are rejected. `rollback` restores the previous
+complete document atomically.
 
 The development cabinet has a separate receipt-gated migration helper under
 `retropie/arcade-cabinet-merger/`. Its `check` action observes one live control

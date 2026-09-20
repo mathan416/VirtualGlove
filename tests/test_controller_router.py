@@ -202,13 +202,25 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertTrue(device.players[1].active)
         device.sinks[1].write.assert_called()
 
-    def test_fceumm_detection_requires_the_fceumm_core(self):
+    def test_joystick_core_detection_supports_stock_nestopia_but_not_native(self):
         with tempfile.TemporaryDirectory() as directory:
-            proc = Path(directory); (proc / "10").mkdir(); (proc / "11").mkdir()
+            proc = Path(directory); (proc / "10").mkdir()
             (proc / "10/cmdline").write_bytes(b"retroarch\0-L\0/usr/lib/libretro/nestopia_libretro.so\0")
-            self.assertFalse(router.fceumm_running(proc))
+            self.assertTrue(router.joystick_core_running(proc))
+            (proc / "10/cmdline").write_bytes(
+                b"retroarch\0-L\0/usr/lib/libretro/nestopia_powerglove_libretro.so\0")
+            self.assertFalse(router.joystick_core_running(proc))
+            (proc / "11").mkdir()
             (proc / "11/cmdline").write_bytes(b"retroarch\0-L\0/usr/lib/libretro/fceumm_libretro.so\0")
-            self.assertTrue(router.fceumm_running(proc))
+            self.assertTrue(router.joystick_core_running(proc))
+
+    def test_supported_core_configs_include_fceumm_and_stock_nestopia(self):
+        root = Path("/configs/retroarch/config")
+        paths = router.joystick_retroarch_configs(root / "FCEUmm/FCEUmm.cfg")
+        self.assertEqual(paths, (root / "FCEUmm/FCEUmm.cfg",
+                                 root / "Nestopia/Nestopia.cfg"))
+        custom = Path("/tmp/custom.cfg")
+        self.assertEqual(router.joystick_retroarch_configs(custom), (custom,))
 
     def test_inputs_protocol_authenticates_and_rejects_replay(self):
         class Store:
