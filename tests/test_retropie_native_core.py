@@ -24,6 +24,14 @@ VERIFY = runpy.run_path(str(ROOT / "scripts/verify-retropie-native-core.py"))
 
 
 class RetroPieNativeCoreTests(unittest.TestCase):
+    def test_installer_selects_retroarch_abi_and_replaces_atomically(self):
+        script = (ROOT / "scripts/install-nestopia-powerglove.sh").read_text()
+        self.assertIn('--runtime "$retroarch"', script)
+        self.assertIn("cmp -s \"$core\" \"$installed\"", script)
+        self.assertIn("/var/backups/virtualglove/nestopia-powerglove/", script)
+        self.assertIn('mv -f "$temporary" "$installed"', script)
+        self.assertIn("FCEUmm remains available", script)
+
     def test_complete_matrix_matches_every_packaged_artifact(self):
         manifest = ROOT / "native/retropie/manifest.json"
         data = json.loads(manifest.read_text())

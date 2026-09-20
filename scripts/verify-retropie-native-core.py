@@ -145,7 +145,8 @@ def verify(manifest_path, core_path, target, load=False):
     raw = _verify_file(core, entry["size"], entry["sha256"], "core")
     _verify_file(source, entry["source_size"], entry["source_sha256"], "source archive")
     with tarfile.open(source, "r:gz") as archive:
-        names = {name.removeprefix("./") for name in archive.getnames()}
+        names = {name[2:] if name.startswith("./") else name
+                 for name in archive.getnames()}
         if "COPYING" not in names or "source/core/input/NstInpPowerGlove.cpp" not in names:
             raise ValueError("RetroPie native-core source archive is incomplete")
     classes = {32: 1, 64: 2}

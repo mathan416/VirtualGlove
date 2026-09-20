@@ -233,7 +233,7 @@ class TuningManager:
         """Change presets without overlapping an active tuning session."""
         with self.lock:
             self._expire()
-            if self.session and data.get("action") not in ("read", "progress", "ready_progress", "export"):
+            if self.session and data.get("action") not in ("read", "progress", "export"):
                 raise ValueError("Finish tuning and switch Tune gestures off before changing players or restoring settings.")
             if data.get("action") == "joystick_deadzone" and (
                     self.center_generation is not None or self.players.data["calibration_restore"] is not None):

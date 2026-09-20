@@ -125,12 +125,13 @@ fixed-capability devices named **VirtualGlove Merged Player 1–4**. Only Player
 1 carries a physical hotkey; VirtualGlove Select has no path to that control.
 Malformed mappings and local states are rejected, tracking timeout clears only
 the VirtualGlove source, and a physical disconnect releases only that source.
-Outputs are neutral and physical devices are not grabbed outside supported NES
-joystick gameplay, so Router cannot duplicate EmulationStation navigation. Its
+Outputs are neutral and physical devices are not grabbed outside Libretro
+gameplay, so Router cannot duplicate EmulationStation navigation. Its
 Unix socket and versioned record remain inside the platform's private
-VirtualGlove directories. Managed Player indexes are confined to the FCEUmm
-and stock Nestopia core overrides. Nestopia (VirtualGlove) uses its separate
-native-input path and never activates Controller Router.
+VirtualGlove directories. Managed physical Player indexes are applied through
+the platform's bounded Libretro configuration layer. Nestopia (VirtualGlove)
+uses a separate native-input path for gestures; it never admits VirtualGlove as
+a duplicate RetroPad source.
 
 On every supported-core transition, Router clears the stored VirtualGlove
 source and requires a new neutral D-pad/button observation before admitting

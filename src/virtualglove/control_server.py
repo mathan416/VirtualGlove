@@ -233,15 +233,15 @@ class ControlState:
         self.revision = 0
         self.worker_status: dict[str, Any] = {}
         self._worker_status_at = None
-        self._ready_marker = config_path.with_name("ready-guide-inhibit")
-        self._ready_game_session = None
+        retired_ready_marker = config_path.with_name("ready-guide-inhibit")
+        if retired_ready_marker.exists() or retired_ready_marker.is_symlink():
+            retired_ready_marker.unlink()
         self.camera_available = False
         self.worker_running = False
         self.last_error: str | None = None
         self._controller_marker = config_path.with_name("controller-armed")
         self._controller_enabled = (
             self._controller_marker.is_file() and not self._controller_marker.is_symlink()
-            and not (self._ready_marker.exists() or self._ready_marker.is_symlink())
         )
         self._pairing_display = pairing_display
         self._pairing_finished = pairing_finished
@@ -390,8 +390,6 @@ class ControlState:
             self._last_controller_choice = time.monotonic()
             self._auto_start_error = None
         if enabled:
-            if self._ready_marker.exists() or self._ready_marker.is_symlink():
-                raise ValueError("Finish or leave Get ready to play before starting controller output.")
             with self.lock:
                 if self.worker_status.get("player", {}).get("needs_center"):
                     raise ValueError("Select Center hand on Dashboard or in Glove Academy before starting controls for this player.")
@@ -1063,77 +1061,6 @@ class ControlState:
                 "console_service": None, "console_authenticated": None,
                 "wifi": read_wifi_status(), "networking": read_network_status(), "checked_seconds_ago": None}
 
-    def ready_request(self, incoming):
-        """Own a durable output inhibit; stale tabs cannot release another visit's guard."""
-        from .game_registry import atomic_write
-        from .ready_guide import essential_complete, game_gate
-        session, action = incoming.get("session"), incoming.get("action")
-        if not isinstance(session, str) or not 16 <= len(session) <= 80 or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-" for c in session):
-            raise ValueError("Invalid ready-guide session.")
-        with self.config_lock:
-            if self._ready_marker.is_symlink():
-                raise ValueError("Ready-guide state path is not a regular file.")
-            if action == "begin":
-                atomic_write(self._ready_marker, session)
-                self._ready_game_session = None
-                self._set_controller_enabled(False)
-                self.flush_controller_request()
-                return {"guarded": True}
-            owner = self._ready_marker.read_text() if self._ready_marker.is_file() else None
-            if action == "status":
-                return {"guarded": owner == session, "game_stage": self._ready_game_session == session}
-            if action in ("release", "cancel"):
-                if owner != session or incoming.get("confirmed") is not True:
-                    raise ValueError("This guide visit is no longer active. Reload the guide.")
-                request = urllib.request.Request(WORKER_URL + "/practice", method="POST",
-                    data=json.dumps({"session": session, "enabled": False}).encode(), headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(request, timeout=1) as response:
-                    practice = json.load(response)
-                status = self.snapshot()
-                if practice.get("practice_mode") is not False or status.get("practice_mode") is not False:
-                    return {"released": False, "message": "Waiting for practice to stop. Close other Academy or tuning sessions."}
-                if action == "release":
-                    player = self._ready_player(incoming)
-                    if not essential_complete(player):
-                        raise ValueError("Complete the essential checks before launching a game.")
-                self._set_controller_enabled(False)
-                self._ready_marker.unlink()
-                self._ready_game_session = session if action == "release" else None
-                return {"released": True}
-            if action == "arm":
-                if owner is not None or self._ready_game_session != session:
-                    raise ValueError("End guide practice explicitly before enabling game controls.")
-                player = self._ready_player(incoming)
-                if not essential_complete(player):
-                    raise ValueError("Complete the essential checks first.")
-                status = self.snapshot()
-                if (status.get("player", {}).get("active") != incoming.get("player")
-                        or status.get("player", {}).get("generation") != incoming.get("generation")):
-                    raise ValueError("Waiting for tracker status for the selected player.")
-                reason = game_gate(status, require_link=False)
-                if reason:
-                    raise ValueError(reason)
-                connection = self.connection_status()
-                age = connection.get("checked_seconds_ago")
-                if (type(age) not in (int, float) or not 0 <= age < 30
-                        or connection.get("console_service") is not True
-                        or connection.get("console_authenticated") is not True):
-                    raise ValueError("Recheck console connectivity and authenticated pairing in Setup.")
-                self._set_controller_enabled(True)
-                return {"armed": True, "pending": not self.flush_controller_request()}
-            raise ValueError("Unknown ready-guide action.")
-
-    def _ready_player(self, incoming):
-        """Validate fresh player identity immediately before release or guide arming."""
-        request = urllib.request.Request(WORKER_URL + "/players", method="POST",
-            data=b'{"action":"read"}', headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(request, timeout=1) as response:
-            player = json.load(response)
-        if (player.get("active") != incoming.get("player") or type(incoming.get("generation")) is not int
-                or player.get("generation") != incoming["generation"] or player.get("needs_center")):
-            raise ValueError("Player or calibration changed. Return to the player step.")
-        return player
-
     def support_report(self) -> dict[str, Any]:
         """Return useful installation health without secrets or personal hand data."""
         status = self.snapshot()
@@ -1311,9 +1238,6 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                 self.send_response(302)
                 self.send_header("Location", "/setup#games-section")
                 self.end_headers()
-            elif path == "/ready":
-                from .ready_web import READY
-                _send(self, 200, READY, "text/html; charset=utf-8")
             elif path == "/learn":
                 _send(self, 200, LEARN, "text/html; charset=utf-8")
             elif path == "/setup":
@@ -1518,11 +1442,6 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                     with urllib.request.urlopen(request, timeout=1) as response:
                         result = response.read()
                     _send(self, 202, result, "application/json")
-                elif path == "/api/ready":
-                    if self.headers.get("X-VirtualGlove-Action") != "ready":
-                        raise ForbiddenActionError("Ready guide request is missing its browser-action safeguard.")
-                    result = state.ready_request(self.json_body(require_json=True))
-                    _send(self, 200, json.dumps(result).encode(), "application/json")
                 elif path == "/api/practice":
                     incoming = self.json_body(require_json=True)
                     enabled = incoming.get("enabled")

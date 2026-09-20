@@ -1290,6 +1290,23 @@ class ControlStateTests(unittest.TestCase):
         finally:
             servers.shutdown()
 
+    def test_retired_ready_guide_routes_are_not_available(self):
+        servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
+        try:
+            port = servers.servers[0].server_address[1]
+            for method, path, body, headers in (
+                    ("GET", "/ready", None, {}),
+                    ("POST", "/api/ready", b"{}", {"Content-Type": "application/json"})):
+                with self.subTest(path=path):
+                    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+                    connection.request(method, path, body, headers)
+                    response = connection.getresponse()
+                    response.read()
+                    self.assertEqual(response.status, 404)
+                    connection.close()
+        finally:
+            servers.shutdown()
+
     def test_runtime_profile_route_forwards_valid_selection_to_worker(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
         try:

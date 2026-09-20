@@ -39,12 +39,14 @@ The console receives authenticated, current controller state. It does not
 replay a queue of old hand positions. Rapid-fire settings are applied at the
 console and can be changed from the Dashboard while the game is running.
 
-At each supported joystick-core launch, Controller Router clears any glove
-state observed in the frontend. Physical controllers are usable immediately.
-VirtualGlove remains neutral until it observes the hand with no direction or
-button gesture, then accepts subsequent gestures. Camera position axes are not
-forwarded through this NES joystick path; native Super Glove Ball receives them
-through its separate guarded native-state channel.
+Controller Router gives its two input sources deliberately different reach.
+Assigned physical controllers follow their merged player into every
+RetroArch/Libretro system. VirtualGlove remains limited to supported NES
+joystick cores. At one of those NES launches, Router clears any glove state
+observed in the frontend and waits for a fresh neutral hand before accepting
+new gestures. Camera position axes are not forwarded through this joystick
+path; native Super Glove Ball receives them through its separate guarded
+native-state channel.
 
 ### Player 1 on each platform
 
@@ -53,7 +55,7 @@ through its separate guarded native-state channel.
 | RetroPie — standard installation | VirtualGlove appears as a separate **VirtualGlove** gamepad. Existing physical controllers remain separate and continue to work. |
 | RetroPie — routed cabinet | Optional **Controller Router** can combine configured I-PACs, joypads, and VirtualGlove into **VirtualGlove Merged Player 1–4**. The standard installation remains unchanged until Router is explicitly saved and applied. |
 | Recalbox | **Controller Router** creates enabled merged Players 1–4. The released Player 1 selection migrates automatically, while the original controllers continue to operate EmulationStation. |
-| Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes at every supported NES joystick-core launch. |
+| Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes for Libretro gameplay. |
 | LaunchBox | The physical XInput controller remains Player 1. VirtualGlove joins it through RetroArch's loopback Network RetroPad. The real keyboard remains available. |
 
 ### Standard RetroPie and the VirtualGlove arcade cabinet
@@ -113,19 +115,27 @@ VirtualGlove therefore creates up to four canonical gameplay devices named
 5. Router clears any VirtualGlove state seen before launch. Physical sources
    work immediately; VirtualGlove is admitted after one fresh neutral hand
    observation, so held frontend input cannot block or steer the new game.
-6. During FCEUmm or stock Nestopia gameplay, Router takes exclusive ownership of assigned
+6. During Libretro gameplay, Router takes exclusive ownership of each assigned
    physical event device. This prevents the original device, the platform
    hotkey service, and the merged device from interpreting the same press.
+   VirtualGlove input is admitted only for supported NES joystick cores.
 7. Buttons remain held while any assigned source holds them. For each physical
    axis, the latest active source owns it until neutral; another still-active
    source then resumes. Any non-neutral physical source outranks VirtualGlove.
 8. At game exit, every merged state is neutralized before exclusive ownership is
    released. EmulationStation then continues using the original controller.
 
-The managed Player assignments live in the core-specific RetroArch overrides
-for FCEUmm and stock Nestopia. Nestopia (VirtualGlove) has its own distinct core
-name and does not load either ordinary joystick route, keeping native Super
-Glove Ball outside Router and preserving its physical-controller path.
+The platforms apply those assignments at different supported layers. RetroPie
+resolves the merged indexes in its launch hook. Batocera persists them through
+its managed `batocera.conf` settings. Recalbox stores them in
+`/recalbox/share/roms/.retroarch.cfg`, which Recalbox deliberately incorporates
+when it generates each Libretro launch. The generated
+`retroarchcustom.cfg.overrides.cfg` is output, not persistent configuration,
+and must not be edited directly.
+
+Nestopia (VirtualGlove) keeps gesture input on its distinct native-state path.
+Its physical controller still participates through the all-Libretro Router
+assignment, preserving menu and exit hotkeys without duplicating glove input.
 
 The physical controller's own hotkey is mapped to a dedicated merged button.
 VirtualGlove Select can emit only NES Select; it cannot enable RetroArch
@@ -159,8 +169,8 @@ from the same screen.
 
 The local screen does not create or replace a pairing credential. Pairing
 authorizes the VirtualGlove Controller and its web Setup page to reach the
-console; routing decides which NES joystick player receives each already configured
-input source.
+console; routing decides which merged player receives each configured physical
+source and which supported NES player may receive VirtualGlove gestures.
 
 FCEUmm recognizes known Four Score games by CRC. Four merged outputs do not make
 an ordinary game four-player. For a compatible altered ROM that FCEUmm does not
@@ -173,7 +183,8 @@ User 5 four-player adaptor; leaving the field out keeps automatic detection.
 - It follows a valid EmulationStation remap automatically without changing the
   saved player assignment. An incomplete mapping disables only that source
   until it is configured correctly.
-- It changes only enabled NES joystick-core Player 1–4 assignments.
+- It applies enabled physical Player 1–4 assignments to Libretro gameplay while
+  keeping VirtualGlove gesture output limited to its supported NES paths.
 - It does not depend on the order in which USB devices appeared after boot.
 - It does not make the merged device navigate the frontend.
 - It does not let VirtualGlove gestures activate the physical hotkey.
@@ -263,7 +274,7 @@ the ROM.
 
 | Platform | Native-core installation and selection |
 | --- | --- |
-| RetroPie | Builds the separate Linux core from pinned source and offers it as a per-ROM emulator. |
+| RetroPie | Selects and verifies a packaged core from RetroArch's actual 32- or 64-bit ABI, then offers it as a per-ROM emulator. |
 | Recalbox | Installs a verified architecture build in persistent storage and exposes it through reversible runtime overlays. |
 | Batocera | Selects and verifies the packaged architecture build, then exposes it through reversible overlays and a per-ROM choice. |
 | LaunchBox | Installs a separately named x86-64 DLL and uses the VirtualGlove RetroArch wrapper for the exact registered ROM. |
@@ -295,8 +306,10 @@ in the [Engineering Journey](ENGINEERING_JOURNEY.md).
 Check the visible symptom first:
 
 - **Physical controller works in the frontend but not in a Recalbox/Batocera
-  game:** rerun the console installer check. Confirm that the saved Player 1 is
-  connected and the merged gamepad is assigned.
+  game:** rerun the current console installer check. Confirm that the saved
+  controller is connected, its merged player exists, and the persistent
+  all-Libretro assignment passes. Do not edit Recalbox's generated
+  `retroarchcustom.cfg.overrides.cfg`.
 - **Buttons are rearranged:** exit the game and confirm the controller mapping
   in EmulationStation. Controller Router adopts a valid remap automatically on
   the next launch; Setup shows **Mapping refreshed** when it differs from the

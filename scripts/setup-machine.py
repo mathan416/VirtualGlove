@@ -24,8 +24,10 @@
 """Install or check VirtualGlove on a supported Controller or console host."""
 import argparse
 import datetime
+import hashlib
 import json
 import os
+import platform
 import pwd
 import grp
 import re
@@ -489,7 +491,7 @@ def registered_roms():
 
 
 def configure_games(confirm):
-    """Prepare FCEUmm games and offer the optional source-built native core."""
+    """Prepare FCEUmm games and install or refresh the optional native core."""
     prefix = Path("/opt/retropie")
     core = prefix / "libretrocores/lr-fceumm/fceumm_libretro.so"
     retroarch = prefix / "emulators/retroarch/bin/retroarch"
@@ -508,12 +510,20 @@ def configure_games(confirm):
     roms = registered_roms()
     super_glove_ball_roms = [rom for rom, profile in roms if profile == "super_glove_ball"]
     native = prefix / "libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so"
-    if super_glove_ball_roms and not native.is_file():
-        prompt = ("Install and register optional lr-nestopia-powerglove for Super Glove Ball? "
-                  "This uses the verified core packaged for this RetroPie architecture")
-        if confirm(prompt):
-            with tempfile.TemporaryDirectory(prefix="powerglove-nestopia-", dir="/var/tmp") as build:
-                run("bash", SOURCE / "scripts/install-nestopia-powerglove.sh", build)
+    install_native = bool(super_glove_ball_roms and native.is_file())
+    if super_glove_ball_roms and not install_native:
+        install_native = confirm(
+            "Install and register optional lr-nestopia-powerglove for Super Glove Ball? "
+            "This uses the verified core packaged for this RetroPie architecture"
+        )
+    if install_native:
+        try:
+            run("bash", SOURCE / "scripts/install-nestopia-powerglove.sh")
+        except subprocess.CalledProcessError as error:
+            if error.returncode not in (3, 4):
+                raise
+            print("ACTION  The packaged native core was not compatible. "
+                  "The existing installation was preserved and FCEUmm remains available.")
     if super_glove_ball_roms and native.is_file():
         selector = runpy.run_path(str(SOURCE / "scripts/configure-super-glove-ball-core.py"))
         system_path, system_text, option_path, option_text = selector["native_registration"](prefix)
@@ -755,6 +765,7 @@ def install_recalbox(peer, player1_device=None):
         custom.read_text() if custom.exists() else ""), 0o755)
     custom.chmod(0o755)
     backup_file("/recalbox/share/system/configs/retroarch/nes.cfg")
+    backup_file("/recalbox/share/roms/.retroarch.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
     run("sh", service, "restart")
@@ -795,6 +806,11 @@ def check_recalbox(report):
         indexes = router.output_indexes(players)
         report.check("Controller Router configuration", routed["platform"] == "recalbox")
         report.check("Controller Router outputs available", len(indexes) == len(players))
+        overrides = Path("/recalbox/share/roms/.retroarch.cfg")
+        override_text = overrides.read_text() if overrides.is_file() else ""
+        report.check("Persistent Libretro routing override",
+                     all(('input_player%d_joypad_index = "%d"' % (player, index))
+                         in override_text for player, index in indexes.items()))
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Controller Router configuration", False)
     native_manifest = root / "native/recalbox/manifest.json"
@@ -1061,6 +1077,20 @@ def check_retropie(report):
     native = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")
     if native.is_file():
         import runpy
+        try:
+            verifier = runpy.run_path(str(SOURCE / "scripts/verify-retropie-native-core.py"))
+            cpuinfo = Path("/proc/cpuinfo").read_text(errors="replace")
+            runtime = Path("/opt/retropie/emulators/retroarch/bin/retroarch")
+            target = verifier["detect_target"](platform.machine(), cpuinfo, runtime)
+            entry = verifier["manifest_entry"](
+                SOURCE / "native/retropie/manifest.json", target
+            )
+            raw = native.read_bytes()
+            packaged = (entry is not None and len(raw) == entry["size"]
+                        and hashlib.sha256(raw).hexdigest() == entry["sha256"])
+        except (OSError, ValueError, KeyError):
+            packaged = False
+        report.check("Native core matches this RetroArch ABI", packaged, pending=True)
         selector = runpy.run_path(str(SOURCE / "scripts/configure-super-glove-ball-core.py"))
         system = selector["settings"](Path("/opt/retropie/configs/nes/emulators.cfg"))
         option = Path("/opt/retropie/configs/nes/powerglove-native.cfg")

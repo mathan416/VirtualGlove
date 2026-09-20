@@ -61,8 +61,8 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn('"fceumm_libretro.so", "nestopia_libretro.so"', router)
         self.assertIn('NATIVE_CORE_NAMES = {"nestopia_powerglove_libretro.so"}', router)
         self.assertIn("return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES", router)
-        self.assertIn('platform in ("recalbox", "batocera")', router)
-        self.assertIn("config_paths.append(global_config)", router)
+        self.assertIn('config["platform"] in ("recalbox", "batocera")', router)
+        self.assertIn('global_config.parent / "nes.cfg"', router)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()

@@ -385,10 +385,10 @@ different USB order.
 Controller Router grew from the cabinet's proven merger idea. It records stable
 hardware identities and the mappings already accepted by EmulationStation,
 then resolves the current Linux devices and RetroArch indexes when needed. The
-original pads continue to own the frontend. During FCEUmm or stock Nestopia
-play, Router exclusively reads assigned pads and presents canonical merged
-Players 1–4. Physical hotkeys remain physical; VirtualGlove Select cannot become
-Hotkey Enable.
+original pads continue to own the frontend. During Libretro play, Router
+exclusively reads assigned pads and presents canonical merged Players 1–4.
+Physical hotkeys remain physical; VirtualGlove Select cannot become Hotkey
+Enable, and gesture input remains limited to its supported NES paths.
 
 Live testing found two less obvious failures. First, a busy camera socket could
 delay physical events, so physical sources were serviced first and old camera
@@ -403,6 +403,14 @@ D-pad/button observation, and ordinary NES joystick cores receive recognized
 digital controls rather than camera-position axes. The same fix applies to
 routed RetroPie, Recalbox, and Batocera; native Super Glove Ball keeps its
 separate continuous-coordinate channel.
+
+Cross-system testing then exposed a platform-specific configuration lesson.
+Recalbox rebuilds `retroarchcustom.cfg` and its `.overrides.cfg` output for every
+launch, so writing a correct merged index there worked only until the next
+game. The durable source is `/recalbox/share/roms/.retroarch.cfg`, which the
+Recalbox generator intentionally reads into every Libretro launch. Moving the
+managed block there preserved EmulationStation mappings and made the same
+physical merged player work in NES, Game Boy, ColecoVision, and Game Gear tests.
 
 ## Validation story — proving that movement was real
 

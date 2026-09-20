@@ -17,7 +17,6 @@ import copy
 import json
 import uuid
 import math
-from datetime import datetime, timezone
 from dataclasses import asdict
 
 from .model import Calibration
@@ -77,39 +76,6 @@ def progress(value):
     return {"course": COURSE, "completed": sorted(set(done)), "lesson": lesson}
 
 
-READY_COURSE = 1
-READY_CHECKS = ("neutral", "left", "right", "up", "down", "a", "b", "start", "select", "menu_guard")
-
-
-def blank_ready_progress():
-    """Return a new empty, versioned Ready-guide progress record."""
-    return {"course": READY_COURSE, "completed": [], "completed_at": None}
-
-
-def ready_progress(value):
-    """Accept only this course's bounded identifiers and a canonical UTC timestamp."""
-    if not isinstance(value, dict) or set(value) != {"course", "completed", "completed_at"}:
-        raise ValueError("Invalid ready-guide progress.")
-    if type(value["course"]) is not int or value["course"] != READY_COURSE:
-        raise ValueError("The ready-guide course changed. Reload the guide.")
-    done = value["completed"]
-    if (not isinstance(done, list) or len(done) > len(READY_CHECKS)
-            or any(type(key) is not str or key not in READY_CHECKS for key in done)
-            or len(set(done)) != len(done)):
-        raise ValueError("Invalid ready-guide check.")
-    stamp = value["completed_at"]
-    if stamp is not None:
-        if not isinstance(stamp, str) or len(stamp) != 20 or set(done) != set(READY_CHECKS):
-            raise ValueError("Invalid ready-guide completion time.")
-        try:
-            date = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-            if date.strftime("%Y-%m-%dT%H:%M:%SZ") != stamp or date.timestamp() < 0:
-                raise ValueError()
-        except (ValueError, OverflowError):
-            raise ValueError("Invalid ready-guide completion time.") from None
-    return {"course": READY_COURSE, "completed": [key for key in READY_CHECKS if key in done], "completed_at": stamp}
-
-
 def blank_progress():
     """Return independent progress for a new player."""
     return {"course": COURSE, "completed": [], "lesson": 0}
@@ -121,11 +87,11 @@ class PlayerSettings:
         self.path, self.validate = path, validate
         self.channels = set(channels)
         self.error = None
-        self.data = {"version": 6, "active": "default", "generation": 0,
+        self.data = {"version": 7, "active": "default", "generation": 0,
                      "calibration_restore": None,
                      "players": {"default": {"name": "Player 1", "thresholds": {},
                          "joystick_deadzone": DEFAULT_JOYSTICK_DEADZONE,
-                         "progress": blank_progress(), "ready_progress": blank_ready_progress(), "needs_center": False, "calibration": None}}}
+                         "progress": blank_progress(), "needs_center": False, "calibration": None}}}
         try:
             if path.exists():
                 if path.stat().st_size > 65536:
@@ -133,7 +99,11 @@ class PlayerSettings:
                 saved = json.loads(path.read_text())
                 if not isinstance(saved, dict):
                     raise ValueError("Invalid player settings object")
+                saved_version = saved.get("version")
                 self.data = self.validate_store(saved)
+                if saved_version == 6:
+                    from .game_registry import atomic_write
+                    atomic_write(self.path, json.dumps(self.data, ensure_ascii=True, indent=2) + "\n")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if isinstance(exc, ValueError) and str(exc) == "Unsupported player settings":
                 self.error = ("Unsupported player settings version. Upgrade from "
@@ -147,8 +117,10 @@ class PlayerSettings:
     def validate_store(self, data):
         """Validate persisted records before exposing them to the app."""
         data = copy.deepcopy(data)
-        if not isinstance(data, dict) or set(data) != {"version", "active", "generation", "players", "calibration_restore"} or type(data["version"]) is not int or data["version"] != 6:
+        if not isinstance(data, dict) or set(data) != {"version", "active", "generation", "players", "calibration_restore"} or type(data["version"]) is not int or data["version"] not in (6, 7):
             raise ValueError("Unsupported player settings")
+        legacy_ready_progress = data["version"] == 6
+        data["version"] = 7
         players = data["players"]
         if not isinstance(players, dict) or not 1 <= len(players) <= MAX_PLAYERS or data["active"] not in players:
             raise ValueError("Invalid players")
@@ -157,13 +129,17 @@ class PlayerSettings:
         for key, item in players.items():
             if not isinstance(key, str) or not 1 <= len(key) <= 32 or not key.isalnum():
                 raise ValueError("Invalid player identifier")
-            if not isinstance(item, dict) or set(item) != {"name", "thresholds", "joystick_deadzone", "progress", "ready_progress", "needs_center", "calibration"} or type(item["needs_center"]) is not bool:
+            expected = {"name", "thresholds", "joystick_deadzone", "progress", "needs_center", "calibration"}
+            if legacy_ready_progress and isinstance(item, dict):
+                if set(item) != expected | {"ready_progress"}:
+                    raise ValueError("Invalid player record")
+                item.pop("ready_progress")
+            if not isinstance(item, dict) or set(item) != expected or type(item["needs_center"]) is not bool:
                 raise ValueError("Invalid player record")
             item["name"] = player_name(item["name"])
             item["thresholds"] = self.validate(item["thresholds"])
             item["joystick_deadzone"] = joystick_deadzone(item["joystick_deadzone"])
             item["progress"] = progress(item["progress"])
-            item["ready_progress"] = ready_progress(item["ready_progress"])
             if item["calibration"] is not None:
                 item["calibration"] = calibration_value(item["calibration"])
         pending = data["calibration_restore"]
@@ -192,7 +168,6 @@ class PlayerSettings:
         return {"active": self.data["active"], "generation": self.data["generation"],
                 "players": [{"id": key, "name": item["name"]} for key, item in self.data["players"].items()],
                 "progress": copy.deepcopy(self.active["progress"]),
-                "ready_progress": copy.deepcopy(self.active["ready_progress"]),
                 "needs_center": self.active["needs_center"],
                 "has_saved_calibration": self.active["calibration"] is not None,
                 "restoring_calibration": self.data["calibration_restore"] is not None, "error": self.error}
@@ -246,14 +221,6 @@ class PlayerSettings:
             incoming = progress(request.get("progress"))
             incoming["completed"] = sorted(set(item["progress"]["completed"]) | set(incoming["completed"]))
             item["progress"] = incoming
-        elif action == "ready_progress":
-            if set(request) != {"action", "player", "generation", "progress"}:
-                raise ValueError("Invalid ready-guide update fields.")
-            incoming = ready_progress(request.get("progress"))
-            incoming["completed"] = [key for key in READY_CHECKS
-                if key in item["ready_progress"]["completed"] or key in incoming["completed"]]
-            incoming["completed_at"] = item["ready_progress"]["completed_at"] or incoming["completed_at"]
-            item["ready_progress"] = incoming
         elif action == "reset_progress":
             item["progress"] = blank_progress()
             data["generation"] += 1
@@ -264,7 +231,7 @@ class PlayerSettings:
             key = uuid.uuid4().hex
             data["players"][key] = {"name": name, "thresholds": copy.deepcopy(item["thresholds"]),
                 "joystick_deadzone": DEFAULT_JOYSTICK_DEADZONE,
-                "progress": blank_progress(), "ready_progress": blank_ready_progress(), "needs_center": True, "calibration": None}
+                "progress": blank_progress(), "needs_center": True, "calibration": None}
             data["active"] = key
             data["generation"] += 1
         elif action == "select":

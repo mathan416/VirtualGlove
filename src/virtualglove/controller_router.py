@@ -391,6 +391,27 @@ def joystick_retroarch_configs(primary: Path) -> tuple[Path, ...]:
     return (primary,)
 
 
+def managed_retroarch_configs(primary: Path, global_config: Path,
+                              config: dict[str, Any]) -> tuple[Path, ...]:
+    """Return every platform file that can override a routed Libretro player."""
+    paths = list(joystick_retroarch_configs(primary))
+    if (config.get("physical_scope") == "all"
+            and config["platform"] in ("recalbox", "batocera")):
+        # These platforms generate retroarchcustom.cfg for each launch and
+        # append the system file afterwards. Manage both so a stale NES index
+        # cannot override the current merged output for native Super Glove
+        # Ball, FCEUmm, or stock Nestopia.
+        paths.extend((global_config, global_config.parent / "nes.cfg"))
+        if config["platform"] == "recalbox":
+            # Recalbox rebuilds retroarchcustom.cfg and its generated
+            # .overrides.cfg for every launch. Its supported ROM-folder
+            # override chain loads /recalbox/share/roms/.retroarch.cfg into
+            # that generated file after controller discovery. Put the routed
+            # player assignments in the persistent source, never the output.
+            paths.append(global_config.parents[3] / "roms/.retroarch.cfg")
+    return tuple(dict.fromkeys(paths))
+
+
 class ControllerRouterDevice:
     """Own Player 1-4 outputs and dynamically reconnect their physical sources."""
     EVENT = struct.Struct("llHHi")
@@ -404,7 +425,6 @@ class ControllerRouterDevice:
                  udev_root: Path = Path("/run/udev/data"), dev_root: Path = Path("/dev/input")) -> None:
         self.config_path, self.config = Path(config_path), load_config(config_path)
         self.retroarch_config, self.proc_root = Path(retroarch_config), proc_root
-        self.retroarch_configs = joystick_retroarch_configs(self.retroarch_config)
         self.global_config = Path(global_config) if global_config else None
         self.platform_config = Path(platform_config) if platform_config else None
         self.es_inputs = Path(es_inputs) if es_inputs else _paths(self.config["platform"])[1]
@@ -458,11 +478,8 @@ class ControllerRouterDevice:
             if len(indexes) == len(self.players):
                 global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
                 global_text = global_path.read_text() if global_path.exists() else ""
-                config_paths = list(self.retroarch_configs)
-                if (self.config.get("physical_scope") == "all"
-                        and self.config["platform"] in ("recalbox", "batocera")
-                        and global_path not in config_paths):
-                    config_paths.append(global_path)
+                config_paths = managed_retroarch_configs(
+                    self.retroarch_config, global_path, self.config)
                 for config_path in config_paths:
                     current = config_path.read_text() if config_path.exists() else ""
                     updated = merge_retroarch_config(current, self.config, indexes, global_text)
@@ -1298,11 +1315,7 @@ def main() -> int:
                 time.sleep(0.05)
         indexes = output_indexes(enabled_players(config), platform=config["platform"])
         global_text = global_config.read_text() if global_config.exists() else ""
-        config_paths = list(joystick_retroarch_configs(retroarch))
-        if (config.get("physical_scope") == "all"
-                and platform in ("recalbox", "batocera")
-                and global_config not in config_paths):
-            config_paths.append(global_config)
+        config_paths = managed_retroarch_configs(retroarch, global_config, config)
         for config_path in config_paths:
             current = config_path.read_text() if config_path.exists() else ""
             updated = merge_retroarch_config(current, config, indexes, global_text)

@@ -163,7 +163,7 @@ sequence begins.
 
 | Platform | Native-core delivery and selection |
 | --- | --- |
-| RetroPie | Builds the separate Linux core from pinned source and offers it in the per-ROM launch menu. FCEUmm remains selected until the player changes that ROM. |
+| RetroPie | Selects and load-checks the packaged core matching RetroArch's actual ABI, then offers it in the per-ROM launch menu. FCEUmm remains selected until the player changes that ROM. |
 | Recalbox | Installs a verified target-specific core in persistent storage, exposes it through a reversible runtime overlay, and creates an exact-ROM choice only when no choice already exists. |
 | Batocera | Resolves one of the packaged architecture builds, verifies and load-tests it, then exposes it through reversible overlays and an exact-ROM choice. |
 | LaunchBox | Installs the verified x86-64 DLL beside its corresponding source and lets the VirtualGlove RetroArch wrapper choose it only for an exact registered Super Glove Ball filename. |

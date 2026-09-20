@@ -95,6 +95,5 @@ class EasterEggOverlayTests(unittest.TestCase):
         from virtualglove.academy_web import LEARN
         from virtualglove.dashboard_web import DASHBOARD
         from virtualglove.joystick_web import JOYSTICK_SCRIPT
-        from virtualglove.ready_web import READY
-        for page in (DASHBOARD,LEARN,READY,JOYSTICK_SCRIPT.encode()):
+        for page in (DASHBOARD,LEARN,JOYSTICK_SCRIPT.encode()):
             self.assertIn(b'updateEasterEgg',page)

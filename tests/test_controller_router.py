@@ -153,6 +153,29 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn("global.retroarch.input_player1_joypad_index=1", replaced)
         self.assertNotIn("global.retroarch.input_player1_joypad_index=3", replaced)
 
+    def test_recalbox_and_batocera_refresh_the_late_nes_append_file(self):
+        primary = Path("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
+        global_config = Path("/userdata/system/configs/retroarch/retroarchcustom.cfg")
+        config = {"platform": "batocera", "physical_scope": "all"}
+        paths = router.managed_retroarch_configs(primary, global_config, config)
+        self.assertIn(primary, paths)
+        self.assertIn(primary.parent.parent / "Nestopia/Nestopia.cfg", paths)
+        self.assertIn(global_config, paths)
+        self.assertIn(global_config.parent / "nes.cfg", paths)
+        self.assertEqual(len(paths), len(set(paths)))
+
+        recalbox = {"platform": "recalbox", "physical_scope": "all"}
+        recalbox_global = Path("/recalbox/share/system/configs/retroarch/retroarchcustom.cfg")
+        recalbox_paths = router.managed_retroarch_configs(
+            Path("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"),
+            recalbox_global, recalbox)
+        self.assertIn(
+            Path("/recalbox/share/roms/.retroarch.cfg"),
+            recalbox_paths)
+        self.assertNotIn(
+            recalbox_global.with_name("retroarchcustom.cfg.overrides.cfg"),
+            recalbox_paths)
+
     def test_retropie_launch_hook_resolves_outputs_after_joystick_selection(self):
         hook = (Path(__file__).resolve().parents[1] /
                 "retropie/runcommand-onstart-virtualglove.sh").read_text()

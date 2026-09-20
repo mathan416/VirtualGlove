@@ -20,7 +20,6 @@ from .web_common import _page, _profile_options, VISION_STARTUP_SCRIPT
 DASHBOARD = _page(
     "Dashboard",
     """<h1>I love the Power Glove. It’s so bad.</h1><p class='lead dashboard-lead'>Live vision, gesture and controller diagnostics from your camera-only VirtualGlove.</p>
-<p><a class=button href=/ready>Get ready to play</a></p>
 <div class=status-grid>
  <div class=card><div class=label>System</div><div class=value id=system>Starting</div></div>
  <div class=card><label class=label for=player-select>Player</label><select class=profile-select id=player-select disabled></select><div class=label id=player-notice role=status aria-live=polite style='margin-top:6px'></div></div>

@@ -122,7 +122,8 @@ class NativeCoreTests(unittest.TestCase):
     def test_distribution_keeps_gpl_notice_with_installed_core(self):
         installer = (ROOT / "scripts/install-nestopia-powerglove.sh").read_text()
         notice = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
-        self.assertIn('destination/source/COPYING', installer)
+        self.assertIn('nestopia-powerglove-source.tar.gz', installer)
+        self.assertIn('tar -xzf "$source_archive"', installer)
         self.assertIn('target/COPYING', installer)
         self.assertIn('VIRTUALGLOVE-NOTICES.md', installer)
         self.assertIn("GNU General Public License, version 2", notice)

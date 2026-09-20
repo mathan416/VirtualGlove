@@ -172,6 +172,9 @@ Player 1–4** output exists, and the current RetroArch player indexes are assig
 Merged devices are intentionally neutral in EmulationStation and become active
 for physical input during Libretro gameplay. VirtualGlove gesture input remains
 limited to supported FCEUmm, stock Nestopia, and native Super Glove Ball paths.
+On Recalbox, the installer check must report **Persistent Libretro routing
+override**. Its generated `retroarchcustom.cfg.overrides.cfg` is expected to be
+rewritten at launch; do not repair that temporary file manually.
 On LaunchBox, the installer must
 report `network-retropad`, a random high loopback port, and a validated isolation
 rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove

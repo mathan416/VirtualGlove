@@ -132,7 +132,7 @@ assert.deepEqual(renderedButtons, [...expectedButtons].sort(), "rendered Dashboa
 for (const id of expectedButtons) assert.equal(typeof get(id).onclick, "function", `${id} has no click handler`);
 for (const id of ["player-select", "profile-selector", "show-statistics", "rapid-a", "rapid-b"])
   assert.equal(typeof get(id).onchange, "function", `${id} has no change handler`);
-for (const href of ["/ready", "/setup", "/help/gameplay"])
+for (const href of ["/setup", "/help/gameplay"])
   assert.match(html, new RegExp(`href=(?:["']?)${href.replace("/", "\\/")}`), `missing ${href} link`);
 assert.ok(calls.some(call => call.path === "/api/practice" && call.body.reset && call.body.enabled === false),
   "Dashboard did not clear practice mode on entry");

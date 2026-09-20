@@ -81,7 +81,6 @@ class ConnectionDoctorTests(unittest.TestCase):
             [(None, 'submit')],
         )
         self.assertIn("$('attract-form').onsubmit", page)
-        self.assertIn('href=/ready', page)
         self.assertIn('id=trust-download', page)
 
     def run_doctor(self, scenario='success'):

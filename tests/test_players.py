@@ -33,13 +33,28 @@ class PlayerTests(unittest.TestCase):
         return self.manager.player_command(dict(action=action, player=state["active"], generation=state["generation"], **extra))
 
     def test_current_settings_survive_a_successful_write(self):
-        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
         self.assertEqual(self.manager.saved["index"]["on"], .6)
         self.command("rename", name="Alex")
         restored = TuningManager(self.path)
         self.assertEqual(restored.player_snapshot()["players"][0]["name"], "Alex")
         self.assertEqual(restored.saved, self.manager.saved)
-        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
+
+    def test_version_six_ready_progress_is_removed_without_losing_player_data(self):
+        saved = json.loads(self.path.read_text())
+        saved["version"] = 6
+        saved["players"]["default"]["ready_progress"] = {
+            "course": 1, "completed": ["neutral", "left"], "completed_at": None,
+        }
+        self.path.write_text(json.dumps(saved))
+        manager = TuningManager(self.path)
+        self.assertIsNone(manager.player_snapshot()["error"])
+        self.assertEqual(manager.saved["index"]["on"], .6)
+        migrated = json.loads(self.path.read_text())
+        self.assertEqual(migrated["version"], 7)
+        self.assertNotIn("ready_progress", migrated["players"]["default"])
+        self.assertEqual(migrated["players"]["default"]["name"], "Player 1")
 
     def test_version_two_player_data_is_rejected_without_mutation(self):
         saved={'version':2,'active':'default','generation':4,'players':{'default':{

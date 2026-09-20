@@ -35,7 +35,7 @@ def git(*arguments: str) -> str:
 def visible_files() -> list[str]:
     """Return tracked and nonignored new files visible in this checkout."""
     result = git("ls-files", "--cached", "--others", "--exclude-standard", "-z")
-    paths = {path for path in result.split("\0") if path}
+    paths = {path for path in result.split("\0") if path and (ROOT / path).is_file()}
     paths.add("scripts/build-code-review-map.py")
     return sorted(paths)
 

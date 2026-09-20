@@ -69,9 +69,9 @@ result before naming the underlying mechanism.
 - Restored the lesson view cleanly when Tune gestures cannot start or stop, so
   a failed personalization lease cannot leave its switch off with the tuning
   panel still covering the Academy.
-- Made Get ready to play work from the Controller's normal HTTP website and
-  explain its brief safety wait instead of appearing stuck on a disabled first
-  step.
+- Removed the confusing Get ready to play experiment. Setup, Dashboard, and
+  Glove Academy now remain the direct paths for connection, centering, practice,
+  and starting controller output; upgrades discard only its isolated progress.
 - Kept Connection and Camera saves independent. Saving one section no longer
   applies or discards unsaved edits in the other, and camera-only edits no
   longer block console pairing.
@@ -119,6 +119,12 @@ controller available, and let each game use the correct input method.
   Nestopia (VirtualGlove) on its separate native-input route. Recalbox and
   Batocera can retain their chosen ordinary NES core without losing either the
   physical controller or VirtualGlove.
+- Applied routed physical-player assignments across Libretro systems while
+  keeping VirtualGlove gestures limited to supported NES paths. Recalbox now
+  stores the managed assignment in its persistent ROM-root override instead of
+  the launch-generated temporary file. Physical controller acceptance passed
+  in Game Boy, ColecoVision, and Game Gear as well as NES and native Super
+  Glove Ball.
 - Added a red Controller Router warning when no physical controller is assigned
   to Player 1, because RetroArch menu and exit hotkeys may then be unavailable
   during NES joystick gameplay.

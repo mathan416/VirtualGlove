@@ -2,10 +2,10 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 685
-Python test modules: 78
+Git-visible files: 681
+Python test modules: 77
 Standalone browser checks: 5
-JavaScript browser harnesses: 8
+JavaScript browser harnesses: 7
 
 This private map is a generated reading aid, not a completed code or security
 audit. Regenerate or verify it with:
@@ -116,7 +116,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 78 test modules. JavaScript
+Normal Python discovery currently contains 77 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-685 tracked or non-ignored files are present in this checkout. Ignored
+681 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -815,8 +815,6 @@ are intentionally omitted.
 |       |-- players.py
 |       |-- process_capture.py
 |       |-- profile_control.py
-|       |-- ready_guide.py
-|       |-- ready_web.py
 |       |-- realtime.py
 |       |-- receiver.py
 |       |-- resolver.py
@@ -847,7 +845,6 @@ are intentionally omitted.
 |   |-- dashboard_statistics_harness.cjs
 |   |-- easter_egg_harness.js
 |   |-- joystick_camera_harness.js
-|   |-- ready_browser_harness.js
 |   |-- setup_status_harness.mjs
 |   |-- test_academy_controls.py
 |   |-- test_academy_diagnostics.py
@@ -907,7 +904,6 @@ are intentionally omitted.
 |   |-- test_profile_relay.py
 |   |-- test_profiles.py
 |   |-- test_reach.py
-|   |-- test_ready_guide.py
 |   |-- test_realtime.py
 |   |-- test_recalbox_assets.py
 |   |-- test_recalbox_native_core.py

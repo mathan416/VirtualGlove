@@ -28,7 +28,7 @@ match. Mouse and touch buttons remain available if the camera is unavailable.
 
 ![Local Rock Paper Scissors, with the camera preview omitted in this documentation example.](images/play-page.png)
 
-## Get ready to play
+## Start a game
 
 Choose your player in **Active player** so practice and sensitivity changes belong
 to you. Select a profile on Dashboard and wait for the camera view. Starting

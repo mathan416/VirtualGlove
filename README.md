@@ -26,6 +26,12 @@ default. LaunchBox keeps physical XInput beside VirtualGlove's managed
 RetroArch controller. Every platform keeps the physical controller usable and
 preserves unrelated controller settings.
 
+On routed RetroPie, Recalbox, and Batocera, assigned physical controllers keep
+their EmulationStation button mappings and player assignments in every
+RetroArch/Libretro system. VirtualGlove gestures remain intentionally narrower:
+ordinary joystick gestures control supported NES cores, while native Super
+Glove Ball uses its separate guarded input path.
+
 When Controller Router is enabled, a game launch always begins neutral. Physical
 controllers are available immediately; VirtualGlove joins only after the hand
 has returned to neutral once. This prevents a gesture observed in
@@ -164,9 +170,6 @@ RetroPie, Recalbox, Batocera, or LaunchBox, save the console hostname or IP addr
 continue into **Pair this Controller**. Pairing stays unavailable until the
 platform and address are both saved. The guided one-time-code method is
 recommended and shows only the command for the selected platform.
-For an optional, resumable first-game walkthrough, select **Get ready to play**
-on Setup or Dashboard. It checks your player, connection, camera, center, and
-essential gestures in safe practice before you explicitly enable game controls.
 
 After confirming the browser certificate against the physical Matrix ID, the
 optional **Trust this Controller** step removes future privacy warnings on that
@@ -312,7 +315,7 @@ its local Help page.
 ## Project status
 
 VirtualGlove 0.5.0 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
-guided readiness checks, live dead-zone visualization, and source-accurate
+live dead-zone visualization, and source-accurate
 rapid-fire behavior. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie.
 
@@ -320,6 +323,8 @@ The `v0.5.0-rc.1` candidate has completed physical controller and VirtualGlove
 acceptance on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
 includes ordinary NES play, native Super Glove Ball, physical-controller
 coexistence, hotkeys, reboot persistence, and Controller Router remapping.
+Recalbox's all-Libretro physical path has also been exercised with Game Boy,
+ColecoVision, and Game Gear games.
 
 Recalbox and Batocera use Controller Router to publish enabled merged Players
 1–4 from configured physical sources and at most one VirtualGlove. Standard

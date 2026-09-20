@@ -161,17 +161,20 @@ dedicated build directory, applies the local patch, and emits
 scripts/build-nestopia-powerglove.sh
 ```
 
-The normal RetroPie installer offers this source build when it finds a registered
-Super Glove Ball ROM. Accepting installs Git and standard build tools, builds in
-a temporary directory, installs the core under its separate name, copies the
-upstream GPLv2 `COPYING` file beside it, and adds the native entry to the launch
-menu. It deliberately leaves that ROM's current FCEUmm selection unchanged.
+The normal RetroPie installer offers the native core when it finds a registered
+Super Glove Ball ROM. The release carries separate ARMv6, ARMv7, 32-bit ARMv8,
+ARM64, and x86-64 builds with matching source archives. Selection follows the
+actual RetroArch ELF format rather than the kernel name—important when a
+64-bit Pi kernel runs 32-bit RetroArch—and then distinguishes the ARM CPU
+generation. The selected core's checksum, source archive, ELF identity,
+libretro API, and `Nestopia PowerGlove` name are verified before installation.
 
-This per-console build is still the supported RetroPie approach. There is no
-single prebuilt RetroPie core that is assumed to fit every Pi generation and OS
-image. The core is required only for native Super Glove Ball; FCEUmm, stock
-Nestopia, and Controller Router do not depend on it. Rerunning the installer can
-rebuild or repair the separate core without replacing stock Nestopia.
+An upgrade refreshes an already installed native core without asking the user
+to opt in again. A changed core is backed up before an atomic replacement. If
+no compatible package exists or the load check fails, the previous core stays
+untouched and FCEUmm remains available. The core is required only for native
+Super Glove Ball; FCEUmm, stock Nestopia, and Controller Router do not depend
+on it.
 
 Batocera cores are target-specific and its `/usr` tree is read-only. Release
 packages carry Batocera 43.1 builds and complete corresponding source for all 15
@@ -281,7 +284,7 @@ followed by choosing `lr-nestopia-powerglove` again if that is the desired saved
 default. The command-line selector below performs the same reversible per-ROM
 choice; neither route changes the system-wide NES emulator.
 
-On the RetroPie host, build/install and then opt in one exact ROM:
+On the RetroPie host, verify/install the packaged core and then opt in one exact ROM:
 
 ```sh
 sudo scripts/install-nestopia-powerglove.sh

@@ -140,54 +140,6 @@ leases expire after six seconds. Another practice tab can keep the shared camera
 running. Existing controller behavior resumes only as the practice mechanism
 allows; this panel never sends a controller-start request.
 
-### Optional Get ready to play guide
-
-Open **Get ready to play** from Dashboard or Setup, or visit `/ready`. The guide
-is optional and resumes the active player's completed essential checks; Academy
-lessons stay independent. Every visit stops controller output before enabling
-player selection and rechecks the saved console, authenticated pairing, camera,
-center, and active registered game. A previous completion never bypasses these
-live checks.
-
-Confirm the player, check the saved console, then start safe practice. Center the
-hand if required or if the camera/playing position moved. The essentials are
-neutral, Left, Right, Up, Down, A, B, Start, Select, and Menu Guard. Each action
-starts from neutral, requires a steady hold, and finishes by releasing to neutral.
-Missing tracking, stale samples, or incomplete calibration cancel the current
-hold; completed checks remain saved. A failed save can be retried without
-changing Academy progress or calibration.
-
-Select **End practice and enable registered-game controls**, then wait for all
-practice/tuning sessions to stop. Launch a game registered in Games on RetroPie.
-If needed, select **Check game and enable controls**. Ready requires fresh camera
-and calibration status, a registered supported profile, matching native/joystick
-mode, and an authenticated receiver link. It does not prove that the ROM consumed
-input, that uinput was created, or that a native core consumed shared state.
-
-Guide progress stores only course version 1, the ten bounded check identifiers,
-and an optional UTC completion time. The players API rejects unknown checks,
-stale course/player generations, extra fields, and malformed timestamps. It
-merges completed checks without losing earlier progress. Version-5 migration
-adds an empty independent guide record to every player and retains the old file
-as `gesture-tuning-v5-backup.json` before the first write. Names, saved centers,
-thresholds, dead zones, and Academy progress are preserved.
-
-`POST /api/ready` uses the same-origin browser safeguard and
-`X-VirtualGlove-Action: ready`. A visit's opaque session owns the persistent
-`data/ready-guide-inhibit` marker. While it exists, manual and automatic starts
-are rejected and a restart remains disarmed. Only that visit can explicitly
-release practice or leave the guide; older tabs cannot unlock a newer visit.
-The guide uses its own existing Academy practice lease and never resets another
-tab's lease. Guide arming revalidates the active player, completed checks, live
-camera/center/game status, and authenticated console health.
-
-Closing the guide releases its practice lease but keeps output inhibited. Reopen
-the guide to resume, or select **Leave guide — keep controls stopped** to exit
-explicitly. This exit removes the guide inhibit and keeps the Controller
-disarmed; a later ordinary Start or registered-game launch follows the existing
-controller rules. No frames, landmarks, hand measurements, addresses, pairing
-material, ROM names, or diagnostic results are stored as guide progress.
-
 ### Connection Doctor
 
 In **Setup → Pair this Controller**, select **Check connection** for a checklist
@@ -1170,11 +1122,10 @@ device configuration files, and files larger than 8 KB are rejected. The API
 requires boolean `reuse_calibration: true` for backup calibration reuse and
 `use_effective_thresholds: true` for complete sensitivity restoration.
 
-`data/gesture-tuning.json` version 6 stores `version`, `active`, `generation`,
+`data/gesture-tuning.json` version 7 stores `version`, `active`, `generation`,
 `players`, and nullable `calibration_restore`. Each player has `name`,
 `thresholds`, one `joystick_deadzone`, `progress` (`course`, `completed`, `lesson`),
-separate `ready_progress` (`course`, `completed`, `completed_at`), `needs_center`, and
-nullable `calibration`. Course version 1 uses sixteen zero-based lesson indices.
+`needs_center`, and nullable `calibration`. Course version 1 uses sixteen zero-based lesson indices.
 Generations reject stale writes after switches/restores/resets. The active
 working reference is mirrored in `data/calibration.json`; individual references
 are kept in the player store. Migration associates an existing valid reference
@@ -1186,16 +1137,12 @@ and centering gate. An interrupted restore resumes after restart; a failed write
 leaves output paused. Switching players cancels an unapplied reference. Export
 waits until a pending restore finishes.
 
-Internal store versions 1–5 migrate without losing names, sensitivity, or progress.
-Version 4 directional activation values migrate using their largest value and
-directional release values are retired.
-Before the first write, `data/gesture-tuning-vN-backup.json` retains the old
-store, where N is its version. This internal recovery migration is separate from
-the unsupported version-1 portable export format. Files use mode `0600` and
-survive upgrades. Older apps cannot read version 6; stop the app and restore the
-appropriate private store backup when deliberately rolling back.
+Version 6 records load without losing names, calibration, dead-zone settings,
+sensitivity, or Academy progress; the retired ready-guide progress is discarded.
+Files use mode `0600` and survive upgrades. Older apps cannot read version 7;
+stop the app and restore a private store backup when deliberately rolling back.
 
-`POST /api/players` supports `read`, `progress`, `ready_progress`, `reset_progress`, `create`,
+`POST /api/players` supports `read`, `progress`, `reset_progress`, `create`,
 `select`, `rename`, `delete`, `export`, `restore`, and `reuse_calibration`.
 Non-read requests include `player` and `generation`. Saved-player reuse also
 requires `confirmed: true`. JSON bodies are limited to 8192 bytes and require
@@ -1864,19 +1811,22 @@ terminal-interface dependency. It detects the platform automatically, displays
 connection state, tests controls, assigns Players 1–4, and confirms save or
 rollback operations. Lower-level commands are `list`, `show`, `configure`,
 `check`, `apply`, and `rollback`. `--platform` can override automatic detection.
-`configure` accepts `--document PATH`; `apply` updates only the managed FCEUmm
-and stock Nestopia core overrides. Nestopia (VirtualGlove) and unrelated NES
-cores never load those overrides. RetroPie keeps Router disabled until an
+`configure` accepts `--document PATH`; `apply` updates the platform's managed
+Libretro Player assignments. RetroPie resolves the final system configuration
+from its launch hook, Batocera persists managed RetroArch keys in
+`batocera.conf`, and Recalbox writes the managed block to
+`/recalbox/share/roms/.retroarch.cfg`. Recalbox's
+`retroarchcustom.cfg.overrides.cfg` is regenerated output and is not a durable
+configuration target. RetroPie keeps Router disabled until an
 authenticated Setup save or an explicit `apply`. Recalbox and Batocera migrate
 their existing version-1 Player 1 record automatically.
 
-When a supported core becomes active, Router releases its stored VirtualGlove
-source and begins the output neutral. Physical sources are available
-immediately. A fresh neutral VirtualGlove observation arms the source; held
-directions or buttons received before that point are ignored. Router maps only
-the recognized digital D-pad and buttons for these NES joystick cores. The
-camera-position axes remain exclusive to Nestopia (VirtualGlove)'s native-state
-interface.
+When Libretro gameplay becomes active, Router begins its physical output
+neutral, resolves the current sources and indexes, and then admits physical
+controls immediately. For supported NES joystick cores it also releases stored
+VirtualGlove state and requires a fresh neutral observation before accepting
+gestures. Camera-position axes remain exclusive to Nestopia (VirtualGlove)'s
+native-state interface.
 
 RetroPie installs the command at
 `/opt/virtualglove/bin/virtualglove-controller-router`. Read-only platform
@@ -1903,7 +1853,7 @@ or the assigned VirtualGlove slot.
 
 Remote Setup uses `/inputs` on TCP 55358 with `virtualglove-inputs/1`. Saves
 carry the revision returned by `read`; stale revisions and changes during a
-running supported NES game are rejected. `rollback` restores the previous
+running Libretro game are rejected. `rollback` restores the previous
 complete document atomically.
 
 The development cabinet's receipt-gated migration helper remains under
@@ -2151,6 +2101,7 @@ they may still perform their normal work.
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
 | `scripts/build-docs-pdf.py` | No flags or positional arguments | Rebuilds all registered PDF editions; requires ReportLab. Use only when ready to regenerate the PDFs. |
 | `scripts/build-nestopia-powerglove.sh` | Optional build-directory positional argument | Clones a pinned official Nestopia revision, applies the isolated native-compatibility patch, and builds the separately named VirtualGlove native core. It does not install the core by itself. |
+| `scripts/verify-retropie-native-core.py` | Required `--manifest` and exactly one of `--target` or `--machine`; optional `--runtime`, `--cpuinfo`, `--core`, `--load`, or `--resolve-core` | Resolves the package from RetroArch's actual ELF ABI before the kernel name, distinguishes ARMv6, ARMv7, and 32-bit ARMv8, and verifies the binary, matching GPL source archive, checksums, ELF identity, libretro API, and `Nestopia PowerGlove` identity. |
 | `scripts/build-recalbox-nestopia-powerglove.sh` | `RECALBOX_SOURCE TARGET [DESTINATION]` | Uses Recalbox's official container and Buildroot Nestopia recipe with a source override. Accepts all seven Recalbox 10.x targets, requires an exact release tag, and accumulates target/version artifacts in one manifest. |
 | `scripts/build-recalbox-native-matrix.sh` | `RECALBOX_SOURCE [DESTINATION]` | Builds all seven targets from one exact Recalbox release tree. Use the single-target builder for a public target that remains on a different Recalbox release. |
 | `.github/workflows/recalbox-native-cores.yml` | Manual `recalbox_version` input | Builds the seven targets as isolated parallel jobs and retains each core, corresponding source archive, and target-specific manifest for review. It never publishes or deploys them. |
@@ -2158,7 +2109,7 @@ they may still perform their normal work.
 | `scripts/build-batocera-native-matrix.sh` | `BATOCERA_SOURCE [DESTINATION]` | Builds all 15 Batocera 43.1 targets and safely resumes by skipping only artifacts that pass manifest, source, checksum, and ELF verification. |
 | `.github/workflows/batocera-native-cores.yml` | Manual exact reviewed Batocera source ref | Builds the 15 targets as isolated parallel jobs, verifies every artifact, and retains the binary, corresponding source, and manifest for review. It never publishes or deploys them. |
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
-| `scripts/install-nestopia-powerglove.sh` | Optional build-directory positional argument | Run with `sudo` on RetroPie after exact-ROM validation. Builds and installs only `lr-nestopia-powerglove`, plus its upstream GPLv2 license and distribution note; stock Nestopia remains untouched. The normal RetroPie installer offers this step when a registered Super Glove Ball ROM is found. |
+| `scripts/install-nestopia-powerglove.sh` | No flags or positional arguments | Run with `sudo` on RetroPie after exact-ROM validation. Resolves and load-checks the packaged core matching RetroArch's ABI, backs up a changed installed core, and replaces it atomically with its GPLv2 license and distribution note. A missing or incompatible package leaves the previous core untouched and FCEUmm available. Stock Nestopia remains untouched. |
 | `scripts/install-recalbox-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Development-only replacement path after the base Recalbox installation. Rejects a running game, verifies the core against the packaged architecture manifest, load-checks it, installs it atomically, refreshes the runtime overlays, and optionally selects only the exact ROM. Normal releases already carry verified target binaries when available. |
 | `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build in the same Recalbox major series. It verifies the exact target, size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. Cross-major fallback is rejected. |
 | `scripts/verify-batocera-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build for the exact Batocera architecture. It verifies corresponding source, checksums, source revisions, build image, ELF identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. |
@@ -2850,8 +2801,8 @@ user-service and `gameStart`/`gameStop` script locations. Both save versioned
 Player 1–4 assignments, stable identities, and authoritative EmulationStation
 mappings in `data/controller-router.json`. Their boot service creates only the
 enabled **VirtualGlove Merged Player 1–4** outputs, keeps them neutral outside
-supported NES joystick cores, and resolves current joypad indexes instead of
-persisting enumeration numbers. Physical input has per-axis priority, buttons
+Libretro gameplay, and resolves current joypad indexes instead of persisting
+enumeration numbers. Physical input has per-axis priority, buttons
 combine, and only Player 1's physical hotkey can assert the dedicated Hotkey
 Enable button. A disconnect releases only that physical source without
 disabling VirtualGlove; the saved controller reconnects automatically. ROMs,

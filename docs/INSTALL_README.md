@@ -189,8 +189,10 @@ curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/ins
 - Enter the Controller name or address on a first installation.
 - If a required emulator is missing, the installer offers to add it through
   RetroPie Setup.
-- If Super Glove Ball is registered, the installer can build the optional
-  `lr-nestopia-powerglove` core. Declining leaves FCEUmm available.
+- If Super Glove Ball is registered, the installer can add the optional
+  `lr-nestopia-powerglove` core packaged for RetroArch's actual processor ABI.
+  It verifies and load-checks the core first; declining or an incompatible core
+  leaves FCEUmm available.
 - The optional **VirtualGlove Calibration Test** can be added to the Ports menu
   now or on a later installer run.
 
@@ -495,10 +497,6 @@ future privacy warnings. Never install it if the IDs do not match.
 Center again after moving the camera, changing playing position, or switching
 to a player who has not been calibrated. The saved center belongs to the player
 and does not chase the hand during play.
-
-For a guided first session, choose **Get ready to play** on Setup or Dashboard.
-It checks the connection, camera, center, and essential gestures without sending
-game controls until you explicitly finish practice.
 
 ### Test an ordinary game
 

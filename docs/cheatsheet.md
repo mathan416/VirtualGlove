@@ -144,11 +144,13 @@ hooks. It also installs the controller mapping and the 45-second startup timer.
 An **ACTION** result asking you to pair or verify gameplay is expected on first
 installation. Correct any **FAIL** result before continuing to pairing.
 
-If a registered Super Glove Ball ROM is present, the installer offers to build
-the optional `lr-nestopia-powerglove` core from its pinned Nestopia source. It
-installs under a separate name and leaves stock Nestopia untouched. The ROM's
-saved emulator remains FCEUmm until you explicitly choose the native core from
-RetroPie's per-ROM launch menu. Declining the optional build leaves the complete
+If a registered Super Glove Ball ROM is present, the installer offers the
+optional `lr-nestopia-powerglove` core. It selects the packaged ARMv6, ARMv7,
+32-bit ARMv8, ARM64, or x86-64 build from RetroArch's actual executable format,
+verifies it, and checks that RetroArch can load it before installation. It uses
+a separate name and leaves stock Nestopia untouched. The ROM's saved emulator
+remains FCEUmm until you explicitly choose the native core from RetroPie's
+per-ROM launch menu. Declining or failing the optional check leaves the complete
 FCEUmm fallback available.
 
 For an existing installation, `--peer` does not replace the saved VirtualGlove Controller address.
@@ -260,8 +262,10 @@ python3 /userdata/system/virtualglove/scripts/verify-batocera-native-core.py \
 RetroPie's separate virtual controller appears after the first authenticated
 packet unless optional Controller Router is enabled. Recalbox and Batocera keep
 their enabled **VirtualGlove Merged Player 1–4** outputs present from service
-startup; checks resolve saved sources and current FCEUmm indexes rather than
-persisting enumeration numbers. LaunchBox retains physical XInput and adds VirtualGlove
+startup; checks resolve saved sources and current Libretro indexes rather than
+persisting enumeration numbers. Assigned physical controllers follow those
+merged players across Libretro systems; VirtualGlove gestures remain limited
+to supported NES and native Super Glove Ball paths. LaunchBox retains physical XInput and adds VirtualGlove
 through a LAN-isolated loopback RetroPad; real keyboard mappings remain a manual
 fallback and their command/hotkey conflicts are reported. Native
 Super Glove Ball sends recognized hand controls only through the guarded native
