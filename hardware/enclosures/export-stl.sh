@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Preserved the Anycubic-assigned full-logo project during exports.
 #   2026-09-19 - Added recessed logo inserts and multicolour 3MF exports.
 #   2026-09-19 - Added the fully enclosed Controller Dock V2 parts.
 # Full history: docs/CHANGELOG.md and Git history.
@@ -62,6 +63,15 @@ export_part hub_coupon virtualglove-hub-fit-coupon
 export_3mf lid_logo_multicolor virtualglove-lid-logo-multicolor
 export_3mf compact_full_logo_multicolor virtualglove-compact-full-logo-multicolor
 export_3mf target_badge_multicolor virtualglove-target-badge-multicolor
-export_3mf full_logo_multicolor virtualglove-full-logo-multicolor
+
+# This file is a complete Anycubic Slicer Next project with ACE assignments,
+# not only an OpenSCAD mesh. Re-exporting it directly would flatten every
+# region back to the first filament. Its geometry can still be regenerated
+# from the three full_logo_* STL parts when the design changes.
+if [[ ! -f "${OUTPUT}/virtualglove-full-logo-multicolor.3mf" ]]; then
+  echo "Missing maintained Anycubic project: virtualglove-full-logo-multicolor.3mf" >&2
+  exit 1
+fi
+echo "Preserving virtualglove-full-logo-multicolor.3mf with its ACE assignments."
 
 echo "STL files written to ${OUTPUT}"

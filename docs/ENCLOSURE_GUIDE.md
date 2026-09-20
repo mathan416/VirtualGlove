@@ -170,6 +170,11 @@ file with material colours assigned. In Anycubic Slicer, verify that those
 three colours map to the intended ACE spools before slicing. The separate STL
 sets remain available for single-colour printing and hand assembly.
 
+The full-size plaque 3MF is also saved as an Anycubic Slicer Next project for
+the four-spool order used during development: **1 black, 2 purple, 3 red, 4
+cyan**. Black prints the backing, red prints the small accents, and cyan prints
+the hand, target, and wordmark. Purple is intentionally loaded but unused.
+
 ![Recessed logo backings with cyan and red inserts separated for assembly](../hardware/enclosures/previews/virtualglove-branding-insets.png)
 
 ![Small-emblem and full-wordmark lid inset options](../hardware/enclosures/previews/virtualglove-lid-logo-options.png)

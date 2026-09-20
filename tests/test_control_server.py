@@ -840,6 +840,7 @@ class ControlStateTests(unittest.TestCase):
         for model_name in (
             "virtualglove-lid-logo-multicolor.3mf",
             "virtualglove-compact-full-logo-multicolor.3mf",
+            "virtualglove-full-logo-multicolor.3mf",
         ):
             with self.subTest(model_name=model_name):
                 model_asset = enclosure_asset(f"stl/{model_name}")
@@ -914,6 +915,27 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn('p1="1"', model)
         self.assertIn('p1="2"', model)
         self.assertIn('p1="3"', model)
+
+    def test_full_logo_3mf_preserves_anycubic_ace_assignments(self):
+        asset = enclosure_asset("stl/virtualglove-full-logo-multicolor.3mf")
+        self.assertIsNotNone(asset)
+        assert asset is not None
+        with ZipFile(io.BytesIO(asset[0])) as archive:
+            settings = archive.read("Metadata/model_settings.config").decode()
+            project = archive.read("Metadata/project_settings.config").decode()
+            model = archive.read("3D/Objects/OpenSCAD Model_1.model").decode()
+        for name, extruder in (
+            ("Dark backing", "1"),
+            ("Cyan artwork", "4"),
+            ("Red accents", "3"),
+        ):
+            self.assertRegex(
+                settings,
+                rf'key="name" value="{name}"[\s\S]*?key="extruder" value="{extruder}"',
+            )
+        for colour in ("#212721", "#6A6DCD", "#ED1C24", "#23A3C7"):
+            self.assertIn(colour, project)
+        self.assertEqual(model.count('type="model"'), 3)
 
     def test_help_routes_serve_html_markdown_and_images(self):
         servers, _state = start_control_server(self.path, "127.0.0.1", 0, 0)
