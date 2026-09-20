@@ -110,12 +110,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/virtualglove-toolkit"
           unzip -q output/install/VirtualGlove-Engineering-Tools.zip -d "$RUNNER_TEMP/virtualglove-toolkit"
           cd "$RUNNER_TEMP/virtualglove-toolkit/VirtualGlove-Engineering-Tools"
+          python scripts/check-engineering-toolkit.py
           python scripts/setup-engineering-tools.py
-          mkdir smoke-input
-          .venv-engineering/bin/python scripts/analyze-motion-samples.py \
-            --samples-dir smoke-input --output smoke-output.json
-          .venv-engineering/bin/python -c \
-            "import json; assert len(json.load(open('smoke-output.json'))['simulation']) == 10"
           python scripts/setup-engineering-tools.py --check
       - name: Publish verified App Lab installation ZIP
         uses: actions/upload-artifact@v4

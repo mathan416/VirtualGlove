@@ -100,6 +100,12 @@ class EngineeringPackageTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
             self.assertIn("Engineering Toolkit check passed", result.stdout)
 
+    def test_release_workflows_use_current_toolkit_self_check(self):
+        for name in ("quality.yml", "install-release.yml"):
+            workflow = (ROOT / ".github/workflows" / name).read_text()
+            self.assertIn("python scripts/check-engineering-toolkit.py", workflow)
+            self.assertNotIn("scripts/analyze-motion-samples.py", workflow)
+
     def test_environment_check_rejects_changed_record(self):
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "environment.json"
