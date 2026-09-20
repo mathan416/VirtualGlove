@@ -20,7 +20,7 @@ Use these settings first:
 - **Camera frame rate:** Automatic
 - **Camera buffers:** 1 buffer
 - **Camera reader:** Compatible - OpenCV
-- **Exposure behavior:** Automatic
+- **Exposure behaviour:** Automatic
 
 Connect one ordinary UVC camera, place the whole hand in view, and check the
 Dashboard. Change advanced settings only to solve a visible problem or compare
@@ -124,7 +124,7 @@ restores its own defaults.
 - Light the hand from the front or side, not from a bright window behind it.
 - Keep the entire hand, wrist, and intended movement area inside the frame.
 - Avoid motion blur by adding room light before increasing gain.
-- Keep the camera and playing position consistent with the saved center and
+- Keep the camera and playing position consistent with the saved centre and
   movement reach.
 
 Glove Academy may warn about a dark hand or a much brighter background. These
@@ -167,7 +167,7 @@ and recovery is confirmed only after the worker receives a real video frame.
 The camera does not need to be attached during installation; its hub and direct
 port are learned on the first healthy use and updated after a move.
 
-Automatic camera selection is the portable behavior. Per-port cycling depends
+Automatic camera selection is the portable behaviour. Per-port cycling depends
 on the hub hardware; unsupported hubs continue to use the guarded fallback.
 
 ## Quick troubleshooting
@@ -179,7 +179,7 @@ on the hub hardware; unsupported hubs continue to use the guarded fallback.
   automatic exposure.
 - **Manual controls unavailable:** return to Automatic or use a camera that
   exposes the required UVC controls.
-- **Tracking jumps at an edge:** check framing, center, and Movement reach before
+- **Tracking jumps at an edge:** check framing, centre, and Movement reach before
   changing exposure.
 - **Unsure which advanced settings suit a new camera:** run **Find the best
   camera settings** in Setup with your usual lighting and playing position.

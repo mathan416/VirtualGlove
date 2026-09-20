@@ -15,15 +15,15 @@
 JOYSTICK_CONTENT = """<section class=card id=joystick-settings style="margin-top:14px" aria-labelledby=joystick-title>
 <h2 id=joystick-title>Joystick dead zone</h2>
 <p id=joystick-player>Loading player…</p>
-<form id=joystick-form><label for=joystick-size>Center box size: Small ↔ Large</label>
+<form id=joystick-form><label for=joystick-size>Centre box size: Small ↔ Large</label>
 <input id=joystick-size type=range min=0.10 max=1 step=0.01 value=0.60 disabled aria-describedby=joystick-value>
-<p id=joystick-value></p><div class=controls><button id=joystick-save type=submit disabled>Save dead zone</button><button id=joystick-default type=button disabled>Use standard size</button><button id=joystick-camera-toggle type=button aria-pressed=false>Turn on camera</button><button id=joystick-center type=button disabled>Center hand</button></div></form>
+<p id=joystick-value></p><div class=controls><button id=joystick-save type=submit disabled>Save dead zone</button><button id=joystick-default type=button disabled>Use standard size</button><button id=joystick-camera-toggle type=button aria-pressed=false>Turn on camera</button><button id=joystick-center type=button disabled>Centre hand</button></div></form>
 <style>#joystick-camera-stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:14px;margin-top:14px}#joystick-camera-stage .camera{display:block;width:100%;height:auto;aspect-ratio:auto;border:0;border-radius:0;margin:0}#joystick-grid{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}#joystick-grid line{stroke:rgba(255,255,255,.55);stroke-width:1;vector-effect:non-scaling-stroke}#joystick-region{fill:rgba(54,219,232,.16)}</style>
 <div id=joystick-camera-stage hidden><img class=camera id=joystick-camera hidden alt="Mirrored camera view for the dead-zone test">
 <svg id=joystick-grid hidden aria-hidden=true viewBox="0 0 1 1" preserveAspectRatio=none><rect id="joystick-region" hidden /><line id="joystick-grid-left" /><line id="joystick-grid-right" /><line id="joystick-grid-top" /><line id="joystick-grid-bottom" /></svg></div>
 <div id=joystick-directions class=controls hidden aria-hidden=true><span class=bit data-direction=left>Left: off</span><span class=bit data-direction=up>Up: off</span><span class=bit data-direction=down>Down: off</span><span class=bit data-direction=right>Right: off</span></div>
 <p id=joystick-live role=status aria-live=polite></p><p id=joystick-center-status role=status aria-live=polite></p><p id=joystick-notice role=status aria-live=polite></p>
-<div id=joystick-camera-help hidden><p>The live box is anchored to the hand center saved with <strong>Center hand</strong>. The chosen percentage sets its width and height, but the box is never smaller than 1.5 times your calibrated hand size. Near an edge, the whole box moves inward so it stays full-size. Inside the box stops movement; moving beyond an edge or corner selects a direction. Native Super Glove Ball X/Y reach is separate.</p>
+<div id=joystick-camera-help hidden><p>The live box is anchored to the hand centre saved with <strong>Centre hand</strong>. The chosen percentage sets its width and height, but the box is never smaller than 1.5 times your calibrated hand size. Near an edge, the whole box moves inward so it stays full-size. Inside the box stops movement; moving beyond an edge or corner selects a direction. Native Super Glove Ball X/Y reach is separate.</p>
 <p>Slider changes preview immediately. Select <strong>Save dead zone</strong> to use them in gameplay.</p></div></section>"""
 
 JOYSTICK_SCRIPT = r"""(()=>{
@@ -40,7 +40,7 @@ function apply(s){if(!s.joystick||!s.players)throw Error('Joystick settings unav
  const changed=player&&(player.active!==s.active||player.generation!==s.generation);
  const samePlayer=player&&player.active===s.active;
  if(changed&&!(centering&&samePlayer)){if(dirty)notice('Player settings changed. Unsaved dead-zone edits were discarded.');dirty=false;hideCamera()}
- if(changed&&!samePlayer)cancelCenter('Centering stopped because the active player changed.');
+ if(changed&&!samePlayer)cancelCenter('Centring stopped because the active player changed.');
  player=s;el('joystick-player').textContent='Player: '+(s.players.find(p=>p.id===s.active)?.name||s.active);
  if(!dirty){const value=s.joystick.deadzone;
  el('joystick-size').value=Math.max(.10,Math.min(1,value));describe(s);
@@ -49,20 +49,20 @@ el('joystick-size').oninput=()=>{dirty=true;redraw();controls()};
 el('joystick-default').onclick=()=>{el('joystick-size').value=.60;dirty=true;redraw();controls();notice('Standard size selected for preview. Save to apply to gameplay.')};
 el('joystick-form').onsubmit=async e=>{e.preventDefault();if(busy||!player||!dirty)return;busy=true;controls();notice('Saving…');
  const identity={player:player.active,generation:player.generation};
- try{const s=await api({action:'joystick_deadzone',...identity,value:Number(el('joystick-size').value)});dirty=false;hideCamera();apply(s);if(cameraWanted)el('joystick-live').textContent='Dead zone saved. Waiting for updated camera test feedback…';notice('Dead zone saved for this player. Center and reach are unchanged.')}
+ try{const s=await api({action:'joystick_deadzone',...identity,value:Number(el('joystick-size').value)});dirty=false;hideCamera();apply(s);if(cameraWanted)el('joystick-live').textContent='Dead zone saved. Waiting for updated camera test feedback…';notice('Dead zone saved for this player. Centre and reach are unchanged.')}
  catch(e){notice(e.message)}finally{busy=false;controls()}};
 let cameraWanted=false, cameraBusy=false, leaseBusy=false, session=null, leaseAt=null, viewReady=false, alive=true, retryAt=0, cameraRevision=0, imageLoaded=false, gridStatus=null;
 let centering=false, centerSeen=false, centerStarted=0, centerDoneUntil=0;
 const releases=new Set();
 const clock=()=>performance.now();
 function ownsPractice(){return cameraWanted&&leaseAt!==null&&clock()-leaseAt<4500&&gridStatus?.practice_mode===true&&gridStatus?.vision_state==='active'&&viewReady&&imageLoaded;}
-function cameraControls(){const toggle=el('joystick-camera-toggle'),center=el('joystick-center');toggle.textContent=cameraWanted?'Turn off camera':'Turn on camera';toggle.disabled=cameraBusy||centering;toggle.setAttribute('aria-pressed',String(cameraWanted));el('joystick-camera-help').hidden=!cameraWanted;center.disabled=busy||centering||!ownsPractice();center.classList.toggle('danger',centering);center.setAttribute('aria-busy',String(centering));center.textContent=centering?'Centering…':clock()<centerDoneUntil?'Center saved ✓':'Center hand';}
+function cameraControls(){const toggle=el('joystick-camera-toggle'),center=el('joystick-center');toggle.textContent=cameraWanted?'Turn off camera':'Turn on camera';toggle.disabled=cameraBusy||centering;toggle.setAttribute('aria-pressed',String(cameraWanted));el('joystick-camera-help').hidden=!cameraWanted;center.disabled=busy||centering||!ownsPractice();center.classList.toggle('danger',centering);center.setAttribute('aria-busy',String(centering));center.textContent=centering?'Centring…':clock()<centerDoneUntil?'Centre saved ✓':'Centre hand';}
 function cancelCenter(message=''){centering=false;centerSeen=false;centerStarted=0;if(message)el('joystick-center-status').textContent=message;cameraControls();}
 function updateCenter(s){if(!centering){cameraControls();return;}if(s.calibrating)centerSeen=true;
- if(s.calibration_save_error){cancelCenter('The hand center could not be saved. Try again.');return;}
- if(centerSeen&&s.calibrated===true&&!s.calibrating&&!s.player?.needs_center){centering=false;centerSeen=false;centerStarted=0;centerDoneUntil=clock()+1800;el('joystick-center-status').textContent='Hand center saved. The grid now uses this position and hand size.';cameraControls();return;}
- if(clock()-centerStarted>20000){cancelCenter('Centering did not finish. Show one relaxed open hand and try again.');return;}
- el('joystick-center-status').textContent=s.calibrating?'Keep one relaxed open hand in your normal playing position.':'Waiting for centering to begin…';cameraControls();}
+ if(s.calibration_save_error){cancelCenter('The hand centre could not be saved. Try again.');return;}
+ if(centerSeen&&s.calibrated===true&&!s.calibrating&&!s.player?.needs_center){centering=false;centerSeen=false;centerStarted=0;centerDoneUntil=clock()+1800;el('joystick-center-status').textContent='Hand centre saved. The grid now uses this position and hand size.';cameraControls();return;}
+ if(clock()-centerStarted>20000){cancelCenter('Centring did not finish. Show one relaxed open hand and try again.');return;}
+ el('joystick-center-status').textContent=s.calibrating?'Keep one relaxed open hand in your normal playing position.':'Waiting for centring to begin…';cameraControls();}
 function directionsOff(){for(const d of directions){const node=el('joystick-directions').querySelector(`[data-direction=${d}]`);node.classList.toggle('on',false);node.textContent=d[0].toUpperCase()+d.slice(1)+': off';}}
 function hideCamera(){viewReady=false;imageLoaded=false;gridStatus=null;clearGrid();el('joystick-camera-stage').hidden=true;el('joystick-camera').removeAttribute('src');el('joystick-camera').hidden=true;directionsOff();cameraControls();}
 async function request(path,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);try{const r=await fetch(path,{...options,signal:controller.signal});const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed.');return data;}finally{clearTimeout(timer)}}
@@ -82,8 +82,8 @@ el('joystick-camera-toggle').onclick=async()=>{if(cameraBusy)return;cameraBusy=t
 };
 el('joystick-center').onclick=async()=>{if(centering||!ownsPractice())return;centering=true;centerSeen=false;centerStarted=clock();centerDoneUntil=0;clearGrid();directionsOff();cameraControls();el('joystick-center-status').textContent='Keep one relaxed open hand in your normal playing position.';
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),3000);
- try{const response=await fetch('/calibrate',{method:'POST',signal:controller.signal});if(!response.ok)throw Error('Centering request failed.');}
- catch(error){cancelCenter(error.name==='AbortError'?'Centering request timed out. Try again.':error.message||'Centering could not start. Try again.');}
+ try{const response=await fetch('/calibrate',{method:'POST',signal:controller.signal});if(!response.ok)throw Error('Centring request failed.');}
+ catch(error){cancelCenter(error.name==='AbortError'?'Centring request timed out. Try again.':error.message||'Centring could not start. Try again.');}
  finally{clearTimeout(timer)}
 };
 function clearGrid(){el('joystick-grid').setAttribute('hidden','');el('joystick-region').setAttribute('hidden','');el('joystick-region').removeAttribute('data-region');}
@@ -146,7 +146,7 @@ el('joystick-camera').onerror=()=>{if(!cameraWanted||!viewReady)return;retryAt=c
 async function poll(){if(polling||busy||document.hidden||!alive)return;polling=true;const revision=cameraRevision;try{const settings=await api({action:'read'});if(busy||!alive)return;apply(settings);if(!cameraWanted)return;
  const s=await request('/status',{cache:'no-store'});if(alive&&revision===cameraRevision)feedback(s);
  }catch(e){if(alive&&revision===cameraRevision){hideCamera();if(cameraWanted)el('joystick-live').textContent='Camera test feedback unavailable. Retrying…';notice(e.message);}}
- finally{polling=false;if(centering&&clock()-centerStarted>20000)cancelCenter('Centering did not finish. Show one relaxed open hand and try again.');}}
+ finally{polling=false;if(centering&&clock()-centerStarted>20000)cancelCenter('Centring did not finish. Show one relaxed open hand and try again.');}}
 async function heartbeat(){if(!alive)return;await renew();for(const id of [...releases])await release(id);if(!cameraWanted&&releases.size===0)el('joystick-live').textContent='';}
 window.addEventListener('pagehide',()=>{alive=false;cameraWanted=false;cameraRevision++;leaseAt=null;centering=false;hideCamera();cameraControls();el('joystick-live').textContent='';
  for(const id of new Set([session,...releases]))if(id)fetch('/api/practice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session:id,enabled:false}),keepalive:true}).catch(()=>{});

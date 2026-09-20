@@ -53,7 +53,7 @@ class PackageContentTests(unittest.TestCase):
                 [installer.sys.executable, str(script), str(root / "backups"),
                  "--keep", "5"], check=False)
 
-    def test_retropie_upgrade_recognizes_current_launcher_only(self):
+    def test_retropie_upgrade_recognises_current_launcher_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             current = root / "etc/virtualglove/launcher.json"

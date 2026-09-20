@@ -7,7 +7,7 @@
 # Change log:
 #   2026-09-13 - Added gesture easter-egg coverage.
 # Full history: docs/CHANGELOG.md and Git history.
-"""Visual-only Vulcan-salute recognition and overlay behavior."""
+"""Visual-only Vulcan-salute recognition and overlay behaviour."""
 
 import json
 from pathlib import Path

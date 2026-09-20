@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_control_server.py
-# Purpose: Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behavior.
+# Purpose: Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -25,7 +25,7 @@
 #   2026-09-03 - Verified Learn-page practice leases and Dashboard restoration.
 #   2026-09-03 - Verified shared profile labels and Python 3.7-compatible mocks.
 
-"""Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behavior."""
+"""Verify dashboard configuration, pairing safeguards, controller state, and guarded shutdown behaviour."""
 
 import json
 import http.client
@@ -113,7 +113,7 @@ class AutomaticGameControllerTests(unittest.TestCase):
     def test_missing_center_reports_reason_without_starting(self):
         self.publish(player={"needs_center":True})
         self.assertFalse(self.state.controller_enabled())
-        self.assertIn("Center hand",self.state.snapshot()["receiver_error"])
+        self.assertIn("Centre hand",self.state.snapshot()["receiver_error"])
 
     def test_manual_profile_status_does_not_start(self):
         self.state.update_worker({"profile_source":"Dashboard","active_profile":"program_a"})
@@ -162,7 +162,7 @@ class ControlStateTests(unittest.TestCase):
                 self.assertEqual(response.status, 400)
             connection.close()
             state.worker_status["player"] = {"needs_center": True}
-            with self.assertRaisesRegex(ValueError, "Center hand"):
+            with self.assertRaisesRegex(ValueError, "Centre hand"):
                 state.set_controller_enabled(True)
         finally:
             servers.shutdown()
@@ -1238,7 +1238,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertIn(b"image:'v-sign.png'", LEARN)
         self.assertIn(b"image:'thumbs-up.png'", LEARN)
         self.assertIn(b"image:'thumb-curl.png'", LEARN)
-        self.assertIn(b"Glove Zap recognized!", LEARN)
+        self.assertIn(b"Glove Zap recognised!", LEARN)
         self.assertIn(b"image:'wrist-roll-left.png'", LEARN)
         self.assertIn(b"image:'wrist-roll-right.png'", LEARN)
         self.assertIn(b"image:'close-all-fingers.png'", LEARN)

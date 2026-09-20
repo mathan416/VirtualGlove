@@ -29,19 +29,19 @@ from virtualglove.camera import camera_candidates  # noqa: E402
 
 
 CUES = (
-    ("neutral_near", "Neutral hand — near", "Sit near the camera with a relaxed open hand centered.", 3.0),
+    ("neutral_near", "Neutral hand — near", "Sit near the camera with a relaxed open hand centred.", 3.0),
     ("slow_xy", "Slow X/Y sweep", "Move slowly across the useful width and height of the camera view.", 4.0),
     ("fast_xy", "Fast X/Y sweep", "Move quickly left/right and up/down while remaining visible.", 4.0),
-    ("short_directions", "Short directions", "Make short left, right, up, and down movements from center.", 4.0),
+    ("short_directions", "Short directions", "Make short left, right, up, and down movements from centre.", 4.0),
     ("a", "A — index curl", "Keep the palm visible and curl only the index finger.", 3.0),
     ("b", "B — thumb curl", "Keep the other fingers open and curl the thumb toward the palm.", 3.0),
-    ("roll_left", "Roll left", "Keep the hand centered and roll the wrist left.", 3.0),
+    ("roll_left", "Roll left", "Keep the hand centred and roll the wrist left.", 3.0),
     ("roll_right", "Roll right", "Return to neutral, then roll the wrist right.", 3.0),
     ("closed_hand", "Closed hand", "Curl the thumb and all four fingers into a comfortable closed hand.", 3.0),
     ("push", "Glove Zap — push", "Begin at neutral distance, then push toward the camera without leaving the frame.", 4.0),
     ("pull", "Pull Back", "Begin at neutral distance, then move away while keeping the palm visible.", 4.0),
-    ("tracking_recovery", "Tracking recovery", "Remove the hand completely, pause, then return it to center.", 4.0),
-    ("neutral_far", "Neutral hand — farther", "Stand farther away with a relaxed open hand centered.", 3.0),
+    ("tracking_recovery", "Tracking recovery", "Remove the hand completely, pause, then return it to centre.", 4.0),
+    ("neutral_far", "Neutral hand — farther", "Stand farther away with a relaxed open hand centred.", 3.0),
     ("a_b_far", "A then B — farther", "At the farther position, curl index for A, release, then curl thumb for B.", 4.0),
     ("neutral_finish", "Neutral finish", "Finish with a relaxed open hand and remain still.", 3.0),
 )

@@ -90,7 +90,7 @@ def render(text: str, replacements: dict[str, str]) -> str:
 
 
 def validate() -> None:
-    """Check internal pages, current behavior, install steps, and release identity."""
+    """Check internal pages, current behaviour, install steps, and release identity."""
     pages = {path.name for path in DIST.glob("*.html")}
     if pages != {"index.html", "install.html", "build.html", "about.html"}:
         raise ValueError("Website page set is incomplete")
@@ -101,7 +101,6 @@ def validate() -> None:
     if facts["candidate_tag"] not in combined or "v0.4.1" in combined:
         raise ValueError("Website release identity is stale")
     prose = html.unescape(re.sub(r"<[^>]+>", " ", combined))
-    prose = prose.replace("Center hand", "")
     american_spellings = re.compile(
         r"\b(?:behaviors?|colors?|colored|coloring|centers?|centered|centering|"
         r"labors?|labored|laboring|recognizes?|recognized|recognizing|"

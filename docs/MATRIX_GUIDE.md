@@ -5,10 +5,10 @@ VirtualGlove's status display. It tells
 you which mode is active and helps distinguish startup, practice, tracking, and
 pairing. It does not show a game's score or confirm that a game accepted a button.
 
-Use the photographs and descriptions below to recognize the display and decide
+Use the photographs and descriptions below to recognise the display and decide
 what to do next.
 
-## Recognize the display
+## Recognise the display
 
 | What you see | See it | What it means | What to do |
 | --- | --- | --- | --- |
@@ -61,7 +61,7 @@ Off keeps four faint pixels along the bottom-left edge, with a dark pixel
 between each indicator. From left to right: app running; console Games service
 reachable; authenticated console response; and **Networking**, meaning a physical
 Wi-Fi or Ethernet link is up. Ethernet through a USB dock counts when Linux
-recognizes it as a physical Ethernet interface. Docker bridges and loopback do not.
+recognises it as a physical Ethernet interface. Docker bridges and loopback do not.
 
 A dark fourth pixel can mean disconnected or unavailable telemetry; Setup uses
 red and grey to distinguish them. A green link does not prove an IP address,
@@ -80,7 +80,7 @@ on TCP port `55358`; no receiver change is required.
 
 The setting affects only the gestures-off attract display. Game/profile artwork,
 T, L, startup, errors, pairing, and application shutdown retain their normal
-brightness and behavior. Saving does not restart the tracker. Install updated
+brightness and behaviour. Saving does not restart the tracker. Install updated
 matrix firmware before using these controls; the footer identifies older firmware.
 
 ## The idle glove show
@@ -142,7 +142,7 @@ used and Dashboard shows output enabled, then confirm the action in the game.
 The matrix does not acknowledge console receipt or the game's response.
 
 A generic **PG** ready symbol or a small pulsing tracking symbol can appear when
-no recognized profile identifier is available. These are fallback displays;
+no recognised profile identifier is available. These are fallback displays;
 normal named game profiles use their numeric, letter, or dedicated two-character
 codes. They do not represent extra games
 or new gesture commands. If you expected **GB** or **BS**, check the selected

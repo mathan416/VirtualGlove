@@ -464,7 +464,7 @@ the case remains comfortable to touch, the camera stays connected, and the
 Matrix and Dashboard behave normally. A warm board is expected; a softening PLA
 case, repeated USB disconnect, or unusually hot enclosure is not.
 
-## Customize and maintain
+## Customise and maintain
 
 ### Make a revision
 
@@ -491,5 +491,5 @@ can tell whether the change is universal or printer-specific.
 - Treat this as a first-fit printable design until it has been measured against
   the exact hub, plugs, inserts, and printer that will be used.
 
-The enclosure protects and organizes the Controller; it does not make the UNO Q
+The enclosure protects and organises the Controller; it does not make the UNO Q
 or hub waterproof, impact-rated, or suitable for outdoor use.

@@ -39,7 +39,7 @@ defaults for every arcade encoder or controller mode.
 | `propose-controller-router.py` | Build but never apply the cabinet Router proposal |
 | `cabinet-controller-router-migration.py` | Receipt-gated check, opt-in migration, and one-command rollback |
 
-## Current behavior
+## Current behaviour
 
 - Buttons remain held while any contributing source holds them.
 - Disconnecting a source releases only that source's state.

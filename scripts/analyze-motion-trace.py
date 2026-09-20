@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: scripts/analyze-motion-trace.py
-# Purpose: Analyze finite per-frame native-motion traces without replaying input.
+# Purpose: Analyse finite per-frame native-motion traces without replaying input.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -9,7 +9,7 @@
 #   2026-09-06 - Added trace freshness, error, class, and settling analysis.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Analyze per-frame motion trace coordinates without replaying controller input."""
+"""Analyse per-frame motion trace coordinates without replaying controller input."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def classify(delta):
 
 
 def analyze(path):
-    """Analyze one saved motion trace without modifying or replaying it."""
+    """Analyse one saved motion trace without modifying or replaying it."""
     report = json.loads(Path(path).read_text())
     events = [e for e in report.get("events", []) if e.get("event") == "vision"]
 

@@ -78,7 +78,7 @@ Protocol work followed an explicit evidence order:
 
 That order prevented a convenient packet description from becoming an
 unquestioned specification. The custom core eventually carried native X/Y and
-the recognized hand actions used by the game, while an explicit FCEUmm launch
+the recognised hand actions used by the game, while an explicit FCEUmm launch
 continued to select joystick behaviour.
 
 The same period expanded Glove Academy and calibration. Neutral centre, scale,
@@ -110,7 +110,7 @@ judgement that a trace cannot: whether the robo-glove felt attached to the hand.
 
 Transport and receiver work quickly fell to roughly millisecond-scale stages.
 Camera delivery, MediaPipe inference, and the more expensive palm-detector path
-became the meaningful optimization targets.
+became the meaningful optimisation targets.
 
 ## Milestone 4 — Explore smoothing and movement response — 6–7 September 2026
 
@@ -214,7 +214,7 @@ Historical samples showed why controlled trials remained necessary:
 
 These were different movements and could not serve as a fair A/B comparison.
 They did reveal that receiver publication count was not the same as the number
-of new recognized positions or displayed frames.
+of new recognised positions or displayed frames.
 
 ## Milestone 6 — Improve fast sweeps, recovery, and transport — 8–9 September 2026
 
@@ -357,7 +357,7 @@ outside it and immediate positional release inside it. Menu Guard, holds, turbo,
 special Programs, and native X/Y kept their existing priorities. The Dashboard
 showed useful program details when statistics were hidden.
 
-Glove Academy became a family-friendly learning and personalization system with
+Glove Academy became a family-friendly learning and personalisation system with
 Pixel Pal guidance, deterministic lesson controls, dedicated gesture artwork,
 camera-quality advice, and controller output paused during practice. The dot
 test, camera wizard, hand-setup backups, and engineering package separated
@@ -399,7 +399,7 @@ VirtualGlove stopped.
 
 The accepted launch boundary now clears that stored glove state. Physical
 controllers work immediately. VirtualGlove joins only after one fresh neutral
-D-pad/button observation, and ordinary NES joystick cores receive recognized
+D-pad/button observation, and ordinary NES joystick cores receive recognised
 digital controls rather than camera-position axes. The same fix applies to
 routed RetroPie, Recalbox, and Batocera; native Super Glove Ball keeps its
 separate continuous-coordinate channel.

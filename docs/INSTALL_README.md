@@ -2,7 +2,7 @@
 
 This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
-pair them securely, center your hand, and test the controls.
+pair them securely, centre your hand, and test the controls.
 
 VirtualGlove 0.5.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
@@ -434,7 +434,7 @@ Adding a ROM does not require reinstalling VirtualGlove:
 | LaunchBox | Import the game into **Nintendo Entertainment System**. New games inherit **VirtualGlove RetroArch**. The launcher checks the registry on every start, so no service restart is needed. |
 
 An existing explicit per-game emulator choice is preserved. Registering a game
-changes only VirtualGlove's profile and launch behavior; it does not copy,
+changes only VirtualGlove's profile and launch behaviour; it does not copy,
 rename, or modify the ROM.
 
 <!-- PAGEBREAK -->
@@ -493,16 +493,16 @@ future privacy warnings. Never install it if the IDs do not match.
 
 ## 5. Calibrate and test a game
 
-### Center your hand
+### Centre your hand
 
 1. Open Dashboard and choose the correct player.
 2. Position the camera so your whole hand remains visible throughout the area
    where you intend to move.
-3. Hold a relaxed open hand at a comfortable center and distance.
-4. Select **Center hand** and remain still until it reports completion.
+3. Hold a relaxed open hand at a comfortable centre and distance.
+4. Select **Centre hand** and remain still until it reports completion.
 
-Center again after moving the camera, changing playing position, or switching
-to a player who has not been calibrated. The saved center belongs to the player
+Centre again after moving the camera, changing playing position, or switching
+to a player who has not been calibrated. The saved centre belongs to the player
 and does not chase the hand during play.
 
 ### Test an ordinary game
@@ -512,7 +512,7 @@ and does not chase the hand during play.
 3. Confirm the expected profile appears on Dashboard and the Matrix.
 4. Test Left, Right, Up, Down, A, B, Start, and Select.
 5. Confirm the physical controller still works for Player 1.
-6. Return the hand to center and confirm movement stops.
+6. Return the hand to centre and confirm movement stops.
 7. Exit the game and confirm gesture output stops.
 
 If Controller Router is enabled, also test every assigned physical controller.
@@ -546,14 +546,14 @@ the rest of VirtualGlove remains installed.
 1. Reboot the Controller and console normally.
 2. Confirm that Dashboard returns and the console reconnects without pairing
    again.
-3. Confirm the selected player, center, tuning, camera choices, and game
+3. Confirm the selected player, centre, tuning, camera choices, and game
    registrations remain available.
 4. Launch the ordinary FCEUmm test game again and confirm both VirtualGlove and
    the physical controller work.
 5. If installed, test Super Glove Ball again.
 
 The Controller remembers whether you selected **Start controller** or **Stop
-controller**, but controls are delivered only during a recognized game session
+controller**, but controls are delivered only during a recognised game session
 or an intentional manual profile. Unknown games and game exit release all
 controls safely.
 
@@ -573,7 +573,7 @@ preserve private settings and user data.
 3. Install the same VirtualGlove release on the selected console platform.
 4. Save the platform and console address in Setup, check the address, and pair
    the two devices.
-5. Center the selected player and test one ordinary registered NES game with
+5. Centre the selected player and test one ordinary registered NES game with
    both VirtualGlove and the physical controller.
 6. If installed, test native Super Glove Ball separately, then reboot both
    devices and repeat the game and exit checks.

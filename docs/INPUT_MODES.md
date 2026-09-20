@@ -1,7 +1,7 @@
 # VirtualGlove Input Modes
 
 VirtualGlove can control an NES game in two different ways. **Joystick mode**
-turns recognized gestures and hand movement into ordinary NES controller input.
+turns recognised gestures and hand movement into ordinary NES controller input.
 **Native Power Glove mode** gives a compatible game the position-and-pose packet
 it expects from the original glove.
 
@@ -31,7 +31,7 @@ gesture recognition.
 ## How joystick mode works
 
 Joystick mode presents familiar RetroPad controls to FCEUmm or stock Nestopia: D-pad, A, B,
-Start, and Select. The active profile decides which recognized movement or
+Start, and Select. The active profile decides which recognised movement or
 gesture produces each control. Returning the hand to its saved centre releases
 movement, and tracking loss safely releases every VirtualGlove control.
 
@@ -172,9 +172,9 @@ authorizes the VirtualGlove Controller and its web Setup page to reach the
 console; routing decides which merged player receives each configured physical
 source and which supported NES player may receive VirtualGlove gestures.
 
-FCEUmm recognizes known Four Score games by CRC. Four merged outputs do not make
+FCEUmm recognises known Four Score games by CRC. Four merged outputs do not make
 an ordinary game four-player. For a compatible altered ROM that FCEUmm does not
-recognize, the advanced registry setting `"four_score": "force"` selects its
+recognise, the advanced registry setting `"four_score": "force"` selects its
 User 5 four-player adaptor; leaving the field out keeps automatic detection.
 
 ### What the merger does not change
@@ -223,7 +223,7 @@ the calibrated position means “place the Robo-Glove at this X/Y coordinate.”
 That difference is the reason native mode can track continuous movement inside
 the playfield.
 
-| What you do | Confirmed native Super Glove Ball behavior |
+| What you do | Confirmed native Super Glove Ball behaviour |
 | --- | --- |
 | Move horizontally or vertically | Position the Robo-Glove continuously in X/Y |
 | Open the hand | Release or throw |
@@ -285,7 +285,7 @@ Nestopia.
 
 ## Confirmed compatibility boundary
 
-Native behavior is validated against `Super Glove Ball (USA)` with SHA-256:
+Native behaviour is validated against `Super Glove Ball (USA)` with SHA-256:
 
 `ad60ef1b62cd1b3bc02a9320376067347a8ab2ebbe46e1616693d8379c9d9a7b`
 

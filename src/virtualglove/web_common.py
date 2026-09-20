@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: src/virtualglove/web_common.py
-# Purpose: Render the shared page shell, profile options, and camera startup behavior.
+# Purpose: Render the shared page shell, profile options, and camera startup behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -9,7 +9,7 @@
 #   2026-09-10 - Give Pixel Pal context-specific poses across the web interface.
 #   2026-09-06 - Separate maintained web modules without changing rendered pages.
 
-"""Render the shared page shell, profile options, and camera startup behavior."""
+"""Render the shared page shell, profile options, and camera startup behaviour."""
 
 import html
 from .play_game import PLAY_STYLE
@@ -18,7 +18,7 @@ from . import __version__
 PROFILE_GROUPS = (
     ("Original programs 1–14", tuple(
         (f"program_{number}", f"{number}: " + {
-            1: "General side view", 2: "Centering coach", 3: "Top view",
+            1: "General side view", 2: "Centring coach", 3: "Top view",
             4: "Iron Tank", 5: "Flight", 6: "Double Dragon",
             7: "Punch-Out!!", 8: "Baseball", 9: "Rad Racer",
             10: "R.C. Pro-Am", 11: "Fast turn", 12: "Super Mario Bros.",
@@ -115,7 +115,7 @@ details.advanced{{margin-top:18px;padding-top:14px;border-top:1px solid var(--li
 @media(max-width:900px){{.status-grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}.dashboard-workspace,.learn-grid,.rps-layout{{grid-template-columns:1fr}}.dashboard-workspace .camera,.learn-camera .camera,.rps-camera .camera{{height:auto;aspect-ratio:4/3}}}}
 @media(max-width:900px){{.help-layout{{grid-template-columns:1fr}}.help-sidebar{{position:static;max-height:none}}.guide-nav{{grid-template-columns:repeat(2,minmax(0,1fr))}}.toc{{display:none}}}}
 @media(max-width:600px){{header{{align-items:center}}.brand{{max-width:58%}}nav{{display:grid;grid-template-columns:repeat(2,auto);gap:5px 12px}}nav a{{margin:0}}.diagnostic-grid{{grid-template-columns:1fr}}.guide-nav{{grid-template-columns:1fr}}.markdown-body{{padding:20px 17px}}}}
-</style></head><body><header><a class=brand href=/dashboard aria-label='VirtualGlove dashboard'><img src=/assets/virtualglove-logo.png alt='VirtualGlove'></a><nav><a href=/dashboard>Dashboard</a><a href=/play>Play</a><a href=/learn>Glove Academy</a><a href=/help>Help</a><a href="/setup">Setup</a></nav></header><main>{content}</main><div id=spock-toast class=spock-toast aria-hidden=true><span class=spock-hand>&#x1F596;</span><strong>Live long and prosper.</strong><small>Pixel Pal recognizes impeccable logic.</small></div><span id=spock-announcement class=visually-hidden aria-live=polite aria-atomic=true></span><footer class=app-footer><span>VirtualGlove v{html.escape(__version__)}</span>{started}<details class=build-details><summary>Software and matrix firmware</summary><p id=build-identity>Checking installed versions…</p></details></footer><script>{EASTER_EGG_SCRIPT}</script><script>{metadata_script}</script><script>{script}</script></body></html>""".encode()
+</style></head><body><header><a class=brand href=/dashboard aria-label='VirtualGlove dashboard'><img src=/assets/virtualglove-logo.png alt='VirtualGlove'></a><nav><a href=/dashboard>Dashboard</a><a href=/play>Play</a><a href=/learn>Glove Academy</a><a href=/help>Help</a><a href="/setup">Setup</a></nav></header><main>{content}</main><div id=spock-toast class=spock-toast aria-hidden=true><span class=spock-hand>&#x1F596;</span><strong>Live long and prosper.</strong><small>Pixel Pal recognises impeccable logic.</small></div><span id=spock-announcement class=visually-hidden aria-live=polite aria-atomic=true></span><footer class=app-footer><span>VirtualGlove v{html.escape(__version__)}</span>{started}<details class=build-details><summary>Software and matrix firmware</summary><p id=build-identity>Checking installed versions…</p></details></footer><script>{EASTER_EGG_SCRIPT}</script><script>{metadata_script}</script><script>{script}</script></body></html>""".encode()
 
 
 VISION_STARTUP_SCRIPT = r"""

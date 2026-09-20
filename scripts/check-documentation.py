@@ -83,6 +83,16 @@ ARCHIVED_DOCUMENTS = {
     Path("docs/direction-response-benchmark.md"),
 }
 
+AMERICAN_PUBLIC_SPELLING = re.compile(
+    r"\b(?:behaviors?|behavioral|colors?|colored|coloring|centers?|centered|centering|"
+    r"recognizes?|recognized|recognizing|customizes?|customized|customizing|"
+    r"organizes?|organized|organizing|optimizations?|optimizes?|optimized|optimizing|"
+    r"analyzes?|analyzed|analyzing|personalizes?|personalized|personalizing|"
+    r"personalization|defense|offense|catalog|dialogs?|grays?|grayscale|"
+    r"fulfills?|fulfilled|fulfilling)\b",
+    re.IGNORECASE,
+)
+
 
 def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
     """Keep current release, upgrade, platform, and retired-feature claims aligned."""
@@ -258,6 +268,21 @@ def tracked_markdown() -> list[Path]:
     return sorted(Path(name) for name in output if name and (ROOT / name).is_file())
 
 
+def check_canadian_english(markdown: list[Path], errors: list[str]) -> None:
+    """Reject American spellings in published prose while preserving technical names."""
+    for path in markdown:
+        source = (ROOT / path).read_text()
+        source = re.sub(r"```.*?```", " ", source, flags=re.DOTALL)
+        source = re.sub(r"`[^`\n]*`", " ", source)
+        source = re.sub(r"<[^>]+>", " ", source)
+        match = AMERICAN_PUBLIC_SPELLING.search(source)
+        if match:
+            line = source.count("\n", 0, match.start()) + 1
+            errors.append(
+                f"American spelling in public prose: {path}:{line}: {match.group(0)}"
+            )
+
+
 def local_targets(path: Path) -> list[Path]:
     """Extract repository-local Markdown and HTML link targets from one document."""
     text = (ROOT / path).read_text()
@@ -344,13 +369,13 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         "## How rapid fire behaves",
         "## Program cards 1–14",
         "### Program 1 - positional control",
-        "### Program 2 - positional control with centering feedback",
+        "### Program 2 - positional control with centring feedback",
         "### Program 3 - depth and side movement",
         "### Program 4 - Iron Tank tread control",
         "### Program 5 - aircraft control",
         "### Program 6 - Double Dragon combinations",
-        "### Program 7 - Punch-Out!! offense and defense",
-        "### Program 8 - baseball offense and defense",
+        "### Program 7 - Punch-Out!! offence and defence",
+        "### Program 8 - baseball offence and defence",
         "### Program 9 - Rad Racer",
         "### Program 10 - R.C. Pro-Am",
         "### Program 11 - rapid turn alternative",
@@ -402,8 +427,8 @@ def check_gameplay_coverage(errors: list[str]) -> None:
     compound_art = {
         "images/gestures/v2/push-closed-fist.png": "closed-fist push",
         "images/gestures/v2/pull-closed-fist.png": "closed-fist pull",
-        "images/gestures/v2/push-closed-fist-right.png": "right-of-center fist push",
-        "images/gestures/v2/push-closed-fist-left.png": "left-of-center fist push",
+        "images/gestures/v2/push-closed-fist-right.png": "right-of-centre fist push",
+        "images/gestures/v2/push-closed-fist-left.png": "left-of-centre fist push",
     }
     for image, label in compound_art.items():
         if image not in gameplay:
@@ -432,7 +457,7 @@ def check_gameplay_coverage(errors: list[str]) -> None:
         if profile_row not in gameplay:
             errors.append(f"cartridge Program {letter.upper()} profile preview is missing")
     for profile in (
-        "2 - Centering coach", "11 - Fast turn", "13 - Finger buttons",
+        "2 - Centring coach", "11 - Fast turn", "13 - Finger buttons",
         "A - Pinball", "D - Mirror world", "H - General play",
     ):
         if f"| **{profile}** |" not in gameplay:
@@ -474,6 +499,7 @@ def main() -> int:
     check_help_coverage(markdown, errors)
     check_gameplay_coverage(errors)
     check_release_facts(markdown, errors)
+    check_canadian_english(markdown, errors)
     check_enclosure_packages(errors)
 
     reference = (ROOT / "docs" / "CONFIGURATION_REFERENCE.md").read_text()

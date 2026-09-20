@@ -18,7 +18,7 @@ src/virtualglove/_build_info.json
 # Generated release installers and packages are published as release assets.
 /output/install/
 
-# Full-resolution photo backup; optimized guide images are tracked.
+# Full-resolution photo backup; optimised guide images are tracked.
 /output/Matrix-Photo-Originals.zip
 
 # Isolated emulator source/build products, never release payloads.

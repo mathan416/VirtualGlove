@@ -392,7 +392,7 @@ class ControlState:
         if enabled:
             with self.lock:
                 if self.worker_status.get("player", {}).get("needs_center"):
-                    raise ValueError("Select Center hand on Dashboard or in Glove Academy before starting controls for this player.")
+                    raise ValueError("Select Centre hand on Dashboard or in Glove Academy before starting controls for this player.")
             config = self.load_config()
             if not str(config.get("receiver", "")).strip() or not config.get("token"):
                 raise ValueError("Configure your game console and pairing in Connection before starting controls.")
@@ -440,7 +440,7 @@ class ControlState:
                     current = self._controller_pending == pending
                 if enabled and current:
                     self.set_controller_enabled(False)
-            raise ValueError("The worker rejected the controller request. Check centering and try again.") from exc
+            raise ValueError("The worker rejected the controller request. Check centring and try again.") from exc
         except (OSError, ValueError, RecursionError):
             return False
         with self.lock:

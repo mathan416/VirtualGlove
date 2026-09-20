@@ -9,7 +9,7 @@
 #   2026-09-07 - Added an expiring demand signal for optional Dashboard telemetry.
 #   2026-09-06 - Implement approved player and connectivity refinements.
 #   2026-09-06 - Add complete hand-setup backups and explicit calibration restoration.
-#   2026-09-06 - Expose bounded player operations and enforce fresh centering.
+#   2026-09-06 - Expose bounded player operations and enforce fresh centring.
 #   2026-09-02 - Added to VirtualGlove.
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 #   2026-09-03 - Added runtime profile requests and camera-free status updates.
@@ -94,7 +94,7 @@ class SharedDebugState:
             return self.stream_clients > 0
 
     def request_calibration(self) -> None:
-        """Queue one hand-centering request."""
+        """Queue one hand-centring request."""
         with self.lock:
             self.calibrate_requested = True
 
@@ -294,7 +294,7 @@ def make_handler(shared: SharedDebugState) -> type[BaseHTTPRequestHandler]:
                     if not isinstance(enabled, bool):
                         raise ValueError("enabled must be true or false")
                     if enabled and shared.tuning is not None and shared.tuning.needs_center():
-                        raise ValueError("Set your center in Glove Academy before starting controls for this player.")
+                        raise ValueError("Set your centre in Glove Academy before starting controls for this player.")
                     shared.request_controller(enabled)
                     response = json.dumps({"controller_enabled": enabled}).encode()
                     self.send_response(200)

@@ -107,7 +107,7 @@ def main() -> None:
                             '-f', str(config)], check=True, timeout=20)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
             # The router or another boot component may already own the SWD GPIO
-            # lines. Early release is only an optimization; normal startup remains
+            # lines. Early release is only an optimisation; normal startup remains
             # authoritative and must not leave a failed user unit behind.
             print("VirtualGlove early-start unavailable; leaving normal startup in control: "
                   + str(error))

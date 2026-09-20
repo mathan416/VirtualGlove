@@ -1,4 +1,4 @@
-<p align="center">
+<p align="centre">
   <img src="assets/virtualglove-logo.png" alt="VirtualGlove" width="760">
 </p>
 
@@ -12,7 +12,7 @@ Arduino UNO Q. Wear a plain glove or use your bare hand—there are no sensors,
 wires, or electronics to add to it.
 
 Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punch.
-VirtualGlove recognizes the pose, sends authenticated controller input across
+VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
@@ -183,7 +183,7 @@ phone or computer.
 
 ### 6. Set up a player
 
-Choose a player, position the camera, and use **Center hand**. Open **Glove
+Choose a player, position the camera, and use **Centre hand**. Open **Glove
 Academy** to learn the gestures and adjust movement reach or sensitivity only if
 needed.
 
@@ -210,7 +210,7 @@ backups, and troubleshooting. Use it as the authoritative setup reference.
 VirtualGlove includes the original Programs 1–14, nine reusable cartridge
 Programs A–I, plus dedicated mappings for Bad Street Brawler and Super Glove
 Ball. The same recognition settings follow
-the player across games; profiles change only what the recognized movements and
+the player across games; profiles change only what the recognised movements and
 gestures send to the console.
 
 | Path | What it provides |
@@ -263,7 +263,7 @@ controller states or requiring a new pairing.
 
 ## Meet Pixel Pal
 
-Pixel Pal helps players learn, personalize, test, and troubleshoot without
+Pixel Pal helps players learn, personalise, test, and troubleshoot without
 turning setup into an engineering exercise.
 
 - **Glove Academy** teaches all 16 movements and gestures while game output is
@@ -281,7 +281,7 @@ turning setup into an engineering exercise.
 | --- | --- |
 | Dashboard · `/dashboard` | See live controls and set per-game A/B rapid fire. |
 | Play · `/play` | Challenge Pixel Pal to Rock Paper Scissors. |
-| Glove Academy · `/learn` | Learn gestures, set movement reach, and personalize recognition safely. |
+| Glove Academy · `/learn` | Learn gestures, set movement reach, and personalise recognition safely. |
 | Setup · `/setup` | Manage players, camera choices, console pairing, games, backups, and display preferences. |
 | Help · `/help` | Read the complete manuals and printable PDFs directly on the Controller. |
 
@@ -296,8 +296,8 @@ turning setup into an engineering exercise.
 | Understand joystick, merged-controller, and native modes | [VirtualGlove Input Modes](docs/INPUT_MODES.md) |
 | Choose or troubleshoot a camera | [Camera Guide](docs/CAMERA_GUIDE.md) |
 | Assemble a printed case quickly | [Enclosure Assembly Quick Reference](docs/ENCLOSURE_QUICK_REFERENCE.md) |
-| Print or customize a case | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
-| Recognize matrix animations and messages | [Matrix Display Guide](docs/MATRIX_GUIDE.md) |
+| Print or customise a case | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
+| Recognise matrix animations and messages | [Matrix Display Guide](docs/MATRIX_GUIDE.md) |
 | Find a quick command or status reminder | [Quick Reference](docs/cheatsheet.md) |
 | Solve a problem by symptom | [Troubleshooting](docs/TROUBLESHOOTING.md) |
 
@@ -327,7 +327,7 @@ pages, validates release-sensitive links and commands, and creates
 
 VirtualGlove 0.5.0 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
 live dead-zone visualization, and source-accurate
-rapid-fire behavior. It extends the authenticated console integration to
+rapid-fire behaviour. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie.
 
 The `v0.5.0-rc.1` candidate has completed physical controller and VirtualGlove

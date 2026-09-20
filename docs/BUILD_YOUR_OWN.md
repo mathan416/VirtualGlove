@@ -1,6 +1,6 @@
 # Build Your Own: Parts, Cost, and Difficulty
 
-VirtualGlove lets you use a camera-recognized hand to control games through
+VirtualGlove lets you use a camera-recognised hand to control games through
 RetroArch on RetroPie, Recalbox, Batocera, or LaunchBox. The **VirtualGlove
 Controller (Arduino UNO Q)** handles the camera, recognition, and website. The
 selected console runs the game. You do not need an original

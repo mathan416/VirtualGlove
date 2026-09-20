@@ -9,7 +9,7 @@
 #   2026-09-11 - Cover physical broadcasts and discovery during resolver failure.
 #   2026-09-06 - Cover slow DNS, newest-state sends, stale answers, and Wi-Fi independence.
 
-"""Exercise connectivity behavior without depending on a physical wireless device."""
+"""Exercise connectivity behaviour without depending on a physical wireless device."""
 import json
 import runpy
 import tempfile

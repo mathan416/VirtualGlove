@@ -23,7 +23,7 @@
 #   2026-09-06 - Implement approved player and connectivity refinements.
 #   2026-09-06 - Address Setup review reliability and private configuration findings.
 #   2026-09-06 - Add complete hand-setup backups and explicit calibration restoration.
-#   2026-09-06 - Require fresh centering after player changes before delivery.
+#   2026-09-06 - Require fresh centring after player changes before delivery.
 #   2026-09-05 - Resumed armed controls from renewable RetroPie game leases.
 #   2026-09-05 - Measured fresh-frame publication and controller-transition latency.
 #   2026-09-05 - Reported clear proven and experimental tracker names.
@@ -183,7 +183,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--camera-exposure", choices=("auto", "low-latency", "kiyo-low-latency", "manual"),
-        default="auto", help="volatile capability-checked exposure behavior",
+        default="auto", help="volatile capability-checked exposure behaviour",
     )
     parser.add_argument("--camera-manual-exposure", type=int, default=None,
                         help="manual V4L2 exposure value; requires Direct V4L2")
@@ -1344,7 +1344,7 @@ def main() -> int:
             # allowed between completed inference and controller transmission.
             engine.config = shared.tuning.configuration(engine_base_config)
             tracker.preview_enabled = preview_due
-            # Landmark diagnostics are required by personalization, but the
+            # Landmark diagnostics are required by personalisation, but the
             # ordinary camera preview already draws directly from the tracker.
             tracker.diagnostics_enabled = tuning_active
             native_xy_active = _native_xy_active(

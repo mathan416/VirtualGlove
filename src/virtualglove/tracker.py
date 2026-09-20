@@ -556,7 +556,7 @@ def _inference_node_threads(node_name: str, landmark_threads: int,
 
 
 def _is_cpu_inference_calculator(calculator: str) -> bool:
-    """Recognize supported legacy Hands CPU nodes across MediaPipe releases."""
+    """Recognise supported legacy Hands CPU nodes across MediaPipe releases."""
     return calculator in (
         "InferenceCalculatorCpu",
         "InferenceCalculatorXnnpack",

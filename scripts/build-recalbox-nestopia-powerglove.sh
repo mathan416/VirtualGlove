@@ -48,7 +48,7 @@ source_dir=$(VIRTUALGLOVE_PREPARE_ONLY=1 \
 source_dir=$(CDPATH= cd -- "$source_dir" && pwd)
 
 # Recalbox's own package recipe supplies its Buildroot compiler, sysroot,
-# optimization flags, sysroot, and target-specific libretro platform. An
+# optimisation flags, sysroot, and target-specific libretro platform. An
 # override source keeps the Recalbox checkout itself unmodified.
 (
   cd "$recalbox"

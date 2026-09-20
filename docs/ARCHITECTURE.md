@@ -5,7 +5,7 @@ UNO Q)** and supported RetroArch consoles.
 
 This guide describes the current implementation reviewed on September 18, 2026.
 It is a map of production responsibilities, data flows, interfaces, and failure
-behavior—not a chronology of experiments. The decisions and discarded paths
+behaviour—not a chronology of experiments. The decisions and discarded paths
 that led here are recorded in the [Engineering Journey](ENGINEERING_JOURNEY.md).
 Supported replay, tracing, and measurement commands are documented separately
 in the [Engineering Toolkit](ENGINEERING_TOOLKIT.md); release and deployment
@@ -86,7 +86,7 @@ controllers. Router clears stale physical state, exclusively reads assigned
 devices, and publishes their canonical merged controls. For a supported NES
 joystick core, it separately clears the VirtualGlove source and requires a
 fresh neutral D-pad/button observation before admitting camera controls.
-Joystick mode carries recognized digital directions and buttons, not
+Joystick mode carries recognised digital directions and buttons, not
 camera-position axes.
 
 The merged gamepads remain neutral outside Libretro gameplay, so EmulationStation
@@ -205,7 +205,7 @@ sockets. These functions are kept separate from camera inference.
 
 7. The receiver checks the message HMAC, live challenge, peer, and increasing
    sequence. For Super Glove Ball it publishes native state before updating the
-   unrelated virtual gamepad; other profiles preserve virtual-gamepad behavior.
+   unrelated virtual gamepad; other profiles preserve virtual-gamepad behaviour.
    It creates the real virtual controller when the first accepted packet arrives.
 
 8. Linux `uinput` exposes the virtual gamepad. Standard RetroPie consumes it as
@@ -214,7 +214,7 @@ sockets. These functions are kept separate from camera inference.
    separately implemented merged Player 1. RetroArch then applies its configured
    input mapping before the game consumes the state.
 
-Program 2 also derives transient centering feedback, Program 13 leaves the
+Program 2 also derives transient centring feedback, Program 13 leaves the
 camera D-pad neutral for the merged physical controller, and Program 14 closes
 vision and neutralizes all VirtualGlove output. These are mapping and lifecycle
 decisions; none rewrites player calibration or recognition tuning.
@@ -270,7 +270,7 @@ former optical-flow experiment is retained only in Git history
 and the former bounded speed curve remains in historical test tooling; neither
 is routed by the supervisor nor exposed as a live configuration.
 
-Native coordinates use each player's calibrated center and optional asymmetric
+Native coordinates use each player's calibrated centre and optional asymmetric
 comfortable-reach spans. A missed observation shorter than
 `native_xy_loss_hold_ms` (180 ms by default) holds only the last X/Y position;
 buttons, fingers, depth, roll, and digital directions release on the first
@@ -296,7 +296,7 @@ production reader. Its saved one-buffer request remains independent of the
 direct-reader diagnostic.
 
 Digital FCEUmm directions instead classify every fresh hand position in a 3×3
-grid anchored to the saved calibrated neutral palm position. The center square
+grid anchored to the saved calibrated neutral palm position. The centre square
 releases all positional directions, its four side regions produce cardinals,
 and its four corner regions produce diagonals.
 
@@ -306,7 +306,7 @@ palm size. The full square translates inward at camera edges rather than
 clipping; live hand size and neutral jitter do not change it.
 
 The dead zone does not alter native reach, finger gestures, or game mappings.
-Re-centering clears saved reach spans because they belong to the old center.
+Re-centring clears saved reach spans because they belong to the old centre.
 
 The worker sends authenticated controller state immediately after recognition.
 Its tuning configuration and pause gates are captured before inference, so no
@@ -337,7 +337,7 @@ camera-to-game latency measurement.
 
 The shipped graph runs on the UNO Q CPU. OpenGL/OpenCL, MediaPipe Tasks GPU,
 MNN/Vulkan, and ncnn comparisons did not beat this complete CPU graph while
-preserving recognition behavior, so they remain engineering research rather
+preserving recognition behaviour, so they remain engineering research rather
 than selectable gameplay runtimes. The model graph is the connected palm-
 detection and landmark-computation pipeline; it is broader than either neural
 network alone. Research details and promotion gates are consolidated in
@@ -406,7 +406,7 @@ the original controller to resume frontend navigation.
 
 At that same launch boundary, Router clears all retained VirtualGlove controls.
 Physical devices can send Start or navigate immediately. VirtualGlove remains
-neutral until the next observation contains no recognized D-pad direction or
+neutral until the next observation contains no recognised D-pad direction or
 button gesture; only subsequent observations can control the game. The ordinary
 NES path publishes digital D-pad/buttons only. Continuous camera X/Y/Z remains
 exclusive to the guarded native Super Glove Ball path.
@@ -529,7 +529,7 @@ direction within 250 ms. Reversal, calibration, profile transition, or tracking
 loss discards an unfinished candidate. Confirmed actions retain their existing
 hysteresis and profile-specific output semantics.
 
-![Personalization flow: choose a problem, record guided phases, pass a preview test, and save](images/architecture/tuning.png)
+![Personalisation flow: choose a problem, record guided phases, pass a preview test, and save](images/architecture/tuning.png)
 
 | Tuning scope | First recording | Middle recording | Final recording |
 | --- | --- | --- | --- |
@@ -574,10 +574,10 @@ recorded pose quality. Live testing is still needed.
 The candidate is temporary until the same recognition path observes two complete
 activation/release cycles and three neutral seconds. Only then can the wizard
 atomically merge selected pairs into the active player’s version-6 record. Positional
-movement is not a gesture-tuning channel: one per-player center-box scalar drives a
+movement is not a gesture-tuning channel: one per-player centre-box scalar drives a
 stateless 3×3 classification, and calibration jitter may enlarge its effective size.
 
-Raw gesture controls remain inside Advanced. Normal personalization retains no
+Raw gesture controls remain inside Advanced. Normal personalisation retains no
 camera recording. The separate diagnostic path deletes its temporary AVI after
 producing an aggregate-only report.
 
@@ -594,7 +594,7 @@ that use that finger; it does not change the button assignments in a game profil
 | Data | Owner and lifetime | Purpose |
 | --- | --- | --- |
 | `config/profiles.json` | Shipped project source | One shared set of recognition parameters; profiles remain output mappings |
-| `data/gesture-tuning.json` | VirtualGlove Controller, persistent | Version-4 player presets, per-player calibration, sensitivity, Academy progress, and required-center flag; versions 1–3 migrate with a backup |
+| `data/gesture-tuning.json` | VirtualGlove Controller, persistent | Version-4 player presets, per-player calibration, sensitivity, Academy progress, and required-centre flag; versions 1–3 migrate with a backup |
 | `data/calibration.json` | VirtualGlove Controller, private persistent | Neutral palm position, apparent scale, wrist angle, and positional jitter for the installed camera and player |
 | `data/device.json` | VirtualGlove Controller, private persistent settings | Destination, selected settings, pairing-related configuration |
 | Tuning samples, preview, leases | Worker memory only | Temporary measurement and ownership state |
@@ -603,7 +603,7 @@ that use that finger; it does not change the button assignments in a game profil
 | `data/models/hand_landmarker.task` | VirtualGlove Controller, verified cache | Reusable pretrained hand-landmark model |
 
 Neutral calibration is distinct from hand setup. It accepts 24 detected hand
-observations with finite, non-collapsed landmark geometry, centers position, depth, and roll,
+observations with finite, non-collapsed landmark geometry, centres position, depth, and roll,
 records 95th-percentile X/Y jitter, and lets movement thresholds rise only
 when needed to remain safely above that noise; hand setup establishes finger thresholds.
 
@@ -695,7 +695,7 @@ Nestopia remains untouched.
 RetroPie registers the custom core in its normal secondary-core directory.
 Recalbox keeps a target-specific core in its persistent share and exposes the
 separate core plus a current system-list entry through reversible runtime
-mounts. Its bounded RetroArch process monitor recognizes the actual core command
+mounts. Its bounded RetroArch process monitor recognises the actual core command
 line and authenticates the same native profile identity used by RetroPie.
 
 Batocera keeps the architecture-selected core in persistent `/userdata`, then uses two
@@ -722,7 +722,7 @@ The optional project-owned `lr-powerglove-dot` core reads the same guarded
 native-state record but does not emulate a Power Glove packet or load a ROM. A
 fixed Ports launcher holds a renewable `super_glove_ball`/`lr-powerglove-dot`
 profile lease while the calibration display is open. The Controller therefore
-uses the production native X/Y path while the display isolates center, reach,
+uses the production native X/Y path while the display isolates centre, reach,
 edge clamping, tracking loss, and recovery from game logic.
 
 ## Interfaces and recovery
@@ -739,16 +739,16 @@ into the worker. Its tuning lock owns one atomic player/settings/progress file.
 Generations reject stale writes.
 
 Each player retains a saved calibration. Selection automatically applies the
-selected player’s saved center through the durable restore path, with output
-paused; players without a saved center require centering.
+selected player’s saved centre through the durable restore path, with output
+paused; players without a saved centre require centring.
 
-Version-4 portable backups include the center-box size, personal and effective
+Version-4 portable backups include the centre-box size, personal and effective
 gesture sensitivity, source software identity, name, and the player's neutral
 reference. They exclude credentials and Academy progress. Older portable formats
 are rejected without mutation.
 
 A version-6 player store journals confirmed calibration reuse. The worker writes
-`calibration.json` before clearing the pending reference and centering gate.
+`calibration.json` before clearing the pending reference and centring gate.
 Output remains paused until Start controller. The journal resumes after crashes.
 Older internal stores are reported as unsupported and are not overwritten.
 Progress writes occur on lesson transitions, not frames.
@@ -793,7 +793,7 @@ Browser mutations use the existing request-header and Origin checks. See the
 
 | Failure or transition | Implemented response | Interpretation |
 | --- | --- | --- |
-| Hand tracking lost | Engine clears held states after its loss delay | Stops stale recognized actions; camera recovery is separate |
+| Hand tracking lost | Engine clears held states after its loss delay | Stops stale recognised actions; camera recovery is separate |
 | Controller packets stop | Receiver releases controls on socket timeout, default 250 ms | A receive timeout, not a measured end-to-end acknowledgement |
 | Hostname or UDP send failure | Sender reports error and throttles retries | Vision and local practice can continue |
 | Camera open/read failure | Worker reports starting/error and retries asynchronously; a sustained failure requests one classified recovery even when USB enumeration remains present. A capability-confirmed hub cycles only the enrolled camera port. Whole-hub fallback is refused when that hub carries networking. | The USB action and camera recovery are separate states. Recovery is confirmed only after the restarted worker receives a frame; `lsusb` alone does not prove the stream is usable. |
@@ -804,7 +804,7 @@ Browser mutations use the existing request-header and Origin checks. See the
 
 A successful UDP send means the local networking call succeeded. It does not
 prove the receiver applied a state or the game accepted it. Diagnose in stages:
-hand detected, measured values, recognized/held action, delivery gate, sender
+hand detected, measured values, recognised/held action, delivery gate, sender
 error, receiver/gamepad state, then emulator/game mapping.
 
 Setup reports the configured console name separately from the active authenticated
@@ -908,10 +908,10 @@ it does not claim every path has been independently security-audited.
 
 ## Validation boundaries
 
-Automated tests establish data contracts, safety behavior, configuration
+Automated tests establish data contracts, safety behaviour, configuration
 persistence, and deterministic input handling. Hardware checks establish camera,
 matrix, bridge, receiver, and emulator integration. Live gameplay establishes
-that recognized movement and gestures remain usable as one end-to-end system.
+that recognised movement and gestures remain usable as one end-to-end system.
 No one category substitutes for the others.
 
 Before releasing recognition changes, exercise optional hand setup and individual
@@ -989,7 +989,7 @@ receiver's input-release deadline. Both native-state publication and `uinput`
 remain behind the same accepted-state check; the core and recognition paths are
 unchanged.
 
-Dashboard, Academy, Games, personalization, Play, and Setup each import their
+Dashboard, Academy, Games, personalisation, Play, and Setup each import their
 maintained page from the owning module. The unused compatibility re-export and
 duplicate worker homepage have been removed.
 

@@ -10,7 +10,7 @@
 #   2026-09-06 - Implement approved player and connectivity refinements.
 #   2026-09-06 - Add complete hand-setup backups and explicit calibration restoration.
 #   2026-09-06 - Persist separate player sensitivity and Academy progress.
-#   2026-09-06 - Added the family-facing personalization wizard and validation gate.
+#   2026-09-06 - Added the family-facing personalisation wizard and validation gate.
 #   2026-09-04 - Added guided gesture sampling and persistent personal thresholds.
 
 """Personal threshold overlays; samples and previews never become camera recordings."""
@@ -46,7 +46,7 @@ PROBLEMS = {
     "setup": "Set up a new hand",
     "difficult": "A gesture is hard to trigger",
     "accidental": "A gesture happens accidentally",
-    "off_center": "Movement feels off-center",
+    "off_center": "Movement feels off-centre",
 }
 SUGGESTION_BIAS = {
     "setup": (.65, .30),
@@ -120,7 +120,7 @@ def validate_recorded_pose(gesture: str, phases: list, config: GestureConfig) ->
                 raise ValueError(
                     f"Keep your {finger} {expected} during the {label} recording "
                     f"({matches}/{len(phase)} measurements matched; at least 90% required). "
-                    "Record again. If comfortable extension is not recognized, try Set up my hand first.")
+                    "Record again. If comfortable extension is not recognised, try Set up my hand first.")
         if sum(all(item["matches"] for item in frame.values()) for frame in feedback) < minimum:
             raise ValueError(f"Hold all required fingers in position together during the {label} recording. "
                              "At least 90% of measurements must match the complete pose. Record again.")
@@ -237,7 +237,7 @@ class TuningManager:
                 raise ValueError("Finish tuning and switch Tune gestures off before changing players or restoring settings.")
             if data.get("action") == "joystick_deadzone" and (
                     self.center_generation is not None or self.players.data["calibration_restore"] is not None):
-                raise ValueError("Wait for hand centering or calibration restore to finish before saving the dead zone.")
+                raise ValueError("Wait for hand centring or calibration restore to finish before saving the dead zone.")
             if data.get("action") == "export":
                 result = self.players.command(data)
                 if self.players.data["calibration_restore"] is not None:
@@ -344,7 +344,7 @@ class TuningManager:
         if reference is None:
             reference = load_calibration(self.path.with_name("calibration.json"))
         if reference is None:
-            raise ValueError("Center your hand before changing movement reach.")
+            raise ValueError("Centre your hand before changing movement reach.")
         if self.players.data["calibration_restore"] is not None:
             raise ValueError("Wait for the current reach values to finish saving.")
         if reset:
@@ -636,7 +636,7 @@ class TuningManager:
                 self.revision += 1
             elif action == "start_test":
                 if not self.preview:
-                    raise ValueError("Analyze the recordings before testing the adjustment.")
+                    raise ValueError("Analyse the recordings before testing the adjustment.")
                 self._reset_test()
                 self.test_started = self.clock()
                 self.test_last_at = self.test_started

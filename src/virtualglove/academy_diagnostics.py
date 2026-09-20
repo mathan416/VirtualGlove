@@ -18,8 +18,8 @@ from pathlib import Path
 
 
 CUES = (
-    ("neutral", "Relaxed open hand", "Hold your open hand in the center.", 3.0),
-    ("directions", "Short directions", "Move left, right, up, and down from center.", 4.0),
+    ("neutral", "Relaxed open hand", "Hold your open hand in the centre.", 3.0),
+    ("directions", "Short directions", "Move left, right, up, and down from centre.", 4.0),
     ("a_b", "A then B", "Curl index for A, release, then curl thumb for B.", 4.0),
     ("menu", "Start then Select", "Make the V sign, release, then give a thumbs-up.", 4.0),
     ("wrist", "Rolls and closed hand", "Roll left, roll right, then close your hand.", 5.0),

@@ -89,6 +89,53 @@ class AuditRegressionTests(unittest.TestCase):
         )
         self.assertEqual(errors, [])
 
+    def test_documentation_audit_rejects_american_public_spelling(self):
+        audit = runpy.run_path(str(ROOT / 'scripts/check-documentation.py'))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prose = root / 'guide.md'
+            prose.write_text('The interface recognizes this behavior.\n')
+            with patch.dict(audit['check_canadian_english'].__globals__, {'ROOT': root}):
+                errors = []
+                audit['check_canadian_english']([Path('guide.md')], errors)
+            self.assertTrue(errors)
+
+            prose.write_text(
+                'The interface recognises this behaviour.\n'
+                '`recognized` and `center` remain protocol fields.\n'
+                '```json\n{"recognized": true, "center": 0.5}\n```\n'
+            )
+            with patch.dict(audit['check_canadian_english'].__globals__, {'ROOT': root}):
+                errors = []
+                audit['check_canadian_english']([Path('guide.md')], errors)
+            self.assertEqual(errors, [])
+
+    def test_public_web_copy_uses_canadian_english(self):
+        from virtualglove.academy_web import LEARN
+        from virtualglove.dashboard_web import DASHBOARD
+        from virtualglove.joystick_web import JOYSTICK_CONTENT, JOYSTICK_SCRIPT
+        from virtualglove.player_web import PLAYER_CONTENT, PLAYER_SCRIPT
+        from virtualglove.setup_web import SETUP_CONTENT, SETUP_SCRIPT
+        from virtualglove.tuning_web import TUNE_CONTENT, TUNE_SCRIPT
+
+        parts = (
+            LEARN, DASHBOARD,
+            JOYSTICK_CONTENT, JOYSTICK_SCRIPT,
+            PLAYER_CONTENT, PLAYER_SCRIPT,
+            SETUP_CONTENT, SETUP_SCRIPT,
+            TUNE_CONTENT, TUNE_SCRIPT,
+        )
+        public_copy = "\n".join(
+            part.decode() if isinstance(part, bytes) else part for part in parts
+        )
+        for phrase in (
+            "Center hand", "Center your hand", "Center saved", "Centering…",
+            "Personalize", "Personalization", "Exposure behavior",
+            "Actual camera behavior", "Help center",
+        ):
+            self.assertNotIn(phrase, public_copy)
+        self.assertIn("Centre hand", public_copy)
+
     def test_malformed_packets_are_rejected_before_device_access(self):
         invalid = [[], None, "text", packet(axes=[]), packet(buttons={'a':1}),
                    packet(axes={'x':32768}), packet(fingers={'index':4}),

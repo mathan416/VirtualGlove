@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_resolver.py
-# Purpose: Verify local name resolution, cache refresh and safe failure behavior.
+# Purpose: Verify local name resolution, cache refresh and safe failure behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT

@@ -97,7 +97,7 @@ def rapid_fire_defaults(profile: str) -> tuple[bool, bool]:
 @dataclass(frozen=True)
 class GestureConfig:
     """Hold movement, curl, roll, depth, pulse, and tracking-loss thresholds."""
-    # Full-frame width and height of the centered joystick region.
+    # Full-frame width and height of the centred joystick region.
     joystick_deadzone: float = 0.60
     coordinate_edge_margin: float = 0.08
     coordinate_smoothing_min: float = 0.70
@@ -170,7 +170,7 @@ class GestureConfig:
 
 
 def joystick_deadzone_bounds(config: GestureConfig, calibration: Calibration):
-    """Return one square centered on saved neutral, translated intact into frame."""
+    """Return one square centred on saved neutral, translated intact into frame."""
     size = config.effective_joystick_deadzone(calibration)
     half = size / 2
     center_x = _clamp(calibration.palm_x, half, 1 - half)
@@ -198,7 +198,7 @@ MENU_GUARD_OFF = {"thumb": 0.20, "ring": 0.35}
 
 
 def vulcan_salute_pose(observation: HandObservation) -> bool:
-    """Recognize an open hand with a deliberate middle/ring finger split."""
+    """Recognise an open hand with a deliberate middle/ring finger split."""
     if not observation.usable:
         return False
     if any(value > 0.32 for value in observation.fingers.values()):
@@ -713,7 +713,7 @@ class GestureEngine:
             noise_y=min(1.0, noise_y),
             **prior_reach,
         )
-        # Re-centering measures neutral pose and jitter; it must not silently
+        # Re-centring measures neutral pose and jitter; it must not silently
         # discard a separately tuned comfortable reach. If the new centre made
         # an old endpoint geometrically unsafe, fall back to the full-field
         # mapping rather than persisting an invalid calibration.
@@ -1181,7 +1181,7 @@ class GestureEngine:
                 dpad["left"] = True
             if roll_right:
                 dpad["right"] = True
-            # The cartridge recognizes its Glove Zap as simultaneous Left+Right.
+            # The cartridge recognises its Glove Zap as simultaneous Left+Right.
             # Emit one 180 ms pulse per push edge; never leak it into menu poses.
             if menu_pose:
                 self._zap_until = 0.0

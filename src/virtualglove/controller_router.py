@@ -373,7 +373,7 @@ def retroarch_running(proc_root: Path = Path("/proc")) -> bool:
 
 
 def joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
-    """Recognize NES cores that accept VirtualGlove as a RetroPad."""
+    """Recognise NES cores that accept VirtualGlove as a RetroPad."""
     return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES
 
 
@@ -655,7 +655,7 @@ class ControllerRouterDevice:
         if buttons.get("glove_zap"): state.buttons.add("r2")
         state.set_axis("hat_x", int(bool(dpad.get("right"))) - int(bool(dpad.get("left"))))
         state.set_axis("hat_y", int(bool(dpad.get("down"))) - int(bool(dpad.get("up"))))
-        # FCEUmm and stock Nestopia consume the recognized NES D-pad. Camera
+        # FCEUmm and stock Nestopia consume the recognised NES D-pad. Camera
         # position axes belong to the separate native Super Glove Ball path;
         # forwarding them here can hold an ordinary game off-centre at launch.
         self.virtual_updated_at = time.monotonic(); self._publish()

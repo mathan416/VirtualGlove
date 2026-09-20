@@ -156,7 +156,7 @@ while making the actual control path less dependable.
 
 We rejected the experiment. Optical flow was disabled, then removed in the
 0.4.2 cleanup. Git history remains the archive. This failure established an
-important rule for the project: **an optimization must improve the complete
+important rule for the project: **an optimisation must improve the complete
 control experience, not merely its own stopwatch.**
 
 ### Finding the useful MediaPipe settings
@@ -479,7 +479,7 @@ repeatedly removing ambiguity:
 - separate preview work from control delivery;
 - replay identical pixels when comparing recognition settings;
 - inspect cue-labelled misses instead of trusting a single percentage;
-- use live play to reject optimizations that win only on paper;
+- use live play to reject optimisations that win only on paper;
 - state exactly which boundaries remain unmeasured.
 
 The finished system is faster because it does less speculative work. It follows

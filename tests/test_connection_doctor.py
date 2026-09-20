@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_connection_doctor.py
-# Purpose: Verify Connection Doctor browser logic and safe diagnostic behavior.
+# Purpose: Verify Connection Doctor browser logic and safe diagnostic behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -53,7 +53,7 @@ process.stdout.write(JSON.stringify({downloaded,calls,probeReads,disabled:$('doc
 });
 """
 
-@unittest.skipUnless(shutil.which('node'), 'Node is required for JavaScript behavior checks')
+@unittest.skipUnless(shutil.which('node'), 'Node is required for JavaScript behaviour checks')
 class ConnectionDoctorTests(unittest.TestCase):
     def test_every_setup_button_has_one_control_and_a_script_owner(self):
         """Keep newly added Setup controls from becoming inert decoration."""

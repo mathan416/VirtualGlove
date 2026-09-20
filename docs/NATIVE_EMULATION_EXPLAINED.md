@@ -8,7 +8,7 @@
 > available for research history and is not published as a separate Help card
 > or PDF.
 
-VirtualGlove offers two ways to turn the same recognized hand into game
+VirtualGlove offers two ways to turn the same recognised hand into game
 input. Most supported games use ordinary NES-style directions and buttons.
 Super Glove Ball can instead consume a native Power Glove packet through
 **Nestopia (VirtualGlove)**, the separately named native core. Linux keeps the
@@ -62,7 +62,7 @@ frontend. LaunchBox retains physical XInput plus a loopback Network RetroPad
 for FCEUmm games, with real keyboard bindings as a manual fallback. Native Super Glove Ball bypasses that RetroPad path
 and consumes only the guarded native record, while its core additionally
 carries physical Start and Select into the two confirmed native packet codes. A profile maps
-recognized gestures to D-pad directions, A, B, Start, and Select.
+recognised gestures to D-pad directions, A, B, Start, and Select.
 Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated
 presses near the boundary.
@@ -79,7 +79,7 @@ not teach the game to understand continuous hand coordinates. FCEUmm remains an
 explicit, complete joystick-style fallback for Super Glove Ball.
 
 Three numeric profiles deliberately change how the camera participates:
-Program 2 adds live centering feedback without changing the saved calibration;
+Program 2 adds live centring feedback without changing the saved calibration;
 Program 13 emits gesture-based A/B and leaves D-pad movement to the merged
 physical Player 1 controller; Program 14 closes the camera and emits no
 VirtualGlove controls while keeping the game session visible. The detailed
@@ -108,9 +108,9 @@ natural Robo-Glove positioning.
 MediaPipe Hands supplies every live coordinate. Geometry is validated and the
 point is clamped to the saved reach before it is published. **Latest
 coordinate** uses each newest point directly during continuous tracking and is
-the only live native movement behavior. Historical bounded-curve tooling remains
+the only live native movement behaviour. Historical bounded-curve tooling remains
 available for engineering replay, but it is not a Controller setting. Latest
-uses the selected frame's capture time, saved center, and per-player reach. A
+uses the selected frame's capture time, saved centre, and per-player reach. A
 short missed observation may hold only X/Y for up to 180 ms
 while actions release. On recovery, Latest accepts aligned forward movement at
 once but holds one contradictory or unusually distant non-forward measurement
@@ -123,7 +123,7 @@ includes it in the authenticated profile heartbeat. Only `super_glove_ball`
 with the separately named Nestopia (VirtualGlove) core selects native input.
 FCEUmm, another core, or an unknown core selects ordinary joystick input.
 
-| What you do | Native Super Glove Ball behavior confirmed in live play |
+| What you do | Native Super Glove Ball behaviour confirmed in live play |
 | --- | --- |
 | Move the hand horizontally or vertically | Continuous Robo-Glove X/Y positioning |
 | Open the hand | Release or throw |
@@ -139,13 +139,13 @@ They are not a claim about every Power Glove-compatible game or ROM revision.
 ## Additional native fields
 
 Every implemented action required to complete Super Glove Ball has been
-confirmed in live play. Wrist rotation is still recognized by VirtualGlove, but
+confirmed in live play. Wrist rotation is still recognised by VirtualGlove, but
 it and the remaining unused native packet fields stay neutral because no
 required in-game action has been identified for them. Bytes 7–8 remain at
 Nestopia's fixed `$00` initialization. Successful play at zero does not prove
 that every ROM ignores those fields.
 
-A field should only be enabled when a repeatable game behavior and a controlled
+A field should only be enabled when a repeatable game behaviour and a controlled
 test justify it. Guessing from a packet diagram can introduce unintended actions.
 The [packet table](super-glove-ball-native.md#confirmed-exact-rom-packet) separates
 confirmed meanings from the parts still under investigation.
@@ -185,7 +185,7 @@ chosen during installation. Its launcher selects `super_glove_ball` plus
 `lr-powerglove-dot` only for the lifetime of the test, so the Controller uses
 the native coordinate path without pretending that an NES ROM is running.
 
-Use it to check center, per-player movement reach, edge behavior, stationary
+Use it to check centre, per-player movement reach, edge behaviour, stationary
 jitter, brief loss, and recovery. It does not emulate the Power Glove packet,
 evaluate finger gestures, or replace live testing in Super Glove Ball.
 

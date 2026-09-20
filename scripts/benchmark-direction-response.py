@@ -169,7 +169,7 @@ def matched_branches(session: Session, saved: bytes, baseline_mask: int, changed
 
 
 def observation(timestamp: float, dx: float = 0.0, dy: float = 0.0) -> HandObservation:
-    """Create one deterministic open-hand camera observation around calibrated center."""
+    """Create one deterministic open-hand camera observation around calibrated centre."""
     return HandObservation(
         timestamp=timestamp, detected=True, confidence=1.0,
         palm_x=.5 + dx * .2, palm_y=.5 + dy * .2, palm_scale=.2,

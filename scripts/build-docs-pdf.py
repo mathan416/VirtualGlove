@@ -234,8 +234,8 @@ def parse_table(
         )
     ]
     image_columns = {column for column, _row in image_cells}
-    centered_head = ParagraphStyle("TableHeadCentered", parent=styles["table_head"], alignment=TA_CENTER)
-    centered_body = ParagraphStyle("TableCentered", parent=styles["table"], alignment=TA_CENTER)
+    centered_head = ParagraphStyle("TableHeadCentred", parent=styles["table_head"], alignment=TA_CENTER)
+    centered_body = ParagraphStyle("TableCentred", parent=styles["table"], alignment=TA_CENTER)
     formatted = [
         [table_cell(
             cell, source,
@@ -1658,7 +1658,7 @@ def main():
           "Architecture and flows")
     build(docs / "MATRIX_GUIDE.md", OUTPUT / "VirtualGlove-Matrix-Guide.pdf",
           "Matrix Display Guide",
-          "Recognize animations, mode letters, pairing, and startup feedback.",
+          "Recognise animations, mode letters, pairing, and startup feedback.",
           "Display reference")
     build(input_audit, OUTPUT / "VirtualGlove-Input-Audit.pdf",
           "Power Glove Game ROM Input Audit",

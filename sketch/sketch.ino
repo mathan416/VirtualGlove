@@ -14,7 +14,7 @@
 //   2026-09-02 - Added to VirtualGlove.
 //   2026-09-03 - Standardized source documentation and maintenance metadata.
 //   2026-09-03 - Added the gestures-idle Power Glove attract animation.
-//   2026-09-03 - Refined the attract animation with cuff travel, spark motion, and grayscale pulsing.
+//   2026-09-03 - Refined the attract animation with cuff travel, spark motion, and greyscale pulsing.
 //   2026-09-03 - Added a scanning L animation for Learn mode.
 
 #include "Arduino_RouterBridge.h"
@@ -54,7 +54,7 @@ k_thread_stack_t* displayStack = nullptr;
 k_tid_t displayThreadId = nullptr;
 
 // Original 8-bit artwork sized for the UNO Q's 8x13 blue matrix. Characters
-// encode brightness: '.' is off, '1' through '7' select exact grayscale
+// encode brightness: '.' is off, '1' through '7' select exact greyscale
 // levels, 'o' is legacy dim, and 'O' is full brightness.
 // A distinct hourglass means startup/loading; the glove remains the idle display.
 const char* const loadingFrames[][8] = {

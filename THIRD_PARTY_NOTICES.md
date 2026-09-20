@@ -228,9 +228,9 @@ or wrong-profile samples are neutralized.
 The patch registers a separate VirtualGlove controller, identifies the core as
 Nestopia PowerGlove where required by the established binary interface, and
 selects the native peripheral for the isolated core. The confirmed ten-byte
-packet carries X, Y, Z, open hand, fist, index point, and Start behavior. Fields
+packet carries X, Y, Z, open hand, fist, index point, and Start behaviour. Fields
 that the exact ROM does not use remain neutral. The compatibility boundary in
-[VirtualGlove Input Modes](docs/INPUT_MODES.md) separates confirmed behavior
+[VirtualGlove Input Modes](docs/INPUT_MODES.md) separates confirmed behaviour
 from deliberately unmapped fields.
 
 The local patch changes only `libretro/libretro.cpp` and
@@ -267,7 +267,7 @@ state ABI, or normal production selection.
 
 Signed controller protocol changes do not alter this libretro patch or require
 a core rebuild unless the native-state ABI itself changes. The confirmed
-behavior is documented in
+behaviour is documented in
 [VirtualGlove Input Modes](docs/INPUT_MODES.md#confirmed-compatibility-boundary).
 Bytes 7-8 retain Nestopia's fixed `$00` initialization because their gameplay
 role has not been established.
@@ -335,9 +335,9 @@ Before publishing a third-party update:
 6. Update this document and rebuild the published Third-party Notices PDF.
 
 For a MediaPipe wheel or model update, also test offline installation, checksum
-failure, camera start, recognition, tracking loss, and thermal behavior. For a
+failure, camera start, recognition, tracking loss, and thermal behaviour. For a
 Nestopia update, recheck the protected upstream header, native-state ABI, packet
-behavior, exact-ROM controls, architecture manifests, target-side load checks,
+behaviour, exact-ROM controls, architecture manifests, target-side load checks,
 and FCEUmm fallback. Detailed commands are in the
 [Configuration Reference](docs/CONFIGURATION_REFERENCE.md#build-inspect-or-maintain-project-files).
 

@@ -125,7 +125,7 @@ class ReachSession:
         raise ValueError('Camera practice did not become ready; check Dashboard.')
 
     def center(self, session):
-        """Recenter normally, clear previous reach, and verify the saved player identity."""
+        """Re-centre normally, clear previous reach, and verify the saved player identity."""
         before = self.center_path.stat().st_mtime_ns
         self.post('calibrate', {})
         deadline = self.clock() + 30
@@ -139,17 +139,17 @@ class ReachSession:
                 if reference is not None and all(getattr(reference, 'reach_' + d) == 0 for d in DIRECTIONS):
                     session.update(center=asdict(reference), samples={})
                     self.persist(session)
-                    return 'Center saved. Next, hold your comfortable left position.'
+                    return 'Centre saved. Next, hold your comfortable left position.'
             self.sleep(.1)
-        raise ValueError('Center not completed; hold a steady visible open hand and retry.')
+        raise ValueError('Centre not completed; hold a steady visible open hand and retry.')
 
     def hold(self, session, direction):
         """Sample three seconds of independent, confident raw palm positions."""
         if 'center' not in session:
-            raise ValueError('Record center first.')
+            raise ValueError('Record the centre first.')
         reference = load_calibration(self.center_path)
         if reference is None or asdict(reference) != session['center']:
-            raise ValueError('Center changed; record center again before measuring reach.')
+            raise ValueError('Centre changed; record the centre again before measuring reach.')
         axis = 'x' if direction in ('left', 'right') else 'y'
         values, seen = [], set()
         deadline = self.clock() + 3
@@ -170,7 +170,7 @@ class ReachSession:
             self.sleep(.02)
         current = load_calibration(self.center_path)
         if current is None or asdict(current) != session['center']:
-            raise ValueError('Center changed during this hold; retry after recentering.')
+            raise ValueError('Centre changed during this hold; retry after re-centring.')
         measured = measure_span(direction, values, session['center']['palm_' + axis], len(seen))
         session['samples'][direction] = measured
         self.persist(session)
@@ -184,7 +184,7 @@ class ReachSession:
                 raise ValueError('Record all four reach positions first.')
             current = load_calibration(self.center_path)
             if current is None or asdict(current) != session.get('center'):
-                raise ValueError('Center changed; not applying reach.')
+                raise ValueError('Centre changed; not applying reach.')
             neutral = dict(session['center'])
             neutral.update({'reach_' + k: v['span'] for k, v in session['samples'].items()})
             backup['calibration'] = calibration_value({'version': 2, 'neutral': neutral})
@@ -221,11 +221,11 @@ class ReachSession:
             status = self.get()
             player = status['player']
             if player.get('needs_center') or status.get('tuning', {}).get('active'):
-                raise ValueError('Finish player centering/tuning first.')
+                raise ValueError('Finish player centring/tuning first.')
             session = dict(state='active', player=player, samples={}, lease='reach-' + uuid.uuid4().hex)
             backup = self.post('api/players', dict(action='export', **self.player_args(session)))['backup']
             if backup['calibration'] is None:
-                raise ValueError('Set your hand center first.')
+                raise ValueError('Set your hand centre first.')
             folder = self.root / 'data/backups' / session['lease']
             folder.mkdir(mode=0o700, parents=True)
             backup_path = folder / 'hand-setup.json'
@@ -234,7 +234,7 @@ class ReachSession:
             self.persist(session)
             self.post('api/controller', {'enabled': False})
             self.wait_practice(session)
-            return 'Output paused. Hold a relaxed center pose, then run center. Backup: ' + str(backup_path)
+            return 'Output paused. Hold a relaxed centre pose, then run the center step. Backup: ' + str(backup_path)
         session = json.loads(self.path.read_text())
         if session['state'] != 'active':
             raise ValueError('No active reach session; inspect Dashboard if a restore is pending.')

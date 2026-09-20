@@ -42,7 +42,7 @@ When sources disagree, use this order:
 
 1. The exact user-supplied Super Glove Ball ROM's input routines and control flow.
 2. Controlled emulator traces of its writes, reads, assembled bytes, and cadence.
-3. Repeatable in-game detection, out-of-range, and movement behavior.
+3. Repeatable in-game detection, out-of-range, and movement behaviour.
 4. Nestopia's existing Power Glove implementation.
 5. The game manual and NESdev reverse-engineering notes.
 
@@ -57,11 +57,11 @@ implementation.
 | A custom core can consume one coherent latest sample per emulated frame | Confirmed in build and unit tests | Versioned 64-byte read-only record with matching even guards; there is no queue or second smoothing stage. |
 | Missing, uncalibrated, wrong-profile, or older-than-250 ms samples are neutral | Confirmed in implementation tests | The receiver also publishes a neutral record on transport timeout and shutdown. |
 | The native core builds separately from stock Nestopia | Confirmed at pinned revision `5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e` | Linux builds identify as `Nestopia PowerGlove`; the Windows build identifies as `Nestopia VirtualGlove`. Stock source and installed cores are not modified. |
-| Candidate X/Y encoding reaches Nestopia's existing Power Glove device | Confirmed for the exact ROM | Minimum, center, and maximum X/Y each produced distinct packets. Cabinet validation corrected the camera-to-Nestopia Y orientation. |
+| Candidate X/Y encoding reaches Nestopia's existing Power Glove device | Confirmed for the exact ROM | Minimum, centre, and maximum X/Y each produced distinct packets. Cabinet validation corrected the camera-to-Nestopia Y orientation. |
 | Detection signature, packet length, boundaries, and bit order | Confirmed | The ROM assembled inverse `$A0` as `$5F`, strobed once per byte, read ten bytes/80 bits per sample MSB first, and required the final stored byte to be `$3F`. |
 | Start encoding | Confirmed | Native byte 6 value `$82` left the title screen and began play while the controller stayed in native mode. On Windows, exact-ROM traces confirm both the V-sign state and physical Player 1 Start produce that same native code. |
 | Native Z encoding | Confirmed headlessly and in live gameplay | Calibrated camera depth is sign-reversed into the hardware convention. Neutral produced `$00`; maximum forward motion produced `$81`. Fist plus forward motion triggered Power Punch during a completed game. |
-| Native open, fist, and index-point encoding | Confirmed headlessly and in live gameplay | The exact ROM repeatedly received `$00` open, `$FF` fist, and `$0F` index-point samples. Shared five-finger recognition determines compound poses before transmission. Live play confirmed release/throw, grab/catch, and Robo-Bullet behavior. |
+| Native open, fist, and index-point encoding | Confirmed headlessly and in live gameplay | The exact ROM repeatedly received `$00` open, `$FF` fist, and `$0F` index-point samples. Shared five-finger recognition determines compound poses before transmission. Live play confirmed release/throw, grab/catch, and Robo-Bullet behaviour. |
 | Native roll byte and unobserved button codes | Neutral; no confirmed game action is missing | Native X/Y, depth, open hand, fist, index point, and Start are mapped. Super Glove Ball has shown no repeatable action for packet byte 4 or for other byte-6 codes. Standard A, B, Select, and wrist-to-button mappings remain available in the FCEUmm joystick mode; sending guessed native codes could create unintended input. |
 | Poll timing tolerances | Confirmed for tested sessions | Headless runs sustained ten-byte polling throughout native phases, and live cabinet sessions remained stable. Broader hardware and timing stress coverage remains useful. |
 | Headless X/Y activation and release responsiveness | Confirmed for the exact ROM | All four axes visibly diverged by frame 3; a 3.1% positive-X step also diverged by frame 3. See the [direction-response benchmark](direction-response-benchmark.md). |
@@ -97,8 +97,8 @@ ROM while assembling the byte:
 | Byte | Confirmed use | Neutral/test values |
 | --- | --- | --- |
 | 0 | Detection signature | `$A0`, assembled by the ROM as `$5F` |
-| 1 | X | `$80` minimum, `$00` center, `$7F` maximum |
-| 2 | Y | `$80` minimum, `$00` center, `$7F` maximum |
+| 1 | X | `$80` minimum, `$00` centre, `$7F` maximum |
+| 2 | Y | `$80` minimum, `$00` centre, `$7F` maximum |
 | 3 | Signed Z/depth | `$00` neutral; forward camera motion maps toward `$81`; away maps positive |
 | 4 | Unused roll candidate | `$00`; the exact ROM has shown no separate wrist-roll action |
 | 5 | Hand gesture | `$00` open, `$FF` fist, `$0F` index point |
@@ -107,7 +107,7 @@ ROM while assembling the byte:
 | 9 | Validation terminator | `$3F` |
 
 Nestopia initializes bytes 7–8 to `$00` and never updates them from controller
-input; our patch retains this behavior. Traces and completed live play confirm
+input; our patch retains this behaviour. Traces and completed live play confirm
 working input at these values, not that the ROM ignores them. No confirmed game
 action requires different values. Establishing a purpose would need focused
 ROM-use analysis or a repeatable one-byte-at-a-time gameplay test; these are not
@@ -115,7 +115,7 @@ known missing controls.
 
 The trace runner starts the exact ROM with the Power Glove attached, proves that
 native `$82` Start enters play, and holds each X/Y extreme for 120 frames. The
-captured screens place the Robo-Glove at left, center, right, bottom, center, and
+captured screens place the Robo-Glove at left, centre, right, bottom, centre, and
 top respectively. Separate 60-frame phases then transmit open, fist, open,
 index-point, open, and fist-plus-forward-Z packets. Tracking-lost, uncalibrated,
 and stale phases prove that the core returns neutral axes, pose, and buttons
@@ -135,7 +135,7 @@ for consumers. Format version 1 is a fixed 64-byte little-endian record containi
 - signed normalized X, Y, Z, and roll axes;
 - detected and calibrated flags;
 - four compact finger-flex levels;
-- recognized-button and compound-pose mask, including five-finger fist and
+- recognised-button and compound-pose mask, including five-finger fist and
     index-point decisions made by the shared recognizer;
 - active-profile identifier;
 - reserved bytes that stay zero.
@@ -234,9 +234,9 @@ per-ROM emulator choice on another cabinet or after changing the core protocol:
 1. Record the ROM digest and retain the ROM outside release packages.
 2. Trace controller strobes and configuration writes from power-on through the game's detection decision.
 3. Prove the detection signature, packet boundary, bit order, and polling cadence from those traces.
-4. Hold every field neutral, then vary X, Y, and Z independently through minimum, center, and maximum values.
+4. Hold every field neutral, then vary X, Y, and Z independently through minimum, centre, and maximum values.
 5. Transmit open, fist, and index point independently, returning to open between each pose.
-6. Confirm repeatable continuous movement plus grab/throw, Robo-Bullet, and fist-plus-forward Power Punch behavior without relying on packet logs alone. The primary cabinet passed this check in a completed game; repeat it after relevant recognition, transport, or core changes.
+6. Confirm repeatable continuous movement plus grab/throw, Robo-Bullet, and fist-plus-forward Power Punch behaviour without relying on packet logs alone. The primary cabinet passed this check in a completed game; repeat it after relevant recognition, transport, or core changes.
 7. Test stale samples, unavailable calibration, and tracking loss. Stale or
    uncalibrated input must immediately neutralize; a brief missed observation may
    hold only X/Y for up to 180 ms, with actions already released, before sustained
@@ -270,7 +270,7 @@ reported emulator and the resulting `native` or `joystick` input mode.
 Batocera's game hook normalizes its `nestopia_powerglove` core name to the same
 authenticated `lr-nestopia-powerglove` identity. The custom core selects the
 native peripheral internally, so frontend device timing cannot make the ROM
-miss its startup detection. This behavior exists only in the separately named
+miss its startup detection. This behaviour exists only in the separately named
 core.
 
 Recalbox's bounded process monitor reads the actual

@@ -267,7 +267,7 @@ to the configured registry directory and removes device access and capabilities.
 The Games, Controller Router, and Tune browser actions require JSON, an explicit action header,
 and matching Origin when supplied; cross-site browser requests are rejected.
 They retain the existing trusted-LAN administration model, not per-user accounts.
-Normal personalization contains numerical thresholds only. Measurements are held briefly
+Normal personalisation contains numerical thresholds only. Measurements are held briefly
 in memory, previews expire with the owning session, and camera images are not saved.
 Tuning suppresses controller delivery even if a game launches or another Dashboard
 requests input. Saved settings are validated and atomically replaced.
@@ -283,7 +283,7 @@ The optional Advanced diagnostic is the only Academy path that records video.
 It is explicitly started and user-paced, remains on the VirtualGlove Controller, and is deleted
 immediately after aggregate analysis or cancellation. An abandoned AVI expires
 after 30 minutes. Its downloadable JSON contains aggregate continuity, latency,
-confidence, lighting, and recognized-state names only: no frames, landmarks,
+confidence, lighting, and recognised-state names only: no frames, landmarks,
 tokens, addresses, or saved personal thresholds.
 
 ### Documentation screenshots
@@ -298,14 +298,14 @@ the interface; they are documentation examples only.
 
 Optional hand setup measures all five fingers; gesture tuning measures selected
 components. Both use three short sets of numerical samples in memory. The
-version-6 `data/gesture-tuning.json` file stores player names, one joystick center-box
+version-6 `data/gesture-tuning.json` file stores player names, one joystick centre-box
 size, gesture activation/release pairs shared across game profiles for each player, Academy progress, and a
-required-center flag and separate saved calibration, plus a bounded pending reference during a calibration
+required-centre flag and separate saved calibration, plus a bounded pending reference during a calibration
 restore. VirtualGlove v0.4.2 is the oldest supported in-place upgrade to 0.5.0 and already
 uses this store format. Portable hand-setup exports use the
 `virtualglove-hand-setup` format at version 4; older formats are rejected without
 changing their source or the active player.
-Exports contain a name, center-box size, personal and complete gesture threshold
+Exports contain a name, centre-box size, personal and complete gesture threshold
 pairs, software identity, and a neutral reference. They exclude
 camera images, landmarks, Wi-Fi credentials, pairing tokens, and lesson progress.
 Restoring calibration requires an explicit same-position confirmation and strict

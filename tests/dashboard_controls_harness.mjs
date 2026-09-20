@@ -137,7 +137,7 @@ for (const href of ["/setup", "/help/gameplay"])
 assert.ok(calls.some(call => call.path === "/api/practice" && call.body.reset && call.body.enabled === false),
   "Dashboard did not clear practice mode on entry");
 
-// Centering is single-flight and recovers from completion.
+// Centring is single-flight and recovers from completion.
 let resolveCalibration;
 calibrationDeferred = {promise: new Promise(resolve => { resolveCalibration = resolve; })};
 const calibrationsBefore = calls.filter(call => call.path === "/calibrate").length;

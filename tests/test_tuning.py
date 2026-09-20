@@ -392,7 +392,7 @@ class TuningTests(unittest.TestCase):
                     self.manager.observe(hand, self.calibration, cfg, True)
                     self.assertEqual(self.manager.snapshot()['finger_feedback'], feedback)
 
-    def test_hand_setup_recognizes_personal_extension_above_default_cutoff(self):
+    def test_hand_setup_recognises_personal_extension_above_default_cutoff(self):
         phases = self.phases()
         for i, phase in enumerate(phases):
             for sample in phase:

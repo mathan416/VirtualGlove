@@ -83,7 +83,7 @@ or Ethernet link**, including supported Ethernet adapters in USB docks.
 | --- | --- | --- |
 | Green | At least one detected physical Wi-Fi/Ethernet link is up | Check console-service and authenticated-response markers next |
 | Red | Detected relevant links report disconnected | Check wireless association, Ethernet cable, dock power, and upstream data connection |
-| Grey | The host report is missing, stale, incomplete, or has no recognized interface | Check that the Controller host sampler was installed/upgraded; do not assume the cable is disconnected |
+| Grey | The host report is missing, stale, incomplete, or has no recognised interface | Check that the Controller host sampler was installed/upgraded; do not assume the cable is disconnected |
 
 Docker bridges and loopback do not make this marker green. A green link does
 not prove an IP address, Internet access, console reachability, or game delivery.
@@ -98,7 +98,7 @@ and wait for **Starting camera and gesture tracking** to finish. First startup
 can take longer than switching between active profiles.
 
 When no camera is connected, Dashboard deliberately shows **Camera unavailable**
-instead of repeatedly presenting a broken preview. This behavior belongs to the
+instead of repeatedly presenting a broken preview. This behaviour belongs to the
 Controller and is the same for RetroPie, Recalbox, Batocera, and LaunchBox; it
 is not a Recalbox-specific failure.
 
@@ -112,7 +112,7 @@ until it reads a real frame.
 Repeated setting changes will not repair a disconnected USB device. See
 [Camera selection](CONFIGURATION_REFERENCE.md#camera-selection).
 
-## The camera works but the hand is not recognized
+## The camera works but the hand is not recognised
 
 Keep one whole hand in frame with its palm facing the camera. Light the hand
 from the camera side and avoid a bright window behind it. Try a bare hand
@@ -131,7 +131,7 @@ adding a runtime setting to `device.json`.
 ## The hand is detected but the game does not move
 
 1. Close local Play and Glove Academy; they pause cabinet input. Finish tuning, then explicitly start controller delivery if required.
-2. Check the selected player and any request to set a fresh centre. Selecting a player loads their saved centre automatically. Use **Center hand** if no centre is saved or the camera or playing position has changed.
+2. Check the selected player and any request to set a fresh centre. Selecting a player loads their saved centre automatically. Use **Centre hand** if no centre is saved or the camera or playing position has changed.
 3. Select **Start controller**. Armed means delivery is permitted when a valid game session or intentional manual profile is active; it does not mean packets are always being sent.
 4. Check Setup's console-service and authenticated-response markers. A reachable service with unconfirmed authentication suggests pairing needs attention. Neither marker proves emulator input consumption.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
@@ -178,7 +178,7 @@ rewritten at launch; do not repair that temporary file manually.
 On LaunchBox, the installer must
 report `network-retropad`, a random high loopback port, and a validated isolation
 rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
-and physical XInput remain available. If gestures are recognized but FCEUmm does
+and physical XInput remain available. If gestures are recognised but FCEUmm does
 not move, rerun the current installer to restore the managed ordinary-game
 configuration and receiver route rather than changing global RetroArch settings.
 If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
@@ -207,7 +207,7 @@ depending on a changing Linux event number.
 
 If a controller is listed as **Unavailable**:
 
-1. Reconnect that exact controller and wait for EmulationStation to recognize it.
+1. Reconnect that exact controller and wait for EmulationStation to recognise it.
 2. Confirm it still appears and works in EmulationStation.
 3. Run **Check controllers** again and press one of its controls.
 4. If the old controller was replaced, close every RetroArch game, assign the
@@ -271,7 +271,7 @@ address or repair local name resolution in that case rather than pairing repeate
 ## Movement drifts or feels reversed
 
 Check the selected game profile and centre before changing sensitivity. Hold a
-relaxed hand at the intended playing position and choose **Center hand**.
+relaxed hand at the intended playing position and choose **Centre hand**.
 Support your forearm where practical. Re-centre after moving the camera.
 
 A profile such as Program D intentionally reverses controls. Native Super Glove
@@ -283,11 +283,11 @@ If ordinary movement is correct but a gesture is unreliable, use **Glove Academy
 → Tune gestures** and describe that symptom to Pixel Pal.
 
 For FCEUmm digital directions, Setup's **Joystick dead zone** adjusts how far
-the selected player moves beyond the square center box. Inside or on its boundary,
+the selected player moves beyond the square centre box. Inside or on its boundary,
 all positional directions release; beyond a side is a cardinal direction and beyond
 a corner is a diagonal. Start with **Use standard size**, then save one small change
 at a time while watching the live direction indicators. The box is anchored to
-the hand center saved by **Center hand**, and its effective width and height are
+the hand centre saved by **Centre hand**, and its effective width and height are
 at least 1.5 times the saved hand size. Near an edge it moves inward intact.
 Live hand size and resting jitter do not make it change. Slider changes preview immediately; Save applies them to
 gameplay. This setting does not
@@ -295,7 +295,7 @@ change native Super Glove Ball X/Y travel or cure processing latency. Use reach
 controls under **Glove Academy → Tune gestures → Movement reach** for native
 screen coverage and the latency procedure below for delay. Smaller reach values
 need less physical hand travel. **Latest coordinate** is the tested default;
-it is the only live native movement behavior and clamps at the saved reach
+it is the only live native movement behaviour and clamps at the saved reach
 edges. Historical bounded-curve replay is an engineering tool, not a Dashboard
 setting. If the Robo-Glove still jumps after
 the hand leaves and re-enters the picture, confirm that the Controller and
@@ -308,7 +308,7 @@ movement immediately.
 
 Practise the V sign and its release in Glove Academy. Keep your fingers clearly
 away from a menu pose while performing another action. Use **A gesture happens
-accidentally** in Tune gestures if recognition needs personalization.
+accidentally** in Tune gestures if recognition needs personalisation.
 
 Menu Guard suppresses D-pad and button output; native continuous positioning
 still follows the hand. Select **Stop controller** for a dependable pause while
@@ -336,7 +336,7 @@ progress. Your browser usually puts it in Downloads with a player-based name,
 such as `alex-virtualglove-hand-setup.json`.
 
 Restore updates the selected player after review. An empty personal-threshold
-object can simply mean defaults are in use. Version-3 backups carry the center-box
+object can simply mean defaults are in use. Version-3 backups carry the centre-box
 size and effective gesture sensitivity; version-2 backups are migrated on import.
 See [backup locations and restore choices](CONFIGURATION_REFERENCE.md#where-player-settings-and-backup-files-live).
 

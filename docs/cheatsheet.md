@@ -1,4 +1,4 @@
-<p align="center">
+<p align="centre">
   <img src="../assets/virtualglove-logo.png" alt="VirtualGlove" width="680">
 </p>
 
@@ -268,7 +268,7 @@ merged players across Libretro systems; VirtualGlove gestures remain limited
 to supported NES and native Super Glove Ball paths. LaunchBox retains physical XInput and adds VirtualGlove
 through a LAN-isolated loopback RetroPad; real keyboard mappings remain a manual
 fallback and their command/hotkey conflicts are reported. Native
-Super Glove Ball sends recognized hand controls only through the guarded native
+Super Glove Ball sends recognised hand controls only through the guarded native
 record and does not duplicate them as ordinary RetroPad input.
 Batocera resolves a packaged native core for its exact architecture and
 load-tests it before exposure; exact registered Super Glove Ball ROMs are
@@ -341,12 +341,12 @@ The app retries camera initialization automatically. Keep **Camera** set to
 ### Place the camera before calibrating
 
 1. Put the camera in its normal cabinet position before calibration.
-2. Stand or sit at your normal playing distance. Keep your comfortable center and the full area you intend to reach inside the camera view, with room at every edge.
-3. Hold a relaxed open hand at that center and select **Center hand**. Direction thresholds are shared across games and automatically rise above measured resting-hand jitter; separate left, right, up, and down calibration is not normally needed.
+2. Stand or sit at your normal playing distance. Keep your comfortable centre and the full area you intend to reach inside the camera view, with room at every edge.
+3. Hold a relaxed open hand at that centre and select **Centre hand**. Direction thresholds are shared across games and automatically rise above measured resting-hand jitter; separate left, right, up, and down calibration is not normally needed.
 4. After checking the live view, close Dashboard or the direct camera stream while playing. Tracking and controller delivery continue, while closing the 5 fps preview reduces avoidable VirtualGlove Controller work and game stutter.
 
 Recalibrate after moving the camera, changing your playing distance, or changing
-your normal center. Returning to the same position produces a similar reference,
+your normal centre. Returning to the same position produces a similar reference,
 although normal camera variation means the saved numbers will not be identical.
 
 ## Website screenshots
@@ -369,7 +369,7 @@ All application screenshots were refreshed from the current source on September 
 
 Glove Academy teaches sixteen lessons with camera feedback and saved progress
 for each player. Complete every lesson to earn **Glove Master**. Learning shows
-**L** on the matrix; optional personalization shows **T**. Both pause cabinet input.
+**L** on the matrix; optional personalisation shows **T**. Both pause cabinet input.
 
 Use **Setup → Players → Players and hand-setup backups** to export the selected player. Your browser
 saves a named file such as `iain-virtualglove-hand-setup.json` on the computer,
@@ -380,7 +380,7 @@ See [backup file locations](CONFIGURATION_REFERENCE.md#where-player-settings-and
 
 ### Tune gestures
 
-![Tune mode with Pixel Pal guiding the personalization choices](images/tune-page.png)
+![Tune mode with Pixel Pal guiding the personalisation choices](images/tune-page.png)
 
 The matrix shows **T** while tuning. Pixel Pal's instruction and primary action sit
 beside the camera on a wide screen. **Movement reach** separately adjusts the
@@ -441,7 +441,7 @@ Leaving Glove Academy restores the selected profile. **Program 14 — Physical
 controller only** also closes the camera, but retains the numbered profile and
 authenticated registered-game session.
 
-RetroPie launch hooks select the registered profile when a recognized game
+RetroPie launch hooks select the registered profile when a recognised game
 starts. A detached monitor waits until RetroArch is running, then renews a bounded
 game session every two seconds. If you launch an unregistered game or a game for a
 system other than NES or Famicom, the launch hook selects **Gestures off**. Ending a
@@ -463,7 +463,7 @@ player explicitly stopped.
 | Curl the thumb and ring finger together | <img src="images/gestures/actions/menu-guard.png" alt="Menu guard with thumb and ring finger curled" width="128"> | Menu guard suppresses D-pad, A, B, Start, and Select. Native Super Glove Ball continuous positioning remains active; use Stop controller to reposition without sending controls. |
 
 Start and Select poses suppress A/B while they form. Keep your hand near its
-calibrated center because some profiles can still produce auxiliary output from
+calibrated centre because some profiles can still produce auxiliary output from
 wrist, depth, or other finger states.
 
 ### Original Programs 1-14 at a glance
@@ -471,7 +471,7 @@ wrist, depth, or other finger states.
 | Program | Games or purpose | Essential controls |
 | --- | --- | --- |
 | 1 | 28 indexed general-action games | Position is D-pad; thumb A; index B; last three fingers trigger a short opposite-turn+B action. |
-| 2 | Centering practice | Program 1 controls plus live **Centered** / **Return to centre** feedback. |
+| 2 | Centring practice | Program 1 controls plus live **Centred** / **Return to centre** feedback. |
 | 3 | Ice Hockey; Top Gun | Side movement Left/Right; push/pull Up/Down; thumb A; index B. |
 | 4 | Iron Tank | Four-finger and wrist poses drive treads; thumb A; near-inverted wrist B. |
 | 5 | Alpha Mission; Life Force; Xevious; 1943 | Side movement or wrist bank Left/Right; push/pull Up/Down; thumb A; index B. |
@@ -538,7 +538,7 @@ reports the core that actually started, so only
 `super_glove_ball` + `lr-nestopia-powerglove` selects native input. FCEUmm and
 any other or unknown core select joystick output.
 
-- **`lr-nestopia-powerglove`** is the native path. It uses the shared camera center and safety behavior, but bypasses D-pad thresholds and sends continuous absolute X/Y across the saved reach. **Latest coordinate** uses MediaPipe Hands directly during continuous tracking and holds only one contradictory or unusually distant non-forward reacquisition for confirmation. Exact-ROM tests confirm controller detection, native Start, X/Y, signed Z, and open/fist/index packet values. Full-game cabinet play confirms grab/throw, index fire, and fist-plus-forward Power Punch. Wrist rotation and remaining unused native packet fields stay neutral.
+- **`lr-nestopia-powerglove`** is the native path. It uses the shared camera centre and safety behaviour, but bypasses D-pad thresholds and sends continuous absolute X/Y across the saved reach. **Latest coordinate** uses MediaPipe Hands directly during continuous tracking and holds only one contradictory or unusually distant non-forward reacquisition for confirmation. Exact-ROM tests confirm controller detection, native Start, X/Y, signed Z, and open/fist/index packet values. Full-game cabinet play confirms grab/throw, index fire, and fist-plus-forward Power Punch. Wrist rotation and remaining unused native packet fields stay neutral.
 - **`lr-fceumm`** remains the complete fallback. It stays in standard joystick mode for the whole session and uses the same responsive movement, finger gestures, and buttons as other FCEUmm games.
 
 Choose FCEUmm again from the same launch menu whenever you want to compare the
@@ -551,7 +551,7 @@ FCEUmm. Use these controls:
 
 | Gesture | Gun Smoke action |
 | --- | --- |
-| Move the whole hand | Walk left, right, up, or down. Returning toward center releases promptly. |
+| Move the whole hand | Walk left, right, up, or down. Returning toward centre releases promptly. |
 | Roll wrist left or right | Add left or right movement. |
 | Curl index finger | A: shoot diagonally right. |
 | Push toward camera | B: shoot diagonally left. |
@@ -566,8 +566,8 @@ full movement region visible, and then calibrate.
 
 1. Launch an unregistered NES or Famicom game. VirtualGlove should show **Gestures off**.
 2. Open Dashboard and choose **A: Pinball**, **D: Challenge**, **H: General**, or another profile.
-3. Wait for the camera view. Hold your open hand in your comfortable resting position. This is your **neutral position**: the position the app treats as the center for movement.
-4. If a direction remains active while your hand is at rest, select **Center hand** and hold still. Also recalibrate after moving the camera or changing your playing position.
+3. Wait for the camera view. Hold your open hand in your comfortable resting position. This is your **neutral position**: the position the app treats as the centre for movement.
+4. If a direction remains active while your hand is at rest, select **Centre hand** and hold still. Also recalibrate after moving the camera or changing your playing position.
 5. Select **Start controller** and test movement, actions, Start, and Select in the game.
 6. Select **Stop controller** before adjusting the camera or testing another mapping.
 
@@ -633,7 +633,7 @@ the VirtualGlove Controller must publish UDP `55356`, and the registry must matc
 2. Tell Pixel Pal whether this is a new hand, a hard gesture, an accidental gesture, or an off-centre play area.
 3. Follow one prompt at a time. When tracking has been clear and steady for one second, select **I'm ready** and follow the countdown.
 4. Try the preview twice, release it twice, and remain neutral for three seconds.
-5. Save the personalization when the guided check passes. Manual values and selective reset are under **Advanced**.
+5. Save the personalisation when the guided check passes. Manual values and selective reset are under **Advanced**.
 
 Controller delivery stays paused during tuning. Start it explicitly from Dashboard
 when ready to play. See [Tune gesture sensitivity](CONFIGURATION_REFERENCE.md#tune-gesture-sensitivity)
@@ -702,7 +702,7 @@ sessions, and restarts. Include it in private backups. Recalibrate when your
 physical setup changes or the resting hand position produces unwanted movement.
 The app uses 24 geometrically valid observations. MediaPipe's displayed score
 describes handedness certainty, not position confidence, so it is not used as a
-false calibration-quality gate. Returning to the same center, distance, and wrist pose produces a similar reference, although
+false calibration-quality gate. Returning to the same centre, distance, and wrist pose produces a similar reference, although
 normal camera variation means the saved values will not be exactly equal.
 Installers preserve this private reference while replacing the shared tested
 recognition baseline in `config/profiles.json`.
@@ -732,13 +732,13 @@ matrix animation, or fixed waiting period does not confirm that power can safely
 be removed. See the [Installation Guide](INSTALL_README.md) for the recorded
 investigation and shutdown guidance.
 
-## Player centers, backups, and Wi-Fi status
+## Player centres, backups, and Wi-Fi status
 
-Each player retains a separate center. Selecting a player in Glove Academy immediately
-loads their sensitivity, progress, and saved center. Use **Center hand** for a new
+Each player retains a separate centre. Selecting a player in Glove Academy immediately
+loads their sensitivity, progress, and saved centre. Use **Centre hand** for a new
 player or after moving the camera or changing playing position. Controller output remains paused until Start.
 
-Portable backups now use VirtualGlove version 4. New exports include the center-box size,
+Portable backups now use VirtualGlove version 4. New exports include the centre-box size,
 personal and complete gesture sensitivity, software identity, and the player's saved calibration. Restore
 separately confirms complete sensitivity and calibration reuse. Version 4 is the
 only supported portable backup format. Current version-6 player stores are

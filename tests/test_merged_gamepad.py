@@ -1,6 +1,6 @@
 # Project: VirtualGlove
 # File: tests/test_merged_gamepad.py
-# Purpose: Verify generic Recalbox/Batocera merged Player 1 behavior.
+# Purpose: Verify generic Recalbox/Batocera merged Player 1 behaviour.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
@@ -9,7 +9,7 @@
 #   2026-09-16 - Added merged Player 1 selection and arbitration coverage.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Verify generic Recalbox/Batocera merged Player 1 behavior."""
+"""Verify generic Recalbox/Batocera merged Player 1 behaviour."""
 
 import json
 import struct

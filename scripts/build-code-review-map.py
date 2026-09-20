@@ -114,11 +114,11 @@ The supported console integrations are deliberately different:
 Programs 1-14, Programs A-I, Bad Street Brawler, Super Glove Ball, and Gestures
 off share the same player, pairing, registry, rapid-fire, and safety model.
 FCEUmm handles ordinary NES mappings. Packaged Nestopia PowerGlove cores provide
-native Super Glove Ball behavior on supported console architectures.
+native Super Glove Ball behaviour on supported console architectures.
 
 REVIEW ORDER
 ------------
-1. README.md and docs/ARCHITECTURE.md for supported behavior and boundaries.
+1. README.md and docs/ARCHITECTURE.md for supported behaviour and boundaries.
 2. python/main.py and src/virtualglove/control_server.py for supervision,
    persistence, web/API ownership, and controller arming.
 3. tracker.py -> gesture.py -> vision_app.py for camera-to-controller state.
@@ -126,7 +126,7 @@ REVIEW ORDER
    delivery, replay protection, timeout release, and output backends.
 5. Platform launch/install paths below, followed by their matching tests.
 6. scripts/application-payload.py, scripts/install-package.py, and
-   scripts/installation-manifest.py before changing upgrade behavior.
+   scripts/installation-manifest.py before changing upgrade behaviour.
 
 RUNTIME AND PLATFORM MAP
 ------------------------
@@ -208,7 +208,7 @@ Retain tests that appear historical when they protect a current boundary:
 * rejection of protocol v1 and retired command-line options;
 * removal of old PowerGlove runtime/service files;
 * unsupported player/import formats remaining untouched;
-* internal directional-search behavior (the old device setting is retired,
+* internal directional-search behaviour (the old device setting is retired,
   but the bounded tracking algorithm is active).
 
 Primary validation commands are maintained in docs/CONTRIBUTING.md and CI in
@@ -219,7 +219,7 @@ Primary validation commands are maintained in docs/CONTRIBUTING.md and CI in
 
 Release validation additionally covers source/documentation audits, JavaScript
 syntax and browser harnesses, installer/package verification, native manifests,
-PDF rendering, UNO Q behavior, and each affected console platform.
+PDF rendering, UNO Q behaviour, and each affected console platform.
 
 CONSERVATIVE RC1 CLEANUP AUDIT
 ------------------------------

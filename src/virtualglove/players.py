@@ -28,7 +28,7 @@ DEFAULT_JOYSTICK_DEADZONE = 0.60
 
 
 def joystick_deadzone(value):
-    """Validate the saved center-box width and height as a full-frame fraction."""
+    """Validate the saved centre-box width and height as a full-frame fraction."""
     if (isinstance(value, bool) or not isinstance(value, (int, float))
             or not math.isfinite(value) or not 0.10 <= value <= 1.0):
         raise ValueError("Choose a joystick dead zone between 0.10 and 1.00.")
@@ -246,7 +246,7 @@ class PlayerSettings:
             data["generation"] += 1
         elif action == "reuse_calibration":
             if request.get("confirmed") is not True or item["calibration"] is None:
-                raise ValueError("Confirm unchanged camera and playing positions before reusing a saved center.")
+                raise ValueError("Confirm unchanged camera and playing positions before reusing a saved centre.")
             item["needs_center"] = True
             data["calibration_restore"] = copy.deepcopy(item["calibration"])
             data["generation"] += 1

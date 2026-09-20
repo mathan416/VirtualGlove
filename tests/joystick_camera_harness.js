@@ -37,11 +37,11 @@ vision='active';await poll();assert(!image.hidden&&image.src.startsWith('/stream
 const id=calls.find(x=>x.path==='/api/practice').data.session;await heartbeat();assert(calls.filter(x=>x.path==='/api/practice'&&x.data.enabled).length>=2);assert(calls.filter(x=>x.path==='/api/practice').every(x=>x.data.session===id));
 if(scenario==='center'){
  const center=$('joystick-center'),size=$('joystick-size');image.onload();assert.equal(center.disabled,false);size.value='.4';size.oninput();
- await center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1);assert.equal(button.disabled,true);assert.equal(center.textContent,'Centering…');
+ await center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1);assert.equal(button.disabled,true);assert.equal(center.textContent,'Centring…');
  center.onclick();await settle();assert.equal(calls.filter(x=>x.path==='/calibrate').length,1,'centering is single-flight');
- statusPatch={calibrating:true,calibrated:false};await poll();assert.equal(center.textContent,'Centering…');assert($('joystick-center-status').textContent.includes('relaxed open hand'));
+ statusPatch={calibrating:true,calibrated:false};await poll();assert.equal(center.textContent,'Centring…');assert($('joystick-center-status').textContent.includes('relaxed open hand'));
  generation++;statusPatch={calibrating:false,calibrated:true,player:{active,generation,needs_center:false},joystick_grid:{anchor:{x:.4,y:.55},center:{x:.4,y:.55},half_size:.3,minimum_size:.3}};await poll();
- assert.equal(center.textContent,'Center saved ✓');assert.equal(center.disabled,false);assert.equal(button.disabled,false);assert.equal(Number(size.value),.4);assert($('joystick-value').textContent.includes('Unsaved preview'));assert(!image.hidden);assert($('joystick-center-status').textContent.includes('grid now uses this position'));
+ assert.equal(center.textContent,'Centre saved ✓');assert.equal(center.disabled,false);assert.equal(button.disabled,false);assert.equal(Number(size.value),.4);assert($('joystick-value').textContent.includes('Unsaved preview'));assert(!image.hidden);assert($('joystick-center-status').textContent.includes('grid now uses this position'));
  statusPatch={};
 }
 if(scenario==='grid'){

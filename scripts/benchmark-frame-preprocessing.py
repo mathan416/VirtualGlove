@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Change log:
 #   2026-09-09 - Documented isolated preparation closures for source checks.
-#   2026-09-08 - Added fused and grayscale controls with streaming, frame-free reports.
+#   2026-09-08 - Added fused and greyscale controls with streaming, frame-free reports.
 #   2026-09-07 - Added an output-paused mirror and buffer-reuse benchmark.
 # Full history: docs/CHANGELOG.md and Git history.
 
@@ -15,7 +15,7 @@
 
 The benchmark never runs MediaPipe, never enables controller output, and retains
 only aggregate timings. The fused NumPy lane is eligible for later live testing
-only when it exactly matches the current mirrored RGB pixels. Grayscale and
+only when it exactly matches the current mirrored RGB pixels. Greyscale and
 no-mirror lanes are deliberately non-equivalent controls, not candidates.
 """
 from __future__ import annotations
@@ -97,9 +97,9 @@ def build_report(lanes: dict, frames: int, equivalence: dict) -> dict:
         "limitations": [
             "This isolates preparation cost; MediaPipe inference is not run or estimated.",
             "VideoCapture has already decoded each source frame to BGR before these lanes run.",
-            "The grayscale transform control measures BGR-to-gray-to-RGB work, not camera MJPEG grayscale decoding.",
+            "The greyscale transform control measures BGR-to-grey-to-RGB work, not camera MJPEG greyscale decoding.",
             "Synthetic JPEG controls re-encode each decoded frame outside the timed lanes and do not reproduce the camera's original MJPEG bytes.",
-            "Grayscale and no-mirror outputs are not recognition-equivalent and cannot be promoted from this report.",
+            "Greyscale and no-mirror outputs are not recognition-equivalent and cannot be promoted from this report.",
             "Any bit-exact faster candidate still requires repeated live latency, continuity, gesture, and thermal validation.",
         ],
     }
@@ -169,7 +169,7 @@ def run(path: Path, maximum: int, jpeg_controls: bool = True) -> dict:
             lanes["no_mirror_convert_only"].append(elapsed)
 
             def grayscale_prepare():
-                """Build the grayscale comparison lane and expand it to RGB."""
+                """Build the greyscale comparison lane and expand it to RGB."""
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 gray = cv2.flip(gray, 1)
                 return cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
@@ -193,10 +193,10 @@ def run(path: Path, maximum: int, jpeg_controls: bool = True) -> dict:
                 lanes["synthetic_jpeg_color_decode_prepare"].append(elapsed)
 
                 def grayscale_decode_expand():
-                    """Decode the grayscale JPEG control and expand it to RGB."""
+                    """Decode the greyscale JPEG control and expand it to RGB."""
                     gray = cv2.imdecode(encoded, cv2.IMREAD_GRAYSCALE)
                     if gray is None:
-                        raise RuntimeError("synthetic grayscale JPEG decode failed")
+                        raise RuntimeError("synthetic greyscale JPEG decode failed")
                     return cv2.cvtColor(cv2.flip(gray, 1), cv2.COLOR_GRAY2RGB)
 
                 _gray, elapsed = _timed(grayscale_decode_expand)
@@ -224,7 +224,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument(
         "--no-jpeg-controls", action="store_true",
-        help="skip synthetic JPEG color/grayscale decode controls",
+        help="skip synthetic JPEG colour/greyscale decode controls",
     )
     args = parser.parse_args()
     report = run(args.clip, max(1, args.frames), not args.no_jpeg_controls)

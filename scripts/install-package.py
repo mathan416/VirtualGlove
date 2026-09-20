@@ -59,7 +59,7 @@ LEGACY_RUNTIME_MEMBERS = {
 
 
 def retropie_launcher_exists(current=RETROPIE_LAUNCHER):
-    """Recognize an existing supported VirtualGlove installation."""
+    """Recognise an existing supported VirtualGlove installation."""
     return current.is_file()
 
 

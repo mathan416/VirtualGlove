@@ -8,7 +8,7 @@
 # Change log:
 #   2026-09-07 - Added end-to-end delivery and measurement-boundary diagrams.
 #   2026-09-05 - Added the armed controller and renewable game-session gates.
-#   2026-09-06 - Updated tuning flow for the family personalization wizard.
+#   2026-09-06 - Updated tuning flow for the family personalisation wizard.
 #   2026-09-04 - Added seven source-defined architecture diagrams.
 # Full history: docs/CHANGELOG.md and Git history.
 
@@ -80,12 +80,12 @@ def main():
       ('restore',2,2,'Exit or lease expiry','Restore selected vision mode')],
       [('off','idle'),('play','gate'),('learn','tune'),('tune','restore')],
       'Start/Stop is sticky. Game leases expire safely; Academy and Tune always pause output.')
-    diagram('tuning','04 / Pixel Pal guides recognition personalization',[
+    diagram('tuning','04 / Pixel Pal guides recognition personalisation',[
       ('a',0,0,'1. Choose the problem','Setup, difficult, accidental, center'),('b',1,0,'2. Choose gesture','Only when the problem needs one'),('c',2,0,'3. Confirm readiness','Whole hand stable; press I am ready'),
-      ('d',2,1,'4. Record three steps','Pose, movement, or repeated depth'),('e',1,1,'5. Analyze separation','Problem-aware safe boundaries'),('f',0,1,'6. Try temporary preview','Two uses + three neutral seconds'),
+      ('d',2,1,'4. Record three steps','Pose, movement, or repeated depth'),('e',1,1,'5. Analyse separation','Problem-aware safe boundaries'),('f',0,1,'6. Try temporary preview','Two uses + three neutral seconds'),
       ('g',0,2,'7. Save selected pairs','Shared version-1 personal settings'),('h',1,2,'Advanced controls','Numbers + private diagnostics'),('i',2,2,'Or retry with guidance','Framing, lighting, pose, overlap')],
       [('a','b'),('b','c'),('c','d'),('d','e'),('e','f'),('f','g')],
-      'Normal personalization retains no images. Controller delivery stays paused throughout the wizard.')
+      'Normal personalisation retains no images. Controller delivery stays paused throughout the wizard.')
     diagram('settings','05 / Effective thresholds and calibration',[
       ('base',0,0,'Profile defaults','config/profiles.json'),('saved',1,0,'Saved personal pairs','data/gesture-tuning.json'),('preview',2,0,'Temporary preview','Only while Tune session lives'),
       ('engine',2,1,'Effective thresholds','Preview > personal > defaults'),('neutral',1,1,'Neutral calibration','data/calibration.json'),('obs',0,1,'Hand measurements','Position, scale, wrist and curls'),

@@ -143,6 +143,14 @@ meaningful contract.
 
 ## Documentation changes
 
+Use Canadian English throughout project-authored public prose, including the
+application, Help, website, guides, and release notes. Prefer forms such as
+`behaviour`, `colour`, `centre`, `labour`, `recognise`, `customise`, `organise`,
+and `personalise`. The user-facing action is **Centre hand**. Preserve exact
+technical identifiers, protocol fields, command names, filenames, legal text,
+and third-party product names when changing their spelling would break an
+interface or misquote a source.
+
 Use two spaces before top-level list markers and keep each item on one source
 line. The current Help renderer treats wrapped continuation lines as separate
 paragraphs. Leave blank lines before and after a list, and keep code examples
@@ -170,7 +178,7 @@ The development environment needs Playwright and Chrome. The script renders the
 current application templates against isolated sample responses and temporary
 player state. It never contacts a live Controller or console. Camera areas use
 a labelled placeholder and pairing inputs use non-secret examples. The capture
-covers Dashboard, Play, Academy learning and personalization, player settings
+covers Dashboard, Play, Academy learning and personalisation, player settings
 and restoration, Setup, Games, Help, attract settings, and every guided-pairing
 state. Shared filenames mean one refresh can affect several guides, so inspect
 the images before rebuilding the PDFs. The script also checks the Security
@@ -249,7 +257,7 @@ Inspect the affected PDF pages for clipped text, broken tables, missing images,
 and unintended page breaks before committing.
 
 The public `README.md`, guides under `docs/`, and documentation images also
-drive the Help Center hosted by the VirtualGlove Controller. After a documentation change is
+drive the Help Centre hosted by the VirtualGlove Controller. After a documentation change is
 merged or otherwise ready to deploy, synchronize and verify that copy with:
 
 ```sh
@@ -317,8 +325,8 @@ Check insufficient samples, tracking loss, overlapping ranges, and calibration
 changes. Verify preview expiry, save/reload, selected-component reset, rejection
 of unsupported stored formats without mutation, isolated player settings and progress,
 stale-tab rejection after player changes or progress resets, and controller
-suppression throughout tuning. Check that player selection automatically restores that player’s saved center,
-missing centers require centering, and hand-setting imports retain explicit calibration reuse;
+suppression throughout tuning. Check that player selection automatically restores that player’s saved centre,
+missing centres require centring, and hand-setting imports retain explicit calibration reuse;
 Start controller remains required. Verify version-4 VirtualGlove round trips and
 rejection of every older portable format without mutation,
 invalid calibration rejection, and restart recovery between both restore writes. Automatic

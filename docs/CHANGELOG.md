@@ -14,6 +14,11 @@ result before naming the underlying mechanism.
 
 ### Changed
 
+- Standardised public application copy, Help, the website, and maintained
+  documentation on Canadian English, including the **Centre hand** control.
+  Technical identifiers, filenames, protocol fields, and third-party names
+  remain unchanged, and automated checks prevent American spellings from
+  returning to published prose.
 - Rebuilt the public website for 0.5.0 as four tracked, static pages covering
   the project, installation and upgrades, enclosure choices, and the creator's
   motivation. Release-sensitive commands and links now come from one checked
@@ -21,7 +26,7 @@ result before naming the underlying mechanism.
 - Made every platform installation example begin in a known writable folder,
   including an explicit extracted-package `Set-Location` step for LaunchBox.
   Fresh installation and v0.4.2 upgrade checks are now separate and copyable.
-- Organized the printable enclosure files through one checked manifest and
+- Organised the printable enclosure files through one checked manifest and
   added complete UNO Q Case, Dock V1, and Dock V2 download bundles without
   breaking the existing individual STL and 3MF links.
 - Corrected the full-wordmark Dock V1 and Dock V2 lid recesses to accept the
@@ -77,10 +82,10 @@ result before naming the underlying mechanism.
   only saying it would retry, and ensured leaving the page always sends a safe
   release even when startup was interrupted.
 - Restored the lesson view cleanly when Tune gestures cannot start or stop, so
-  a failed personalization lease cannot leave its switch off with the tuning
+  a failed personalisation lease cannot leave its switch off with the tuning
   panel still covering the Academy.
 - Removed the confusing Get ready to play experiment. Setup, Dashboard, and
-  Glove Academy now remain the direct paths for connection, centering, practice,
+  Glove Academy now remain the direct paths for connection, centring, practice,
   and starting controller output; upgrades discard only its isolated progress.
 - Kept Connection and Camera saves independent. Saving one section no longer
   applies or discards unsaved edits in the other, and camera-only edits no
@@ -155,7 +160,7 @@ controller available, and let each game use the correct input method.
   camera test is on.
 - Kept multi-player USB boards such as the I-PAC Ultimate I/O as separate
   logical controllers. Controller Router now distinguishes the board's Player
-  1 and Player 2 interfaces while still recognizing the same board after a USB
+  1 and Player 2 interfaces while still recognising the same board after a USB
   port move.
 - Fixed Recalbox and Batocera merged Player 1 assignment when Linux's `jsN`
   number differs from RetroArch's joypad order. Ordinary FCEUmm and stock
@@ -206,7 +211,7 @@ controller available, and let each game use the correct input method.
   exact RetroArch profiles plus receipt-gated migration and one-command
   rollback tooling.
 - Added an advanced per-game `four_score: "force"` option for compatible ROM
-  variants that FCEUmm's CRC list does not recognize. Known Four Score games
+  variants that FCEUmm's CRC list does not recognise. Known Four Score games
   continue to use FCEUmm's automatic detection.
 
 - Added printable VirtualGlove Controller enclosures: a compact UNO Q case, a
@@ -247,7 +252,7 @@ controller available, and let each game use the correct input method.
   one console family from accidentally changing another.
 - Improved the V-sign Start gesture for naturally spread fingers. It now looks
   at the straighter outer finger joints, reducing missed Start commands without
-  changing the intentional hold, release, or Menu Guard behavior.
+  changing the intentional hold, release, or Menu Guard behaviour.
 - Added a reusable local test environment. Instead of reporting the same
   missing NumPy or OpenCV module many times, the test runner checks once and
   gives one clear setup command.
@@ -444,11 +449,11 @@ At a glance:
 
 - Added exact Program 1–10 filename aliases observed in the NES library for
   revision-tagged, alternate-region, and `Robo Warrior` spelling variants.
-  These aliases retain the official profile and rapid-fire behavior.
+  These aliases retain the official profile and rapid-fire behaviour.
 
 - Added the original Power Glove Programs 1–14 as first-class profiles, with
   their documented movement, finger, wrist, depth, compound-action, rapid-fire,
-  centering, and manual-control behavior. Added Mattel's indexed game mappings,
+  centring, and manual-control behaviour. Added Mattel's indexed game mappings,
   exact case-insensitive `.nes`, `.zip`, and `.7z` aliases, and per-game rapid
   A/B exceptions without changing Programs A–I or the dedicated game profiles.
 - Added validated structured game-registry entries with optional `rapid_a` and
@@ -459,7 +464,7 @@ At a glance:
 - Expanded the Game and Gesture Guide with gesture-by-gesture Programs 1–14
   cards, compound-action timing and release rules, the complete official game
   index, rapid-fire exceptions, physical-controller use, and Program 14's
-  camera-off behavior. Synchronized the installation, configuration, matrix,
+  camera-off behaviour. Synchronized the installation, configuration, matrix,
   architecture, native-emulation, quick-reference, and project guides. Updated
   Pixel Pal's Extra-Digit Hunt for the added illustrations; its verified answer
   is now 25.
@@ -486,12 +491,12 @@ At a glance:
   30-second cooldown, stores no hand data, and announces the phrase politely to
   screen readers.
 
-- Added **Center hand** directly to the Joystick dead-zone camera test. It is
+- Added **Centre hand** directly to the Joystick dead-zone camera test. It is
   available only while the safe camera test is running. Game output stays
   paused, and the grid redraws around the newly saved hand centre and hand size.
 
 - Added a 3×3 camera grid to the dead-zone test, using the saved calibrated hand
-  center and the same translated, full-size bounds as gameplay. A subtle live direction region highlight clears on
+  centre and the same translated, full-size bounds as gameplay. A subtle live direction region highlight clears on
   tracking loss or suppressed movement; no labels or palm marker are drawn.
   Moved the camera toggle beside **Use standard size**.
 
@@ -523,10 +528,10 @@ At a glance:
   startup profiles remain unchanged during upgrades.
 
 - Moved **Joystick dead zone** directly below **Players** in Setup so player
-  selection, centering, and movement-box adjustment stay together.
+  selection, centring, and movement-box adjustment stay together.
 
 - The joystick camera test now previews unsaved slider changes immediately in
-  its grid, highlight, and direction pills, using the saved hand center and
+  its grid, highlight, and direction pills, using the saved hand centre and
   current live palm position. Camera toggles retain the draft; player changes discard
   it. Saving is still required for gameplay, and feedback waits for updated
   worker bounds before returning to saved D-pad output.
@@ -534,9 +539,9 @@ At a glance:
 - Ordered Setup with separate **Connection and startup** and **Pair with
   RetroPie** sections. **Show statistics** remains at the very bottom, after
   Games, and shares its default-off switch with Dashboard. Recent events is
-  retained because it reports recognized gestures such as Glove Zap.
+  retained because it reports recognised gestures such as Glove Zap.
 - Joystick dead-zone size now means a chosen width and height fraction of the
-  full camera frame, anchored to each player's saved neutral palm center in both
+  full camera frame, anchored to each player's saved neutral palm centre in both
   preview and gameplay. The effective square is at least 1.5 times the saved
   calibrated hand size; near a frame edge it translates inward without clipping
   or shrinking. Live hand size and jitter never make the box breathe. All existing
@@ -556,7 +561,7 @@ At a glance:
   players, calibration, tuning, Academy progress, and camera recovery forward
   before placing obsolete files in a recovery backup.
 - Fixed RetroPie upgrades from pre-0.4.1 installations so the bootstrap
-  recognizes the existing legacy launcher before asking for a Controller
+  recognises the existing legacy launcher before asking for a Controller
   address. Package-source preflight now completes before the installer creates
   or migrates VirtualGlove configuration, and existing cabinet hooks are
   validated before that migration begins.
@@ -653,7 +658,7 @@ the next stable-version heading; a tinkerer can follow the trail.
   newer mock-call conveniences. The release gate now runs the full suite on
   both Python 3.7 and Python 3.12 before packaging.
 - Made local HTTPS certificate renewal independent of OpenSSL's version-specific
-  hostname-check exit behavior, so a changed Controller IP is always reflected
+  hostname-check exit behaviour, so a changed Controller IP is always reflected
   in the trusted certificate. Corrected the remaining Python 3.7 Matrix test
   compatibility issue found by the release gate.
 
@@ -727,8 +732,8 @@ the next stable-version heading; a tinkerer can follow the trail.
 - Added five context-specific Pixel Pal stances for coaching, play, inspection,
   safety, and success. The website and friendly guides now choose his pose by
   purpose while preserving the existing welcome and Glove Master trophy art.
-- Added a per-player square center-box control for FCEUmm joystick movement,
-  including all four diagonals, immediate center release, live direction feedback,
+- Added a per-player square centre-box control for FCEUmm joystick movement,
+  including all four diagonals, immediate centre release, live direction feedback,
   and automatic neutral-jitter protection.
 
 - Added an Engineering Journey that records the one-week development process,
@@ -780,13 +785,13 @@ the next stable-version heading; a tinkerer can follow the trail.
   replacement worker starts.
 
 - Replaced positional activation/release hysteresis with the original-style
-  nine-region layout: center, four cardinal directions, and four diagonals. Every
+  nine-region layout: centre, four cardinal directions, and four diagonals. Every
   fresh position is classified independently; native Super Glove Ball X/Y,
   Menu Guard, tracking-loss safety, and Program-specific mappings are unchanged.
 - Upgraded the player store to version 5 and portable hand-setup backups to
   version 3. Older stores and version-2 backups migrate the largest directional
-  activation value into the new scalar center box and discard obsolete releases.
-  Positional directions are no longer offered as gesture-personalization channels.
+  activation value into the new scalar centre box and discard obsolete releases.
+  Positional directions are no longer offered as gesture-personalisation channels.
 
 - Reworked Architecture as a current-system reference and moved historical
   movement, runtime, GPU, and reacquisition discussion into Engineering Journey.
@@ -831,10 +836,10 @@ the next stable-version heading; a tinkerer can follow the trail.
   restoration. A deliberately killed child can still wedge this Kiyo/hub at the
   USB level, so destructive crash injection is not part of routine validation.
 - Promoted the validated direction-aware fast-sweep search to standard
-  MediaPipe behavior. Removed its Setup checkbox and guarded save endpoint;
+  MediaPipe behaviour. Removed its Setup checkbox and guarded save endpoint;
   older `directional_search` device-file values are now harmlessly ignored.
 - Renamed the packaged CPU runtime from the misleading `powerglove.gpu2` local
-  version to `powerglove.cpu1`. Its selected graph and behavior remain the same;
+  version to `powerglove.cpu1`. Its selected graph and behaviour remain the same;
   the new name makes clear that production inference uses XNNPACK on the CPU.
 - Corrected Setup's Controller output flag so an armed Controller waiting for a
   game is shown as ready instead of falsely reporting **Receiver unavailable**.
@@ -858,7 +863,7 @@ the next stable-version heading; a tinkerer can follow the trail.
 - Added an optional, ROM-free **VirtualGlove Calibration Test** to RetroPie's
   Ports list. Its separately built `lr-powerglove-dot` core displays the same
   guarded native X/Y used by Super Glove Ball, automatically holds and releases
-  a native test profile, and gives players a simple center, reach, edge,
+  a native test profile, and gives players a simple centre, reach, edge,
   tracking-loss, and recovery check without changing any game's emulator.
 - Added a camera-free post-inference benchmark with repeated statistics-off,
   statistics-on, and statistics-off lanes. It measures established-session UDP
@@ -915,14 +920,14 @@ the next stable-version heading; a tinkerer can follow the trail.
 - Aligned the example Controller configuration with the shipped four-thread,
   0.35 tracking-confidence and 2.25 search-area defaults.
 
-- Made Latest coordinate the only live Super Glove Ball native X/Y behavior.
+- Made Latest coordinate the only live Super Glove Ball native X/Y behaviour.
   Removed the Dashboard movement selector and its restart endpoint; older saved
   bounded-mode values are ignored, while historical benchmark tooling remains
   available for engineering comparison.
 - Reorganized Setup into shorter, action-first sections. Tracking and controller
   output now use the same red, grey, and green status flags as connection checks;
   the console-check age and gameplay caveat remain visible without the redundant
-  color legend.
+  colour legend.
 - Put player naming controls before their explanation, summarized what each
   player and hand-setup backup contains, and named downloaded backups after the
   player, such as `alex-powerglove-hand-setup.json`.
@@ -1058,7 +1063,7 @@ users to install and test, while remaining a prerelease rather than the final
   Linux-specific `IP_PKTINFO` integration skip on macOS. Documentation audits
   cover all 19 Markdown guides and matching PDFs, and browser interaction tests
   cover live camera discovery, camera selection, exposure choices, and saved
-  Setup behavior.
+  Setup behaviour.
 
 - A live Razer Kiyo Pro test accepted the direct V4L2 path at 640×480 MJPEG
   and 30 fps. The driver supplied monotonic timestamps and advancing sequence
@@ -1076,7 +1081,7 @@ users to install and test, while remaining a prerelease rather than the final
 
 This unpublished development baseline is included in `v0.4.0-rc.1`. It promotes
 the native-movement efficiency work validated after the
-0.3.2 release candidates. The shared gesture mappings and FCEUmm behavior remain
+0.3.2 release candidates. The shared gesture mappings and FCEUmm behaviour remain
 compatible; the principal change is a lower-latency, more precise MediaPipe path
 for native Super Glove Ball X/Y.
 
@@ -1114,8 +1119,8 @@ for native Super Glove Ball X/Y.
 - Avoided calculating unused experimental palm anchors during ordinary gameplay.
   Diagnostic runs still expose the complete candidate set for comparison.
 
-- Preserved a player's valid comfortable-reach spans when **Center hand** updates
-  neutral pose and jitter. If a moved center makes the saved endpoints unsafe,
+- Preserved a player's valid comfortable-reach spans when **Centre hand** updates
+  neutral pose and jitter. If a moved centre makes the saved endpoints unsafe,
   the mapping falls back to the full camera field instead of saving invalid reach.
 
 ### Fixed
@@ -1142,7 +1147,7 @@ for native Super Glove Ball X/Y.
 - The complete Python suite passes 496 tests with one expected Linux-specific
   skip. Browser interaction coverage includes camera-rate persistence and the
   statistics preference's default-off, safe-rendering, cross-tab, and no-work
-  behavior.
+  behaviour.
 
 - Live Super Glove Ball tracing measured about 65 ms median camera-to-coordinate
   age. In the confirmation window, five strongly forward recoveries passed
@@ -1170,11 +1175,11 @@ project base version remains 0.3.2. This is a prerelease.
 - Added a separate Glove Academy **Movement reach** editor for the active player.
   It exposes left, right, up, and down normalized spans, reports tracking-area
   dimensions and aspect ratio, saves only those four fields, and can restore the
-  full-camera mapping without changing center, gestures, or lesson progress.
+  full-camera mapping without changing centre, gestures, or lesson progress.
 
 - Added Dashboard selection between **Bounded speed curve** and **Latest
   coordinate** for native Super Glove Ball X/Y. Both modes use the same MediaPipe
-  observations, calibration, reach mapping, and safety behavior.
+  observations, calibration, reach mapping, and safety behaviour.
 
 - Added a four-lane native movement comparison for version-2 vision replay reports. It compares the former overshooting experiment, a safely capped error-driven reference, the bounded speed curve, and direct latest coordinates; a deterministic 27-candidate sweep reports jitter, lag, medium response, fast pickup, reversals, overshoot, continuity, and source age when available.
 
@@ -1183,17 +1188,17 @@ project base version remains 0.3.2. This is a prerelease.
   staggered trackers, and MediaPipe Tasks live-stream CPU/GPU experiments.
   These tools do not create a production GPU mode or change gameplay output.
 
-- Prepared optional per-frame motion traces separating recognized, flow, selected and filtered coordinates, including source freshness and fallback reasons. Added an offline saved-sample review and an actual-engine smoothing step model; the model is not a physical latency measurement.
+- Prepared optional per-frame motion traces separating recognised, flow, selected and filtered coordinates, including source freshness and fallback reasons. Added an offline saved-sample review and an actual-engine smoothing step model; the model is not a physical latency measurement.
 
 - Added `analyze-motion-trace.py` and `compare-motion-matrix.py` for normalized movement classes, selected-versus-filtered error, settling estimates, source-age distributions, fallback reasons, and tracking-loss counts. Ran the six trace-only smoothing configurations on the UNO with zero dropped trace records and restored the live setting afterward.
 
-- Added Setup → Joystick dead zone: a per-player size slider with automatic half-distance release, live direction indicators, and a standard-size preset. Saves update all four digital direction thresholds while preserving center, native reach and other gestures. Advanced directional pairs remain in Glove Academy.
+- Added Setup → Joystick dead zone: a per-player size slider with automatic half-distance release, live direction indicators, and a standard-size preset. Saves update all four digital direction thresholds while preserving centre, native reach and other gestures. Advanced directional pairs remain in Glove Academy.
 
 - Added an optional UNO Q test workflow for the cabinet's installed dot core, dot-labeled guided status sessions, and a read-only native-state probe for validity, loss/recovery and coordinate ranges. MediaPipe, controller output and game defaults remain unchanged; physical comparison is pending.
 
 - Benchmarked Kiyo Pro capture on UNO Q and added an opt-in 640×480 MJPEG/two-buffer/volatile-HDR-off candidate, which delivered 59.7–59.8 fps in isolated capture repeats. Higher 720p decoding costs ruled out copying the Pi resolution. Inference threads are unchanged; recognition-under-load and physical latency validation remain pending.
 
-- Ported optional per-player comfortable reach spans from the Raspberry Pi version. Both MediaPipe response modes map asymmetric reach to the screen edges, player backups preserve spans, and re-centering clears them. Added a guided, output-paused calibration helper using raw palm measurements in practice mode. Camera defaults and inference threads are unchanged pending UNO Q measurements.
+- Ported optional per-player comfortable reach spans from the Raspberry Pi version. Both MediaPipe response modes map asymmetric reach to the screen edges, player backups preserve spans, and re-centring clears them. Added a guided, output-paused calibration helper using raw palm measurements in practice mode. Camera defaults and inference threads are unchanged pending UNO Q measurements.
 
 - Added and evaluated an experimental Super Glove Ball optical-flow path. Live
   testing found it jerky and unreliable, so it is now archived as research code
@@ -1246,7 +1251,7 @@ project base version remains 0.3.2. This is a prerelease.
 
 - Restrict UNO host mDNS to detected physical network interfaces during host setup. The test UNO advertised Docker bridges and renamed itself to `ArduIain-2.local` after a conflict during container restarts, breaking profile heartbeat delivery. The backed-up interface correction restored the original hostname and automatic game-profile recovery across a verified app restart.
 
-- Dashboard Center hand and Start controller clicks now survive status refreshes in Safari/WebKit. Controller requests stay disabled while pending, and centering guidance names the selected player beside the controls. Request feedback is announced and displayed beside those controls.
+- Dashboard Centre hand and Start controller clicks now survive status refreshes in Safari/WebKit. Controller requests stay disabled while pending, and centring guidance names the selected player beside the controls. Request feedback is announced and displayed beside those controls.
 
 ### Changed
 
@@ -1280,9 +1285,9 @@ project base version remains 0.3.2. This is a prerelease.
 
 - Moved player creation, renaming, deletion, and hand-setup backup/restore into Setup → Players. Academy and Dashboard offer compact selectors for the same Controller-wide active player. Dashboard places Player before Active profile and combines game name and session status in one Game card.
 
-- Glove Academy player selection now immediately loads sensitivity, lesson progress, and the player’s saved center. Removed the separate Use player and Reuse my saved center buttons. Players without a saved center still need Center hand; switching keeps controller output paused, and backup-import calibration reuse remains an explicit choice.
+- Glove Academy player selection now immediately loads sensitivity, lesson progress, and the player’s saved centre. Removed the separate Use player and Reuse my saved centre buttons. Players without a saved centre still need Centre hand; switching keeps controller output paused, and backup-import calibration reuse remains an explicit choice.
 
-- Renamed the explicit centering action to **Center hand** throughout Dashboard, Glove Academy, player settings, personalization, and maintained instructions. Centering continues to save only to the selected player; switching players during a sample prevents it being saved to the new player.
+- Renamed the explicit centring action to **Centre hand** throughout Dashboard, Glove Academy, player settings, personalisation, and maintained instructions. Centring continues to save only to the selected player; switching players during a sample prevents it being saved to the new player.
 
 ### Validation
 
@@ -1328,7 +1333,7 @@ Changes since rc.6: guided Setup pairing, networking indicators, refreshed guide
 
 - Reorganized Gameplay, Configuration, and component documentation; made Academy learning and per-player backup file locations explicit across guides and READMEs. Clarified both pairing PIN flows, native packet bytes 7–8, and Menu Guard's native-position limitation. Standardized Gun Smoke display text while retaining exact filenames, added wrapping for audit/benchmark tables, and refreshed Help assets and PDFs. The documentation-review batch was deployed as an uncommitted development build; the subsequent Networking and community-guide additions were also deployed without a commit or release.
 
-- Simplified the tracker display name to **MediaPipe Hands** in the interface, diagnostics, command help, and documentation. The `legacy` identifier and tracking behavior are unchanged.
+- Simplified the tracker display name to **MediaPipe Hands** in the interface, diagnostics, command help, and documentation. The `legacy` identifier and tracking behaviour are unchanged.
 
 ### Added
 
@@ -1353,7 +1358,7 @@ Changes since rc.5. This candidate adds saved player setups, complete hand backu
 
 ### Added
 
-- Up to twelve Controller-stored players with individual sensitivity, Academy progress, Glove Master awards, and saved calibration. Switching players pauses output and requires fresh centering or explicit same-position reuse.
+- Up to twelve Controller-stored players with individual sensitivity, Academy progress, Glove Master awards, and saved calibration. Switching players pauses output and requires fresh centring or explicit same-position reuse.
 - Complete version-2 hand-setup backups with name, personal and effective sensitivity, software identity, and per-player calibration. Restore reviews complete sensitivity and calibration reuse separately, preserves Academy progress, and recovers safely after interrupted writes. Earlier version-2 backups work; portable version-1 exports are rejected. Internal stores migrate to version 4 with private recovery backups.
 - Version-2 HMAC-SHA256 controller messages with receiver-issued challenges, replay/retired-session rejection, bounded nonblocking handshakes, and restart recovery. No input state is queued during negotiation, and the shared secret is absent from signed packets.
 - Idle matrix controls for On, Dim, or Off with faint app, console-service, authenticated-console, and independent Wi-Fi pixels. Setup reports unavailable Wi-Fi telemetry separately from disconnection. The unprivileged host sampler is installed on setup/upgrade; the fourth pixel requires the matching matrix firmware. Game, T/L, startup, error, and pairing displays are unchanged.
@@ -1420,7 +1425,7 @@ recorded by the release tag and installer manifests.
 
 - Refined the idle matrix animation with a double-flash lightning bolt, separated
   fingers and thumb, a consistent cuff buckle, a longer fist hold, and a smaller
-  travelling spark. Grayscale shading and a gradual glow finish the four-second
+  travelling spark. Greyscale shading and a gradual glow finish the four-second
   loop. Added a preview rendered from the sketch's actual frames; physical LED
   appearance remains a separate check. Requires a matrix firmware update.
 - Updated native compatibility test assertions to match the already documented
@@ -1447,11 +1452,11 @@ recorded by the release tag and installer manifests.
   Punch validation. Exact-ROM headless traces verify the ten-byte packet values;
   wrist rotation and remaining native button codes stay neutral.
 - Replaced Glove Academy's threshold-first Tune panel with a Pixel Pal-guided
-  personalization wizard. Families choose the problem, confirm clear framing,
+  personalisation wizard. Families choose the problem, confirm clear framing,
   record gesture-specific steps, pass a two-use preview test, and then save only
   affected shared components. Raw numerical controls now live under Advanced.
 - Added dedicated **Show your hand** and **Find neutral** artwork, clearer Start
-  and Select lesson titles, and an intentional **Set this as my center** action.
+  and Select lesson titles, and an intentional **Set this as my centre** action.
 - Added an optional local Academy diagnostic. It exercises the deployed proven
   tracker, emits an aggregate report without images or landmarks, and deletes
   its temporary video after analysis, cancellation, or a 30-minute abandonment.
@@ -1547,7 +1552,7 @@ the completed illustrated documentation set.
   the FCEUmm Gun Smoke test responded within two.
 - Compared the exact Super Glove Ball ROM in both cores, confirmed that FCEUmm
   remains standard-joypad-only, and corrected native Y wrapping so its packet
-  and screen position span bottom, center, and top.
+  and screen position span bottom, centre, and top.
 - Added an optional RetroPie installer offer that builds the pinned GPLv2
   native core locally, registers both per-ROM launch choices without changing
   the saved FCEUmm selection, and installs the upstream license beside the core.
@@ -1620,7 +1625,7 @@ the completed illustrated documentation set.
   added a separate file-by-file VirtualGlove modification ledger, made
   the native-core build reject header changes, and installed that ledger beside
   the optional core and its upstream `COPYING` file.
-- Centered gesture, profile, and matrix artwork in Help and printable table
+- Centred gesture, profile, and matrix artwork in Help and printable table
   columns. Grouped related startup and attention-state matrix photographs into
   compact visual rows where side-by-side comparison is clearer.
 - Added a dedicated menu-guard illustration and substantially enlarged the A/D/H
@@ -1733,12 +1738,12 @@ profile selection, and refreshed illustrated manuals.
   application containers.
 - Added one-command host setup for RetroPie and UNO Q, with managed-file backups, preserved private configuration, delayed startup, and read-only PASS/FAIL/ACTION checks. Empty pairing tokens no longer cause restart loops.
 - Added explicit A, B, and GLOVE ZAP practice lessons and live indicators. Learn consistently uses the general profile without changing the selected game.
-- Added a Glove Master completion achievement to Learn after all eleven lessons are recognized, with Start again and Dashboard actions. Skips do not count.
+- Added a Glove Master completion achievement to Learn after all eleven lessons are recognised, with Start again and Dashboard actions. Skips do not count.
 - Added hand illustrations to every Learn lesson and finger/pose feedback for Start and Select. Learn accepts confirmed menu poses after their short button pulse ends, rather than requiring a second hold longer than the pulse.
 - Added a live active-profile selector to the Dashboard without changing the startup profile saved on Setup.
 - Added temporary Learn sessions that start vision while preserving the selected profile and desired controller state, including multi-tab leases and automatic recovery when a page disappears unexpectedly.
 - Added a dedicated matrix gestures-idle state with a pinball-style animated glove, separate from both true shutdown and the flashing error X.
-- Added a dedicated Learn-mode matrix state with a bright `L` and moving grayscale scan highlight.
+- Added a dedicated Learn-mode matrix state with a bright `L` and moving greyscale scan highlight.
 - Restored safe-shutdown readiness automatically after a reboot or App Lab
   application replacement.
 
@@ -1770,7 +1775,7 @@ profile selection, and refreshed illustrated manuals.
 - Made **Gestures off** a healthy worker state that releases controller input, closes the camera and MediaPipe tracker, and keeps the website and authenticated RetroPie profile listener available.
 - Made camera and model initialization lazy so idle mode performs no capture or vision processing and can return to an active profile without restarting the website.
 - Reworked the matrix attract sequence into distinct pinball-style beats: a four-frame energy sweep, a broad travelling cuff, a staged glove reveal, intermediate finger curls, an eight-position spark with a comet trail, one outline pulse, and a readable hold.
-- Used the UNO Q matrix's full eight-level grayscale range to separate the dim glove body, spark halo, bright spark, and whole-glove pulse.
+- Used the UNO Q matrix's full eight-level greyscale range to separate the dim glove body, spark halo, bright spark, and whole-glove pulse.
 
 ### Documentation
 

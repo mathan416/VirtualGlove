@@ -81,8 +81,8 @@ on the physical matrix before entering the one-time PIN.
 ### Joystick dead-zone camera test
 
 In **Setup → Joystick dead zone**, the chosen percentage is the nominal width
-and height of the center region as a fraction of the full camera frame. The box
-is anchored to the neutral palm center saved by **Center hand** and never follows
+and height of the centre region as a fraction of the full camera frame. The box
+is anchored to the neutral palm centre saved by **Centre hand** and never follows
 the live hand. Its effective width and height are at least 1.5 times the saved
 calibrated palm size. If that full square would cross a camera edge, VirtualGlove
 translates it inward rather than clipping or shrinking it. The remaining space
@@ -91,12 +91,12 @@ range is 10–100%. Resting jitter and live hand-size changes do not move or res
 the box. Native Super Glove Ball X/Y calibration, noise filtering, and reach
 remain separate and unchanged.
 
-The **Turn on camera** and **Center hand** buttons follow **Use standard size**
+The **Turn on camera** and **Centre hand** buttons follow **Use standard size**
 in the slider's controls row. The panel starts off with its camera hidden.
-**Center hand** becomes available only after this panel owns an active practice
-lease and its preview is live. Centering keeps controller output paused, samples
+**Centre hand** becomes available only after this panel owns an active practice
+lease and its preview is live. Centring keeps controller output paused, samples
 the selected player's relaxed hand, and redraws the grid from the newly saved
-center and hand size without discarding an unsaved slider preview. The mirrored stream
+centre and hand size without discarding an unsaved slider preview. The mirrored stream
 shows a label-free 3×3 grid. Moving the slider immediately redraws the lines,
 highlight, and direction pills from the live palm position without another
 request. This is an **unsaved preview**: gameplay changes only after **Save dead
@@ -105,7 +105,7 @@ discards it. After saving, feedback waits for the worker's saved bounds before
 returning to its authoritative D-pad directions.
 
 Gameplay positional directions use the same absolute palm coordinates and
-saved-center bounds. Exact boundaries count as center. Tracking loss and
+saved-centre bounds. Exact boundaries count as centre. Tracking loss and
 menu/start/select suppression clear preview directions and highlights; missing
 calibration or a stopped camera or owned lease hides the grid. The camera
 toggle never saves settings. Existing player dead-zone numbers and all other
@@ -119,11 +119,11 @@ reports active practice vision.
 
 Practice `/status` includes a read-only `joystick_grid` only while valid active
 calibration is available. `anchor` is the saved neutral palm position, `center`
-is the possibly edge-translated box center, `half_size` is the saved effective
+is the possibly edge-translated box centre, `half_size` is the saved effective
 half-size, and `minimum_size` is the 1.5-hand floor needed to derive an exact
 draft preview. Coordinates match the mirrored preview and are not flipped again.
 The field is omitted outside practice,
-during centering, or while a required/failed calibration is pending. It is never
+during centring, or while a required/failed calibration is pending. It is never
 persisted. Player snapshots retain the chosen `deadzone`, report the possibly
 enlarged `effective_deadzone`, `hand_size_minimum`, and `hand_size_protected`,
 and retain `jitter_protected: false` for compatibility.
@@ -137,7 +137,7 @@ failures clear feedback and retry safely.
 and releases only this panel's lease. Leaving the page also releases it. If a
 release cannot be confirmed, the panel reports that fact and retries; abandoned
 leases expire after six seconds. Another practice tab can keep the shared camera
-running. Existing controller behavior resumes only as the practice mechanism
+running. Existing controller behaviour resumes only as the practice mechanism
 allows; this panel never sends a controller-start request.
 
 ### Connection Doctor
@@ -201,7 +201,7 @@ from camera frames and controller packets, which remain newest-state-only.
 | Camera frame rate | Automatic | Tries 30 fps first, then accepts the camera driver's usable rate if necessary. Explicit 30- and 60-fps requests are available for comparison and fall back safely when unsupported. The live negotiated rate appears below the setting while tracking is active. |
 | Camera buffers | `1` | Selects one or two driver capture buffers. One minimizes queue depth; two may improve delivery continuity on some cameras. The latest-frame owner still discards superseded frames. Pixel Pal's camera test compares supported choices. |
 | Camera reader | Recommended — OpenCV | The portable, gameplay-validated capture path. **Engineering comparison — Direct V4L2** is an opt-in Linux 64-bit, 640×480 MJPEG experiment that drains to the newest driver buffer and falls back to OpenCV if its requirements are not met. |
-| Exposure behavior | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
+| Exposure behaviour | Automatic — no camera changes | Leave cameras untouched by default. **Low latency — standard UVC** keeps automatic exposure and requests fixed frame rate only when those controls are advertised. **Razer Kiyo Pro — tested low latency** adds the Kiyo's volatile HDR-off request. **Manual exposure and gain** is available with Direct V4L2 after capability and range checks. |
 
 ![Advanced camera settings showing the discovered-camera dropdown and exposure controls](images/setup-camera.png)
 
@@ -264,17 +264,17 @@ lock between completed inference and the signed controller send.
 
 Native X/Y can map a player's comfortable left, right, up, and down positions to
 the screen edges. It changes sensitivity and physical travel, not processing
-time. Gesture thresholds, D-pad behavior, depth, and Latest-coordinate movement
+time. Gesture thresholds, D-pad behaviour, depth, and Latest-coordinate movement
 stay unchanged.
 
 The four optional `calibration.neutral` fields `reach_left`, `reach_right`,
-`reach_up`, and `reach_down` are normalized image distances from the saved center.
+`reach_up`, and `reach_down` are normalized image distances from the saved centre.
 All four zero (or omitted in older backups) use the original camera-boundary
 mapping. Otherwise all four must be finite numbers at least `0.05` and fit inside
-the image around that center. Player presets and version-4 VirtualGlove hand-setup backups
+the image around that centre. Player presets and version-4 VirtualGlove hand-setup backups
 preserve them. New reach-bearing backups require reach-aware software on import.
-**Center hand preserves valid reach spans** because neutral centering and
-comfortable travel are separate adjustments. If a new center would place an
+**Centre hand preserves valid reach spans** because neutral centring and
+comfortable travel are separate adjustments. If a new centre would place an
 existing endpoint outside the camera image, the software safely returns to the
 full-field mapping. Review reach after moving the camera or changing playing
 position. Never reuse another camera setup's spans as universal defaults.
@@ -284,12 +284,12 @@ The four fields load the active player's exact saved spans, and the read-only
 summary shows the resulting width, height, and aspect ratio. Smaller values need
 less hand travel. **Save reach values** replaces only these four calibration
 fields. **Restore full camera field** writes four zeros after confirmation and
-does not alter center, scale, roll, jitter, thresholds, or Academy progress.
+does not alter centre, scale, roll, jitter, thresholds, or Academy progress.
 Controller output remains paused while Tune gestures is open.
 
 The operator helper `scripts/calibrate-reach.py` runs inside the Controller
 container, using the worker's Python environment and loopback APIs. After normal
-player centering, run these as separate commands, cueing the player before each:
+player centring, run these as separate commands, cueing the player before each:
 
 ```sh
 python scripts/calibrate-reach.py begin
@@ -302,7 +302,7 @@ python scripts/calibrate-reach.py apply
 ```
 
 `begin` saves a private complete backup under `data/backups/reach-*/`, persistently
-pauses delivery, and leases practice mode. Hold a relaxed palm at center for
+pauses delivery, and leases practice mode. Hold a relaxed palm at centre for
 `center`, then a steady, comfortable endpoint for each three-second directional
 step. The helper samples raw palm positions and requires at least 12 independent
 reliable observations, at least 80% reliable observations, and a stable hold away
@@ -331,7 +331,7 @@ active player's reach rectangle before mapping. Movement beyond an edge stays
 pinned to that edge and cannot build hidden off-screen state. The selected
 frame's capture timestamp drives freshness; inference-start time is not
 substituted for it. The production anchor remains the five-point average
-of wrist and four knuckles so existing centers and reach spans remain valid.
+of wrist and four knuckles so existing centres and reach spans remain valid.
 
 MediaPipe still supplies fingers, depth, roll, and gestures; FCEUmm directions
 and every game mapping are unchanged.
@@ -463,14 +463,14 @@ Gestures off affects only VirtualGlove-generated input. Recalbox/Batocera's
 merged physical source and LaunchBox's physical XInput controller remain
 available; LaunchBox's loopback RetroPad becomes neutral and its real keyboard
 fallback remains available. Generic RetroPie follows its separate gamepad assignments. **Program
-14 — Physical controller only** has the same neutral camera/output behavior while deliberately retaining
+14 — Physical controller only** has the same neutral camera/output behaviour while deliberately retaining
 the numbered profile and authenticated registered-game session.
 
 Activation waits for any unfinished preload, verifies the saved model, opens
 and configures the camera, waits for a usable frame, and creates the tracker.
 Dashboard, Play, and Glove Academy show **Starting camera and gesture tracking** until vision
 is active. The elapsed time covers startup work, not only the physical camera.
-**Center hand** stays disabled until initialization finishes.
+**Centre hand** stays disabled until initialization finishes.
 
 Switching between active profiles reuses the camera and tracker. **Gestures off**
 releases both, while imported libraries remain in memory. An application restart,
@@ -522,7 +522,7 @@ restore streaming, check the powered hub, cable, and camera connection.
 ### Glove Academy, calibration, and live readings
 
 Open **Glove Academy** at `/learn` to practise gestures, calibrate your resting
-position, or personalize recognition. The matrix shows **L** for lessons and
+position, or personalise recognition. The matrix shows **L** for lessons and
 **T** for tuning.
 
 Glove Academy starts the camera even when **Gestures off** is selected and uses a
@@ -552,7 +552,7 @@ practice indicators do not change those mappings.
 | V sign | Without personal adjustments, index and middle curl must be below 0.28; ring and little curl must exceed 0.42. Hold steadily for 0.50 seconds to send Start. A non-V pose must then remain visible for 0.30 seconds before Start can rearm. |
 | Thumbs-up | Without personal adjustments, thumb curl must be below 0.32 and all four finger curls above 0.42. Hold for 0.15 seconds to send Select. |
 | Live hand measurements | Shows curl values, thresholds, enlarged landmarks, and forward or backward movement relative to the calibrated hand size. |
-| Center hand | Replaces the saved resting reference. The button turns red while sampling, then blue with a brief completion message. |
+| Centre hand | Replaces the saved resting reference. The button turns red while sampling, then blue with a brief completion message. |
 
 #### Tracking and timing diagnostics
 
@@ -583,7 +583,7 @@ interpretation because its depth units differ.
 Glove Academy and gameplay share held finger and movement states. Glove Zap and Pull Back
 need two consecutive beyond-threshold observations plus 0.10 normalized
 palm-scale movement in the intended direction within 250 ms. Once confirmed,
-they remain recognized until movement falls below their respective release thresholds, and a confirmed menu pose
+they remain recognised until movement falls below their respective release thresholds, and a confirmed menu pose
 still satisfies its lesson after the short controller pulse ends. The browser
 preview is capped at 5 fps; status updates follow each tracking calculation.
 
@@ -594,7 +594,7 @@ you need to reposition without sending controls.
 
 The app reuses its saved resting reference across Glove Academy, gameplay, profile
 changes, and restarts. It calibrates automatically only when that reference is
-missing or invalid. Use **Center hand** after moving the camera or changing your
+missing or invalid. Use **Centre hand** after moving the camera or changing your
 playing position. Keep your palm near the resting position when practising
 finger curls so unintended movement does not obscure the finger readings.
 See [Saved neutral-hand calibration](#saved-neutral-hand-calibration) for storage
@@ -660,7 +660,7 @@ are tested engineering defaults rather than ordinary player controls.
 Direction-aware fast-sweep search is always active in the production MediaPipe
 path. It applies the measured gentle next-frame search translation without
 changing reach, gestures, mappings, or Latest-coordinate output. It has no
-device-file switch. Latest coordinate is the only live native X/Y behavior.
+device-file switch. Latest coordinate is the only live native X/Y behaviour.
 
 Setup's **Find the best camera settings** wizard temporarily compares the
 current configuration with capability-supported combinations. Its crash-safe
@@ -940,7 +940,7 @@ Mattel's *Power Glove Instructions*, page 14, documents a separate hardware
 power-on rule: both rapid-fire switches initially turn on. That page also says
 not every program has rapid fire and points to the individual descriptions.
 VirtualGlove intentionally follows the active profile's documented button
-behavior instead of emulating the blanket hardware power-on state.
+behaviour instead of emulating the blanket hardware power-on state.
 
 Here, `rapid_a` and `rapid_b` control only repetition of the corresponding NES
 button while its gesture remains active. They do not modify profile-owned fast
@@ -971,7 +971,7 @@ The numeric portion of the shipped registry is:
 | Profile | Mattel-indexed titles | Structured rapid-fire entries |
 | --- | --- | --- |
 | `program_1` | Blades of Steel; Blaster Master; Bubble Bobble; Castlevania; Castlevania II: Simon's Quest; Contra; Deadly Towers; Donkey Kong Classics; Double Dribble; Gauntlet; Gradius; Jackal; Kid Icarus; Kung-Fu Heroes; Metal Gear; Metroid; Mickey Mousecapade; Operation Wolf; Platoon; Racket Attack; Rampage; RoboWarrior; Rygar; Seicross; Star Force; Superman; Xenophobe; Zelda II: The Adventure of Link | Blaster Master: `rapid_a=false`; Double Dribble and Racket Attack: `rapid_a=false`, `rapid_b=false` |
-| `program_2` | No indexed title; centering-practice alternative | None |
+| `program_2` | No indexed title; centring-practice alternative | None |
 | `program_3` | Ice Hockey; Top Gun | Ice Hockey: `rapid_b=false` |
 | `program_4` | Iron Tank | None |
 | `program_5` | Alpha Mission; Life Force; Xevious; 1943: The Battle of Midway | Alpha Mission: `rapid_a=false` |
@@ -1057,9 +1057,9 @@ reset or update another player. Saving errors pause lesson recognition until
 saved state is available again.
 
 Switching players, adding/deleting the active player, and restoring settings
-pause controller output. Each player keeps a separate saved calibration. Selecting a player immediately loads their sensitivity, progress, and saved center.
-Use **Center hand** after moving the camera or changing playing position. A new player has
-no saved center and needs centering once. Saved centers apply through the durable restore path;
+pause controller output. Each player keeps a separate saved calibration. Selecting a player immediately loads their sensitivity, progress, and saved centre.
+Use **Centre hand** after moving the camera or changing playing position. A new player has
+no saved centre and needs centring once. Saved centres apply through the durable restore path;
 output stays paused until you explicitly start it. Finish tuning and turn
 **Tune gestures** off before changing players or restoring settings.
 
@@ -1094,21 +1094,21 @@ rejected without changing the selected player. Fields are `name`, personal `thre
 personal thresholds mean no personal overrides. Effective thresholds contain
 all nine gesture activation/release pairs, including the supplied defaults in use.
 They let a later restore retain those sensitivity values when defaults change.
-Game mappings, recognition algorithms, and all other software behavior are not
+Game mappings, recognition algorithms, and all other software behaviour are not
 frozen by a hand backup.
 
 Calibration contains version `2` and `neutral` values: `palm_x`, `palm_y`,
 `palm_scale`, `roll`, `noise_x`, and `noise_y`. It comes from this player's saved
-reference, including while a selected player’s saved center is being applied.
+reference, including while a selected player’s saved centre is being applied.
 It is `null` if this player has no saved reference. The app does not assume that
-a stored center still matches the present physical setup.
+a stored centre still matches the present physical setup.
 
 **Restore hand setup** opens a review before any changes. It replaces the active
 player's name and sensitivity while keeping Academy progress. Check **Restore
 the complete saved sensitivity** to use `effective_thresholds`; leave it unchecked
 to restore personal adjustments with the installed defaults. Independently,
 check **My camera position and playing position match this backup** to reuse
-calibration. Otherwise set a fresh center. Controls stay paused until Start.
+calibration. Otherwise set a fresh centre. Controls stay paused until Start.
 
 Version 4 is the only supported portable backup format. Older formats are
 rejected with an unsupported-version message and their source file is never
@@ -1129,11 +1129,11 @@ requires boolean `reuse_calibration: true` for backup calibration reuse and
 Generations reject stale writes after switches/restores/resets. The active
 working reference is mirrored in `data/calibration.json`; individual references
 are kept in the player store. Migration associates an existing valid reference
-only with the currently centered player, not with every preset.
+only with the currently centred player, not with every preset.
 
 Confirmed reuse atomically stores a pending calibration while keeping output
 gated. The worker writes the active calibration, then clears the pending reference
-and centering gate. An interrupted restore resumes after restart; a failed write
+and centring gate. An interrupted restore resumes after restart; a failed write
 leaves output paused. Switching players cancels an unapplied reference. Export
 waits until a pending restore finishes.
 
@@ -1153,19 +1153,19 @@ progress are available on the trusted LAN; presets are not login accounts.
 
 ## Tune gesture sensitivity
 
-Use **Glove Academy → Tune gestures** to personalize recognition. You do not need to edit
+Use **Glove Academy → Tune gestures** to personalise recognition. You do not need to edit
 `config/profiles.json`; it is the release-owned shared baseline. Updates back up
 and replace it. Personal adjustments belong in `data/gesture-tuning.json`, which
 remains untouched.
 
-1. Choose **Set up a new hand**, **A gesture is hard to trigger**, **A gesture happens accidentally**, or **Movement feels off-center**.
-2. Choose the gesture when asked. Off-center movement instead shows the saved center and an explicit **Center hand** action.
+1. Choose **Set up a new hand**, **A gesture is hard to trigger**, **A gesture happens accidentally**, or **Movement feels off-centre**.
+2. Choose the gesture when asked. Off-centre movement instead shows the saved centre and an explicit **Centre hand** action.
 3. Keep the complete hand visible with valid palm geometry for one second. Select **I'm ready** and wait through the two-second countdown. The displayed MediaPipe score is handedness certainty, not a position-quality requirement.
 4. Follow the three recordings. Ordinary poses and movement steps last two seconds. Glove Zap and Pull Back use a six-second middle step containing three motions and returns.
-5. Analyze the recording and try the temporary preview twice. Return to neutral after each use and remain neutral for three seconds.
+5. Analyse the recording and try the temporary preview twice. Return to neutral after each use and remain neutral for three seconds.
 6. Save when the guided test passes. Only selected components are merged into the active player’s hand settings.
 
-![Tune mode with Pixel Pal guiding the personalization choices](images/tune-page.png)
+![Tune mode with Pixel Pal guiding the personalisation choices](images/tune-page.png)
 
 The reference screenshot deliberately excludes the live camera area. Pixel Pal
 presents one instruction and primary action at a time. **Movement reach** is a
@@ -1177,8 +1177,8 @@ shows a scanning **T** while tuning and a matching scanning **L** in ordinary pr
 Activation is the point where a non-positional gesture begins; release is the lower point where
 it stops. Separate values prevent rapid on/off flickering. Wrist steering, push,
 pull-back, fingers, and braking use these held states; game-specific button assignments
-and pulses still apply. Positional directions instead use Setup's single square center
-box and are not gesture-personalization channels. Compound gestures share component thresholds, so
+and pulses still apply. Positional directions instead use Setup's single square centre
+box and are not gesture-personalisation channels. Compound gestures share component thresholds, so
 changing a finger also affects other gestures that use it. Suggested menu-pose
 adjustments tune the closed fingers; already extended fingers retain their existing
 settings from hand setup or existing personal/default values. Button assignments and menu hold timing
@@ -1189,7 +1189,7 @@ Hand setup learns open and curled thresholds for all five fingers. Individual tu
 Only the active player’s adjusted components override all game profiles. Untuned components retain
 the shared supplied values. Personal adjustments are saved atomically in
 `data/gesture-tuning.json` and survive application restarts and normal updates.
-Normal personalization saves no images or recordings. Stored player files must
+Normal personalisation saves no images or recordings. Stored player files must
 use the version-6 format introduced with VirtualGlove 0.4.1 and retained by
 0.4.2; older files are
 reported as unsupported and are not overwritten.
@@ -1206,12 +1206,12 @@ changes the resting reference separately and invalidates any current recordings.
 
 ### Private Academy diagnostic capture
 
-The Advanced diagnostic is separate from personalization. Eight user-paced cues
+The Advanced diagnostic is separate from personalisation. Eight user-paced cues
 exercise neutral, directions, A/B, menu poses, rolls, depth motion, Menu Guard,
 and tracking recovery using the deployed **MediaPipe Hands** backend.
 The VirtualGlove Controller records a temporary local AVI only while a cue is active. Completion
 produces an aggregate JSON report containing detection continuity, confidence,
-latency, hand brightness, and recognized state names. It contains no frames or
+latency, hand brightness, and recognised state names. It contains no frames or
 per-frame landmarks. The AVI is deleted immediately after analysis or cancellation;
 an abandoned capture is deleted after 30 minutes. No network upload occurs.
 
@@ -1224,7 +1224,7 @@ useful for understanding the defaults; personal tuning is managed through Glove 
 
 | Field | What it measures | Effect of lowering the value |
 | --- | --- | --- |
-| `joystick_deadzone` | Chosen width and height of the saved-center region as a fraction of the full camera frame (0.10–1.00); effective size is at least 1.5 calibrated hands | Positional directions begin closer to the saved center unless the hand-size floor applies |
+| `joystick_deadzone` | Chosen width and height of the saved-centre region as a fraction of the full camera frame (0.10–1.00); effective size is at least 1.5 calibrated hands | Positional directions begin closer to the saved centre unless the hand-size floor applies |
 | `coordinate_edge_margin` | Camera margin excluded from native X/Y travel | Native travel reaches its edge closer to the camera boundary |
 | `coordinate_smoothing_min` | Minimum weight assigned to the newest native coordinate | Small native movements respond more immediately but may show more jitter |
 | `coordinate_smoothing_max` | Maximum newest-coordinate weight during deliberate travel | Large native movements catch up less quickly |
@@ -1239,7 +1239,7 @@ useful for understanding the defaults; personal tuning is managed through Glove 
 | `curl_off` | Curl amount at which an active curl releases | Curl stays active until the finger is straighter |
 | `roll_on` | Wrist rotation from the centred angle | Roll actions activate with less rotation |
 | `roll_off` | Rotation at which active roll releases | Roll stays active closer to neutral |
-| `push_on` | Relative increase in apparent hand size from center | Push actions activate with less forward movement |
+| `push_on` | Relative increase in apparent hand size from centre | Push actions activate with less forward movement |
 | `push_off` | Depth change at which an active push releases | Push stays active closer to the centred depth |
 | `depth_confirm_frames` | Consecutive beyond-threshold observations required for Glove Zap or Pull Back | Fewer observations accept shorter changes but reduce spike rejection |
 | `depth_motion_window_ms` | Window in which the required depth travel must occur | A longer interval accepts slower depth motion |
@@ -1283,7 +1283,7 @@ The supplied shared recognition defaults are:
 ```
 
 The `recognition` object applies to every game profile. FCEUmm positional movement
-uses a stateless 3×3 grid around the calibrated center. Positions inside or exactly
+uses a stateless 3×3 grid around the calibrated centre. Positions inside or exactly
 on the square produce no positional D-pad bits; side regions produce cardinals and
 corner regions produce diagonals. Neutral calibration records ordinary X/Y jitter
 and can safely enlarge the effective square beyond the player's chosen value. Setup
@@ -1292,7 +1292,7 @@ and dedicated game profiles only decide how shared recognition states map to
 controller output.
 
 Native stabilization treats a saturated `1.0` calibration jitter measurement as
-unusable. It keeps that calibration's center, scale, and wrist values but uses
+unusable. It keeps that calibration's centre, scale, and wrist values but uses
 the small fixed native noise floor, avoiding a large dead zone followed by a
 jump. A normal measured jitter value continues to raise the native noise floor.
 
@@ -1322,7 +1322,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 
 1. Select **Stop controller** and back up both installations and private settings.
 2. Update the selected console and the VirtualGlove Controller from the same development commit or compatible release. The receiver rejects retired input protocols, and the sender does not downgrade; mixed versions pause controller delivery.
-3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behavior and actual game input. Profile changes also establish a fresh controller session.
+3. Restart both applications, confirm matching software identities, then select **Start controller**. Verify neutral/release behaviour and actual game input. Profile changes also establish a fresh controller session.
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
 Existing pairing credentials and native emulator files need no format migration.
@@ -1487,7 +1487,7 @@ which erases the shape on the physical display. Transitional objects need to
 cross several columns and remain visible for more than one frame; isolated
 one-pixel changes are easily lost to persistence and viewing angle.
 
-Always judge animation timing and grayscale on the physical VirtualGlove Controller. A source
+Always judge animation timing and greyscale on the physical VirtualGlove Controller. A source
 grid or browser mock-up is useful for finding malformed frames, but it cannot
 reproduce LED bloom, exposure, or perceived persistence. A short video covering
 several complete loops is the preferred review artifact for later refinements.
@@ -1590,12 +1590,12 @@ repository templates by themselves does not migrate active configuration.
 | Gestures off shows a blinking X | Update VirtualGlove; Gestures off should show the glove attract animation and must not open the camera. |
 | Camera disappears after reboot | Check `lsusb` and `/dev/v4l/by-id/`, reconnect the camera or hub if absent, and keep Camera set to **Automatic** unless selecting a specific listed device. See [startup diagnostics](#vision-startup-and-timing). |
 | First activation is slow | Allow background preloading to finish and inspect the startup stage logs before attributing the delay to the camera. |
-| Movement triggers too late | Recalibrate neutral first and verify the hand is steady; then reduce the selected player's **Joystick dead zone** center-box size. |
-| Direction remains stuck | Recalibrate neutral, return inside the Setup center box, and verify tracking-loss release. Adjust **Joystick dead zone** if the resting box is too small. |
+| Movement triggers too late | Recalibrate neutral first and verify the hand is steady; then reduce the selected player's **Joystick dead zone** centre-box size. |
+| Direction remains stuck | Recalibrate neutral, return inside the Setup centre box, and verify tracking-loss release. Adjust **Joystick dead zone** if the resting box is too small. |
 | Pairing suddenly fails | Run the pairing flow again so both devices receive the same current key. |
 | EmulationStation pauses or another USB device behaves unexpectedly at boot | Verify receiver startup is controlled by the 45-second timer and the service is not independently enabled at boot. |
 
-## Configuration file catalog
+## Configuration file catalogue
 
 | Repository file | Active or installed copy | Used by |
 | --- | --- | --- |
@@ -1751,9 +1751,9 @@ See the installation guide for the investigation status and Arduino guidance.
 
 ## Saved neutral-hand calibration
 
-The worker saves its completed neutral reference in `data/calibration.json`. It includes palm position, apparent size, wrist angle, and normal X/Y positional jitter; it is not a personally trained gesture model. The jitter estimate can raise the shared movement thresholds above their baseline, but never makes them more sensitive. Glove Academy, gameplay, profile changes, camera reconnects, and worker restarts reuse this reference. **Center hand** explicitly replaces it after sampling completes; an interrupted calibration preserves the previous saved reference. Recalibrate after moving your camera or changing your seating or standing position.
+The worker saves its completed neutral reference in `data/calibration.json`. It includes palm position, apparent size, wrist angle, and normal X/Y positional jitter; it is not a personally trained gesture model. The jitter estimate can raise the shared movement thresholds above their baseline, but never makes them more sensitive. Glove Academy, gameplay, profile changes, camera reconnects, and worker restarts reuse this reference. **Centre hand** explicitly replaces it after sampling completes; an interrupted calibration preserves the previous saved reference. Recalibrate after moving your camera or changing your seating or standing position.
 
-On first use, or if the saved file is missing or invalid, the worker samples an initial reference automatically. Calibration requires 24 complete observations at 70% hand confidence or better. It averages palm center and apparent size, uses a circular mean for wrist angle, and records the 95th-percentile X/Y deviation as normal jitter. Hold a relaxed open hand still at the intended neutral point and distance. Repeating from the same physical setup should produce a close reference, not identical floating-point values, because camera landmarks vary from frame to frame.
+On first use, or if the saved file is missing or invalid, the worker samples an initial reference automatically. Calibration requires 24 complete observations at 70% hand confidence or better. It averages palm centre and apparent size, uses a circular mean for wrist angle, and records the 95th-percentile X/Y deviation as normal jitter. Hold a relaxed open hand still at the intended neutral point and distance. Repeating from the same physical setup should produce a close reference, not identical floating-point values, because camera landmarks vary from frame to frame.
 
 The release-owned `config/profiles.json` contains the portable starting point:
 movement thresholds, coordinate range, stabilization, finger, roll, depth,
@@ -2127,7 +2127,7 @@ they may still perform their normal work.
 | `scripts/benchmark-post-inference.py` | Optional `--iterations` (default 100000), `--slow-publisher-ms` (default 5), and `--output` | Runs camera-free established-session signed UDP and Dashboard-housekeeping lanes in off/on/off order. Reports p50/p95/p99/max send, housekeeping, and full-iteration times; a slow newest-only status consumer proves Dashboard backpressure cannot queue controller input. |
 | `scripts/benchmark-native-motion-curve.py` | Version-2 vision replay JSON, optional lane index, and required new output path | Compares the former overshooting experiment, capped error curve, actual bounded speed curve, and unsmoothed coordinates. Sweeps 27 bounded candidates and reports jitter, lag, medium response, fast pickup, reversals, overshoot, continuity, and available source age without controlling a game. |
 | `scripts/benchmark-camera-pipeline.py` | Required `--camera DEVICE` and `--worker-stopped`; optional `--source-root PATH`, `--seconds 5..600`, `--buffers 1 2`, `--capture-isolation thread process`, `--inference-threads 1..4`, `--aggregate-only`, `--skip-replay`, `--tracking-evidence`, and `--output PATH` | Linux-only, output-paused capture/recognition diagnostic. Requires exclusive camera ownership and can compare selected V4L2 buffer counts, the current capture thread, or a benchmark-only latest-frame capture process. Aggregate mode reports driver dequeue age, decode, recognition pickup, graph, post-graph, Linux task scheduling, sequence cadence, skips, stalls, and compact correlated tail events without retaining frames. Detector context separates the frame before detection, camera age entering it, detector cost, skipped frames, and recovered coordinate age. Lightweight tracking evidence attributes palm and landmark paths. Three-thread inference and process-isolated capture remain research comparisons; neither changes the production setting. It does not change camera controls or player settings. |
-| `scripts/benchmark-palm-anchors.py` | Version-2 replay JSON and required new output path | Compares the five-point baseline, four-knuckle centroid, palm-polygon center, and weighted wrist/knuckle center for pose shift, travel retention, continuity, and reacquisition. It reports evidence but does not change the live anchor. |
+| `scripts/benchmark-palm-anchors.py` | Version-2 replay JSON and required new output path | Compares the five-point baseline, four-knuckle centroid, palm-polygon centre, and weighted wrist/knuckle centre for pose shift, travel retention, continuity, and reacquisition. It reports evidence but does not change the live anchor. |
 | `scripts/benchmark-frame-preprocessing.py` | Camera or clip input and required new output path | Output-paused comparison of mirrored-frame preparation and reusable buffers. It cannot change handedness or preview conventions. |
 | `scripts/benchmark-staggered-trackers.py` | Camera or clip input and required new output path | Isolated two-tracker newest-sequence experiment. It never arms controller output and is not a gameplay backend. |
 | `scripts/benchmark-tasks-live-stream.py` | Camera or clip input, Tasks model, delegate choice, and required new output path | Isolated MediaPipe Tasks live-stream CPU/GPU probe with one result in flight and newest-sequence accounting. GPU support and performance must be demonstrated on the target; this is not a production mode. |
@@ -2503,7 +2503,7 @@ unless you intend to shut down the VirtualGlove Controller.
 
 ### RetroPie updates
 
-1. On RetroPie, back up customized files under `/etc/virtualglove/`, especially `games.json` and `launcher.json`, using your normal private backup method.
+1. On RetroPie, back up customised files under `/etc/virtualglove/`, especially `games.json` and `launcher.json`, using your normal private backup method.
 2. Open the original source checkout, normally `~/VirtualGlove`. The installed copy under `/opt/virtualglove-src` is not a Git checkout.
 3. Run the commands below. Review `git status --short` before pulling; if Git reports a conflict, resolve it before running the installer.
 4. Resolve any **FAIL** in the installer report, then launch a registered game and check its profile and controls. The installer preserves existing settings and tokens.
@@ -2762,7 +2762,7 @@ prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replac
 these example tags with actual published tags, and use the matching option on
 the selected Linux console. No GitHub release is created by running an installer.
 
-| Option | Behavior |
+| Option | Behaviour |
 | --- | --- |
 | `--version TAG` | Use one exact published release on both machines. Without a tag, select the latest stable GitHub release. |
 | `--development TAG` | Explicitly use a published development prerelease, such as `dev-COMMIT`. This is a release tag, not a branch name. |
@@ -2954,7 +2954,7 @@ excluded from managed ownership. `config/profiles.json` is deliberately managed
 and replaced from the release; its previous copy is retained in the update backup.
 
 On the first manifest-enabled update, incoming package paths are installed using
-the existing backup-and-replace behavior. Unknown files absent from the package
+the existing backup-and-replace behaviour. Unknown files absent from the package
 are left alone: the installer does not infer an old inventory from the directory.
 On later updates, application-owned files are authoritative release content.
 Locally changed owned files are backed up and replaced; obsolete owned files are
