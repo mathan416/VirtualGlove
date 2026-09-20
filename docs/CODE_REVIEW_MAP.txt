@@ -2,8 +2,8 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 672
-Python test modules: 77
+Git-visible files: 685
+Python test modules: 78
 Standalone browser checks: 5
 JavaScript browser harnesses: 8
 
@@ -116,7 +116,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 77 test modules. JavaScript
+Normal Python discovery currently contains 78 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-672 tracked or non-ignored files are present in this checkout. Ignored
+685 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -575,35 +575,52 @@ are intentionally omitted.
 |   |   `-- nestopia-powerglove.patch
 |   |-- powerglove-dot
 |   |   `-- powerglove_dot.cpp
-|   `-- recalbox
-|       |-- odroidgo2
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
-|       |-- rg353x
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
-|       |-- rpi3
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
-|       |-- rpi4_64
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
-|       |-- rpi5_64
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
-|       |-- rpizero2
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
+|   |-- recalbox
+|   |   |-- odroidgo2
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- rg353x
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- rpi3
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- rpi4_64
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- rpi5_64
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- rpizero2
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   |-- x86_64
+|   |   |   `-- 10.1
+|   |   |       |-- nestopia-powerglove-source.tar.gz
+|   |   |       `-- nestopia_powerglove_libretro.so
+|   |   `-- manifest.json
+|   `-- retropie
+|       |-- aarch64
+|       |   |-- nestopia-powerglove-source.tar.gz
+|       |   `-- nestopia_powerglove_libretro.so
+|       |-- armv6
+|       |   |-- nestopia-powerglove-source.tar.gz
+|       |   `-- nestopia_powerglove_libretro.so
+|       |-- armv7
+|       |   |-- nestopia-powerglove-source.tar.gz
+|       |   `-- nestopia_powerglove_libretro.so
+|       |-- armv8_32
+|       |   |-- nestopia-powerglove-source.tar.gz
+|       |   `-- nestopia_powerglove_libretro.so
 |       |-- x86_64
-|       |   `-- 10.1
-|       |       |-- nestopia-powerglove-source.tar.gz
-|       |       `-- nestopia_powerglove_libretro.so
+|       |   |-- nestopia-powerglove-source.tar.gz
+|       |   `-- nestopia_powerglove_libretro.so
 |       `-- manifest.json
 |-- output
 |   |-- app-lab
@@ -756,6 +773,7 @@ are intentionally omitted.
 |   |-- verify-batocera-native-core.py
 |   |-- verify-launchbox-native-core.py
 |   |-- verify-recalbox-native-core.py
+|   |-- verify-retropie-native-core.py
 |   `-- virtualglove-controller-router
 |-- sketch
 |   |-- firmware_version.h
@@ -895,6 +913,7 @@ are intentionally omitted.
 |   |-- test_recalbox_native_core.py
 |   |-- test_resolver.py
 |   |-- test_retroarch_remote.py
+|   |-- test_retropie_native_core.py
 |   |-- test_runtime_assets.py
 |   |-- test_setup_machine.py
 |   |-- test_setup_review.py

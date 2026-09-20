@@ -209,13 +209,57 @@ def unpack(archive, destination, machine, version):
                          "retropie/runcommand-onstart-virtualglove.sh",
                          "retropie/runcommand-onend-virtualglove.sh",
                          "scripts/install-nestopia-powerglove.sh",
+                         "scripts/verify-retropie-native-core.py",
                          "scripts/install-powerglove-dot.sh",
                          "scripts/configure-super-glove-ball-core.py",
+                         "native/retropie/manifest.json",
                          "native/nestopia-powerglove/nestopia-powerglove.patch",
                          "native/powerglove-dot/powerglove_dot.cpp",
                          "src/virtualglove/dot_launcher.py",
                          "retropie/bin/virtualglove-dot",
                      ])))
+        if machine == "retropie":
+            manifest_member = "VirtualGlove/native/retropie/manifest.json"
+            if manifest_member not in seen:
+                raise ValueError("Incomplete package: missing native/retropie/manifest.json")
+            native = json.loads(package.read(manifest_member))
+            if native.get("format") != 1 or not isinstance(native.get("cores"), dict):
+                raise ValueError("Incomplete package: malformed RetroPie native-core manifest")
+            valid_targets = {"armv6", "armv7", "armv8_32", "aarch64", "x86_64"}
+            if set(native["cores"]) != valid_targets:
+                raise ValueError("Incomplete package: incomplete RetroPie native-core matrix")
+            for target, entry in native["cores"].items():
+                if not isinstance(entry, dict):
+                    raise ValueError("Incomplete package: malformed RetroPie native-core target")
+                required_fields = {
+                    "build_environment", "cpu_arch", "elf_class", "elf_machine",
+                    "file", "float_abi", "max_glibc_symbol", "nestopia_revision",
+                    "patch_sha256", "sha256", "size", "source_file",
+                    "source_sha256", "source_size", "validation",
+                }
+                expected_elf = {
+                    "armv6": (32, "arm"), "armv7": (32, "arm"),
+                    "armv8_32": (32, "arm"), "aarch64": (64, "aarch64"),
+                    "x86_64": (64, "x86_64"),
+                }[target]
+                if (set(entry) != required_fields
+                        or (entry.get("elf_class"), entry.get("elf_machine")) != expected_elf
+                        or not isinstance(entry.get("size"), int) or entry["size"] <= 0
+                        or not isinstance(entry.get("source_size"), int)
+                        or entry["source_size"] <= 0
+                        or any(not isinstance(entry.get(field), str)
+                               or not re.fullmatch(r"[0-9a-f]{64}", entry[field])
+                               for field in ("sha256", "source_sha256", "patch_sha256"))
+                        or not isinstance(entry.get("nestopia_revision"), str)
+                        or not re.fullmatch(r"[0-9a-f]{40}", entry["nestopia_revision"])):
+                    raise ValueError("Incomplete package: malformed RetroPie native-core entry")
+                for field in ("file", "source_file"):
+                    relative = entry.get(field)
+                    path = PurePosixPath(relative) if isinstance(relative, str) else None
+                    if (path is None or path.is_absolute() or ".." in path.parts
+                            or path.parts[:1] != (target,)):
+                        raise ValueError("Incomplete package: unsafe RetroPie native-core path")
+                    required.append("native/retropie/" + str(path))
         if machine == "recalbox":
             native = json.loads(package.read("VirtualGlove/native/recalbox/manifest.json"))
             if native.get("format") != 2 or not isinstance(native.get("cores"), dict):

@@ -45,6 +45,11 @@ result before naming the underlying mechanism.
 
 ### Fixed
 
+- Kept Batocera's merged physical controller active in every Libretro system,
+  not only NES. Controller Router now writes a bounded, reversible
+  `batocera.conf` override that Batocera's own generator applies after choosing
+  frontend controllers, so Game Boy, SNES, Game Gear, and other Libretro cores
+  no longer open the physical device that Router has exclusively grabbed.
 - Corrected the printable Controller enclosures after a physical fit check.
   Narrower UNO Q supports now clear its underside connectors, lid skirts pass
   around the corner bosses and thick USB-C plugs, and Dock V2 provides a wider
@@ -153,6 +158,11 @@ controller available, and let each game use the correct input method.
 
 ### Added
 
+- Added packaged Nestopia (VirtualGlove) cores for RetroPie's ARMv6, ARMv7,
+  32-bit ARMv8, AArch64, and x86-64 targets. Installation chooses from the
+  actual RetroArch executable format rather than the kernel name, verifies the
+  binary and corresponding GPL source archive, and retains local compilation
+  as a fallback when no packaged target matches.
 - Added optional **Controller Router** for RetroPie, Recalbox, and Batocera.
   It can combine several EmulationStation-configured controllers into any of
   four FCEUmm players and assign the single paired VirtualGlove to one player.

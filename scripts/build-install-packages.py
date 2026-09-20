@@ -78,7 +78,7 @@ def build(version, destination):
                         continue
                     if (machine == "retropie" and relative[0] == "native"
                             and (len(relative) < 2 or relative[1] not in (
-                                "nestopia-powerglove", "powerglove-dot"))):
+                                "retropie", "nestopia-powerglove", "powerglove-dot"))):
                         continue
                     if (machine == "recalbox" and relative[0] == "native"
                             and (len(relative) < 2 or relative[1] not in (

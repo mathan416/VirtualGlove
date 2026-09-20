@@ -16,7 +16,7 @@ scanned game artwork, or publisher assets.
 | MediaPipe 0.10.35 | Hand landmark recognition on the Controller | Modified ARM64/Python 3.12 wheel included; Apache License 2.0 |
 | Google Hand Landmarker | Model used by MediaPipe | Unmodified model included; Apache License 2.0 |
 | Arduino Zephyr loader and flash configuration | Loads Matrix firmware on Arduino UNO Q | Two unmodified platform files included; Apache License 2.0 |
-| Modified Nestopia libretro core | Native Super Glove Ball input | GPLv2 binary and exact corresponding source included for Recalbox, Batocera, and LaunchBox; RetroPie builds locally |
+| Modified Nestopia libretro core | Native Super Glove Ball input | GPLv2 binary and exact corresponding source included for RetroPie, Recalbox, Batocera, and LaunchBox |
 | NumPy and headless OpenCV | Numerical and camera support | Installed as Python dependencies; BSD-3-Clause and Apache License 2.0 respectively |
 | evdev | Linux console input support | Installed where required; BSD-3-Clause |
 | Python Cryptography | Authenticated LaunchBox communication | Installed in the isolated LaunchBox runtime; Apache License 2.0 or BSD-3-Clause |
@@ -164,7 +164,7 @@ The corresponding licence text is distributed as `licenses/GPL-2.0.txt`.
 | Windows patch SHA-256 | `88c7bae02bfdb1cda8866dadb676710889da7910a8ac695a2a9eb4b62b72e4e7` |
 | Modified upstream files | `libretro/libretro.cpp`; `source/core/input/NstInpPowerGlove.cpp` |
 | Modification ledger | This guide, under **Nestopia modification ledger** |
-| Build recipe | `scripts/build-nestopia-powerglove.sh`; Recalbox target/matrix wrappers; Batocera target/matrix wrappers; Windows target wrapper `scripts/build-launchbox-nestopia-powerglove.sh` |
+| Build recipe | `scripts/build-nestopia-powerglove.sh`; pinned RetroPie cross-build environments recorded in its manifest; Recalbox and Batocera target/matrix wrappers; Windows target wrapper `scripts/build-launchbox-nestopia-powerglove.sh` |
 | Built filename | `nestopia_powerglove_libretro.so` or `nestopia_powerglove_libretro.dll` |
 
 ### Binary and source distribution
@@ -175,7 +175,7 @@ The manifests are the authoritative checksum ledger.
 
 | Platform | Packaged targets | Authoritative manifest or recipe |
 | --- | --- | --- |
-| RetroPie | Built locally for the host processor from pinned source | `scripts/build-nestopia-powerglove.sh` |
+| RetroPie | `armv6`, `armv7`, 32-bit `armv8`, `aarch64`, `x86_64` | `native/retropie/manifest.json` |
 | Recalbox 10.1 | `rpizero2`, `rpi3`, `rpi4_64`, `rpi5_64`, `rg353x`, `odroidgo2`, `x86_64` | `native/recalbox/manifest.json` |
 | Batocera 43.1 | `bcm2835`, `bcm2836`, `bcm2837`, `bcm2711`, `bcm2712`, `x86_64`, `rk3326`, `rk3399`, `rk3568`, `rk3588`, `s905`, `s905gen2`, `s905gen3`, `s922x`, `sm8250` | `native/batocera/manifest.json` |
 | LaunchBox | Windows `x86_64` | `native/launchbox/manifest.json` |
@@ -188,17 +188,18 @@ The verified LaunchBox core has SHA-256
 Its corresponding source archive has SHA-256
 `a1c3e574b8b65195dab63d3865bf70d3371a44a059ea7d08ef67b3c6595f5033`.
 
-Recalbox and Batocera packages select a build for the detected architecture,
-verify it against the manifest, and perform a target-side libretro load and
-identity check. Compatible later platform releases may reuse the newest
-packaged build for the same architecture, but the load check remains the final
-gate. Failure leaves FCEUmm available.
+RetroPie, Recalbox, and Batocera packages select a build for the detected
+architecture, verify it against the manifest, and perform a target-side
+libretro load and identity check. Compatible later Recalbox and Batocera
+releases may reuse the newest packaged build for the same architecture, but
+the load check remains the final gate. Failure leaves FCEUmm available.
 
-The optional RetroPie installation downloads the pinned upstream source,
-including its author notices and `COPYING` file, applies the patch, and builds
-for the host processor. The installer places `COPYING`, this notice, and the
-modification ledger beside the installed binary. Stock Nestopia is never
-replaced.
+The optional RetroPie installation verifies the packaged core and matching
+source archive for the host processor. The installer places `COPYING`, this
+notice, and the modification ledger beside the installed binary. The exact
+physically validated Pi 4 binary remains a separate 32-bit ARMv8 artifact;
+original Pi 2 hardware receives the ARMv7 build instead. Stock Nestopia is
+never replaced.
 
 For every additional prebuilt core, produce a separately identified artifact
 for the exact tested operating-system target and architecture. Accompany each binary with

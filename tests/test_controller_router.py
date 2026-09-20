@@ -136,6 +136,23 @@ class ControllerRouterTests(unittest.TestCase):
             self.assertEqual(router.output_indexes([1], sys_root, udev_root, "recalbox"), {1: 0})
             self.assertEqual(router.output_indexes([1], sys_root, udev_root, "retropie"), {1: 3})
 
+    def test_batocera_overrides_survive_generated_retroarch_configuration(self):
+        config = {"format": 2, "platform": "batocera",
+                  "players": [{"player": 1, "sources": [source()]}],
+                  "virtualglove_player": 1, "physical_scope": "all"}
+        original = "controllers.bluetooth.enabled=1\nglobal.retroarch.video_vsync=true\n"
+        updated = router.merge_batocera_config(original, config, {1: 3})
+        self.assertIn("controllers.bluetooth.enabled=1", updated)
+        self.assertIn("global.retroarch.video_vsync=true", updated)
+        self.assertIn("## VirtualGlove Controller Router", updated)
+        self.assertIn("global.retroarch.input_player1_joypad_index=3", updated)
+        self.assertIn("global.retroarch.input_player1_start_btn=11", updated)
+        self.assertIn("global.retroarch.input_enable_hotkey_btn=12", updated)
+        replaced = router.merge_batocera_config(updated, config, {1: 1})
+        self.assertEqual(replaced.count("## VirtualGlove Controller Router"), 1)
+        self.assertIn("global.retroarch.input_player1_joypad_index=1", replaced)
+        self.assertNotIn("global.retroarch.input_player1_joypad_index=3", replaced)
+
     def test_retropie_launch_hook_resolves_outputs_after_joystick_selection(self):
         hook = (Path(__file__).resolve().parents[1] /
                 "retropie/runcommand-onstart-virtualglove.sh").read_text()

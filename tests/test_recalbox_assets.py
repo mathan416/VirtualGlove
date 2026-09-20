@@ -87,7 +87,12 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("gameStop", event)
         self.assertIn('emulator="lr-${4:-}"', event)
         self.assertIn('nestopia_powerglove) emulator="lr-nestopia-powerglove"', event)
-        self.assertIn('if [ "$emulator" = lr-fceumm ]', event)
+        self.assertIn('if [ "$emulator" = libretro ]', event)
+        self.assertIn('if [ "${4:-}" != nestopia_powerglove ]', event)
+        self.assertNotIn('if [ "$emulator" = lr-fceumm ]', event)
+        router = (ROOT / "src/virtualglove/controller_router.py").read_text()
+        self.assertIn("merge_batocera_config", router)
+        self.assertIn('Path("/userdata/system/batocera.conf")', router)
         self.assertNotIn("systemctl", service + event)
 
     def test_router_live_check_does_not_replace_unsaved_setup_choices(self):

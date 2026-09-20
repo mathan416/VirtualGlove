@@ -399,12 +399,14 @@ class ControllerRouterDevice:
                  socket_path: Path | None = None, *, sinks: dict[int, Any] | None = None,
                  es_inputs: Path | None = None,
                  global_config: Path | None = None,
+                 platform_config: Path | None = None,
                  proc_root: Path = Path("/proc"), sys_root: Path = Path("/sys/class/input"),
                  udev_root: Path = Path("/run/udev/data"), dev_root: Path = Path("/dev/input")) -> None:
         self.config_path, self.config = Path(config_path), load_config(config_path)
         self.retroarch_config, self.proc_root = Path(retroarch_config), proc_root
         self.retroarch_configs = joystick_retroarch_configs(self.retroarch_config)
         self.global_config = Path(global_config) if global_config else None
+        self.platform_config = Path(platform_config) if platform_config else None
         self.es_inputs = Path(es_inputs) if es_inputs else _paths(self.config["platform"])[1]
         self.sys_root, self.udev_root, self.dev_root = sys_root, udev_root, dev_root
         self.players = {player: PlayerState(player) for player in enabled_players(self.config)}
@@ -465,6 +467,11 @@ class ControllerRouterDevice:
                     current = config_path.read_text() if config_path.exists() else ""
                     updated = merge_retroarch_config(current, self.config, indexes, global_text)
                     atomic_write(config_path, updated, 0o644)
+                if self.config["platform"] == "batocera" and self.platform_config:
+                    current = (self.platform_config.read_text()
+                               if self.platform_config.exists() else "")
+                    atomic_write(self.platform_config, merge_batocera_config(
+                        current, self.config, indexes, global_text), 0o644)
                 self.installed_indexes = indexes
                 return
             time.sleep(0.05)
@@ -815,6 +822,35 @@ def merge_retroarch_config(text: str, config: dict[str, Any], indexes: dict[int,
     return "\n".join(output).lstrip("\n") + "\n"
 
 
+def merge_batocera_config(text: str, config: dict[str, Any], indexes: dict[int, int],
+                          global_config: str = "") -> str:
+    """Persist Router bindings through Batocera's generated RetroArch config."""
+    begin = "## VirtualGlove Controller Router"
+    end = "## End VirtualGlove Controller Router"
+    output, inside = [], False
+    for line in text.splitlines():
+        if line.strip() == begin:
+            inside = True
+            continue
+        if inside:
+            if line.strip() == end:
+                inside = False
+            continue
+        output.append(line)
+    while output and not output[-1]:
+        output.pop()
+    managed = merge_retroarch_config("", config, indexes, global_config).splitlines()
+    output.extend(["", begin])
+    for line in managed:
+        if not line or line.startswith("#"):
+            continue
+        key, value = line.split("=", 1)
+        output.append("global.retroarch.%s=%s" % (
+            key.strip(), value.strip().strip('"')))
+    output.append(end)
+    return "\n".join(output).lstrip("\n") + "\n"
+
+
 def revision(config: dict[str, Any]) -> str:
     """Hash normalized configuration independently of file formatting."""
     return hashlib.sha256((json.dumps(config, sort_keys=True, separators=(",", ":")) + "\n").encode()).hexdigest()
@@ -1028,7 +1064,7 @@ def router_request(settings: dict[str, Any], operation: str,
     return response["result"]
 
 
-def _paths(platform: str) -> tuple[Path, Path, Path, Path]:
+def _paths(platform: str) -> tuple[Path, Path, Path, Path, Path | None]:
     """Return fixed configuration paths for one supported console."""
     if platform == "recalbox":
         root = Path("/recalbox/share/system/virtualglove")
@@ -1036,18 +1072,19 @@ def _paths(platform: str) -> tuple[Path, Path, Path, Path]:
         return (root / "data/controller-router.json",
                 Path("/recalbox/share/system/.emulationstation/es_input.cfg"),
                 retroarch / "config/FCEUmm/FCEUmm.cfg",
-                retroarch / "retroarchcustom.cfg")
+                retroarch / "retroarchcustom.cfg", None)
     if platform == "batocera":
         root = Path("/userdata/system/virtualglove")
         retroarch = Path("/userdata/system/configs/retroarch")
         return (root / "data/controller-router.json",
                 Path("/userdata/system/configs/emulationstation/es_input.cfg"),
                 retroarch / "config/FCEUmm/FCEUmm.cfg",
-                retroarch / "retroarchcustom.cfg")
+                retroarch / "retroarchcustom.cfg",
+                Path("/userdata/system/batocera.conf"))
     return (Path("/etc/virtualglove/controller-router.json"),
             Path("/opt/retropie/configs/all/emulationstation/es_input.cfg"),
             Path("/opt/retropie/configs/all/retroarch/config/FCEUmm/FCEUmm.cfg"),
-            Path("/opt/retropie/configs/nes/retroarchcustom.cfg"))
+            Path("/opt/retropie/configs/nes/retroarchcustom.cfg"), None)
 
 
 def _assignment_label(player: int | None) -> str:
@@ -1204,7 +1241,7 @@ def main() -> int:
     parser.add_argument("--socket", type=Path)
     args = parser.parse_args()
     platform = args.platform or detect_platform()
-    default_config, es_inputs, retroarch, global_config = _paths(platform)
+    default_config, es_inputs, retroarch, global_config, platform_config = _paths(platform)
 
     def activate_retropie() -> None:
         """Start RetroPie's opt-in Router after its first local wizard save."""
@@ -1222,7 +1259,8 @@ def main() -> int:
         if args.socket is None:
             parser.error("serve requires --socket")
         device = ControllerRouterDevice(args.config or default_config, retroarch, args.socket,
-                                        es_inputs=es_inputs, global_config=global_config)
+                                        es_inputs=es_inputs, global_config=global_config,
+                                        platform_config=platform_config)
         try:
             while True: time.sleep(3600)
         except KeyboardInterrupt:
@@ -1269,6 +1307,10 @@ def main() -> int:
             current = config_path.read_text() if config_path.exists() else ""
             updated = merge_retroarch_config(current, config, indexes, global_text)
             atomic_write(config_path, updated, 0o644)
+        if platform == "batocera" and platform_config:
+            current = platform_config.read_text() if platform_config.exists() else ""
+            atomic_write(platform_config, merge_batocera_config(
+                current, config, indexes, global_text), 0o644)
         if platform == "retropie" and not was_active:
             subprocess.run(("systemctl", "restart", "virtualglove-receiver.service"), check=True)
         print("Controller Router assignments applied.")

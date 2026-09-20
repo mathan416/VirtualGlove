@@ -248,6 +248,7 @@ class ArchiveTests(unittest.TestCase):
                 dict(format=1, machine=machine, version='dev-test')))
             for name in ('scripts/setup-machine.py', 'scripts/installation-manifest.py',
                          'scripts/install-nestopia-powerglove.sh',
+                         'scripts/verify-retropie-native-core.py',
                          'scripts/install-powerglove-dot.sh',
                          'scripts/configure-super-glove-ball-core.py',
                          'src/virtualglove/receiver.py',
@@ -278,6 +279,36 @@ class ArchiveTests(unittest.TestCase):
                          'native/powerglove-dot/powerglove_dot.cpp',
                          'src/virtualglove/dot_launcher.py'):
                 output.writestr('VirtualGlove/' + name, 'test')
+            if machine == 'retropie':
+                cores = {}
+                for target in ('armv6', 'armv7', 'armv8_32', 'aarch64', 'x86_64'):
+                    core = target + '/nestopia_powerglove_libretro.so'
+                    source = target + '/nestopia-powerglove-source.tar.gz'
+                    output.writestr('VirtualGlove/native/retropie/' + core, 'core')
+                    output.writestr('VirtualGlove/native/retropie/' + source, 'source')
+                    elf_class, elf_machine = ((64, target) if target in ('aarch64', 'x86_64')
+                                              else (32, 'arm'))
+                    cores[target] = {
+                        'build_environment': 'test',
+                        'cpu_arch': target,
+                        'elf_class': elf_class,
+                        'elf_machine': elf_machine,
+                        'file': core,
+                        'float_abi': 'test',
+                        'max_glibc_symbol': '2.27',
+                        'nestopia_revision': '0' * 40,
+                        'patch_sha256': '1' * 64,
+                        'sha256': '2' * 64,
+                        'size': 4,
+                        'source_file': source,
+                        'source_sha256': '3' * 64,
+                        'source_size': 6,
+                        'validation': 'test',
+                    }
+                output.writestr('VirtualGlove/native/retropie/manifest.json', json.dumps({
+                    'format': 1,
+                    'cores': cores,
+                }))
             console_members = {
                 'recalbox': (
                     'src/virtualglove/console_monitor.py',
@@ -834,7 +865,8 @@ class GameSetupTests(unittest.TestCase):
                  patch.object(setup, "run", side_effect=command) as run:
                 setup.configure_games(lambda message: "lr-nestopia-powerglove" in message)
 
-            run.assert_any_call("apt-get", "install", "-y", "git", "build-essential")
+            self.assertFalse(any(call.args[:2] == ("apt-get", "install")
+                                 for call in run.call_args_list))
             self.assertIn("lr-nestopia-powerglove", system.read_text())
             games = prefix / "configs/all/emulators.cfg"
             self.assertFalse(games.exists())

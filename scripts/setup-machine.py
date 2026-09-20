@@ -509,10 +509,9 @@ def configure_games(confirm):
     super_glove_ball_roms = [rom for rom, profile in roms if profile == "super_glove_ball"]
     native = prefix / "libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so"
     if super_glove_ball_roms and not native.is_file():
-        prompt = ("Build and register optional lr-nestopia-powerglove for Super Glove Ball? "
-                  "This installs build tools and downloads pinned GPLv2 source")
+        prompt = ("Install and register optional lr-nestopia-powerglove for Super Glove Ball? "
+                  "This uses the verified core packaged for this RetroPie architecture")
         if confirm(prompt):
-            run("apt-get", "install", "-y", "git", "build-essential")
             with tempfile.TemporaryDirectory(prefix="powerglove-nestopia-", dir="/var/tmp") as build:
                 run("bash", SOURCE / "scripts/install-nestopia-powerglove.sh", build)
     if super_glove_ball_roms and native.is_file():
@@ -900,6 +899,7 @@ def install_batocera(peer, player1_device=None):
     backup_file("/userdata/system/configs/retroarch/nes.cfg")
     backup_file("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     backup_file("/userdata/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
+    backup_file("/userdata/system/batocera.conf")
     run("batocera-services", "enable", "VirtualGlove")
     subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
     run("batocera-services", "start", "VirtualGlove")
@@ -917,6 +917,9 @@ def check_batocera(report):
                  Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
     report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
     report.check("Batocera game hook installed", Path("/userdata/system/scripts/virtualglove-game").is_file())
+    report.check("All Libretro systems use the merged controller",
+                 "## VirtualGlove Controller Router" in
+                 Path("/userdata/system/batocera.conf").read_text(errors="replace"), pending=True)
     controller = root / "data/player1-controller.json"
     try:
         merged = merged_controller_module()
