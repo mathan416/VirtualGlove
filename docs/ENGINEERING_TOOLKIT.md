@@ -10,6 +10,23 @@ begin with an existing trace or recorded clip, proceed through an output-free
 comparison, and reach a running Controller only after the offline result is
 understood.
 
+## Pick a workflow
+
+You do not need to learn every tool. Start with the question you are trying to
+answer and use the smallest workflow that can answer it.
+
+| Question | Start here | Continue only when needed |
+| --- | --- | --- |
+| Did recognition change? | `guided-vision-benchmark.py`, then `benchmark-vision-replay.py` | `benchmark-palm-anchors.py` or one of the isolated tracker experiments |
+| Is movement responsive and stable? | `benchmark-native-motion-curve.py` | `analyze-motion-trace.py` or `benchmark-direction-response.py` |
+| Where is time being spent? | `measure-vision-status.py` | `prepare-end-to-end-session.py`, then the bounded latency-tracing workflow |
+| Is camera delivery the bottleneck? | `benchmark-camera-pipeline.py` | frame-preprocessing or exposure soaks |
+| Does native Super Glove Ball still behave correctly? | `build-nestopia-powerglove.sh`, then `run-nestopia-powerglove-trace.py` | the matched direction-response comparison |
+| Could another recognition backend help? | Use the retained Tasks, staggered-tracker, or ncnn comparison | Treat the result as research evidence, not a production switch |
+
+Prefer offline tools first. Commands that open a camera or temporarily restart
+services say so in their help and require deliberate operator steps.
+
 ## Choose the right download
 
 Download `VirtualGlove-Engineering-Tools.zip` from the same GitHub release as
@@ -57,6 +74,12 @@ Activate it on macOS or Linux:
 . .venv-engineering/bin/activate
 ```
 
+On Windows PowerShell:
+
+```powershell
+.\.venv-engineering\Scripts\Activate.ps1
+```
+
 MediaPipe comparisons use Python 3.12, matching the supported Controller
 toolchain:
 
@@ -75,26 +98,28 @@ with a generic workstation package. Use the packaged tools from a workstation
 for offline analysis and orchestration, or the existing deployed engineering
 copy on a development Controller when direct camera access is required.
 
-## What is included
+## Tool map
 
 The generated `engineering-tools.json` records the exact toolkit version,
 complete file inventory, and these categories.
 
-| Category | Purpose | Changes a running system? |
+| Category | Main commands | Changes a running system? |
 | --- | --- | --- |
-| Offline analysis | Examine latency, motion, direction response, palm anchors, and preprocessing evidence | No |
-| Camera and recognition | Record a guided clip or compare camera delivery and MediaPipe lanes | May take exclusive ownership of the camera; never sends controller output |
-| Live system tracing | Observe or temporarily trace the Controller, receiver, and native core | Some commands restart measured services; production is restored when stopped normally |
-| Native and accelerator research | Exercise a supplied libretro core, ncnn sidecar, or isolated inference experiment | Does not install a core by itself; may compile local research binaries |
-| Toolkit support | Set up and validate the extracted environment | Creates files only inside the toolkit environment |
+| Offline analysis | Latency, motion-trace, direction-response, preprocessing, movement-curve, palm-anchor, post-inference, and diagnostic-overhead tools | No |
+| Camera and recognition | Guided capture, vision replay, camera-pipeline measurement, isolated tracker comparisons, and exposure soaks | May take exclusive ownership of the camera; never sends controller output |
+| Live system tracing | Status measurement, end-to-end preflight, bounded trace management, and native latency sessions | Observation is read-only; trace sessions temporarily restart measured services and restore production when stopped normally |
+| Native and accelerator research | Pinned Nestopia and FCEUmm builders, native-core trace instrumentation, ncnn, and MediaPipe Tasks comparisons | Builds only in a local destination and never installs a core; probes may run caller-supplied binaries or models |
+| Toolkit support | Environment setup and the dependency-free package self-check | Creates or verifies files only inside the toolkit environment |
 
-Shared `src/virtualglove`, `config`, and `native` source is included where
-the tools import or inspect it. The package also contains the project licence,
-third-party notices, and this guide.
+Shared `src/virtualglove` and `config` source is included where tools import or
+inspect it. Native-emulation research receives the editable VirtualGlove patch
+and diagnostic header, not the platform release binaries. The package also
+contains the project licence, third-party notices, and this guide.
 
 The archive intentionally excludes ROMs, recorded video, trace results,
 credentials, pairing tokens, player settings, personal calibration, cached
-models, compiled emulator cores, and private device data.
+models, compiled emulator cores, platform core source archives, and private
+device data.
 
 Repository-only maintenance tools are excluded: release publishing, device
 deployment, firmware stamping, package construction, PDF and screenshot
@@ -178,7 +203,9 @@ Stop normal vision before allowing an engineering tool to own the camera. Keep
 controller output stopped and ensure no game depends on the camera during the
 test.
 
-The guided recorder provides a local live preview and user-paced cues:
+The single supported recorder provides a local live preview and user-paced
+cues. It replaced the older fixed-duration recorder so the operator can verify
+each pose instead of racing a timer:
 
 ```sh
 python scripts/guided-vision-benchmark.py \
@@ -215,6 +242,22 @@ details.
 
 ## Native emulator research
 
+Build the pinned, patched Nestopia core in a local directory without installing
+it:
+
+```sh
+sh scripts/build-nestopia-powerglove.sh build/nestopia-research
+```
+
+Build a stock FCEUmm comparison core when a matched joystick test needs it:
+
+```sh
+sh scripts/build-fceumm-benchmark.sh build/fceumm-research
+```
+
+Both builders fetch pinned upstream source. Review their output and licences;
+do not substitute their local products for platform-packaged release cores.
+
 `run-nestopia-powerglove-trace.py` loads a caller-supplied libretro core and ROM
 without installing either one. The toolkit never supplies commercial ROMs.
 Keep ROM and scratch paths outside the extracted toolkit, and remove scratch
@@ -224,6 +267,11 @@ The ncnn and MediaPipe Tasks tools are retained for reproducible comparison;
 they are not production alternatives. A faster isolated layer or delegate is
 not sufficient evidence. Any proposed runtime must preserve recognition,
 continuity, ordering, thermal stability, and complete camera-to-game latency.
+
+The toolkit no longer includes the old fixed recorder, `min/boost` filename
+matrix, or earlier ideal-step sampler. Their assumptions belonged to retired
+motion experiments. Guided capture, labelled replay evidence, and the bounded
+native-motion curve are the maintained replacements.
 
 ## Evidence checklist
 

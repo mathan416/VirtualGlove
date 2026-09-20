@@ -12,6 +12,35 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+### Changed
+
+- Refocused the optional Engineering Toolkit around maintained workflows for
+  guided recognition capture, labelled replay, movement response, latency,
+  camera delivery, native emulation, and isolated accelerator research. The
+  guide now starts with questions people are likely to investigate and points
+  to the smallest suitable workflow.
+- Reduced the Engineering Toolkit source archive by excluding packaged
+  Batocera, Recalbox, and Windows emulator binaries and their platform source
+  archives. Native researchers still receive the editable VirtualGlove patch,
+  diagnostic header, and safe local builders.
+- Kept native-core matrix builders, documentation renderers, the code-review
+  map generator, and the test runner in full development checkouts instead of
+  copying maintainer-only commands onto ordinary Controllers and consoles.
+
+### Removed
+
+- Removed three superseded engineering utilities: the timer-driven camera
+  recorder, the retired `min/boost` trace-name comparator, and the earlier
+  ideal-step motion sampler. Guided recording, replay evidence, and the bounded
+  native-motion curve are their maintained replacements.
+
+### Fixed
+
+- Removed a retired native-motion command-line option from the full camera
+  exposure soak and strengthened the toolkit self-check and package tests so
+  duplicate inventory entries or compiled emulator artifacts cannot quietly
+  return.
+
 ## [0.5.0-rc.1] - 2026-09-20
 
 VirtualGlove 0.5.0 expands beyond RetroPie, adds Windows support, and completes

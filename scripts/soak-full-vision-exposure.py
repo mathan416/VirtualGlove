@@ -42,7 +42,7 @@ def worker_command(args):
         "--tracking-confidence", "0.35", "--tracking-roi-scale", "2.25",
         "--fps", "30", "--capture-backend", "direct-v4l2",
         "--camera-exposure", "auto", "--camera-buffers", "2",
-        "--native-xy-mode", "latest", "--model", str(args.model),
+        "--model", str(args.model),
         "--camera-manual-exposure-test", str(args.exposure),
         "--camera-manual-gain-test", str(args.gain),
     ]

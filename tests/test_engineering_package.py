@@ -48,17 +48,25 @@ class EngineeringPackageTests(unittest.TestCase):
                 self.assertIn(prefix + "scripts/measure-vision-status.py", names)
                 self.assertIn(prefix + "scripts/check-engineering-toolkit.py", names)
                 self.assertIn(prefix + "scripts/setup-engineering-tools.py", names)
+                self.assertIn(prefix + "scripts/build-nestopia-powerglove.sh", names)
                 self.assertIn(prefix + "docs/ENGINEERING_TOOLKIT.md", names)
                 self.assertIn(prefix + "README.md", names)
                 self.assertIn(prefix + "src/virtualglove/gesture.py", names)
                 self.assertIn(prefix + "native/nestopia-powerglove/diagnostic_trace.h", names)
+                self.assertIn(prefix + "native/nestopia-powerglove/nestopia-powerglove.patch", names)
                 self.assertNotIn(prefix + "scripts/deploy-uno-q-wifi.sh", names)
                 self.assertNotIn(prefix + "scripts/build-docs-pdf.py", names)
                 self.assertNotIn(prefix + "scripts/build-install-packages.py", names)
+                self.assertNotIn(prefix + "scripts/record-vision-benchmark.py", names)
+                self.assertNotIn(prefix + "scripts/compare-motion-matrix.py", names)
+                self.assertNotIn(prefix + "scripts/analyze-motion-samples.py", names)
+                self.assertFalse(any(name.endswith((".so", ".dll", ".dylib", ".a", ".tar.gz"))
+                                     for name in names))
                 self.assertFalse(any("/data/" in name or "/tests/" in name
                                      or name.endswith((".mov", ".mp4", ".nes", ".7z"))
                                      for name in names))
             self.assertTrue(output.with_suffix(".zip.sha256").is_file())
+            self.assertLess(output.stat().st_size, 5_000_000)
 
     def test_same_inputs_produce_identical_archive(self):
         with tempfile.TemporaryDirectory() as directory:

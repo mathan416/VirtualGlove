@@ -11,6 +11,29 @@
 # Full history: docs/CHANGELOG.md and Git history.
 set -eu
 
+usage() {
+  cat <<'EOF'
+Usage: scripts/build-nestopia-powerglove.sh [DESTINATION]
+
+Clone the pinned Nestopia source, apply the isolated VirtualGlove native-input
+patch, and build a local libretro core. The command never installs the result.
+DESTINATION defaults to build/nestopia-powerglove.
+EOF
+}
+
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  -*)
+    echo "error: unsupported option: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+[ "$#" -le 1 ] || { usage >&2; exit 2; }
+
 revision=5a1cd378cb46ca9ccc2dd6f8b2b6a79ab986052e
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 destination=${1:-"$root/build/nestopia-powerglove"}
