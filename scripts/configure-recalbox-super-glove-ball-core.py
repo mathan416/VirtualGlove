@@ -28,6 +28,23 @@ DEFAULT_REGISTRY = Path("/recalbox/share/system/virtualglove/data/games.json")
 DEFAULT_ROM_ROOT = Path("/recalbox/share/roms/nes")
 
 
+def _indent_xml(element, level=0):
+    """Indent XML on Python versions that predate ElementTree.indent()."""
+    if hasattr(ET, "indent"):
+        ET.indent(element, space="  ")
+        return
+    whitespace = "\n" + level * "  "
+    if len(element):
+        if not element.text or not element.text.strip():
+            element.text = whitespace + "  "
+        for child in element:
+            _indent_xml(child, level + 1)
+        if not child.tail or not child.tail.strip():
+            child.tail = whitespace
+    if level and (not element.tail or not element.tail.strip()):
+        element.tail = whitespace
+
+
 def systemlist_text(current: str) -> str:
     """Add the separate core to NES while preserving every other system."""
     root = ET.fromstring(current)
@@ -57,7 +74,7 @@ def systemlist_text(current: str) -> str:
         matches[0].attrib.update(attributes)
     else:
         ET.SubElement(emulator, "core", attributes)
-    ET.indent(root, space="  ")
+    _indent_xml(root)
     return '<?xml version="1.0" ?>\n' + ET.tostring(root, encoding="unicode") + "\n"
 
 
