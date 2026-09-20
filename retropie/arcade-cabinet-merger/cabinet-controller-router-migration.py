@@ -11,22 +11,27 @@
 
 """Migrate the proven cabinet merger only after a successful Router preflight."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
+import stat
 import subprocess
 import tempfile
 import time
 from pathlib import Path
 
 from virtualglove.controller_router import (
-    ControllerRouterDevice, atomic_write, enabled_players, fceumm_running,
+    ControllerRouterDevice, atomic_write, enabled_players,
+    joystick_core_running as fceumm_running,
     load_config, output_indexes, revision, test_activity,
 )
 
 ROUTER_CONFIG = Path("/etc/virtualglove/controller-router.json")
 FCEUMM_CONFIG = Path("/opt/retropie/configs/all/retroarch/config/FCEUmm/FCEUmm.cfg")
 GLOBAL_CONFIG = Path("/opt/retropie/configs/nes/retroarchcustom.cfg")
+NES_CONFIG = Path("/opt/retropie/configs/nes/retroarch.cfg")
 RECEIPT = Path("/etc/virtualglove/controller-router-cabinet-check.json")
 STATE = Path("/etc/virtualglove/controller-router-cabinet-migration.json")
 OLD_SERVICE = "arcade-gamepad-merger.service"
@@ -49,12 +54,34 @@ def _saved_text(path: Path) -> str | None:
     return path.read_text() if path.is_file() and not path.is_symlink() else None
 
 
-def _restore(path: Path, text: str | None, mode: int = 0o600) -> None:
-    """Restore one recorded file state exactly."""
-    if text is None:
-        path.unlink(missing_ok=True)
+def _saved_file(path: Path) -> dict | None:
+    """Record text and ownership so rollback preserves RetroPie's writable files."""
+    if not path.is_file() or path.is_symlink():
+        return None
+    details = path.stat()
+    return {"text": path.read_text(), "mode": stat.S_IMODE(details.st_mode),
+            "uid": details.st_uid, "gid": details.st_gid}
+
+
+def _restore(path: Path, saved: str | dict | None, mode: int = 0o600,
+             owner_from_parent: bool = False) -> None:
+    """Restore one recorded file, including metadata in current receipts."""
+    if saved is None:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
     else:
+        parent = path.parent.stat() if owner_from_parent else None
+        text = saved["text"] if isinstance(saved, dict) else saved
+        mode = saved.get("mode", mode) if isinstance(saved, dict) else mode
         atomic_write(path, text, mode)
+        if isinstance(saved, dict):
+            os.chown(str(path), saved["uid"], saved["gid"])
+        elif parent is not None:
+            # Compatibility with migration receipts written before file
+            # metadata was recorded. RetroPie owns these configuration trees.
+            os.chown(str(path), parent.st_uid, parent.st_gid)
 
 
 def check(proposal_path: Path, watch_ms: int) -> None:
@@ -68,10 +95,23 @@ def check(proposal_path: Path, watch_ms: int) -> None:
         raise ValueError("The cabinet proposal must target RetroPie.")
     assigned = {source["id"] for entry in proposal["players"] for source in entry["sources"]}
     es_inputs = Path("/opt/retropie/configs/all/emulationstation/es_input.cfg")
-    activity = test_activity(es_inputs, watch_ms)
+    activity = {}
+    deadline = time.monotonic() + watch_ms / 1000.0
+    while assigned - set(activity) and time.monotonic() < deadline:
+        remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
+        sample = test_activity(es_inputs, min(1000, remaining_ms))
+        for identity, controls in sample.items():
+            activity.setdefault(identity, set()).update(controls)
     missing_activity = sorted(assigned - set(activity))
     if missing_activity:
-        raise ValueError("Press a control on every proposed physical source during validation.")
+        descriptions = {
+            source["id"]: "%s [%s]" % (source["name"], source["id"][-6:])
+            for entry in proposal["players"] for source in entry["sources"]
+        }
+        missing = ", ".join(descriptions.get(identity, identity[-6:])
+                            for identity in missing_activity)
+        raise ValueError("No input was observed from: %s. Press a control on every "
+                         "proposed physical source during validation." % missing)
     runtime = Path("/run/virtualglove")
     runtime.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="router-cabinet-check-", dir=runtime) as directory:
@@ -82,7 +122,8 @@ def check(proposal_path: Path, watch_ms: int) -> None:
             config, temporary / "FCEUmm.cfg", temporary / "router.sock",
             global_config=GLOBAL_CONFIG)
         try:
-            if len(output_indexes(enabled_players(proposal))) != len(enabled_players(proposal)):
+            if len(output_indexes(enabled_players(proposal),
+                                  platform=proposal["platform"])) != len(enabled_players(proposal)):
                 raise ValueError("Not every proposed merged player output appeared.")
         finally:
             device.close()
@@ -98,13 +139,17 @@ def rollback() -> None:
     state = json.loads(STATE.read_text())
     subprocess.run(("systemctl", "disable", "--now", ROUTER_SERVICE), check=False)
     _restore(ROUTER_CONFIG, state.get("router_config"))
-    _restore(FCEUMM_CONFIG, state.get("fceumm_config"), 0o644)
+    _restore(FCEUMM_CONFIG, state.get("fceumm_config"), 0o644, True)
+    _restore(NES_CONFIG, state.get("nes_config"), 0o644, True)
     if state.get("old_enabled"):
         _run("systemctl", "enable", OLD_SERVICE)
     if state.get("old_active"):
         _run("systemctl", "start", OLD_SERVICE)
     _run("systemctl", "restart", "virtualglove-receiver.service")
-    STATE.unlink()
+    try:
+        STATE.unlink()
+    except FileNotFoundError:
+        pass
     print("PASS  Previous arcade merger and RetroArch settings restored.")
 
 
@@ -121,15 +166,24 @@ def apply(proposal_path: Path) -> None:
     if (receipt.get("revision") != revision(proposal)
             or time.time() - receipt.get("checked_at", 0) > 3600):
         raise ValueError("Run a fresh cabinet preflight for this exact proposal first.")
-    state = {"format": 1, "router_config": _saved_text(ROUTER_CONFIG),
-             "fceumm_config": _saved_text(FCEUMM_CONFIG),
+    state = {"format": 2, "router_config": _saved_text(ROUTER_CONFIG),
+             "fceumm_config": _saved_file(FCEUMM_CONFIG),
+             "nes_config": _saved_file(NES_CONFIG),
              "old_enabled": _service_state(OLD_SERVICE, "is-enabled"),
              "old_active": _service_state(OLD_SERVICE, "is-active")}
     atomic_write(STATE, json.dumps(state, indent=2) + "\n")
     try:
         atomic_write(ROUTER_CONFIG, json.dumps(proposal, indent=2) + "\n")
         _run("systemctl", "enable", "--now", ROUTER_SERVICE)
-        if len(output_indexes(enabled_players(proposal))) != len(enabled_players(proposal)):
+        players = enabled_players(proposal)
+        deadline = time.monotonic() + 5.0
+        indexes = {}
+        while time.monotonic() < deadline:
+            indexes = output_indexes(players, platform=proposal["platform"])
+            if len(indexes) == len(players):
+                break
+            time.sleep(0.1)
+        if len(indexes) != len(players):
             raise RuntimeError("Controller Router outputs did not become ready.")
         _run("systemctl", "disable", "--now", OLD_SERVICE)
         _run("systemctl", "restart", "virtualglove-receiver.service")

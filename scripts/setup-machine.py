@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-09-19 - Kept RetroPie Controller Router available before receiver startup.
 #   2026-09-11 - Adopted the virtualglove App Lab directory and conditional legacy repair.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
 #   2026-09-11 - Exposed the stable host name to the containerized HTTPS server.
@@ -244,7 +245,12 @@ def install_retropie(peer):
                  "virtualglove-controller-router.service"):
         write_file(Path("/etc/systemd/system") / unit, (SOURCE / "retropie" / unit).read_bytes())
     profile = "VirtualGlove.cfg"
-    write_file(base / "retroarch/autoconfig" / profile, (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
+    write_file(base / "retroarch/autoconfig" / profile,
+               (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
+    for player in range(1, 5):
+        profile = "VirtualGlove Merged Player %d.cfg" % player
+        write_file(base / "retroarch/autoconfig/udev" / profile,
+                   (SOURCE / "retropie/retroarch" / profile).read_bytes())
     for path, content in hooks:
         write_file(path, content, 0o755)
         path.chmod(path.stat().st_mode | 0o111)
@@ -256,6 +262,10 @@ def install_retropie(peer):
     run("systemctl", "daemon-reload")
     run("systemctl", "enable", "--now", "virtualglove-games.service")
     run("systemctl", "restart", "virtualglove-games.service")
+    router_config = Path("/etc/virtualglove/controller-router.json")
+    if router_config.is_file():
+        run("systemctl", "enable", "--now", "virtualglove-controller-router.service")
+        run("systemctl", "restart", "virtualglove-controller-router.service")
     run("systemctl", "disable", "virtualglove-receiver.service")
     if len(token.read_text().strip()) >= 16:
         run("systemctl", "restart", "virtualglove-receiver.service")
@@ -1021,6 +1031,12 @@ def check_retropie(report):
     paired = token.exists() and 16 <= len(token.read_text().strip()) <= 256
     report.check("Local pairing token configured (pair on the Connection page if missing)", paired, pending=True)
     if paired:
+        router = Path("/etc/virtualglove/controller-router.json")
+        if router.is_file():
+            report.command("Controller Router running", ["systemctl", "is-active", "--quiet",
+                                                          "virtualglove-controller-router.service"])
+            report.check("Controller Router receiver socket available",
+                         Path("/run/virtualglove/controller-router.sock").is_socket())
         report.command("Receiver service running", ["systemctl", "is-active", "--quiet", "virtualglove-receiver.service"])
         report.command("Games service running", ["systemctl", "is-active", "--quiet", "virtualglove-games.service"])
     for action in ("start", "end"):

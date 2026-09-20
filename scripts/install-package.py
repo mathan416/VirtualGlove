@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Restart Controller Router safely across RetroPie upgrades.
 #   2026-09-11 - Made virtualglove the canonical App Lab directory and added recoverable legacy migration.
 #   2026-09-11 - Prevented renamed and legacy App Lab projects from overlapping on upgrade.
 #   2026-09-11 - Added safe, optional first-install Controller naming.
@@ -483,7 +484,7 @@ def stop_managed_runtime(machine, setup):
     present = False
     if machine == "retropie":
         units = ("virtualglove-receiver.timer", "virtualglove-receiver.service",
-                 "virtualglove-games.service")
+                 "virtualglove-games.service", "virtualglove-controller-router.service")
         present = any(Path("/etc/systemd/system", unit).exists() for unit in units)
         for unit in units:
             subprocess.run(["systemctl", "stop", unit], check=False,
@@ -512,6 +513,9 @@ def restart_managed_runtime(machine):
     """Best-effort recovery when an upgrade fails after stopping an old runtime."""
     if machine == "retropie":
         subprocess.run(["systemctl", "start", "virtualglove-games.service"], check=False)
+        if Path("/etc/virtualglove/controller-router.json").is_file():
+            subprocess.run(["systemctl", "start", "virtualglove-controller-router.service"],
+                           check=False)
         subprocess.run(["systemctl", "start", "virtualglove-receiver.timer"], check=False)
         token = Path("/etc/virtualglove/token")
         if token.is_file() and len(token.read_text().strip()) >= 16:

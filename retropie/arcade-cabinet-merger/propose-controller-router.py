@@ -23,6 +23,17 @@ EIGHTBITDO = {
     "8BitDo 8BitDo Ultimate wireless Controller for PC",
     "8BitDo Ultimate Wireless / Pro 2 Wired Controller",
 }
+IPAC_PLAYER1_HOTKEY = {"name": "hotkey", "type": "button", "code": 298,
+                       "value": 1, "evdev_code": 298}
+
+
+def with_cabinet_hotkey(source: dict) -> dict:
+    """Preserve the proven I-PAC Player 1 hotkey absent from ES mapping."""
+    result = dict(source)
+    result["mapping"] = [dict(item) for item in source["mapping"]]
+    if not any(item["name"] == "hotkey" for item in result["mapping"]):
+        result["mapping"].append(dict(IPAC_PLAYER1_HOTKEY))
+    return result
 
 
 def proposal(es_inputs: Path) -> dict:
@@ -35,7 +46,9 @@ def proposal(es_inputs: Path) -> dict:
     players = []
     for player in (1, 2):
         sources = []
-        if len(ipacs) >= player: sources.append(ipacs[player - 1])
+        if len(ipacs) >= player:
+            source = ipacs[player - 1]
+            sources.append(with_cabinet_hotkey(source) if player == 1 else source)
         if len(pads) >= player: sources.append(pads[player - 1])
         if sources: players.append({"player": player, "sources": sources})
     if not players:

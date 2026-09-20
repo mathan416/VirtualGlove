@@ -19,6 +19,22 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Kept cabinet and joypad controls responsive while VirtualGlove is active.
+  Controller Router now services physical input first, discards queued camera
+  history in bounded batches, and avoids rescanning every input device on each
+  control cycle. It also preserves standard Home/Guide hotkeys and the arcade
+  cabinet's established I-PAC hotkey without allowing VirtualGlove or Players
+  2-4 to trigger RetroArch shortcuts.
+- Kept RetroPie's Controller Router socket available when the receiver restarts.
+  The receiver no longer removes the Router-owned runtime directory, upgrades
+  restart both services in dependency order, and installation checks now catch
+  a missing Router socket before gameplay.
+- Matched Controller Router's player indexes to each platform's RetroArch
+  generation. RetroPie now follows its stable `jsN` assignment while Recalbox
+  and Batocera retain their udev joypad ordering. RetroPie's root-owned Router
+  service keeps these core assignments current, and its unprivileged launch
+  hook copies the validated block into RetroPie's final temporary launch file
+  without rewriting protected persistent configuration.
 - Extended Controller Router to stock Nestopia as well as FCEUmm, while keeping
   Nestopia (VirtualGlove) on its separate native-input route. Recalbox and
   Batocera can retain their chosen ordinary NES core without losing either the

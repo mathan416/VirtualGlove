@@ -396,6 +396,14 @@ def translate_es_mapping(mapping: list[dict], joystick_descriptor: int) -> list[
             output["value"] = DIRECTION_NAMES[item["name"]][1]
         if _valid_input_code(output["type"], output["code"]):
             translated.append(output)
+    # EmulationStation commonly omits a dedicated Home/Guide button from its
+    # saved gameplay mapping even though Linux exposes it as BTN_MODE. Preserve
+    # that standard physical hotkey for Player 1; the Router strips hotkey from
+    # Players 2-4 and VirtualGlove can never publish it.
+    if (not any(item["name"] == "hotkey" for item in translated)
+            and BUTTON_CODES["hotkey"] in button_codes[:button_count[0]]):
+        translated.append({"name": "hotkey", "type": "button",
+                           "code": BUTTON_CODES["hotkey"], "value": 1})
     if not translated:
         raise ValueError("the selected Player 1 mapping has no usable controls")
     return translated

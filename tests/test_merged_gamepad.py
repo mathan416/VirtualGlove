@@ -118,6 +118,25 @@ class MergedGamepadTests(unittest.TestCase):
             {"b": 304, "a": 305, "select": 139, "start": 158, "hotkey": 172},
         )
 
+    def test_standard_guide_button_is_preserved_when_es_omits_hotkey(self):
+        mapping = [{"name": "a", "type": "button", "code": 0, "value": 1}]
+
+        def populate(_descriptor, request, buffer, _mutate):
+            if request == merged.JSIOCGAXES:
+                buffer[0] = 0
+            elif request == merged.JSIOCGBUTTONS:
+                buffer[0] = 2
+            elif request == merged.JSIOCGBTNMAP:
+                struct.pack_into("H", buffer, 0, 304)
+                struct.pack_into("H", buffer, 2, merged.BUTTON_CODES["hotkey"])
+            return 0
+
+        with patch.object(merged.fcntl, "ioctl", side_effect=populate):
+            translated = merged.translate_es_mapping(mapping, 17)
+
+        self.assertIn({"name": "hotkey", "type": "button", "code": 316, "value": 1},
+                      translated)
+
     def test_retroarch_index_uses_udev_joypad_order_not_js_suffix(self):
         """Batocera's js4 can be RetroArch pad 2 when only three pads exist."""
         with tempfile.TemporaryDirectory() as name:

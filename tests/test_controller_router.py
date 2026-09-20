@@ -86,6 +86,44 @@ class ControllerRouterTests(unittest.TestCase):
             self.assertEqual(result["virtualglove_player"], 1)
             self.assertTrue(old.exists())
 
+    def test_output_indexes_follow_each_platforms_retroarch_generation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); sys_root, udev_root = root / "sys", root / "udev"
+            udev_root.mkdir()
+            event = sys_root / "event5"
+            (event / "device").mkdir(parents=True)
+            (event / "device/name").write_text(router.output_name(1) + "\n")
+            (event / "dev").write_text("13:69\n")
+            (udev_root / "c13:69").write_text("E:ID_INPUT_JOYSTICK=1\n")
+            joystick = sys_root / "js3/device"
+            joystick.mkdir(parents=True)
+            (joystick / "name").write_text(router.output_name(1) + "\n")
+            self.assertEqual(router.output_indexes([1], sys_root, udev_root, "batocera"), {1: 0})
+            self.assertEqual(router.output_indexes([1], sys_root, udev_root, "recalbox"), {1: 0})
+            self.assertEqual(router.output_indexes([1], sys_root, udev_root, "retropie"), {1: 3})
+
+    def test_retropie_launch_hook_resolves_outputs_after_joystick_selection(self):
+        hook = (Path(__file__).resolve().parents[1] /
+                "retropie/runcommand-onstart-virtualglove.sh").read_text()
+        self.assertNotIn("virtualglove-controller-router apply", hook)
+        self.assertNotIn("sudo", hook)
+        self.assertIn('lr-fceumm|lr-nestopia)', hook)
+        self.assertIn('/sys/class/input/js*', hook)
+        self.assertIn('VirtualGlove Merged Player $player', hook)
+        self.assertIn('/opt/retropie/configs/$1/retroarch.cfg', hook)
+        self.assertNotIn('/dev/shm/retroarch.cfg', hook)
+        self.assertNotIn('lr-nestopia-powerglove)', hook)
+
+    def test_retropie_autoconfig_profiles_match_router_output_identities(self):
+        root = Path(__file__).resolve().parents[1] / "retropie/retroarch"
+        for player in range(1, 5):
+            text = (root / ("VirtualGlove Merged Player %d.cfg" % player)).read_text()
+            self.assertIn('input_device = "VirtualGlove Merged Player %d"' % player, text)
+            self.assertIn('input_vendor_id = "4617"', text)
+            self.assertIn('input_product_id = "%d"' % (0x5650 + player), text)
+            self.assertIn('input_up_btn = "h0up"', text)
+            self.assertEqual('input_enable_hotkey_btn' in text, player == 1)
+
     def test_inventory_deduplicates_repeated_emulationstation_entry(self):
         duplicate = {**source(), "event": "/dev/input/event1", "joystick": "/dev/input/js1"}
         with patch.object(router, "controller_candidates", return_value=[duplicate, duplicate]):
@@ -201,6 +239,33 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertEqual(device.descriptors, {})
         self.assertTrue(device.players[1].active)
         device.sinks[1].write.assert_called()
+
+    def test_virtual_socket_drops_queued_history_and_applies_latest_state(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        old = json.dumps({"dpad": {"left": True}}).encode()
+        malformed = b"not-json"
+        latest = json.dumps({"dpad": {"right": True}}).encode()
+        device.socket = Mock()
+        device.socket.recv.side_effect = [old, malformed, latest, BlockingIOError()]
+        device._virtual = Mock()
+
+        device._drain_virtual()
+
+        device._virtual.assert_called_once()
+        self.assertTrue(device._virtual.call_args.args[0]["dpad"]["right"])
+        self.assertFalse(device._virtual.call_args.args[0]["dpad"].get("left", False))
+
+    def test_virtual_socket_drain_is_bounded_under_continuous_traffic(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        newest = json.dumps({"dpad": {"right": True}}).encode()
+        device.socket = Mock()
+        device.socket.recv.return_value = newest
+        device._virtual = Mock()
+
+        device._drain_virtual()
+
+        self.assertEqual(device.socket.recv.call_count, router.VIRTUAL_DRAIN_LIMIT)
+        device._virtual.assert_called_once()
 
     def test_joystick_core_detection_supports_stock_nestopia_but_not_native(self):
         with tempfile.TemporaryDirectory() as directory:

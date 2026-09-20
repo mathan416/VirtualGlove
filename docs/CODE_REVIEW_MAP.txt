@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: /Users/mathan/Developer/PowerGlove
 Project version: 0.5.0
-Git-visible files: 669
+Git-visible files: 673
 Python test modules: 77
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -152,7 +152,7 @@ back up modified managed files before replacement.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-669 tracked or non-ignored files are present in this checkout. Ignored
+673 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -656,6 +656,10 @@ are intentionally omitted.
 |   |   |-- virtualglove-receiver
 |   |   `-- virtualglove-retropie-hook
 |   |-- retroarch
+|   |   |-- VirtualGlove Merged Player 1.cfg
+|   |   |-- VirtualGlove Merged Player 2.cfg
+|   |   |-- VirtualGlove Merged Player 3.cfg
+|   |   |-- VirtualGlove Merged Player 4.cfg
 |   |   `-- VirtualGlove.cfg
 |   |-- runcommand-onend-virtualglove.sh
 |   |-- runcommand-onstart-virtualglove.sh

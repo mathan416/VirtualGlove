@@ -49,6 +49,8 @@ DEVICE_NAME = "VirtualGlove Merged Player {}"
 DEVICE_PRODUCT_BASE = 0x5650
 CONFIG_NAME = "controller-router.json"
 PROTOCOL = "virtualglove-inputs/1"
+DISCOVERY_INTERVAL_SECONDS = 1.0
+VIRTUAL_DRAIN_LIMIT = 256
 MAX_REQUEST = 262144
 
 
@@ -367,6 +369,7 @@ class ControllerRouterDevice:
         self.virtual_updated_at = 0.0
         self.config_revision = revision(self.config)
         self.config_checked_at = 0.0
+        self.discovery_checked_at = 0.0
         self.installed_indexes: dict[int, int] = {}
         self.stop = threading.Event()
         self.lock = threading.Lock()
@@ -395,7 +398,8 @@ class ControllerRouterDevice:
     def _install_indexes(self) -> None:
         """Wait for every output and atomically update the managed settings."""
         for _attempt in range(40):
-            indexes = output_indexes(list(self.players), self.sys_root, self.udev_root)
+            indexes = output_indexes(list(self.players), self.sys_root, self.udev_root,
+                                     self.config["platform"])
             if len(indexes) == len(self.players):
                 global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
                 global_text = global_path.read_text() if global_path.exists() else ""
@@ -513,6 +517,27 @@ class ControllerRouterDevice:
             state.set_axis(target, max(-32767, min(32767, int(axes.get(source, 0)))))
         self.virtual_updated_at = time.monotonic(); self._publish()
 
+    def _drain_virtual(self) -> None:
+        """Discard queued history and apply only the newest valid glove state."""
+        queued = []
+        for _packet in range(VIRTUAL_DRAIN_LIMIT):
+            try:
+                queued.append(self.socket.recv(8193))
+            except BlockingIOError:
+                break
+            except OSError:
+                return
+        # Decode from newest to oldest so malformed traffic cannot hide the
+        # newest valid state, while avoiding JSON work for discarded history.
+        for payload in reversed(queued):
+            try:
+                incoming = virtual_state(json.loads(payload)) if len(payload) <= 8192 else None
+            except (ValueError, UnicodeError, json.JSONDecodeError):
+                continue
+            if incoming is not None:
+                self._virtual(incoming)
+                return
+
     def _run(self) -> None:
         """Monitor compatible NES cores, configuration, hot-plug, and source events."""
         active = False
@@ -521,7 +546,8 @@ class ControllerRouterDevice:
                 now_active = joystick_core_running(self.proc_root)
                 if now_active != active:
                     if now_active and output_indexes(list(self.players), self.sys_root,
-                                                     self.udev_root) != self.installed_indexes:
+                                                     self.udev_root,
+                                                     self.config["platform"]) != self.installed_indexes:
                         self._install_indexes()
                     active = now_active; self._set_active(active)
                 if self.virtual_updated_at and time.monotonic() - self.virtual_updated_at >= VIRTUAL_TIMEOUT_SECONDS:
@@ -534,12 +560,15 @@ class ControllerRouterDevice:
                         if revision(updated) != self.config_revision:
                             self._reload_config(updated)
                         elif output_indexes(list(self.players), self.sys_root,
-                                            self.udev_root) != self.installed_indexes:
+                                            self.udev_root,
+                                            self.config["platform"]) != self.installed_indexes:
                             self._install_indexes()
                     except (OSError, RuntimeError, ValueError, json.JSONDecodeError):
                         pass
                     self.config_checked_at = time.monotonic()
-                self._discover()
+                if time.monotonic() - self.discovery_checked_at >= DISCOVERY_INTERVAL_SECONDS:
+                    self._discover()
+                    self.discovery_checked_at = time.monotonic()
             sources = list(self.descriptors)
             if self.socket is not None: sources.append(self.socket)
             if not sources:
@@ -549,13 +578,6 @@ class ControllerRouterDevice:
             except (OSError, ValueError):
                 continue
             with self.lock:
-                if self.socket is not None and self.socket in ready:
-                    try:
-                        payload = self.socket.recv(8193)
-                        incoming = virtual_state(json.loads(payload)) if len(payload) <= 8192 else None
-                        if incoming is not None: self._virtual(incoming)
-                    except (OSError, ValueError, UnicodeError, json.JSONDecodeError):
-                        pass
                 for fd in [value for value in ready if isinstance(value, int)]:
                     try:
                         payload = os.read(fd, self.EVENT.size * 64)
@@ -573,6 +595,10 @@ class ControllerRouterDevice:
                         self._publish()
                     except OSError:
                         self._drop(fd)
+                # Physical sources are deliberately serviced first. A busy
+                # camera stream must never delay an attached controller.
+                if self.socket is not None and self.socket in ready:
+                    self._drain_virtual()
 
     def close(self) -> None:
         """Neutralize and close every router-owned resource."""
@@ -593,11 +619,19 @@ def output_name(player: int) -> str:
 
 
 def output_indexes(players: list[int], sys_root: Path = Path("/sys/class/input"),
-                   udev_root: Path = Path("/run/udev/data")) -> dict[int, int]:
-    """Resolve current RetroArch indexes without persisting enumeration numbers."""
+                   udev_root: Path = Path("/run/udev/data"),
+                   platform: str = "recalbox") -> dict[int, int]:
+    """Resolve current platform-specific RetroArch indexes without persisting them."""
     found = {}
     for player in players:
-        index = merged_joypad_index(sys_root, udev_root, output_name(player))
+        name = output_name(player)
+        if platform == "retropie":
+            index = next((int(item.name[2:]) for item in sorted(
+                sys_root.glob("js*"), key=lambda path: int(path.name[2:]))
+                if (item / "device/name").is_file()
+                and (item / "device/name").read_text(errors="replace").strip() == name), None)
+        else:
+            index = merged_joypad_index(sys_root, udev_root, name)
         if index is not None:
             found[player] = index
     return found
@@ -892,7 +926,7 @@ def _wait_for_outputs(config: dict[str, Any], attempts: int = 50) -> bool:
     """Wait briefly for the Router service to publish every enabled output."""
     players = enabled_players(config)
     for _attempt in range(attempts):
-        if len(output_indexes(players)) == len(players):
+        if len(output_indexes(players, platform=config["platform"])) == len(players):
             return True
         time.sleep(0.1)
     return False
@@ -1031,13 +1065,17 @@ def main() -> int:
             was_active = subprocess.run(
                 ("systemctl", "is-active", "--quiet", "virtualglove-controller-router.service"),
                 check=False).returncode == 0
-            subprocess.run(("systemctl", "enable", "--now",
-                            "virtualglove-controller-router.service"), check=True)
+            if not was_active:
+                if os.geteuid() != 0:
+                    raise ValueError("Controller Router service is not running; run apply as root.")
+                subprocess.run(("systemctl", "enable", "--now",
+                                "virtualglove-controller-router.service"), check=True)
             for _attempt in range(40):
-                if len(output_indexes(enabled_players(config))) == len(enabled_players(config)):
+                if len(output_indexes(enabled_players(config),
+                                      platform=config["platform"])) == len(enabled_players(config)):
                     break
                 time.sleep(0.05)
-        indexes = output_indexes(enabled_players(config))
+        indexes = output_indexes(enabled_players(config), platform=config["platform"])
         global_text = global_config.read_text() if global_config.exists() else ""
         for config_path in joystick_retroarch_configs(retroarch):
             current = config_path.read_text() if config_path.exists() else ""

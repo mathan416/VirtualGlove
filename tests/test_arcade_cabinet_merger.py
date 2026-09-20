@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "retropie/arcade-cabinet-merger/arcade-gamepad-merger"
+PROPOSAL_SOURCE = ROOT / "retropie/arcade-cabinet-merger/propose-controller-router.py"
 
 
 class FakeCodes:
@@ -89,10 +90,20 @@ def load_merger():
     return module
 
 
+def load_proposal():
+    """Load the cabinet proposal helper whose installed filename contains a hyphen."""
+    loader = importlib.machinery.SourceFileLoader("cabinet_router_proposal", str(PROPOSAL_SOURCE))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
 class ArcadeCabinetMergerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.merger = load_merger()
+        cls.proposal = load_proposal()
 
     def test_outputs_preserve_the_proven_two_player_identity(self):
         self.assertEqual(
@@ -144,11 +155,31 @@ class ArcadeCabinetMergerTests(unittest.TestCase):
         text = (ROOT / "retropie/arcade-cabinet-merger/"
                        "cabinet-controller-router-migration.py").read_text()
         self.assertIn('choices=("check", "apply", "rollback")', text)
-        self.assertIn("Press a control on every proposed physical source", text)
+        self.assertIn("No input was observed from:", text)
+        self.assertIn('"proposed physical source during validation."', text)
+        self.assertIn("while assigned - set(activity)", text)
+        self.assertIn("min(1000, remaining_ms)", text)
         self.assertIn("ControllerRouterDevice(", text)
-        self.assertIn('"fceumm_config": _saved_text(FCEUMM_CONFIG)', text)
+        self.assertIn('"fceumm_config": _saved_file(FCEUMM_CONFIG)', text)
+        self.assertIn('"nes_config": _saved_file(NES_CONFIG)', text)
         self.assertIn('_restore(FCEUMM_CONFIG, state.get("fceumm_config")', text)
+        self.assertIn('_restore(NES_CONFIG, state.get("nes_config")', text)
+        self.assertIn('os.chown(str(path), saved["uid"], saved["gid"])', text)
         self.assertIn('"disable", "--now", OLD_SERVICE', text)
+        self.assertIn("deadline = time.monotonic() + 5.0", text)
+        self.assertIn("if len(indexes) == len(players)", text)
+
+    def test_cabinet_proposal_preserves_known_ipac_player1_hotkey(self):
+        source = {"mapping": [{"name": "a", "type": "button", "code": 0,
+                                "value": 1}]}
+        updated = self.proposal.with_cabinet_hotkey(source)
+        self.assertEqual(updated["mapping"][-1], {
+            "name": "hotkey", "type": "button", "code": 298,
+            "value": 1, "evdev_code": 298,
+        })
+        self.assertEqual(source["mapping"], [
+            {"name": "a", "type": "button", "code": 0, "value": 1}
+        ])
 
 
 if __name__ == "__main__":

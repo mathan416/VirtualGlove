@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-19 - Left the shared Router runtime directory under Router ownership.
 #   2026-09-02 - Added to VirtualGlove.
 #   2026-09-03 - Standardized source documentation and maintenance metadata.
 # Full history: docs/CHANGELOG.md and Git history.
@@ -12,14 +13,12 @@
 [Unit]
 Description=VirtualGlove virtual gamepad receiver
 Wants=network-online.target
-After=network-online.target
+After=network-online.target virtualglove-controller-router.service
 ConditionFileNotEmpty=/etc/virtualglove/token
 
 [Service]
 Type=simple
 User=root
-RuntimeDirectory=virtualglove
-RuntimeDirectoryMode=0755
 ExecStart=/opt/virtualglove/bin/virtualglove-receiver --listen 0.0.0.0 --token-file /etc/virtualglove/token
 Restart=on-failure
 RestartSec=2
