@@ -131,6 +131,75 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["suggested_player"], 1)
 
+    def test_inventory_reports_live_mapping_refresh_without_changing_assignment(self):
+        saved = source(); saved["mapping"] = [{"name": "a", "type": "button",
+                                               "code": 0, "value": 1}]
+        current = {**saved, "mapping": [{"name": "a", "type": "button",
+                                          "code": 2, "value": 1}],
+                   "event": "/dev/input/event1", "joystick": "/dev/input/js1"}
+        config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 3, "sources": [saved]}], "virtualglove_player": 1})
+        with patch.object(router, "controller_candidates", return_value=[current]):
+            result = router.inventory(Path("/unused"), config)
+        self.assertEqual(result[0]["assigned_player"], 3)
+        self.assertEqual(result[0]["mapping_status"], "refreshed")
+
+    def test_setup_reports_automatically_refreshed_mapping(self):
+        self.assertIn("Connected · Mapping refreshed", ROUTER_SCRIPT)
+        self.assertIn("Controllers configured in EmulationStation appear here automatically", ROUTER_CONTENT)
+        self.assertIn("without changing the selected player", ROUTER_CONTENT)
+
+    def test_idle_router_reopens_source_when_frontend_mapping_changes(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        saved = source()
+        device.config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 1, "sources": [saved]}], "virtualglove_player": 1})
+        device.descriptors = {9: {"source_id": "pad-one",
+                                  "mapping_revision": router.mapping_revision(saved["mapping"])}}
+        device._drop = Mock()
+        refreshed = {**saved, "mapping": [{"name": "b", "type": "button",
+                                            "code": 1, "value": 1}]}
+        device._refresh_idle_mappings([refreshed])
+        device._drop.assert_called_once_with(9)
+
+    def test_discovery_uses_live_frontend_mapping_instead_of_saved_snapshot(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        saved = source(); live = {**saved, "event": "/dev/input/event7",
+                                  "joystick": "/dev/input/js3",
+                                  "mapping": [{"name": "b", "type": "button",
+                                               "code": 2, "value": 1}]}
+        device.config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 1, "sources": [saved]}], "virtualglove_player": 1})
+        device.descriptors = {}
+        device.players = {1: router.PlayerState(1)}
+        device.session_mapping_revisions = {}
+        with patch.object(router.os, "open", side_effect=[17, 18]), \
+                patch.object(router.os, "close"), \
+                patch.object(router, "translate_es_mapping", return_value=[]) as translate, \
+                patch.object(router, "input_axis_ranges", return_value={}):
+            device._discover([live])
+        translate.assert_called_once_with(live["mapping"], 17)
+        self.assertEqual(device.descriptors[18]["mapping_revision"],
+                         router.mapping_revision(live["mapping"]))
+
+    def test_running_game_defers_a_changed_mapping_until_game_exit(self):
+        device = router.ControllerRouterDevice.__new__(router.ControllerRouterDevice)
+        saved = source(); changed = {**saved, "event": "/dev/input/event7",
+                                     "joystick": "/dev/input/js3",
+                                     "mapping": [{"name": "b", "type": "button",
+                                                  "code": 2, "value": 1}]}
+        device.config = router.validate_config({"format": 2, "platform": "retropie",
+            "players": [{"player": 1, "sources": [saved]}], "virtualglove_player": 1})
+        device.descriptors = {}
+        device.players = {1: router.PlayerState(1)}
+        device.players[1].active = True
+        device.session_mapping_revisions = {
+            "pad-one": router.mapping_revision(saved["mapping"])}
+        with patch.object(router.os, "open") as opened:
+            device._discover([changed])
+        opened.assert_not_called()
+        self.assertEqual(device.descriptors, {})
+
     def test_inventory_keeps_two_interfaces_from_one_ipac_board(self):
         first = {**source("ipac-input0", "Ultimarc I-PAC Ultimate I/O"),
                  "uniq": "5", "phys": "usb-1/input0",
@@ -195,6 +264,64 @@ class ControllerRouterTests(unittest.TestCase):
                                          activity_check=lambda: True)
             with self.assertRaisesRegex(ValueError, "Close the running"):
                 blocked.operate("rollback", {"revision": blocked.read()["revision"]})
+
+    def test_save_prefers_refreshed_mapping_with_same_stable_source_id(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory); es = base / "es.xml"; es.write_text("<inputList/>")
+            path = base / "router.json"
+            stale = source(); stale["guid"] = "stale-guid"
+            stale["mapping"] = [{"name": "start", "type": "button", "code": 8,
+                                 "value": 1}]
+            config = router.validate_config({"format": 2, "platform": "retropie",
+                "players": [{"player": 1, "sources": [stale]}],
+                "virtualglove_player": 1})
+            path.write_text(json.dumps(config))
+            refreshed = source(); refreshed["guid"] = "current-guid"
+            refreshed["mapping"] = [{"name": "start", "type": "button", "code": 7,
+                                     "value": 1}]
+            store = router.RouterStore(path, "retropie", es, activity_check=lambda: False)
+            with patch.object(router, "controller_candidates", return_value=[refreshed]):
+                current = store.read()
+                saved = store.operate("save", {"revision": current["revision"],
+                    "config": {"players": [{"player": 1, "sources": ["pad-one"]}],
+                               "virtualglove_player": 1}})
+            materialized = saved["config"]["players"][0]["sources"][0]
+            self.assertEqual(materialized["guid"], "current-guid")
+            self.assertEqual(materialized["mapping"][0]["code"], 7)
+
+    def test_check_reports_saved_but_disconnected_source_as_unsafe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory); es = base / "es.xml"; es.write_text("<inputList/>")
+            path = base / "router.json"
+            config = router.validate_config({"format": 2, "platform": "retropie",
+                "players": [{"player": 1, "sources": [source()]}],
+                "virtualglove_player": 1})
+            path.write_text(json.dumps(config))
+            store = router.RouterStore(path, "retropie", es, activity_check=lambda: False)
+            disconnected = [{"id": "pad-one", "name": "Pad", "connected": False,
+                             "assigned_player": 1}]
+            with patch.object(router, "inventory", return_value=disconnected), \
+                    patch.object(router, "test_activity", return_value={}):
+                result = store.operate("check", {"watch_ms": 0})
+            self.assertEqual(result["missing_sources"], ["pad-one"])
+            self.assertFalse(result["safe"])
+
+    def test_check_reports_reconnected_source_with_stale_mapping_as_unsafe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory); es = base / "es.xml"; es.write_text("<inputList/>")
+            path = base / "router.json"
+            config = router.validate_config({"format": 2, "platform": "retropie",
+                "players": [{"player": 1, "sources": [source()]}],
+                "virtualglove_player": 1})
+            path.write_text(json.dumps(config))
+            store = router.RouterStore(path, "retropie", es, activity_check=lambda: False)
+            stale = [{"id": "pad-one", "name": "Pad", "connected": True,
+                      "assigned_player": None}]
+            with patch.object(router, "inventory", return_value=stale), \
+                    patch.object(router, "test_activity", return_value={}):
+                result = store.operate("check", {"watch_ms": 0})
+            self.assertEqual(result["missing_sources"], ["pad-one"])
+            self.assertFalse(result["safe"])
 
     def test_failed_first_activation_removes_new_configuration(self):
         with tempfile.TemporaryDirectory() as directory:

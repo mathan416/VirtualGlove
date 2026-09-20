@@ -23,7 +23,8 @@ supported measurements, use the version-matched
 8. [9–10 September — Refine camera delivery and resilience](#milestone-8-refine-camera-delivery-and-resilience-9-10-september-2026)
 9. [10 September — Establish the production pipeline boundary](#milestone-9-establish-the-production-pipeline-boundary-10-september-2026)
 10. [10–11 September — Turn the prototype into a releasable product](#milestone-10-turn-the-prototype-into-a-releasable-product-10-11-september-2026)
-11. [The resulting engineering method](#the-resulting-engineering-method)
+11. [12–20 September — Make multi-controller play predictable](#milestone-11-make-multi-controller-play-predictable-12-20-september-2026)
+12. [The resulting engineering method](#the-resulting-engineering-method)
 
 ## The week at a glance
 
@@ -39,6 +40,7 @@ supported measurements, use the version-matched
 | 9–10 September | Camera delivery and recovery | Make capture tunable and recovery prove that a real frame can be read. |
 | 10 September | Production boundary | Stop tuning thresholds that could not reduce the measured palm-detector cost. |
 | 10–11 September | Productization | Simplify controls, strengthen installation and recovery, and release as VirtualGlove. |
+| 12–20 September | Controller routing | Preserve each platform's frontend mapping, merge only during supported gameplay, and start every game from neutral. |
 
 ## Milestone 1 — Establish camera recognition and joystick output — 2–3 September 2026
 
@@ -371,6 +373,36 @@ evidence, and this historical journey.
 The project was then renamed VirtualGlove to distinguish the new camera-based
 system while retaining historically accurate references to the original Power
 Glove and Super Glove Ball.
+
+## Milestone 11 — Make multi-controller play predictable — 12–20 September 2026
+
+Adding Recalbox, Batocera, and a multi-controller RetroPie cabinet exposed a
+different kind of input problem. Linux event numbers, joystick numbers, and
+RetroArch player indexes can all change independently. Copying one controller's
+button numbers or saving `/dev/input/eventN` worked only until the next boot or
+different USB order.
+
+Controller Router grew from the cabinet's proven merger idea. It records stable
+hardware identities and the mappings already accepted by EmulationStation,
+then resolves the current Linux devices and RetroArch indexes when needed. The
+original pads continue to own the frontend. During FCEUmm or stock Nestopia
+play, Router exclusively reads assigned pads and presents canonical merged
+Players 1–4. Physical hotkeys remain physical; VirtualGlove Select cannot become
+Hotkey Enable.
+
+Live testing found two less obvious failures. First, a busy camera socket could
+delay physical events, so physical sources were serviced first and old camera
+history was collapsed to the newest bounded state. Second, Router remembered a
+glove state received before RetroArch started. A game could therefore open with
+a direction or gesture already held, appearing to ignore every controller until
+VirtualGlove stopped.
+
+The accepted launch boundary now clears that stored glove state. Physical
+controllers work immediately. VirtualGlove joins only after one fresh neutral
+D-pad/button observation, and ordinary NES joystick cores receive recognized
+digital controls rather than camera-position axes. The same fix applies to
+routed RetroPie, Recalbox, and Batocera; native Super Glove Ball keeps its
+separate continuous-coordinate channel.
 
 ## Validation story — proving that movement was real
 

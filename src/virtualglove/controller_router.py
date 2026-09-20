@@ -35,7 +35,7 @@ from .profile_control import read_token, sign_message, verify_message
 from .merged_gamepad import (
     AXIS_CODES, BUTTON_NAMES, DIRECTION_NAMES, ANALOG_NAMES,
     CANONICAL_AXIS_INDEX, CANONICAL_BUTTON_INDEX, MERGED_RETROARCH_BINDINGS,
-    controller_candidates, find_saved_controller, input_devices,
+    controller_candidates, find_saved_controller,
     platform_hotkey_bindings, UInputMergedGamepad, merged_joypad_index,
     PhysicalMapper, translate_es_mapping, input_axis_ranges, virtual_state,
     EVIOCGRAB, EV_KEY, EV_ABS, VIRTUAL_TIMEOUT_SECONDS,
@@ -104,6 +104,14 @@ def _saved_source(candidate: dict[str, Any]) -> dict[str, Any]:
     if not result["id"] or not result["name"] or not _valid_mapping(result["mapping"]):
         raise ValueError("Controller inventory entry is incomplete.")
     return result
+
+
+def mapping_revision(mapping: object) -> str:
+    """Return a stable fingerprint for one validated EmulationStation mapping."""
+    if not _valid_mapping(mapping):
+        return ""
+    return hashlib.sha256(json.dumps(mapping, sort_keys=True,
+                                     separators=(",", ":")).encode()).hexdigest()
 
 
 def validate_config(data: object) -> dict[str, Any]:
@@ -196,8 +204,12 @@ def inventory(es_inputs: Path, config: dict[str, Any] | None = None,
         order = len(results) + 1
         assignment = resolved.get(item["id"])
         public_id = assignment[1]["id"] if assignment else item["id"]
+        mapping_status = "current"
+        if assignment and mapping_revision(item["mapping"]) != mapping_revision(assignment[1]["mapping"]):
+            mapping_status = "refreshed"
         results.append({"id": public_id, "name": item["name"],
                         "identity_suffix": public_id[-6:], "connected": True,
+                        "mapping_status": mapping_status,
                         "assigned_player": assignment[0] if assignment else None,
                         "suggested_player": order if order <= 4 else None})
     visible = {item["id"] for item in results}
@@ -208,6 +220,7 @@ def inventory(es_inputs: Path, config: dict[str, Any] | None = None,
                     continue
                 results.append({"id": source["id"], "name": source["name"],
                                 "identity_suffix": source["id"][-6:], "connected": False,
+                                "mapping_status": "unavailable",
                                 "assigned_player": entry["player"], "suggested_player": None})
     return results
 
@@ -352,6 +365,7 @@ class ControllerRouterDevice:
 
     def __init__(self, config_path: Path, retroarch_config: Path,
                  socket_path: Path | None = None, *, sinks: dict[int, Any] | None = None,
+                 es_inputs: Path | None = None,
                  global_config: Path | None = None,
                  proc_root: Path = Path("/proc"), sys_root: Path = Path("/sys/class/input"),
                  udev_root: Path = Path("/run/udev/data"), dev_root: Path = Path("/dev/input")) -> None:
@@ -359,6 +373,7 @@ class ControllerRouterDevice:
         self.retroarch_config, self.proc_root = Path(retroarch_config), proc_root
         self.retroarch_configs = joystick_retroarch_configs(self.retroarch_config)
         self.global_config = Path(global_config) if global_config else None
+        self.es_inputs = Path(es_inputs) if es_inputs else _paths(self.config["platform"])[1]
         self.sys_root, self.udev_root, self.dev_root = sys_root, udev_root, dev_root
         self.players = {player: PlayerState(player) for player in enabled_players(self.config)}
         self.sinks = sinks if sinks is not None else {player: UInputMergedGamepad(
@@ -371,6 +386,7 @@ class ControllerRouterDevice:
         # Otherwise the last observation received while EmulationStation was
         # active can become the game's first controller input.
         self.virtual_armed = False
+        self.session_mapping_revisions: dict[str, str] = {}
         self.config_revision = revision(self.config)
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
@@ -416,8 +432,19 @@ class ControllerRouterDevice:
             time.sleep(0.05)
         raise RuntimeError("Controller Router outputs did not appear in /sys/class/input")
 
-    def _set_active(self, active: bool) -> None:
+    def _set_active(self, active: bool,
+                    candidates: list[dict[str, Any]] | None = None) -> None:
         """Grab or release physical sources across a supported-core transition."""
+        if active:
+            available = candidates if candidates is not None else (
+                self._current_candidates() if hasattr(self, "es_inputs") else [])
+            self.session_mapping_revisions = {}
+            for _player, saved in self._saved_sources():
+                candidate = find_saved_controller(saved, available)
+                mapping = candidate["mapping"] if candidate else saved["mapping"]
+                self.session_mapping_revisions[saved["id"]] = mapping_revision(mapping)
+        else:
+            self.session_mapping_revisions.clear()
         for fd, record in list(self.descriptors.items()):
             if record["grabbed"] != active:
                 try:
@@ -465,12 +492,27 @@ class ControllerRouterDevice:
 
     def _saved_sources(self) -> list[tuple[int, dict[str, Any]]]:
         """Flatten configured physical sources with their player slot."""
-        return [(entry["player"], source) for entry in self.config["players"]
+        return [(entry["player"], source)
+                for entry in getattr(self, "config", {}).get("players", [])
                 for source in entry["sources"]]
 
-    def _discover(self) -> None:
-        """Reconnect saved identities without depending on event numbering."""
-        candidates = input_devices(self.sys_root, self.dev_root)
+    def _current_candidates(self) -> list[dict[str, Any]]:
+        """Read currently connected devices with their live frontend mappings."""
+        return controller_candidates(self.es_inputs, self.sys_root, self.dev_root)
+
+    def _refresh_idle_mappings(self, candidates: list[dict[str, Any]]) -> None:
+        """Drop idle descriptors whose validated EmulationStation mapping changed."""
+        saved_by_id = {source["id"]: source for _player, source in self._saved_sources()}
+        for fd, record in list(self.descriptors.items()):
+            saved = saved_by_id.get(record["source_id"])
+            candidate = find_saved_controller(saved, candidates) if saved else None
+            current = mapping_revision(candidate.get("mapping")) if candidate else ""
+            if not current or current != record.get("mapping_revision"):
+                self._drop(fd)
+
+    def _discover(self, candidates: list[dict[str, Any]] | None = None) -> None:
+        """Reconnect saved identities using current validated frontend mappings."""
+        candidates = candidates if candidates is not None else self._current_candidates()
         connected_ids = {record["source_id"] for record in self.descriptors.values()}
         for player, saved in self._saved_sources():
             if saved["id"] in connected_ids:
@@ -478,10 +520,16 @@ class ControllerRouterDevice:
             candidate = find_saved_controller(saved, candidates)
             if candidate is None:
                 continue
+            live_revision = mapping_revision(candidate["mapping"])
+            expected_revision = self.session_mapping_revisions.get(saved["id"])
+            if self.players[player].active and live_revision != expected_revision:
+                # EmulationStation changes apply only after the running game
+                # exits, so a reconnect cannot silently change button meaning.
+                continue
             joy_fd = event_fd = None
             try:
                 joy_fd = os.open(candidate["joystick"], os.O_RDONLY | os.O_NONBLOCK)
-                mapping = translate_es_mapping(saved["mapping"], joy_fd)
+                mapping = translate_es_mapping(candidate["mapping"], joy_fd)
                 event_fd = os.open(candidate["event"], os.O_RDONLY | os.O_NONBLOCK)
                 source = self.players[player].physical.setdefault(saved["id"], SourceState())
                 mapper = PhysicalMapper(mapping, _MapperState(source), input_axis_ranges(event_fd, mapping))
@@ -490,7 +538,8 @@ class ControllerRouterDevice:
                     fcntl.ioctl(event_fd, EVIOCGRAB, 1)
                 self.descriptors[event_fd] = {"fd": event_fd, "source_id": saved["id"],
                                               "player": player, "source": source,
-                                              "mapper": mapper, "grabbed": active}
+                                              "mapper": mapper, "grabbed": active,
+                                              "mapping_revision": live_revision}
                 event_fd = None
             except (OSError, ValueError):
                 pass
@@ -574,11 +623,16 @@ class ControllerRouterDevice:
             with self.lock:
                 now_active = joystick_core_running(self.proc_root)
                 if now_active != active:
+                    candidates = None
+                    if now_active:
+                        candidates = self._current_candidates()
+                        self._refresh_idle_mappings(candidates)
+                        self._discover(candidates)
                     if now_active and output_indexes(list(self.players), self.sys_root,
                                                      self.udev_root,
                                                      self.config["platform"]) != self.installed_indexes:
                         self._install_indexes()
-                    active = now_active; self._set_active(active)
+                    active = now_active; self._set_active(active, candidates)
                 if self.virtual_updated_at and time.monotonic() - self.virtual_updated_at >= VIRTUAL_TIMEOUT_SECONDS:
                     player = self.config.get("virtualglove_player")
                     if player in self.players: self.players[player].virtual.release()
@@ -596,7 +650,10 @@ class ControllerRouterDevice:
                         pass
                     self.config_checked_at = time.monotonic()
                 if time.monotonic() - self.discovery_checked_at >= DISCOVERY_INTERVAL_SECONDS:
-                    self._discover()
+                    candidates = self._current_candidates()
+                    if not active:
+                        self._refresh_idle_mappings(candidates)
+                    self._discover(candidates)
                     self.discovery_checked_at = time.monotonic()
             sources = list(self.descriptors)
             if self.socket is not None: sources.append(self.socket)
@@ -750,7 +807,12 @@ class RouterStore:
             connected = list(candidates.values())
             for entry in load_config(self.path)["players"]:
                 for source in entry["sources"]:
-                    candidates[source["id"]] = find_saved_controller(source, connected) or source
+                    # A currently discovered exact-GUID record is authoritative.
+                    # Retain the saved record only when the source is genuinely
+                    # unavailable; never replace a refreshed mapping merely
+                    # because its stable physical identity is unchanged.
+                    if source["id"] not in candidates:
+                        candidates[source["id"]] = find_saved_controller(source, connected) or source
         proposed_players = proposed.get("players", [])
         if not isinstance(proposed_players, list) or len(proposed_players) > 4:
             raise ValueError("Controller Router supports Players 1 through 4.")
@@ -777,7 +839,8 @@ class RouterStore:
                 return current
             if operation == "check":
                 config = current["config"]
-                connected = {item["id"] for item in current["inventory"]}
+                connected = {item["id"] for item in current["inventory"]
+                             if item.get("connected") and item.get("assigned_player") is not None}
                 missing = [source["id"] for entry in config["players"] for source in entry["sources"]
                            if source["id"] not in connected]
                 activity = test_activity(self.es_inputs, payload.get("watch_ms", 0))
@@ -1068,7 +1131,7 @@ def main() -> int:
         if args.socket is None:
             parser.error("serve requires --socket")
         device = ControllerRouterDevice(args.config or default_config, retroarch, args.socket,
-                                        global_config=global_config)
+                                        es_inputs=es_inputs, global_config=global_config)
         try:
             while True: time.sleep(3600)
         except KeyboardInterrupt:

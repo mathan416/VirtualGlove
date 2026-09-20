@@ -50,7 +50,7 @@ itself establish that the camera, receiver, or game is working.
 | VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
 | RetroPie services | Receive controller packets, expose the standard `VirtualGlove` gamepad, signal game launches, serve paired game-registry edits | Camera processing or physical-controller remapping |
 | Controller Router | Optionally combine EmulationStation-configured physical sources and one VirtualGlove into stable Players 1–4 for FCEUmm and stock Nestopia | Raw keyboards, mice, frontend navigation, native Super Glove Ball, or LaunchBox |
-| Recovered RetroPie cabinet merger | Preserve the proven I-PAC/8BitDo implementation as migration reference and rollback | New generic routing after the cabinet accepts Controller Router |
+| Recovered RetroPie cabinet merger | Preserve the proven I-PAC/8BitDo implementation as historical reference and tested rollback | The cabinet's active routing, which now uses Controller Router |
 | Recalbox integration | Run from `/recalbox/share`, migrate the released Player 1 record, and operate Controller Router without patching the read-only OS | Recalbox system-image files and frontend control |
 | Batocera integration | Run as a persistent user service, consume supported game lifecycle events, and operate Controller Router | Batocera system-image files and frontend control |
 | LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and publish Player 1 through a LAN-isolated loopback RetroPad beside physical XInput and real-keyboard fallback controls | LaunchBox database files and global joypad configuration |
@@ -80,6 +80,13 @@ Buttons use source-aware hold sets. The most recently activated physical source
 owns an axis until neutral, then another still-held physical source resumes.
 Physical axes outrank VirtualGlove. Only Player 1 carries the physical hotkey;
 VirtualGlove Select and Players 2–4 cannot assert the hotkey-enabler.
+
+The transition into a supported core is an input boundary. Router clears the
+VirtualGlove source and publishes neutral before admitting camera controls.
+Physical sources are available immediately; VirtualGlove is armed only after a
+fresh neutral D-pad/button observation. Joystick mode carries recognized
+digital directions and buttons, not camera-position axes. This prevents a
+frontend gesture or off-centre hand from becoming the first game input.
 
 The merged gamepads remain neutral outside FCEUmm and stock Nestopia, so EmulationStation
 continues to use only the original controller. Disconnect releases only physical
@@ -115,13 +122,13 @@ named `VirtualGlove`. RetroArch can accept that device beside an already
 configured physical joypad, which is sufficient for an ordinary new install and
 does not rewrite the console's existing controller layout.
 
-The VirtualGlove development cabinet currently retains the optional
-`retropie/arcade-cabinet-merger` reference and rollback implementation. It
-consumes the standard `VirtualGlove` device alongside two I-PAC gamepad
-interfaces and supported 8BitDo controllers, publishing `Arcade Merged Player
-1` and `Arcade Merged Player 2`. The proposed migration imports those known
-assignments into Controller Router and changes nothing until they pass live
-validation.
+The VirtualGlove development cabinet retains the optional
+`retropie/arcade-cabinet-merger` reference and rollback implementation. That
+older service consumed the standard `VirtualGlove` device alongside two I-PAC
+gamepad interfaces and supported 8BitDo controllers, publishing `Arcade Merged
+Player 1` and `Arcade Merged Player 2`. Its mappings supplied the migration
+proposal; the cabinet now runs Controller Router after live reboot, hotkey,
+physical-controller, VirtualGlove, and simultaneous-input acceptance.
 
 This component was originally installed directly at
 `/usr/local/sbin/arcade-gamepad-merger`. The source is project-authored rather
@@ -135,7 +142,7 @@ It generalizes the cabinet's multi-source idea to four independently enabled
 players, stable identities, EmulationStation mapping translation, launch-time
 index synchronization, exclusive supported-core ownership, and physical-axis priority.
 The older cabinet program remains available only as a tested reference and
-one-command rollback until the cabinet migration is accepted.
+one-command rollback.
 
 Router writes enabled Player indexes and canonical controls to separate FCEUmm
 and stock Nestopia core-specific RetroArch overrides rather than the
@@ -352,20 +359,22 @@ and delivery.
 
 #### Joystick-mode ownership by platform
 
-RetroPie exposes VirtualGlove as its own Linux gamepad. LaunchBox keeps the
-physical XInput controller unchanged and adds VirtualGlove through a loopback
-Network RetroPad. Recalbox and Batocera need a different boundary because their
-launchers generate RetroArch Player 1 from the controller selected in
-EmulationStation.
+Standard RetroPie exposes VirtualGlove as its own Linux gamepad. Optional routed
+RetroPie systems use the same Controller Router engine as Recalbox and
+Batocera. LaunchBox keeps the physical XInput controller unchanged and adds
+VirtualGlove through a loopback Network RetroPad.
 
-On Recalbox and Batocera, one persistent Controller Router service creates the
+On routed RetroPie, Recalbox, and Batocera, one persistent Controller Router service creates the
 enabled **VirtualGlove Merged Player 1–4** outputs before gameplay. The initial
 installation preserves the selected Player 1 arrangement; Setup can later
 assign several configured physical sources to a player and the one VirtualGlove
-to exactly one slot. The record keeps authoritative EmulationStation mappings,
-including SDL indices used only to translate them into Linux event controls;
-those namespaces are not interchangeable on controllers whose Start, Select,
-or Home buttons use keyboard-class event codes.
+to exactly one slot. The record keeps each source's last validated
+EmulationStation mapping. While idle and immediately before a supported launch,
+Router rereads the live frontend mapping and replaces its translator when the
+mapping fingerprint changes; the player assignment remains untouched. SDL
+indices are used only to translate the mapping into Linux event controls. Those
+namespaces are not interchangeable on controllers whose Start, Select, or Home
+buttons use keyboard-class event codes.
 
 The service never treats `/dev/input/eventN`, `/dev/input/jsN`, or a RetroArch
 joypad index as identity. It resolves the current event device from the saved
@@ -374,6 +383,12 @@ udev joystick order. Batocera repeats the index synchronization in its
 `gameStart` hook; the persistent service also detects later enumeration
 changes.
 
+New EmulationStation-configured devices appear in Setup as unassigned sources.
+Router never silently assigns them after initial installation. If a saved
+device's live mapping is missing, incomplete, or ambiguous, that source remains
+neutral and unavailable while the other merged sources continue working. A
+mapping is never replaced during a running game.
+
 The original physical controller owns EmulationStation. When RetroArch starts,
 the merger uses `EVIOCGRAB` to take exclusive ownership of that controller's
 event stream, clears any retained physical state, and publishes only the
@@ -381,6 +396,13 @@ canonical merged device. This prevents the same Select or hotkey press from
 reaching RetroArch, the platform hotkey service, and the merger independently.
 At game exit, it publishes neutral state before releasing the grab, allowing
 the original controller to resume frontend navigation.
+
+At that same launch boundary, Router clears all retained VirtualGlove controls.
+Physical devices can send Start or navigate immediately. VirtualGlove remains
+neutral until the next observation contains no recognized D-pad direction or
+button gesture; only subsequent observations can control the game. The ordinary
+NES path publishes digital D-pad/buttons only. Continuous camera X/Y/Z remains
+exclusive to the guarded native Super Glove Ball path.
 
 Physical directions and axes take priority while active; ordinary physical and
 VirtualGlove buttons combine. The physical hotkey is carried on a dedicated

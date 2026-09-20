@@ -67,6 +67,11 @@ Moving sufficiently left of your saved centre can press Left; returning toward
 centre releases it. Activation and release thresholds help avoid repeated
 presses near the boundary.
 
+On routed Linux consoles, every ordinary-game launch clears pre-launch glove
+state. Physical controls work immediately; VirtualGlove starts contributing
+after one fresh neutral observation. Continuous camera axes are intentionally
+absent from this joystick route and remain available only to the native core.
+
 This is useful for games expecting a conventional controller. Original Programs
 1–14 and cartridge Programs A–I change which gestures produce those controls;
 registered titles can also apply the documented rapid-fire exceptions. They do

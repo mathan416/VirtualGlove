@@ -49,6 +49,7 @@ class MergedGamepadTests(unittest.TestCase):
             (base / "id/vendor").write_text("1234\n")
             (base / "id/product").write_text("5678\n")
             (base / "id/version").write_text("0001\n")
+            (base / "id/bustype").write_text("0003\n")
             (base / "uniq").write_text("serial\n")
             (base / "phys").write_text("usb-1\n")
             (sys_root / "js0").mkdir()
@@ -60,6 +61,54 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(candidates[0]["mapping"][0]["evdev_code"], 304)
         self.assertEqual(candidates[0]["joystick"], str(root / "dev/js0"))
         self.assertEqual(len(candidates[0]["id"]), 16)
+
+    def test_exact_current_sdl_guid_wins_over_stale_same_name_record(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            current = "03000000341200007856000001000000"
+            es = root / "es_input.cfg"
+            body = ES_INPUT.removeprefix("<inputList>").removesuffix("</inputList>")
+            stale = body.replace('deviceGUID="abc"', 'deviceGUID="stale"')
+            matching = body.replace('deviceGUID="abc"', f'deviceGUID="{current}"')
+            es.write_text("<inputList>" + stale + matching + "</inputList>")
+            sys_root = root / "sys"
+            base = sys_root / "event4/device"
+            (base / "id").mkdir(parents=True)
+            (base / "capabilities").mkdir()
+            (base / "name").write_text("Test Pad\n")
+            (base / "capabilities/key").write_text("1 0\n")
+            (base / "id/bustype").write_text("0003\n")
+            (base / "id/vendor").write_text("1234\n")
+            (base / "id/product").write_text("5678\n")
+            (base / "id/version").write_text("0001\n")
+            (base / "uniq").write_text("serial\n")
+            (base / "phys").write_text("usb-1\n")
+            (sys_root / "js0").mkdir()
+            (sys_root / "js0/device").symlink_to(base.resolve(), target_is_directory=True)
+            candidates = merged.controller_candidates(es, sys_root, root / "dev")
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["guid"], current)
+
+    def test_stale_index_only_mapping_is_not_matched_by_name(self):
+        xml = ES_INPUT.replace('deviceGUID="abc"', 'deviceGUID="stale"')
+        xml = xml.replace(' code="304"', '').replace(' code="314"', '')
+        xml = xml.replace(' code="315"', '').replace(' code="16"', '')
+        xml = xml.replace(' code="17"', '').replace(' code="0"', '')
+        xml = xml.replace(' code="310"', '')
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            es = root / "es_input.cfg"; es.write_text(xml)
+            sys_root = root / "sys"; base = sys_root / "event4/device"
+            (base / "id").mkdir(parents=True); (base / "capabilities").mkdir()
+            (base / "name").write_text("Test Pad\n")
+            (base / "capabilities/key").write_text("1 0\n")
+            for key, value in (("bustype", "0003"), ("vendor", "1234"),
+                               ("product", "5678"), ("version", "0001")):
+                (base / f"id/{key}").write_text(value + "\n")
+            (base / "uniq").write_text("serial\n"); (base / "phys").write_text("usb-1\n")
+            (sys_root / "js0").mkdir()
+            (sys_root / "js0/device").symlink_to(base.resolve(), target_is_directory=True)
+            self.assertEqual(merged.controller_candidates(es, sys_root, root / "dev"), [])
 
     def test_one_ipac_board_exposes_two_distinct_logical_gamepads(self):
         """A shared USB serial must not collapse separate HID collections."""

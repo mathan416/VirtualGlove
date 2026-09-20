@@ -167,6 +167,12 @@ a temporary directory, installs the core under its separate name, copies the
 upstream GPLv2 `COPYING` file beside it, and adds the native entry to the launch
 menu. It deliberately leaves that ROM's current FCEUmm selection unchanged.
 
+This per-console build is still the supported RetroPie approach. There is no
+single prebuilt RetroPie core that is assumed to fit every Pi generation and OS
+image. The core is required only for native Super Glove Ball; FCEUmm, stock
+Nestopia, and Controller Router do not depend on it. Rerunning the installer can
+rebuild or repair the separate core without replacing stock Nestopia.
+
 Batocera cores are target-specific and its `/usr` tree is read-only. Release
 packages carry Batocera 43.1 builds and complete corresponding source for all 15
 supported targets. Startup resolves the exact architecture, verifies the

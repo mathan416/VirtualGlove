@@ -636,6 +636,9 @@ enabled **VirtualGlove Merged Player 1–4** outputs; assign both sources to the
 same player in Setup. LaunchBox combines physical XInput with its loopback
 RetroPad while retaining real keys as a backup. Generic RetroPie exposes
 VirtualGlove as a separate gamepad unless optional Controller Router is enabled.
+On a routed console, each game begins with physical controls available and
+VirtualGlove neutral. Rest the hand at centre once before the first gesture;
+Router will not replay a direction or button held in the frontend.
 
 **First round:**
 

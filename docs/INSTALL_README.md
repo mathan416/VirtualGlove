@@ -7,7 +7,12 @@ pair them securely, center your hand, and test the controls.
 VirtualGlove 0.5.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
-[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-two-script-installation).
+[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
+
+The next release candidate is `v0.5.0-rc.1`. After it is published, install
+that exact version on both machines with the pinned-version procedure in the
+technical reference. The unversioned commands in this guide intentionally
+continue to select the latest stable release.
 
 ## 1. Before you begin
 
@@ -43,6 +48,10 @@ After pairing, Setup shows **Controller Router**. It lists only controllers
 already configured by EmulationStation. Review the suggested Player 1–4 choices,
 choose one player or Unassigned for each physical controller, choose at most one
 VirtualGlove player, then save. Opening the card never changes the console.
+Newly configured EmulationStation controllers appear automatically as
+**Unassigned**. If you remap an assigned controller in EmulationStation, Router
+keeps its player assignment and uses the validated new mapping on the next game
+launch; Setup marks it **Mapping refreshed**.
 
 Recalbox and Batocera automatically carry their released Player 1 selection into
 the new format. A normal RetroPie install keeps its separate `VirtualGlove`
@@ -51,6 +60,11 @@ controllers remain the frontend controllers; merged outputs stay neutral
 outside supported NES joystick cores. Router writes separate core-specific
 overrides for FCEUmm and stock Nestopia, while Nestopia (VirtualGlove) retains
 its separate native-input path.
+
+At each supported game launch, Router discards any glove state seen in the
+frontend. Physical controllers work immediately. Rest the hand at neutral once;
+VirtualGlove then joins the merged player. This startup handshake prevents a
+held frontend gesture from becoming an accidental first game input.
 
 Use **Check controllers** and press a direction or button on each pad. Close any
 running NES game before changing assignments. **Restore previous assignments**
@@ -175,11 +189,12 @@ VirtualGlove appears as a separate game controller. Your physical controller
 remains available for menus and gameplay. Registered games tell VirtualGlove
 which profile to use, and game exit safely releases all controls.
 
-The VirtualGlove development arcade cabinet optionally combines its I-PAC
-panel, supported 8BitDo controllers, and VirtualGlove into shared arcade-player
-devices. That cabinet-specific component is maintained with the project but is
-not enabled by the normal installer. Most RetroPie systems should keep the
-separate-controller arrangement above. See [VirtualGlove Input
+The VirtualGlove development arcade cabinet uses optional Controller Router to
+combine its two I-PAC interfaces, supported 8BitDo controllers, and
+VirtualGlove into shared arcade-player devices. Its original cabinet merger is
+retained as a tested rollback reference, but is no longer the active path.
+Router is not enabled by the normal RetroPie installer. Most RetroPie systems
+should keep the separate-controller arrangement above. See [VirtualGlove Input
 Modes](INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet)
 for the two designs and when each is appropriate.
 
@@ -194,8 +209,10 @@ you.
 
 #### First game and updates
 
-After pairing, test an ordinary registered game with FCEUmm and confirm both
-VirtualGlove and the physical controller work. Test Super Glove Ball separately
+After pairing, test an ordinary registered game with FCEUmm. If Router is
+enabled, confirm the physical controller works immediately, rest the hand at
+neutral once, and then confirm VirtualGlove works without stopping or restarting
+it. Test Super Glove Ball separately
 if you installed its native core. To update later, close the game and rerun the
 same install command.
 
@@ -530,7 +547,7 @@ Keep the printed backup location until you have completed the reboot and game
 checks above. If the installer reports an unknown or locally modified retired
 file, follow its message rather than deleting the installation manifest or
 forcing the upgrade. The
-[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-two-script-installation)
+[technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation)
 describes staged upgrades and recovery.
 
 ### Read the installer report
@@ -591,8 +608,12 @@ Check these in order:
 5. The platform uses the VirtualGlove controller arrangement described in its
    install section.
 
-Stop and start the Controller once, then relaunch the game. Do not replace the
-entire RetroArch configuration to repair one binding.
+If Controller Router is enabled, rest the hand at its saved neutral position
+once after launch. Physical controls should work immediately; you must not need
+to stop VirtualGlove to make a physical Start press work. If stopping
+VirtualGlove is required, close the game and rerun the current console installer
+to update Router. Do not replace the entire RetroArch configuration to repair
+one binding.
 
 ### The wrong physical controller is Player 1
 

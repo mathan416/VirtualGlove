@@ -114,6 +114,9 @@ One connected pad is automatic; with several, run the matching installer with
 `--list-player1-devices`, then repeat it with `--player1-device DEVICE-ID`.
 After pairing, use Setup's **Controller Router** to assign configured physical
 controllers and the one VirtualGlove across enabled merged Players 1–4.
+At game launch, physical controls work immediately. Rest the hand at neutral
+once before the first gesture; Router discards frontend glove state instead of
+replaying it into the game.
 
 The following source-checkout path is specifically for RetroPie developers. Run
 it in a local terminal or SSH session with the normal RetroPie account.
@@ -269,7 +272,9 @@ selected only when they have no explicit core choice. LaunchBox verifies its
 Windows DLL during installation and falls back to FCEUmm joystick mode if that
 DLL is later missing or changed.
 Select **Start controller** on Dashboard when ready, launch a registered game,
-and verify gameplay with both VirtualGlove and the physical joypad.
+verify the physical joypad immediately, rest the hand at neutral once, and then
+verify VirtualGlove. You should never need to stop VirtualGlove to make a
+physical controller begin working.
 
 ### Run the local software tests
 

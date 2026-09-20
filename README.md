@@ -16,7 +16,7 @@ VirtualGlove recognizes the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current release: v0.5.0**
+**Current project version: 0.5.0 · Next candidate: v0.5.0-rc.1**
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
@@ -25,6 +25,11 @@ RetroPie can opt into the same Router while retaining its separate-gamepad
 default. LaunchBox keeps physical XInput beside VirtualGlove's managed
 RetroArch controller. Every platform keeps the physical controller usable and
 preserves unrelated controller settings.
+
+When Controller Router is enabled, a game launch always begins neutral. Physical
+controllers are available immediately; VirtualGlove joins only after the hand
+has returned to neutral once. This prevents a gesture observed in
+EmulationStation from becoming the game's first input.
 
 Ordinary NES games use FCEUmm. Super Glove Ball can also use the separately
 named Nestopia (VirtualGlove) core for native movement and glove actions without
@@ -73,6 +78,12 @@ These steps install the latest stable release. Install the **same version on
 both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
+
+Release-candidate testers should install `v0.5.0-rc.1` on both machines using
+the pinned-version procedure in the
+[technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
+The unversioned commands below deliberately continue to select the latest
+stable release.
 
 ### 1. Prepare the Controller
 
@@ -128,8 +139,9 @@ native core still receives the complete FCEUmm joystick path.
 The generic RetroPie installation exposes a separate **VirtualGlove** gamepad.
 The project-maintained
 [`arcade-cabinet-merger`](docs/INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet) remains as the
-development cabinet's proven reference and rollback implementation. Optional
-Controller Router generalizes that work without changing RetroPie's default.
+development cabinet's proven reference and rollback implementation. The cabinet
+now runs the shared Controller Router, which generalizes that work without
+changing RetroPie's default.
 Recalbox and Batocera create the enabled **VirtualGlove Merged Player 1–4**
 devices and initially preserve the installer-selected Player 1 arrangement.
 Setup can then assign several configured physical sources to a player and place
@@ -304,9 +316,16 @@ guided readiness checks, live dead-zone visualization, and source-accurate
 rapid-fire behavior. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie.
 
+The `v0.5.0-rc.1` candidate has completed physical controller and VirtualGlove
+acceptance on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
+includes ordinary NES play, native Super Glove Ball, physical-controller
+coexistence, hotkeys, reboot persistence, and Controller Router remapping.
+
 Recalbox and Batocera use Controller Router to publish enabled merged Players
 1–4 from configured physical sources and at most one VirtualGlove. Standard
-RetroPie keeps its separate gamepad until Router is explicitly enabled.
+RetroPie keeps its separate gamepad until Router is explicitly enabled; the
+project arcade cabinet now uses Router for its two I-PAC interfaces, 8BitDo
+controllers, and VirtualGlove.
 LaunchBox uses a local RetroPad while leaving XInput and
 real keyboard controls available. Every platform supports registered FCEUmm
 games and the separately named Nestopia (VirtualGlove) path for native Super

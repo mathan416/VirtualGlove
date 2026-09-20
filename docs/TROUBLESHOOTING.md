@@ -137,6 +137,13 @@ adding a runtime setting to `device.json`.
 5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
 6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
 
+If Controller Router is enabled, return the hand to neutral once after the game
+appears. Router deliberately rejects directions and button gestures until that
+fresh neutral observation, while physical controls remain available
+immediately. If no physical controller responds until VirtualGlove is stopped,
+the console has an older Router build; close the game and rerun the current
+console installer.
+
 If the ROM was added after VirtualGlove was installed, refresh the frontend's
 game list before testing it. Recalbox and Batocera also need a VirtualGlove
 service restart or reboot after a newly registered Super Glove Ball ROM so the

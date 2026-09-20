@@ -1437,9 +1437,10 @@ or any other physical controller.
 The optional development-cabinet integration is maintained separately under
 `retropie/arcade-cabinet-merger/`. It adds two `Arcade Merged Player`
 autoconfigurations and a cabinet-specific service without changing this
-standard `VirtualGlove.cfg`. Do not apply its I-PAC button numbers or device
-names to another cabinet until that hardware's Linux events and hotkeys have
-been confirmed.
+standard `VirtualGlove.cfg`. The development cabinet has migrated to Controller
+Router; this older integration remains the tested rollback and mapping
+reference. Do not apply its I-PAC button numbers or device names to another
+cabinet until that hardware's Linux events and hotkeys have been confirmed.
 
 If RetroArch has a hand-written override for this device, remove or reconcile
 that override before diagnosing the supplied autoconfiguration.
@@ -1869,6 +1870,14 @@ cores never load those overrides. RetroPie keeps Router disabled until an
 authenticated Setup save or an explicit `apply`. Recalbox and Batocera migrate
 their existing version-1 Player 1 record automatically.
 
+When a supported core becomes active, Router releases its stored VirtualGlove
+source and begins the output neutral. Physical sources are available
+immediately. A fresh neutral VirtualGlove observation arms the source; held
+directions or buttons received before that point are ignored. Router maps only
+the recognized digital D-pad and buttons for these NES joystick cores. The
+camera-position axes remain exclusive to Nestopia (VirtualGlove)'s native-state
+interface.
+
 RetroPie installs the command at
 `/opt/virtualglove/bin/virtualglove-controller-router`. Read-only platform
 layouts retain their launcher at
@@ -1881,7 +1890,13 @@ program execution.
 The version-2 `controller-router.json` document contains `platform`, `players`,
 and `virtualglove_player`. Each player entry contains a slot from 1–4 and stable
 physical source records. Sources contain the friendly identity and authoritative
-EmulationStation mapping, never `eventN`, `jsN`, or a saved RetroArch index. A
+last-known EmulationStation mapping, never `eventN`, `jsN`, or a saved RetroArch
+index. While idle and before each supported launch, Router validates the live
+EmulationStation entry and automatically refreshes its translator if the
+mapping changed. The stable player assignment does not change. Setup labels
+this state **Mapping refreshed**. An incomplete or ambiguous live mapping makes
+only that source unavailable rather than guessing or reusing unsafe button
+numbers. A
 source may appear in only one player. `virtualglove_player` is `null` or one
 slot from 1–4. Enabled outputs are the slots with at least one physical source
 or the assigned VirtualGlove slot.
@@ -1891,12 +1906,11 @@ carry the revision returned by `read`; stale revisions and changes during a
 running supported NES game are rejected. `rollback` restores the previous
 complete document atomically.
 
-The development cabinet has a separate receipt-gated migration helper under
-`retropie/arcade-cabinet-merger/`. Its `check` action observes one live control
-from every proposed physical source and temporarily creates all proposed
-outputs without changing RetroArch. `apply` requires that fresh receipt,
-preserves the old merger state and FCEUmm override, and automatically restores
-them if activation fails. `rollback` performs the same restoration explicitly.
+The development cabinet's receipt-gated migration helper remains under
+`retropie/arcade-cabinet-merger/`. Its accepted migration imported both I-PAC
+interfaces, both 8BitDo controllers, and VirtualGlove into Router. `rollback`
+still restores the previous service and RetroArch state if the reference path
+is needed.
 
 Structured game entries may add `"four_score": "force"`. This sets FCEUmm's
 User 5 device to its 4-Player Adaptor value (`769`) for a compatible altered
@@ -2835,17 +2849,17 @@ Recalbox installs under `/recalbox/share/system/virtualglove`, adds one
 idempotent call to the persistent `custom.sh`, and observes RetroArch through
 `/proc` because Recalbox does not expose Batocera's game-event interface.
 Batocera installs under `/userdata/system/virtualglove` and uses its supported
-user-service and `gameStart`/`gameStop` script locations. Both save one selected
-controller's stable identity and EmulationStation mapping in
-`data/player1-controller.json`. Their boot service creates **VirtualGlove Merged
-Player 1**, keeps it neutral outside RetroArch, and updates only the NES Player 1
-joypad index. Physical input has per-axis priority, buttons combine, and only the
-physical hotkey can assert the dedicated Hotkey Enable button. A disconnect
-releases the physical source without disabling VirtualGlove; the saved controller
-reconnects automatically. Player 2, ROMs, saves, frontend control, and unrelated
-settings are preserved. Upgrades remove only the eight former managed keyboard
-values and back up the previous NES append configuration. Their FCEUmm path
-supports every joystick profile. Batocera additionally
+user-service and `gameStart`/`gameStop` script locations. Both save versioned
+Player 1–4 assignments, stable identities, and authoritative EmulationStation
+mappings in `data/controller-router.json`. Their boot service creates only the
+enabled **VirtualGlove Merged Player 1–4** outputs, keeps them neutral outside
+supported NES joystick cores, and resolves current joypad indexes instead of
+persisting enumeration numbers. Physical input has per-axis priority, buttons
+combine, and only Player 1's physical hotkey can assert the dedicated Hotkey
+Enable button. A disconnect releases only that physical source without
+disabling VirtualGlove; the saved controller reconnects automatically. ROMs,
+saves, frontend control, and unrelated settings are preserved. Their FCEUmm and
+stock Nestopia paths support every joystick profile. Batocera additionally
 supports the separately named `nestopia_powerglove` core for native Super Glove
 Ball. Recalbox requires an exact target match, prefers an exact release build,
 and otherwise accepts the newest packaged build from the same major series only

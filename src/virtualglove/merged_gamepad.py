@@ -181,6 +181,7 @@ def input_devices(sys_root: Path = Path("/sys/class/input"),
             continue
         identity = {
             "name": name,
+            "bustype": _text(base / "id/bustype"),
             "vendor": _text(base / "id/vendor"),
             "product": _text(base / "id/product"),
             "version": _text(base / "id/version"),
@@ -198,6 +199,7 @@ def input_devices(sys_root: Path = Path("/sys/class/input"),
             # EmulationStation stores SDL indices rather than evdev codes. A
             # sibling joystick node is required to translate them safely.
             continue
+        identity["guid"] = _sdl_guid(identity)
         if identity["uniq"]:
             # ``uniq`` identifies the USB board, not necessarily one logical
             # controller.  Include the stable HID collection so an I-PAC's
@@ -211,6 +213,24 @@ def input_devices(sys_root: Path = Path("/sys/class/input"),
         identity["id"] = hashlib.sha256(stable.encode()).hexdigest()[:16]
         devices.append(identity)
     return devices
+
+
+def _sdl_guid(device: dict) -> str:
+    """Build SDL's Linux USB/Bluetooth GUID from authoritative input IDs."""
+    try:
+        values = [int(device.get(key, ""), 16)
+                  for key in ("bustype", "vendor", "product", "version")]
+    except (TypeError, ValueError):
+        return ""
+    if any(not 0 <= value <= 0xFFFF for value in values):
+        return ""
+    return b"".join(struct.pack("<H", value) + b"\0\0" for value in values).hex()
+
+
+def _authoritative_evdev_mapping(mapping: list[dict]) -> bool:
+    """Return whether non-hat controls carry frontend-supplied evdev codes."""
+    relevant = [item for item in mapping if item.get("type") in ("button", "axis")]
+    return bool(relevant) and all("evdev_code" in item for item in relevant)
 
 
 def parse_es_inputs(path: Path) -> list[dict]:
@@ -266,12 +286,19 @@ def controller_candidates(es_inputs: Path, sys_root: Path = Path("/sys/class/inp
     configured = parse_es_inputs(es_inputs)
     candidates = []
     for device in input_devices(sys_root, dev_root):
-        matches = [item for item in configured if item["name"] == device["name"]]
+        named = [item for item in configured if item["name"] == device["name"]]
+        exact = [item for item in named
+                 if device.get("guid") and item.get("guid") == device["guid"]]
+        # Recalbox/Batocera can publish authoritative evdev codes. Those remain
+        # safe across an SDL GUID change; index-only RetroPie records do not.
+        matches = exact or [item for item in named
+                            if _authoritative_evdev_mapping(item["mapping"])]
         unique = {json.dumps(item, sort_keys=True): item for item in matches}
         if len(unique) == 1:
             selected = next(iter(unique.values()))
             candidate = dict(device)
-            candidate.update({"guid": selected["guid"], "mapping": selected["mapping"]})
+            candidate.update({"guid": device.get("guid") or selected["guid"],
+                              "mapping": selected["mapping"]})
             candidates.append(candidate)
     return candidates
 
@@ -441,6 +468,10 @@ def controller_matches(saved: dict, candidate: dict) -> bool:
     for key in ("name", "vendor", "product", "version"):
         if saved.get(key, "") != candidate.get(key, ""):
             return False
+    if (saved.get("guid") and candidate.get("guid")
+            and saved["guid"] != candidate["guid"]
+            and not _authoritative_evdev_mapping(saved.get("mapping", []))):
+        return False
     if saved.get("uniq"):
         if saved["uniq"] != candidate.get("uniq"):
             return False
@@ -457,7 +488,10 @@ def find_saved_controller(saved: dict, candidates: list[dict]) -> dict | None:
         return exact[0]
     model = [item for item in candidates if all(
         saved.get(key, "") == item.get(key, "")
-        for key in ("name", "vendor", "product", "version"))]
+        for key in ("name", "vendor", "product", "version")) and not (
+            saved.get("guid") and item.get("guid")
+            and saved["guid"] != item["guid"]
+            and not _authoritative_evdev_mapping(saved.get("mapping", [])))]
     return model[0] if len(model) == 1 else None
 
 

@@ -132,6 +132,12 @@ VirtualGlove directories. Managed Player indexes are confined to the FCEUmm
 and stock Nestopia core overrides. Nestopia (VirtualGlove) uses its separate
 native-input path and never activates Controller Router.
 
+On every supported-core transition, Router clears the stored VirtualGlove
+source and requires a new neutral D-pad/button observation before admitting
+gesture input. Physical sources are not gated. Camera position axes are not
+published through the ordinary NES joystick route, preventing pre-launch or
+off-centre camera state from becoming a game-start input.
+
 LaunchBox installs no Windows virtual-pad, keyboard-filter, or device-hiding
 driver. Ordinary games receive VirtualGlove through RetroArch's built-in Network
 RetroPad on a random high UDP port. The sender targets `127.0.0.1`, the interface

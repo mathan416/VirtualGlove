@@ -12,6 +12,8 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.5.0-rc.1] - 2026-09-20
+
 VirtualGlove 0.5.0 expands beyond RetroPie, adds Windows support, and completes
 the move from the old development name to VirtualGlove. The emphasis is on a
 predictable installation: choose the platform, pair once, keep the physical
@@ -19,6 +21,16 @@ controller available, and let each game use the correct input method.
 
 ### Fixed
 
+- Followed controller remaps made in EmulationStation automatically. Controller
+  Router keeps the selected Player 1–4 assignment, refreshes the validated
+  button mapping while idle or before the next game, and lists newly configured
+  controllers as unassigned. An incomplete mapping now disables only that
+  source instead of risking scrambled controls or hotkeys.
+- Started every routed NES game from a neutral VirtualGlove state. Physical
+  controllers now work immediately at launch, while gestures are admitted only
+  after one fresh neutral hand observation. The joystick route no longer
+  forwards native camera-position axes, preventing a frontend gesture or
+  off-centre hand from blocking the title screen.
 - Kept cabinet and joypad controls responsive while VirtualGlove is active.
   Controller Router now services physical input first, discards queued camera
   history in bounded batches, and avoids rescanning every input device on each
@@ -84,6 +96,10 @@ controller available, and let each game use the correct input method.
   Setup provides review-before-save assignments, a short live-input check,
   revision-safe saves, and rollback. Standard RetroPie remains unchanged until
   Router is explicitly enabled.
+- Migrated the VirtualGlove development cabinet from its original fixed
+  I-PAC/8BitDo merger to Controller Router after reboot, hotkey, physical-pad,
+  VirtualGlove, and simultaneous-input acceptance. The original merger remains
+  available as a tested rollback reference.
 - Added a console-local Controller Router assignment screen with connection
   status, Players 1–4, live input testing, save confirmation, and rollback.
   Controller assignment remains separate from secure console pairing.
@@ -147,6 +163,12 @@ controller available, and let each game use the correct input method.
   core cannot enter a release package.
 
 ### Changed
+
+- Prepared the first 0.5.0 release candidate after physical acceptance on
+  RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. Ordinary NES input,
+  native Super Glove Ball, physical-controller coexistence, hotkeys, reboot
+  persistence, and current EmulationStation mapping adoption were verified on
+  the applicable platforms.
 
 - Reorganized Controller Help into User Manuals, Installation Guides,
   Technical Documentation, and Project Information. The new VirtualGlove Input
