@@ -11,6 +11,11 @@ VirtualGlove Controller hostname and `CONSOLE-NAME.local`
 with your RetroPie, Recalbox, Batocera, or LaunchBox host name. Each command section identifies the machine
 on which to run it. Keep passwords and pairing tokens out of this document.
 
+The unversioned download commands select the current stable release, v0.5.0.
+To test v0.5.1-rc.1, use the pinned candidate commands in the
+[Installation Guide](INSTALL_README.md); install the same candidate on the
+Controller and console. A failed checksum check changes no installed files.
+
 ## Your installation
 
 | Item | Value |

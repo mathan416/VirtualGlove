@@ -6,10 +6,11 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-21 - Added read-only Batocera and Recalbox FCEUmm preflight.
 #   2026-09-08 - Added two-device latency-session preflight and acceptance gates.
 # Full history: docs/CHANGELOG.md and Git history.
 
-"""Inspect the development checkout, Controller, and RetroPie without changing them."""
+"""Inspect the checkout, Controller, and console without changing them."""
 
 from __future__ import annotations
 
@@ -119,7 +120,7 @@ if role == "controller":
                "tracking_roi_scale",
                )
     result["device_settings"] = {key: source.get(key) for key in allowed if key in source}
-else:
+elif role == "retropie":
     core = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")
     native = Path("/run/virtualglove/native-state")
     result["services"] = {
@@ -163,6 +164,135 @@ else:
         configs[str(path)] = {"sha256": digest(path), "selected": selected}
     result["retroarch_configuration"] = configs
     result["throttling"] = command("vcgencmd", "get_throttled") if shutil.which("vcgencmd") else None
+elif role in ("recalbox", "batocera"):
+    base = (Path("/recalbox/share/system/virtualglove") if role == "recalbox"
+            else Path("/userdata/system/virtualglove"))
+    # These systems keep their read-only OS root separate from writable user
+    # storage. Trace preparation must check the partition that holds evidence.
+    result["disk_free_bytes"] = shutil.disk_usage(
+        base if base.exists() else base.parent).free
+    result["disk_checked"] = "writable_platform_data"
+    result["installation_present"] = base.is_dir()
+    version_path = (Path("/recalbox/recalbox.version") if role == "recalbox"
+                    else Path("/usr/share/batocera/batocera.version"))
+    result["platform_version"] = (text(version_path, 128) or "").strip() or None
+    service = (base / "recalbox/virtualglove-service" if role == "recalbox"
+               else Path("/userdata/system/services/VirtualGlove"))
+    config_paths = (
+        (Path("/recalbox/share/roms/.retroarch.cfg"),
+         Path("/recalbox/share/system/recalbox.conf"),
+         Path("/recalbox/share/system/configs/retroarch/retroarchcustom.cfg"),
+         Path("/recalbox/share/system/configs/retroarch/nes.cfg"),
+         Path("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"))
+        if role == "recalbox" else
+        (Path("/userdata/system/batocera.conf"),
+         Path("/userdata/system/configs/retroarch/retroarchcustom.cfg"),
+         Path("/userdata/system/configs/retroarch/nes.cfg"),
+         Path("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"))
+    )
+    result["services"] = {"virtualglove": command("sh", str(service), "status")}
+    result["files"] = {
+        "receiver_sha256": digest(base / "src/virtualglove/receiver.py"),
+        "router_sha256": digest(base / "src/virtualglove/controller_router.py"),
+        "fceumm_sha256": digest("/usr/lib/libretro/fceumm_libretro.so"),
+        "router_config_sha256": digest(base / "data/controller-router.json"),
+    }
+    router = text(base / "data/controller-router.json")
+    try:
+        routed = json.loads(router) if router else {}
+        slots = routed.get("players", {})
+        result["router"] = {
+            "platform": routed.get("platform"),
+            "configured_player_slots": len(slots) if isinstance(slots, (dict, list)) else None,
+            "virtualglove_player": routed.get("virtualglove_player"),
+        }
+    except ValueError:
+        result["router"] = {"invalid": True}
+    try:
+        checked = subprocess.run(
+            ("sh", str(base / "scripts/virtualglove-controller-router"), "check"),
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=8)
+        if checked.returncode or len(checked.stdout) > 262144:
+            raise ValueError("router check unavailable")
+        state = json.loads(checked.stdout)
+        inventory = state.get("inventory", [])
+        result["router_check"] = {
+            "safe": state.get("safe") is True,
+            "enabled_players": state.get("enabled_players", []),
+            "missing_source_count": len(state.get("missing_sources", [])),
+            "configured_source_count": sum(len(item.get("sources", [])) for item in
+                                           state.get("config", {}).get("players", [])),
+            "connected_source_count": sum(item.get("connected") is True for item in inventory),
+        }
+    except (OSError, ValueError, subprocess.SubprocessError, TypeError):
+        result["router_check"] = {"unavailable": True}
+    result["merged_input_devices"] = (text("/proc/bus/input/devices") or "").count(
+        'Name="VirtualGlove Merged Player ')
+    result["retroarch_running"] = False
+    result["active_core"] = None
+    for process in Path("/proc").glob("[0-9]*"):
+        if not (text(process / "comm") or "").strip().casefold().startswith("retroarch"):
+            continue
+        result["retroarch_running"] = True
+        arguments = text(process / "cmdline", 32768) or ""
+        for core in ("fceumm_libretro.so", "nestopia_powerglove_libretro.so",
+                     "nestopia_libretro.so"):
+            if core in arguments:
+                result["active_core"] = core
+                break
+        if result["active_core"] is None:
+            try:
+                with (process / "maps").open(errors="replace") as mappings:
+                    for line in mappings:
+                        for core in ("fceumm_libretro.so", "nestopia_powerglove_libretro.so",
+                                     "nestopia_libretro.so"):
+                            if core in line:
+                                result["active_core"] = core
+                                break
+                        if result["active_core"] is not None:
+                            break
+            except OSError:
+                pass
+        break
+    keys = ("video_threaded", "video_driver", "video_vsync", "video_frame_delay",
+            "video_frame_delay_auto",
+            "video_max_swapchain_images", "video_refresh_rate", "run_ahead_enabled",
+            "input_poll_type_behavior", "input_player1_joypad_index")
+    configs = {}
+    for path in config_paths:
+        body = text(path)
+        if body is None:
+            continue
+        selected = {}
+        for line in body.splitlines():
+            if "=" not in line or line.lstrip().startswith("#"):
+                continue
+            key, value = (part.strip() for part in line.split("=", 1))
+            prefixed = (key.removeprefix("global.retroarch.")
+                        if key.startswith("global.retroarch.") else
+                        key.removeprefix("nes.retroarch.")
+                        if key.startswith("nes.retroarch.") else None)
+            if key in keys or prefixed in keys or key in ("global.videomode", "nes.videomode"):
+                selected[key] = value.strip('"')
+        configs[str(path)] = {"sha256": digest(path), "selected": selected}
+    result["retroarch_configuration"] = configs
+    if role == "batocera" and shutil.which("iw"):
+        devices = command("iw", "dev")
+        wifi = []
+        for line in devices.get("output", "").splitlines():
+            parts = line.strip().split()
+            if len(parts) != 2 or parts[0] != "Interface":
+                continue
+            interface = parts[1]
+            link = command("iw", "dev", interface, "link")
+            if not link.get("output", "").startswith("Connected to "):
+                continue
+            power = command("iw", "dev", interface, "get", "power_save")
+            wifi.append({"interface": interface,
+                         "power_save": power.get("output", "").strip()})
+        result["connected_wifi"] = wifi
+else:
+    raise SystemExit("unsupported inspection role")
 
 print(json.dumps(result, allow_nan=False))
 '''
@@ -261,49 +391,123 @@ def evaluate(status: dict, controller: dict, retropie: dict, source: dict,
     return checks
 
 
+def evaluate_merged_console(status: dict, controller: dict, console: dict,
+                            source: dict, require_gameplay: bool = False) -> list[dict]:
+    """Check FCEUmm comparison readiness without assuming RetroPie's native ABI."""
+    checks = []
+    def add(name, passed, severity="error", detail=None):
+        """Append one privacy-safe readiness result."""
+        checks.append({"name": name, "passed": bool(passed), "severity": severity,
+                       "detail": detail})
+    add("source checkout is clean", not source["dirty"], "warning")
+    add("Controller worker is running", status.get("worker_running") is True)
+    add("camera is available", status.get("camera_available") is True,
+        "error" if require_gameplay else "warning")
+    add("player calibration is available", status.get("calibrated") is True or
+        (not require_gameplay and controller.get("files", {}).get("calibration_present")),
+        "error" if require_gameplay else "warning")
+    add("Controller has at least 1 GiB free", controller.get("disk_free_bytes", 0) >= 2**30)
+    add("console has at least 1 GiB free", console.get("disk_free_bytes", 0) >= 2**30)
+    add("VirtualGlove console installation is present",
+        console.get("installation_present") is True)
+    add("FCEUmm is installed", bool(console.get("files", {}).get("fceumm_sha256")))
+    add("Controller Router is installed", bool(console.get("files", {}).get("router_sha256")))
+    add("Controller Router configuration is valid for this platform",
+        console.get("router", {}).get("platform") == console.get("role"))
+    router_check = console.get("router_check", {})
+    add("Controller Router live check is available",
+        router_check.get("unavailable") is not True and bool(router_check))
+    add("configured physical controllers are available",
+        router_check.get("safe") is True, "warning",
+        {"missing_source_count": router_check.get("missing_source_count")})
+    add("merged input device is present", console.get("merged_input_devices", 0) >= 1)
+    service_output = console.get("services", {}).get("virtualglove", {}).get("output", "")
+    add("Controller Router process is running", "RUNNING controller_router" in service_output)
+    add("receiver process is running", "RUNNING receiver" in service_output,
+        "error" if require_gameplay else "warning")
+    if console.get("role") == "batocera":
+        for wifi in console.get("connected_wifi", []):
+            add("Batocera connected Wi-Fi power saving is off",
+                wifi.get("power_save") == "Power save: off", "warning",
+                {"interface": wifi.get("interface"), "state": wifi.get("power_save")})
+    add("deployed Controller commit matches checkout",
+        (status.get("build") or {}).get("commit") == source.get("commit"),
+        "warning", "A different checkout may be intentional; record the deployed build")
+    if require_gameplay:
+        add("RetroArch is running", console.get("retroarch_running") is True)
+        add("FCEUmm is the active core", console.get("active_core") == "fceumm_libretro.so")
+    else:
+        add("RetroArch is closed for baseline preparation",
+            console.get("retroarch_running") is False, "warning",
+            "Close the game before changing settings; read-only preflight is still safe")
+    return checks
+
+
 def main() -> int:
     """Write one new private readiness report and fail record-phase errors."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--controller-status", required=True,
                         help="Controller public status URL, normally ending in /status?statistics=1")
     parser.add_argument("--controller-ssh", required=True, help="SSH target, for example arduino@host")
-    parser.add_argument("--retropie-ssh", required=True, help="SSH target, for example pi@host")
+    parser.add_argument("--console-platform", choices=("retropie", "recalbox", "batocera"),
+                        default="retropie", help="Console integration being measured")
+    parser.add_argument("--console-ssh", help="SSH target for the selected console")
+    parser.add_argument("--retropie-ssh", help="Legacy alias for --console-ssh with RetroPie")
     parser.add_argument("--controller-identity", type=Path)
     parser.add_argument("--retropie-identity", type=Path)
+    parser.add_argument("--console-identity", type=Path)
     parser.add_argument("--controller-host-key-alias")
     parser.add_argument("--retropie-host-key-alias")
+    parser.add_argument("--console-host-key-alias")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--phase", choices=("prepare", "record"), default="prepare",
-                        help="record makes live game/native-state checks mandatory")
+                        help="record requires a running game and the selected platform's input checks")
     args = parser.parse_args()
-    args.output_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
+    if args.console_ssh and args.retropie_ssh:
+        parser.error("Use --console-ssh or --retropie-ssh, not both")
+    if args.console_platform != "retropie" and args.retropie_ssh:
+        parser.error("--retropie-ssh is only valid for RetroPie")
+    target = args.console_ssh or args.retropie_ssh
+    if not target:
+        parser.error("--console-ssh is required")
+    if args.console_identity and args.retropie_identity:
+        parser.error("Use one console identity option")
+    if args.console_host_key_alias and args.retropie_host_key_alias:
+        parser.error("Use one console host-key alias option")
     status = fetch_status(args.controller_status)
     source = git_identity()
     controller = inspect_remote(args.controller_ssh, args.controller_identity, "controller",
                                 args.controller_host_key_alias)
-    retropie = inspect_remote(args.retropie_ssh, args.retropie_identity, "retropie",
-                              args.retropie_host_key_alias)
-    checks = evaluate(status, controller, retropie, source, args.phase == "record")
+    console = inspect_remote(target, args.console_identity or args.retropie_identity,
+                             args.console_platform,
+                             args.console_host_key_alias or args.retropie_host_key_alias)
+    checks = (evaluate(status, controller, console, source, args.phase == "record")
+              if args.console_platform == "retropie" else
+              evaluate_merged_console(status, controller, console, source,
+                                      args.phase == "record"))
     report = {
-        "format": "virtualglove-end-to-end-preflight/1",
+        "format": "virtualglove-end-to-end-preflight/2",
         "session_id": uuid.uuid4().hex,
         "phase": args.phase,
+        "console_platform": args.console_platform,
         "created_unix": time.time(),
         "source": source,
         "controller_status": status,
         "controller_host": controller,
-        "retropie_host": retropie,
+        "console_host": console,
         "checks": checks,
         "acceptance": {
-            "physical_hand_to_display_ms": {"target_p50": 150, "target_p95": 200},
-            "receiver_publication_p95_ms": 2,
-            "core_consumption": "next emulated input frame",
+            "physical_hand_to_display_ms": {"historical_goal_p50": 150,
+                                            "historical_goal_p95": 200},
+            "comparison": "Use matched physical joypad and VirtualGlove trials; do not declare parity from this preflight",
+            "core_consumption": "not established by this preflight",
             "tracking": "no continuity or stationary-stability regression",
             "trace_drops": 0,
             "movement_math_frozen_until_dominant_stage_identified": True,
         },
         "privacy": "No token, pairing credential, player name, image, landmark, or raw coordinate is recorded.",
     }
+    args.output_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
     destination = args.output_dir / "preflight.json"
     destination.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     os.chmod(destination, 0o600)

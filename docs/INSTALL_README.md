@@ -14,6 +14,49 @@ in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
 
+**Testing v0.5.1-rc.1:** The same installers handle a fresh installation or an
+upgrade. Close games first and use the same pinned candidate on both devices.
+Run only the command for your console after installing the Controller. On the
+UNO Q, connect as `arduino` and run:
+
+```sh
+cd /home/arduino
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-uno-q.sh
+bash install-uno-q.sh --version v0.5.1-rc.1
+```
+
+For RetroPie, connect as the normal `pi` user and run:
+
+```sh
+cd "$HOME"
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-retropie.sh
+bash install-retropie.sh --version v0.5.1-rc.1
+```
+
+For Recalbox, connect as `root` and run:
+
+```sh
+cd /recalbox/share/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-recalbox.sh
+bash install-recalbox.sh --version v0.5.1-rc.1
+```
+
+For Batocera, connect as `root` and run:
+
+```sh
+cd /userdata/system
+curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-batocera.sh
+bash install-batocera.sh --version v0.5.1-rc.1
+```
+
+For LaunchBox, download this candidate's `VirtualGlove-LaunchBox.zip`, extract
+it, open Administrator PowerShell, enter the extracted `VirtualGlove` folder,
+and follow the LaunchBox section below with your actual LaunchBox and RetroArch
+paths. Keep the backup paths printed by both installers. Reboot and check
+physical input, VirtualGlove input, exit hotkeys, and native Super Glove Ball
+if installed. The Batocera installer verifies the published ZIP checksum
+before changing anything; a mismatch is a safe failure, not a partial upgrade.
+
 ## 1. Before you begin
 
 You need:

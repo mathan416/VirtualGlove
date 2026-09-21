@@ -10,10 +10,14 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
-## [0.5.1] - Unreleased
+## [0.5.1-rc.1] - 2026-09-21
 
 ### Added
 
+- Added read-only Batocera and Recalbox FCEUmm latency preflights and a matched
+  physical-controller/VirtualGlove acceptance record. The checks distinguish
+  Controller timing, console input-chain health, and measured screen response
+  without claiming an unmeasured receiver or network delay.
 - Added the photo-validated Controller Dock V2.1, which replaces the withdrawn
   V2 design while retaining the compact UNO Q Case and Controller Dock V1.
   The revised enclosed dock has a wider cable-loop bay, low strain-relief
@@ -23,6 +27,9 @@ result before naming the underlying mechanism.
 
 ### Fixed
 
+- Release assets are now uploaded as a draft and downloaded again for checksum
+  verification before the candidate is published. Batocera's installer still
+  refuses a mismatched ZIP without changing the installed system.
 - Batocera now disables power saving on a connected Wi-Fi interface when
   VirtualGlove starts and before each game. This prevents wireless buffering
   from delivering otherwise intact hand-position updates in jerky bursts;

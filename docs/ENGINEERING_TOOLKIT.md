@@ -192,9 +192,8 @@ python scripts/measure-vision-status.py \
   --output status-sample.json
 ```
 
-The current end-to-end preflight is specifically for a Controller and RetroPie.
-It checks a development checkout and both devices. It uses SSH but does not
-change them:
+The end-to-end preflight checks a development checkout, the Controller, and
+the selected console. It uses SSH but does not change either device:
 
 ```sh
 python scripts/prepare-end-to-end-session.py \
@@ -207,10 +206,98 @@ python scripts/prepare-end-to-end-session.py \
 Use dedicated SSH identities through the corresponding identity options. Do
 not place private keys inside the toolkit directory or an evidence bundle.
 
-Do not substitute Recalbox, Batocera, or LaunchBox details into the
-`--retropie-ssh` option. Their service layouts, persistence rules, and input
-routes differ. Use the installed platform checks below, and record that the
-general RetroPie preflight was not run.
+For Batocera and Recalbox FCEUmm comparisons, use `--console-platform batocera`
+or `--console-platform recalbox`, then `--console-ssh` and the optional
+`--console-identity`. The platform-specific inspector checks their actual
+service, router, core, and configuration paths. Run `--phase record` in a new
+directory after FCEUmm starts. These preflights never restart the receiver or
+claim to measure its publication delay. Follow the Batocera and Recalbox
+acceptance procedure below for matched physical-joypad, VirtualGlove, video,
+and reboot records. LaunchBox
+does not yet have this SSH preflight. The bounded trace manager below remains
+RetroPie-only; do not use it on Recalbox or Batocera.
+
+### Batocera and Recalbox latency acceptance
+
+Keep the same Controller and camera, player, calibration, lighting, distance,
+network route, monitor, display mode, ROM, FCEUmm core, gesture profile, and
+saved dead zone. Close the Dashboard camera preview. Alternate platform order
+between runs. Record any unavoidable difference; different screens or ROM
+revisions make a hand-to-screen comparison less conclusive. The baseline is
+observation only: do not tune calibration, filtering, or emulator settings.
+
+Before each run, use Setup's Controller Router **Check** to confirm Player 1,
+the physical joypad, VirtualGlove assignment, and merged-device availability.
+For Batocera, the read-only preflight command is below. Replace the example
+hostnames with the names of your Controller and console. Add
+`--controller-identity` and `--console-identity` only if SSH does not already
+select the correct keys.
+
+```sh
+python3 scripts/prepare-end-to-end-session.py \
+  --controller-status 'http://CONTROLLER.local:8088/status?statistics=1' \
+  --controller-ssh arduino@CONTROLLER.local \
+  --console-platform batocera --console-ssh root@BATOCERA.local \
+  --phase prepare --output-dir "$HOME/vg-batocera-prepare-01"
+```
+
+For Recalbox, change `--console-platform` to `recalbox`, use its current SSH
+address, and choose a new output directory. Repeat with `--phase record` and
+another directory after the FCEUmm game starts. A failed preflight writes no
+report; a missing report is not a passing check. The report records only
+allowlisted status, file hashes, a non-secret router summary, selected
+RetroArch settings, process health, temperatures, and connected Batocera Wi-Fi
+power-saving state. It reports a missing console installation as a failed
+readiness check rather than exiting before writing the report.
+
+1. Start the same ordinary NES game in FCEUmm on each console and confirm the
+   active core in the `record` preflight. Super Glove Ball is a separate native
+   test; do not mix it into FCEUmm parity results. On Batocera Wi-Fi, confirm
+   power saving is off before interpreting a movement comparison.
+2. Test a physical joypad first: directions, A, B, Start, Select, and the
+   physical hotkey exit. Re-enter the same game state for VirtualGlove trials.
+3. Film the moving hand (or physical controller) and display in the **same
+   frame** at a high, constant frame rate. Repeat ten clear movements in each
+   direction, with centre returns and held moves.
+4. During VirtualGlove trials, collect read-only Controller observations with
+   `run-native-latency-session.py --test fceumm --protocol full` or a shorter
+   `measure-vision-status.py` window. Cue times are pacing aids, not
+   synchronised event timestamps.
+5. Review the original video with `analyze-latency-video.py`. For the physical
+   controller trial, `hand_onset` means the first visible actuation frame;
+   note that convention. Exclude occluded or ambiguous trials.
+6. Repeat on the other console, then swap the order and repeat. Do not add
+   percentiles from separate stages or subtract clocks on different machines.
+
+Copy this record once per platform and run. Keep full preflights and face video
+private; share only aggregates unless everyone filmed consents.
+
+| Acceptance field | Observation |
+| --- | --- |
+| Date, platform and release; Controller and console builds | |
+| Preflight session ID, errors and warnings | |
+| ROM, FCEUmm core, profile and saved dead zone | |
+| Camera, resolution, FPS, lighting and preview state | |
+| Network route, display, refresh rate and video settings | |
+| Physical joypad mode and Router Player 1 assignment | |
+| Physical controls, hotkey exit and VirtualGlove controls | |
+| Physical actuation-to-screen p50/p95 and accepted trial count | |
+| Hand-onset-to-screen p50/p95 and accepted trial count | |
+| Capture age, inference and send p50/p95 and samples | |
+| Tracking losses, stale frames, gaps and centre release | |
+| Reboot/relaunch result; evidence hashes and limitations | |
+| Pass, fail or inconclusive; evidence-backed explanation | |
+
+If both physical and VirtualGlove controls are slower on Batocera, inspect its
+core, RetroArch video settings, compositor, refresh rate, and display path
+first. If only VirtualGlove is slower, check packet cadence and the receiver,
+Router, uinput, and RetroArch input-poll path. The present read-only evidence
+cannot isolate every console stage: label that result **unattributed** until a
+safe console trace exists. If Controller capture age or inference p95 worsens
+on both systems, investigate camera/inference. If the conditions differ,
+record the comparison as **inconclusive** and repeat it matched. A change
+passes only if both physical and VirtualGlove controls, exit hotkeys, and
+release at the saved hand centre still work after restart.
 
 ## Diagnose Controller Router
 

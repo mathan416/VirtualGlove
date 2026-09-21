@@ -90,4 +90,9 @@ jobs:
           if [ "$PRERELEASE" = true ]; then args+=(--prerelease); fi
           mapfile -t release_assets < <(awk '{print "output/install/" $2}' output/install/SHA256SUMS)
           release_assets+=(output/install/SHA256SUMS)
-          gh release create "$RELEASE_VERSION" "${release_assets[@]}" --target "$(git rev-parse HEAD)" --title "VirtualGlove $RELEASE_VERSION" --generate-notes "${args[@]}"
+          gh release create "$RELEASE_VERSION" "${release_assets[@]}" --draft --target "$(git rev-parse HEAD)" --title "VirtualGlove $RELEASE_VERSION" --generate-notes "${args[@]}"
+          mkdir -p "$RUNNER_TEMP/published-assets"
+          gh release download "$RELEASE_VERSION" --dir "$RUNNER_TEMP/published-assets"
+          cd "$RUNNER_TEMP/published-assets"
+          sha256sum --check SHA256SUMS
+          gh release edit "$RELEASE_VERSION" --draft=false

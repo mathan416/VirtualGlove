@@ -58,6 +58,12 @@ native-state channel.
 | Batocera | Uses the same **Controller Router** model as Recalbox and resolves current Linux and RetroArch indexes for Libretro gameplay. |
 | LaunchBox | The physical XInput controller remains Player 1. VirtualGlove joins it through RetroArch's loopback Network RetroPad. The real keyboard remains available. |
 
+On Batocera over Wi-Fi, both joystick and native movement depend on timely
+packet delivery. The installed service disables connected Wi-Fi power saving
+at startup and before a game; it does not change Controller Router assignments
+or RetroArch button mappings. If movement pauses and then jumps, check the
+wireless state as described in the [Troubleshooting Guide](TROUBLESHOOTING.md).
+
 ### Standard RetroPie and the VirtualGlove arcade cabinet
 
 A fresh RetroPie installation does not need a merger. The standard installer

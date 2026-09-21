@@ -245,6 +245,15 @@ newest controller state before it performs handshake maintenance.
 | Setup console check, Controller to console TCP 55358 | Visible Setup polls every 5 seconds; the Controller starts at most one real probe every 10 seconds | A result becomes stale after 30 seconds; destination or key changes invalidate it immediately | Status only. It does not confirm that an emulator consumed input and does not run in the inference path. |
 | Physical-link sampler, Controller host | Every 5 seconds | Its small record expires after 15 seconds | Supplies Wi-Fi/Ethernet status and safe directed-broadcast addresses. It does not scan networks, send controller data, or affect inference. |
 
+Batocera adds one network-delivery safeguard outside the inference loop. When
+VirtualGlove starts and before each game, its host service disables power saving
+on an associated Wi-Fi interface. A controlled UDP cadence test showed that
+power saving caused intact packets to arrive in bursts, making native
+Super Glove Ball movement pause and jump. Wired links and disconnected Wi-Fi
+interfaces are unchanged. The Engineering Toolkit records this setting during
+Batocera preflight; receiver timestamps alone do not identify which wireless
+hop buffered a packet.
+
 These defaults make normal traffic small: controller states account for almost
 all of it, at roughly 18 KiB/s at 30 Hz, while handshake and profile maintenance
 add well under 1 KiB/s in steady play. A state packet is never held for a

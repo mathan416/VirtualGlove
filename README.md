@@ -18,6 +18,13 @@ Power Glove controller.
 
 **Current stable release: v0.5.0**
 
+**Next release candidate: v0.5.1-rc.1.** It includes smoother Batocera
+Wi-Fi input delivery, the revised Controller Dock V2.1, and strengthened
+Batocera package verification. To test it, install the same pinned candidate
+on the Controller and console; the unversioned commands below continue to
+select stable v0.5.0. See the [Installation Guide](docs/INSTALL_README.md)
+for the candidate commands and upgrade checks.
+
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
 configured physical controllers and VirtualGlove as enabled merged Players 1–4.

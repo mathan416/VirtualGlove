@@ -163,6 +163,98 @@ class DiagnosticTests(unittest.TestCase):
             'deployed Controller commit matches checkout':'error',
         })
 
+    def test_recalbox_batocera_preflight_uses_merged_fceumm_path(self):
+        status = dict(worker_running=True, camera_available=True, calibrated=True,
+                      build={'commit': 'a'*40})
+        controller = {'disk_free_bytes': 2**30}
+        source = {'commit': 'a'*40, 'dirty': False}
+        for platform in ('recalbox', 'batocera'):
+            console = {'role': platform, 'disk_free_bytes': 2**30,
+                       'installation_present': True,
+                       'files': {'fceumm_sha256': 'b'*64, 'router_sha256': 'c'*64},
+                       'router': {'platform': platform}, 'merged_input_devices': 1,
+                       'router_check': {'safe': True, 'enabled_players': [1],
+                                        'missing_source_count': 0},
+                       'services': {'virtualglove': {'output':
+                           'RUNNING controller_router\nRUNNING receiver'}},
+                       'retroarch_running': True, 'active_core': 'fceumm_libretro.so'}
+            checks = preflight.evaluate_merged_console(status, controller, console,
+                                                       source, require_gameplay=True)
+            self.assertFalse([check for check in checks if not check['passed']])
+            console['active_core'] = 'nestopia_libretro.so'
+            failed = {check['name'] for check in preflight.evaluate_merged_console(
+                status, controller, console, source, require_gameplay=True)
+                if not check['passed'] and check['severity'] == 'error'}
+            self.assertEqual(failed, {'FCEUmm is the active core'})
+
+    def test_merged_preflight_prepare_does_not_require_a_running_game(self):
+        checks = preflight.evaluate_merged_console(
+            {'worker_running': True, 'camera_available': False, 'calibrated': False},
+            {'disk_free_bytes': 2**30},
+            {'role': 'batocera', 'disk_free_bytes': 2**30,
+             'installation_present': True,
+             'files': {'fceumm_sha256': 'b'*64, 'router_sha256': 'c'*64},
+             'router': {'platform': 'batocera'}, 'merged_input_devices': 1,
+             'router_check': {'safe': True, 'enabled_players': [1],
+                              'missing_source_count': 0},
+             'services': {'virtualglove': {'output': 'RUNNING controller_router'}},
+             'retroarch_running': False},
+            {'commit': 'a'*40, 'dirty': False})
+        failed = {check['name']: check['severity'] for check in checks if not check['passed']}
+        self.assertEqual(failed, {'camera is available': 'warning',
+                                  'player calibration is available': 'warning',
+                                  'receiver process is running': 'warning',
+                                  'deployed Controller commit matches checkout': 'warning'})
+
+    def test_batocera_preflight_flags_wifi_buffering_and_missing_install(self):
+        console = {'role': 'batocera', 'disk_free_bytes': 2**30,
+                   'installation_present': False, 'files': {}, 'router': {},
+                   'router_check': {}, 'merged_input_devices': 0,
+                   'services': {'virtualglove': {'output': ''}},
+                   'connected_wifi': [{'interface': 'wlan0',
+                                       'power_save': 'Power save: on'}]}
+        checks = preflight.evaluate_merged_console(
+            {'worker_running': True}, {'disk_free_bytes': 2**30}, console,
+            {'commit': 'a'*40, 'dirty': False})
+        failed = {check['name']: check['severity'] for check in checks
+                  if not check['passed']}
+        self.assertEqual(failed['VirtualGlove console installation is present'], 'error')
+        self.assertEqual(failed['Batocera connected Wi-Fi power saving is off'], 'warning')
+
+    def test_batocera_preflight_writes_platform_record_without_legacy_alias(self):
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder) / 'batocera'
+            status = {'worker_running': True, 'camera_available': True,
+                      'calibrated': True, 'build': {'commit': 'a'*40}}
+            controller = {'role': 'controller', 'disk_free_bytes': 2**30}
+            console = {'role': 'batocera', 'disk_free_bytes': 2**30,
+                       'installation_present': True,
+                       'files': {'fceumm_sha256': 'b'*64, 'router_sha256': 'c'*64},
+                       'router': {'platform': 'batocera'}, 'merged_input_devices': 1,
+                       'router_check': {'safe': True},
+                       'services': {'virtualglove': {'output':
+                           'RUNNING controller_router\nRUNNING receiver'}},
+                       'retroarch_running': False}
+            arguments = ['prepare-end-to-end-session.py',
+                         '--controller-status', 'http://controller/status?statistics=1',
+                         '--controller-ssh', 'arduino@controller',
+                         '--console-platform', 'batocera', '--console-ssh', 'root@console',
+                         '--output-dir', str(destination)]
+            with patch.object(sys, 'argv', arguments), \
+                 patch.object(preflight, 'fetch_status', return_value=status), \
+                 patch.object(preflight, 'git_identity', return_value={
+                     'commit': 'a'*40, 'dirty': False}), \
+                 patch.object(preflight, 'inspect_remote', side_effect=[controller, console]) as remote:
+                self.assertEqual(preflight.main(), 0)
+            self.assertEqual([call.args[2] for call in remote.call_args_list],
+                             ['controller', 'batocera'])
+            report = json.loads((destination / 'preflight.json').read_text())
+            self.assertEqual(report['format'], 'virtualglove-end-to-end-preflight/2')
+            self.assertEqual(report['console_platform'], 'batocera')
+            self.assertEqual(report['console_host']['role'], 'batocera')
+            self.assertNotIn('retropie_host', report)
+            self.assertEqual((destination / 'preflight.json').stat().st_mode & 0o777, 0o600)
+
     def test_video_review_selection_and_template_are_bounded(self):
         self.assertEqual(video_analysis.review_selection(20, around='10', radius=2),
                          {8, 9, 10, 11, 12})

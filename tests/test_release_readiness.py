@@ -30,8 +30,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         version = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
         self.assertIsNotNone(version)
         self.assertEqual(version.group(1), facts["project_version"])
-        self.assertEqual(facts["release_tag"], "v" + facts["project_version"])
-        self.assertEqual(facts["channel"], "stable")
+        self.assertEqual(facts["release_tag"], "v" + facts["project_version"] + "-rc.1")
+        self.assertEqual(facts["channel"], "release-candidate")
         self.assertEqual(facts["oldest_supported_upgrade"], "v0.4.2")
         self.assertEqual(facts["upgrade_acceptance"], {
             "from": "v0.4.2",
@@ -54,8 +54,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         combined = "\n".join((dist / name).read_text() for name in (
             "index.html", "install.html", "build.html", "about.html",
         ))
-        self.assertIn("v0.5.0", combined)
-        self.assertNotIn("v0.5.0-rc.1", combined)
+        self.assertIn("v0.5.1-rc.1", combined)
         self.assertNotIn("v0.4.1", combined)
         self.assertNotIn("Get ready to play", combined)
         about = (dist / "about.html").read_text()
@@ -76,9 +75,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("Iain tests Super Glove Ball while VirtualGlove recognises his hand", about)
         self.assertIn("assets/iain-virtualglove-recognition.jpg", actual)
         home = (dist / "index.html").read_text()
-        self.assertIn("Stable release · v0.5.0", home)
-        self.assertIn("VirtualGlove 0.5.0 is the current stable release", home)
-        self.assertNotIn("Release candidates are for testing", home)
+        self.assertIn("Release candidate · v0.5.1-rc.1", home)
+        self.assertIn("Release candidates are for testing", home)
         self.assertIn("Learn to play in Glove Academy", home)
         self.assertIn("how VirtualGlove recognises your hand movements and gestures", home)
         self.assertNotIn("Learn safely in Glove Academy", home)
@@ -113,6 +111,11 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn('stale_website = destination / "VirtualGlove-Website.zip"', builder)
         self.assertIn("output/install/SHA256SUMS", workflow)
         self.assertNotIn('gh release create "$RELEASE_VERSION" output/install/*', workflow)
+        self.assertIn('gh release create "$RELEASE_VERSION" "${release_assets[@]}" --draft', workflow)
+        self.assertLess(workflow.index('gh release download "$RELEASE_VERSION"'),
+                        workflow.index('sha256sum --check SHA256SUMS'))
+        self.assertLess(workflow.index('sha256sum --check SHA256SUMS'),
+                        workflow.index('gh release edit "$RELEASE_VERSION" --draft=false'))
 
     def test_enclosure_manifest_covers_every_public_print_file(self):
         root = ROOT / "hardware/enclosures"
