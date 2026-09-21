@@ -115,7 +115,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertLess(workflow.index('gh release download "$RELEASE_VERSION"'),
                         workflow.index('sha256sum --check SHA256SUMS'))
         self.assertLess(workflow.index('sha256sum --check SHA256SUMS'),
-                        workflow.index('gh release edit "$RELEASE_VERSION" --draft=false'))
+                        workflow.index('gh release edit "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --draft=false'))
 
     def test_enclosure_manifest_covers_every_public_print_file(self):
         root = ROOT / "hardware/enclosures"

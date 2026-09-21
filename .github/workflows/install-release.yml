@@ -95,4 +95,4 @@ jobs:
           gh release download "$RELEASE_VERSION" --dir "$RUNNER_TEMP/published-assets"
           cd "$RUNNER_TEMP/published-assets"
           sha256sum --check SHA256SUMS
-          gh release edit "$RELEASE_VERSION" --draft=false
+          gh release edit "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --draft=false
