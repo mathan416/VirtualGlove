@@ -67,7 +67,7 @@ estimates are not a complete cabinet build cost. Expensive cameras, displays,
 and enclosure work can raise the total substantially.
 
 When printing an enclosure, use the design-specific UNO Q Case, Controller Dock
-V1, or Controller Dock V2 bundle linked from the
+V1, or Controller Dock V2.1 bundle linked from the
 [Controller Enclosure Guide](ENCLOSURE_GUIDE.md). Each archive includes only the
 matching structural pieces, lid-branding choices, fit coupons, finishing part,
 and parametric source. Individual STL and 3MF links remain available.

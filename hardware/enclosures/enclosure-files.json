@@ -4,6 +4,8 @@
     "matrix_bezel": "stl/virtualglove-matrix-bezel.stl",
     "usb_c_fit_coupon": "stl/virtualglove-usb-c-fit-coupon.stl",
     "hub_fit_coupon": "stl/virtualglove-hub-fit-coupon.stl",
+    "dock_v21_mount_fit_coupon": "stl/virtualglove-dock-v2-1-mount-fit-coupon.stl",
+    "dock_v21_wordmark_fit_coupon": "stl/virtualglove-dock-v2-1-wordmark-fit-coupon.stl",
     "source": "virtualglove-controller.scad"
   },
   "branding": {
@@ -55,16 +57,21 @@
       "branding": ["small_emblem", "full_wordmark"],
       "fit_tests": ["usb_c_fit_coupon", "hub_fit_coupon"]
     },
-    "controller_dock_v2": {
-      "title": "Controller Dock V2",
-      "archive": "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+    "controller_dock_v21": {
+      "title": "Controller Dock V2.1",
+      "archive": "VirtualGlove-Controller-Dock-V2.1-Print-Files.zip",
       "structural": [
-        "stl/virtualglove-dock-v2-base.stl",
-        "stl/virtualglove-dock-v2-lid.stl",
-        "stl/virtualglove-dock-v2-lid-full-logo.stl"
+        "stl/virtualglove-dock-v2-1-base.stl",
+        "stl/virtualglove-dock-v2-1-lid.stl",
+        "stl/virtualglove-dock-v2-1-lid-full-logo.stl"
       ],
       "branding": ["small_emblem", "full_wordmark"],
-      "fit_tests": ["usb_c_fit_coupon", "hub_fit_coupon"]
+      "fit_tests": [
+        "usb_c_fit_coupon",
+        "hub_fit_coupon",
+        "dock_v21_mount_fit_coupon",
+        "dock_v21_wordmark_fit_coupon"
+      ]
     }
   }
 }

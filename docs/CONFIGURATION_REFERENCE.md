@@ -2096,7 +2096,7 @@ they may still perform their normal work.
 | Script | Arguments and flags | Result or requirement |
 | --- | --- | --- |
 | `scripts/build-app-lab-package.sh` | No flags or positional arguments | Builds `output/app-lab/VirtualGlove-Uno-Q.zip`; requires Bash, rsync, zip, and the existing public PDFs. |
-| `scripts/build-enclosure-packages.py` | No flags or positional arguments | Validates `hardware/enclosures/enclosure-files.json` and deterministically rebuilds the UNO Q Case, Dock V1, and Dock V2 print-file bundles. |
+| `scripts/build-enclosure-packages.py` | No flags or positional arguments | Validates `hardware/enclosures/enclosure-files.json` and deterministically rebuilds the UNO Q Case, Dock V1, and Dock V2.1 print-file bundles. |
 | `website/build.py` | No flags or positional arguments | Reads `config/release.json`, renders and validates the four static public pages, and creates `output/website/VirtualGlove-Website.zip` for manual upload. |
 | `scripts/verify-app-lab-package.py` | Optional `ARCHIVE` path; `-h`, `--help` | Checks the supplied ZIP or the default ZIP above; prints its SHA-256. Returns `0` on success, `1` on verification failure. |
 | `scripts/check-documentation.py` | `--require-pdfs`; `-h`, `--help` | Checks Markdown, links, and coverage. The optional flag also inspects the PDF set and needs `pypdf`. Returns `0` on success, `1` on failure. |
@@ -2899,7 +2899,7 @@ python3 scripts/build-install-packages.py --version dev-COMMIT
 
 `output/install/` contains the Controller, RetroPie, Recalbox, Batocera, and
 LaunchBox packages, the optional Engineering Toolkit ZIP, the Linux entry scripts, their shared package installer,
-the three design-specific enclosure bundles, checksum companions, and
+the four design-specific enclosure bundles, checksum companions, and
 `SHA256SUMS`. The public website remains under `output/website/` for separate
 manual publishing and is never attached to a GitHub RC or release. Package
 identity and safe paths are validated at build time and installation time.

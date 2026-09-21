@@ -254,7 +254,7 @@ back up modified managed files before replacement.
 The public static website is tracked under website/, reads bounded release facts
 from config/release.json, and produces a manual-upload ZIP. Enclosure print-file
 ownership is recorded in hardware/enclosures/enclosure-files.json; its builder
-creates separate UNO Q Case, Dock V1, and Dock V2 archives without changing the
+creates separate UNO Q Case, Dock V1, and Dock V2.1 archives without changing the
 stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY

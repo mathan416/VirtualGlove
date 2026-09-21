@@ -8,7 +8,8 @@
 # Change log:
 #   2026-09-19 - Preserved the Anycubic-assigned full-logo project during exports.
 #   2026-09-19 - Added recessed logo inserts and multicolour 3MF exports.
-#   2026-09-19 - Added the fully enclosed Controller Dock V2 parts.
+#   2026-09-20 - Added photo-validated Controller Dock V2.1 parts and coupons;
+#                V2.1 supersedes the withdrawn V2 print.
 # Full history: docs/CHANGELOG.md and Git history.
 set -euo pipefail
 
@@ -73,9 +74,11 @@ export_part uno_lid_full_logo virtualglove-uno-lid-full-logo
 export_part dock_base virtualglove-dock-base
 export_part dock_lid virtualglove-dock-lid
 export_part dock_lid_full_logo virtualglove-dock-lid-full-logo
-export_part dock_v2_base virtualglove-dock-v2-base
-export_part dock_v2_lid virtualglove-dock-v2-lid
-export_part dock_v2_lid_full_logo virtualglove-dock-v2-lid-full-logo
+export_part dock_v21_base virtualglove-dock-v2-1-base
+export_part dock_v21_lid virtualglove-dock-v2-1-lid
+export_part dock_v21_lid_full_logo virtualglove-dock-v2-1-lid-full-logo
+export_part dock_v21_mount_coupon virtualglove-dock-v2-1-mount-fit-coupon
+export_part dock_v21_wordmark_coupon virtualglove-dock-v2-1-wordmark-fit-coupon
 export_part matrix_bezel virtualglove-matrix-bezel
 export_part lid_logo_backing virtualglove-lid-logo-backing
 export_part lid_logo_cyan virtualglove-lid-logo-cyan

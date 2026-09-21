@@ -16,7 +16,7 @@ benefits from a friendly second look.
 
 - **UNO Q Case:** page 3. The hub remains outside the compact case.
 - **Controller Dock V1:** pages 4-5. The hub sits in the open rear service bay.
-- **Controller Dock V2:** pages 6-7. The hub is hidden inside the closed case.
+- **Controller Dock V2.1:** pages 6-7. The hub is hidden inside the closed case.
 - **Final inspection:** page 8 for every enclosure.
 
 ## Page 2 - gather parts and disconnect power
@@ -60,9 +60,14 @@ electronics.
 7. Connect camera, USB-C PD power, and optional Ethernet for the fixed layout.
 8. Fit the lid, Matrix bezel, one matching logo set, and four rubber feet.
 
-## Pages 6-7 - assemble Controller Dock V2
+## Pages 6-7 - assemble Controller Dock V2.1
 
-![Controller Dock V2 steps 1 through 4](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2.png)
+Before step 1, verify its slimmer board
+posts with the mount-pattern coupon and verify the chosen 100 x 30 mm wordmark
+with the recess coupon. V2.1 provides a wide cable bay, low cable guides, plug
+headroom, and a short lid skirt that clears the screw bosses.
+
+![Controller Dock V2.1 steps 1 through 4](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2-1.png)
 
 1. Seat the four heat-set inserts square and flush.
 2. Mount the UNO Q with USB-C facing its broad opening.
@@ -71,7 +76,7 @@ electronics.
 4. Route the captive lead through that open bay to the UNO Q without forcing a
    tight bend or straining the socket.
 
-![Controller Dock V2 steps 5 through 8](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png)
+![Controller Dock V2.1 steps 5 through 8](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-dock-v2-1-finish.png)
 
 5. Connect a USB-A camera inside and route its flexible cable out, or leave the
    rear USB-C data port available for a USB-C camera.
@@ -98,7 +103,7 @@ Download the matching print bundle before you begin:
 
 - [UNO Q Case print files](../hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
 - [Controller Dock V1 print files](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
-- [Controller Dock V2 print files](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip)
+- [Controller Dock V2.1 print files](../hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2.1-Print-Files.zip)
 
 Use the [Controller Enclosure Guide](ENCLOSURE_GUIDE.md) for printer settings,
 fit adjustments, detailed explanations, and troubleshooting.

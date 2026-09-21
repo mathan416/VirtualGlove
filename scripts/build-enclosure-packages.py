@@ -8,7 +8,7 @@
 # Change log:
 #   2026-09-20 - Added deterministic per-design enclosure bundles.
 # Full history: docs/CHANGELOG.md and Git history.
-"""Build and verify the three public enclosure print-file archives."""
+"""Build and verify the public enclosure print-file archives."""
 
 from __future__ import annotations
 

@@ -27,12 +27,12 @@ FULLY_CLEAR_DISTANCE = 2
 
 PREVIEW_NAMES = (
     "virtualglove-branding-insets.png",
-    "virtualglove-controller-dock-v2-back.png",
-    "virtualglove-controller-dock-v2-exploded.png",
-    "virtualglove-controller-dock-v2-exterior.png",
-    "virtualglove-controller-dock-v2-left.png",
-    "virtualglove-controller-dock-v2-port-access.png",
-    "virtualglove-controller-dock-v2-right.png",
+    "virtualglove-controller-dock-v2-1-back.png",
+    "virtualglove-controller-dock-v2-1-exploded.png",
+    "virtualglove-controller-dock-v2-1-exterior.png",
+    "virtualglove-controller-dock-v2-1-left.png",
+    "virtualglove-controller-dock-v2-1-port-access.png",
+    "virtualglove-controller-dock-v2-1-right.png",
     "virtualglove-lid-logo-options.png",
     "virtualglove-uno-lid-logo-options.png",
     "virtualglove-printable-branding.png",

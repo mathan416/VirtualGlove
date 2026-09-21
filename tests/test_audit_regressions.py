@@ -362,7 +362,7 @@ class AuditRegressionTests(unittest.TestCase):
             sorted(name for name in selected if name.endswith('.zip')),
             [
                 'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip',
-                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2-Print-Files.zip',
+                'hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2.1-Print-Files.zip',
                 'hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip',
             ],
         )

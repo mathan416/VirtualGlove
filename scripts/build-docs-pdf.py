@@ -258,7 +258,7 @@ def parse_table(
         widths = [1.8 * inch, 2.3 * inch, 2.5 * inch]
     elif source.name == "ENCLOSURE_GUIDE.md" and rows[0] in (
         ["View", "UNO Q Case", "Controller Dock V1"],
-        ["View", "Controller Dock V2", "What to check"],
+        ["View", "Controller Dock V2.1", "What to check"],
     ):
         widths = [0.55 * inch, 3.025 * inch, 3.025 * inch]
     elif source.name == "ENCLOSURE_GUIDE.md" and rows[0] == [
@@ -1094,8 +1094,8 @@ ENCLOSURE_QUICK_REFERENCE_PAGES = (
     "virtualglove-enclosure-quick-reference-uno.png",
     "virtualglove-enclosure-quick-reference-dock-v1.png",
     "virtualglove-enclosure-quick-reference-dock-v1-finish.png",
-    "virtualglove-enclosure-quick-reference-dock-v2.png",
-    "virtualglove-enclosure-quick-reference-dock-v2-finish.png",
+    "virtualglove-enclosure-quick-reference-dock-v2-1.png",
+    "virtualglove-enclosure-quick-reference-dock-v2-1-finish.png",
     "virtualglove-enclosure-quick-reference-finish.png",
 )
 
@@ -1442,11 +1442,11 @@ def build_enclosure_quick_reference(output: Path) -> None:
         url=bundle_root + "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
     )
     _draw_route_card(
-        canvas, title="DOCK V2", page_label="PAGES 6-7",
-        detail="Closed enclosure with the UNO Q and hub hidden inside.",
-        image_name="virtualglove-controller-dock-v2-exterior.png", x=532,
+        canvas, title="DOCK V2.1", page_label="PAGES 6-7",
+        detail="Revised closed enclosure with room for real cables and plugs.",
+        image_name="virtualglove-controller-dock-v2-1-exterior.png", x=532,
         accent=RED,
-        url=bundle_root + "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+        url=bundle_root + "VirtualGlove-Controller-Dock-V2.1-Print-Files.zip",
     )
     _quick_reference_footer(canvas, "Do not power anything until the final inspection on page 8.")
     canvas.showPage()
@@ -1516,21 +1516,21 @@ def build_enclosure_quick_reference(output: Path) -> None:
         footer="The V1 hub remains visible and removable in its open rear service bay.",
     )
     _build_step_page(
-        canvas, title="CONTROLLER DOCK V2 - STEPS 1-4", page_number=6,
+        canvas, title="CONTROLLER DOCK V2.1 - STEPS 1-4", page_number=6,
         accent=RED,
         steps=[
             dict(number=1, title="Seat the four inserts", instruction="Keep each M3 insert square and flush with the corner boss.", pictogram="v2-inserts", caution=True),
             dict(number=2, title="Mount the UNO Q", instruction="USB-C faces its broad opening; fasten with four M3 x 8 mm screws.", pictogram="v2-screws"),
             dict(number=3, title="Orient the hidden hub", instruction="USB-C bank faces rear; Ethernet faces the right-side opening.", pictogram="v2-rear"),
-            dict(number=4, title="Connect the captive cable", instruction="The OpenSCAD layout puts the hub behind the UNO Q. Route its lead without socket strain.", image_name="virtualglove-controller-dock-v2-port-access.png", model_callouts=True),
+            dict(number=4, title="Connect the captive cable", instruction="The OpenSCAD layout puts the hub behind the UNO Q. Route its lead without socket strain.", image_name="virtualglove-controller-dock-v2-1-port-access.png", model_callouts=True),
         ],
-        footer="Dock V2 continues directly on page 7.",
+        footer="Dock V2.1 continues directly on page 7.",
     )
     _build_step_page(
-        canvas, title="CONTROLLER DOCK V2 - STEPS 5-8", page_number=7,
+        canvas, title="CONTROLLER DOCK V2.1 - STEPS 5-8", page_number=7,
         accent=RED,
         steps=[
-            dict(number=5, title="Choose the camera route", instruction="Plug USB-A inside and route its cable out, or use rear USB-C data.", image_name="virtualglove-controller-dock-v2-port-access.png"),
+            dict(number=5, title="Choose the camera route", instruction="Plug USB-A inside and route its cable out, or use rear USB-C data.", image_name="virtualglove-controller-dock-v2-1-port-access.png"),
             dict(number=6, title="Keep power and Ethernet clear", instruction="Power uses rear USB-C PD; Ethernet reaches the right-side opening.", pictogram="v2-rear"),
             dict(number=7, title="Dry-fit the lid", instruction="It must close freely without touching hub, plugs, cables, or board.", pictogram="v2-finish", caution=True),
             dict(number=8, title="Close and finish", instruction="Fasten the lid, fit the Matrix bezel and matching logo set, then add four feet.", pictogram="finish"),
@@ -1673,7 +1673,7 @@ def main():
     build(docs / "CAMERA_GUIDE.md", OUTPUT / "VirtualGlove-Camera-Guide.pdf",
           "Camera Setup", "Choose, tune, and troubleshoot a camera without changing gesture recognition.", "User guide")
     build(docs / "ENCLOSURE_GUIDE.md", OUTPUT / "VirtualGlove-Enclosure-Guide.pdf",
-          "VirtualGlove Controller Enclosure Guide", "Print the UNO Q Case, full-access Dock V2, or retained Dock V1.", "Workshop guide")
+          "VirtualGlove Controller Enclosure Guide", "Print the UNO Q Case, Dock V1, or enclosed Dock V2.1.", "Workshop guide")
     build_enclosure_quick_reference(OUTPUT / "VirtualGlove-Enclosure-Quick-Reference.pdf")
     build(docs / "ENGINEERING_JOURNEY.md", OUTPUT / "VirtualGlove-Engineering-Journey.pdf",
           "Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")

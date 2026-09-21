@@ -56,23 +56,31 @@ hub_x = (dock_w - hub_l) / 2;
 hub_y = 70.0;
 hub_bottom = 9.5;
 
-// Controller Dock V2 -------------------------------------------------------
-// V2 fully encloses the hub. The USB-C bank faces rear access openings. Cables
-// attached to the opposite USB-A/HDMI bank are fitted before the lid closes
-// and leave through rear routing notches on either side of the hub.
-dock_v2_w = 160;
-dock_v2_d = 122;
-dock_v2_base_h = 33;
-dock_v2_corner = 6;
-dock_v2_uno_x = (dock_v2_w - uno_w) / 2 + 8.0;
-dock_v2_uno_y = 8.5;
-// Put the RJ45 end beside its wall opening. This also leaves a useful bend
-// bay at the captive-cable end instead of trapping it against the left wall.
-hub_v2_x = dock_v2_w - wall - hub_l - 0.6;
-hub_v2_y = dock_v2_d - wall - hub_w - 0.6;
-hub_v2_bottom = 11.5;
-hub_v2_platform_t = 2.6;
-hub_v2_rail_h = 1.6;
+// Controller Dock V2.1 -----------------------------------------------------
+// V2.1 is grounded in the first physical V2 assembly. It preserves the fully
+// enclosed hub layout while adding a real bend bay for the hub's thick captive
+// cable, slimmer board mounts, more plug headroom, and a lid skirt that clears
+// the insert towers without relying on a perfect print.
+dock_v21_w = 172;
+dock_v21_d = 126;
+dock_v21_base_h = 38;
+dock_v21_corner = 6;
+dock_v21_uno_x = 76.0;
+dock_v21_uno_y = 8.5;
+hub_v21_x = dock_v21_w - wall - hub_l - 0.6;
+// Leave a full 14 mm service gap behind the hub. This moves the hub and its
+// cradle clear of the rear-right lid boss while a normal plug can still bridge
+// the gap from the rear wall to the outward-facing connector bank.
+hub_v21_rear_gap = 14.0;
+hub_v21_y = dock_v21_d - wall - hub_w - hub_v21_rear_gap;
+hub_v21_bottom = 11.5;
+hub_v21_platform_t = 2.6;
+hub_v21_rail_h = 1.6;
+v21_lid_skirt_h = 3.2;
+v21_lid_boss_relief_d = 11.0;
+v21_standoff_d = 4.8;
+v21_standoff_foot_d = 5.8;
+v21_full_wordmark_recess = [102.0, 32.0];
 
 module rounded_prism(size, r) {
     hull() {
@@ -107,6 +115,24 @@ module board_standoffs(origin) {
                              d = uno_standoff_foot_d);
                 }
                 translate([0, 0, 0.8]) cylinder(h = uno_standoff_top, d = 2.7);
+            }
+}
+
+module board_standoffs_v21(origin) {
+    // The first physical V2 print showed that the shared posts were too broad
+    // beside the UNO Q's underside hardware. These tops are deliberately slim;
+    // a short foot still spreads load into the enclosure floor.
+    for (hole = uno_holes)
+        translate([origin[0] + hole[0], origin[1] + hole[1], floor_t])
+            difference() {
+                union() {
+                    cylinder(h = uno_standoff_top - floor_t,
+                             d = v21_standoff_d);
+                    cylinder(h = uno_standoff_foot_h,
+                             d = v21_standoff_foot_d);
+                }
+                translate([0, 0, 0.8])
+                    cylinder(h = uno_standoff_top, d = 2.7);
             }
 }
 
@@ -171,6 +197,34 @@ module lid_shell(size, skirt_h, corner) {
         }
         lid_screw_holes(size, top_t + skirt_h);
         lid_boss_reliefs(size, skirt_h);
+    }
+}
+
+module lid_shell_v21(size, skirt_h, corner) {
+    // The shorter skirt still locates the lid but no longer descends far enough
+    // to bind on slight elephant-foot or tall insert towers. Oversized reliefs
+    // give every corner boss 1.5 mm radial clearance.
+    difference() {
+        union() {
+            rounded_prism([size[0], size[1], top_t], corner);
+            translate([wall + fit, wall + fit, top_t])
+                difference() {
+                    rounded_prism([size[0] - 2 * (wall + fit),
+                                   size[1] - 2 * (wall + fit), skirt_h],
+                                  max(1, corner - wall - fit));
+                    translate([1.8, 1.8, -0.1])
+                        rounded_prism([size[0] - 2 * (wall + fit + 1.8),
+                                       size[1] - 2 * (wall + fit + 1.8),
+                                       skirt_h + 0.2],
+                                      max(0.8, corner - wall - fit - 1.8));
+                }
+        }
+        lid_screw_holes(size, top_t + skirt_h);
+        for (p = [[6.3, 6.3], [size[0] - 6.3, 6.3],
+                  [6.3, size[1] - 6.3],
+                  [size[0] - 6.3, size[1] - 6.3]])
+            translate([p[0], p[1], top_t - 0.05])
+                cylinder(h = skirt_h + 0.1, d = v21_lid_boss_relief_d);
     }
 }
 
@@ -257,18 +311,41 @@ module hub_cradle() {
             translate([x, y, hub_bottom]) cube([3.3, 3.3, 5.0]);
 }
 
-module hub_v2_cradle() {
-    // The low cradle holds the hidden hub below the lid. Rails touch only the
-    // lower shell and stay below both connector banks.
-    platform_z = hub_v2_bottom - hub_v2_platform_t;
-    translate([hub_v2_x - 1.3, hub_v2_y - 1.3, floor_t])
-        cube([hub_l + 2.6, hub_w + 2.6, platform_z - floor_t]);
-    translate([hub_v2_x - 1.3, hub_v2_y - 1.3, platform_z])
-        cube([hub_l + 2.6, hub_w + 2.6, hub_v2_platform_t]);
-    translate([hub_v2_x - 1.3, hub_v2_y - 1.3, hub_v2_bottom])
-        cube([hub_l + 2.6, 1.8, hub_v2_rail_h]);
-    translate([hub_v2_x - 1.3, hub_v2_y + hub_w - 0.5, hub_v2_bottom])
-        cube([hub_l + 2.6, 1.8, hub_v2_rail_h]);
+module hub_v21_cradle() {
+    // The hub rests in a clearance-sized tray. Low rails locate the shell but
+    // remain below both connector banks, and the captive-cable end stays open.
+    platform_z = hub_v21_bottom - hub_v21_platform_t;
+    translate([hub_v21_x - 1.5, hub_v21_y - 1.5, floor_t])
+        cube([hub_l + 3.0, hub_w + 3.0, platform_z - floor_t]);
+    translate([hub_v21_x - 1.5, hub_v21_y - 1.5, platform_z])
+        cube([hub_l + 3.0, hub_w + 3.0, hub_v21_platform_t]);
+    translate([hub_v21_x - 1.5, hub_v21_y - 1.5, hub_v21_bottom])
+        cube([hub_l + 3.0, 1.6, hub_v21_rail_h]);
+    translate([hub_v21_x - 1.5, hub_v21_y + hub_w - 0.1,
+               hub_v21_bottom])
+        cube([hub_l + 3.0, 1.6, hub_v21_rail_h]);
+    // A small right-end stop prevents lengthwise movement without crowding the
+    // thick fixed lead at the left end.
+    translate([hub_v21_x + hub_l + 0.2, hub_v21_y - 1.5,
+               hub_v21_bottom])
+        cube([1.3, hub_w + 3.0, 3.0]);
+}
+
+module cable_guide_segment_v21(a, b, height = 3.6) {
+    // Low rounded rails guide, but never clamp, the captive cable. They are low
+    // enough for the cable to be lifted out during service.
+    hull() {
+        translate([a[0], a[1], floor_t]) cylinder(h = height, d = 3.2);
+        translate([b[0], b[1], floor_t]) cylinder(h = height, d = 3.2);
+    }
+}
+
+module cable_guides_v21() {
+    // The physical cable naturally makes a broad loop at the left. These two
+    // guides preserve a minimum bend radius of roughly 20 mm and keep the loop
+    // away from the left-rear lid boss and UNO Q mounting hardware.
+    cable_guide_segment_v21([15, 78], [15, 44]);
+    cable_guide_segment_v21([33, 74], [45, 63]);
 }
 
 module dock_base() {
@@ -311,54 +388,106 @@ module dock_lid(full_logo = false) {
     }
 }
 
-module dock_v2_base() {
+module dock_v21_base() {
+    // The cradle's rear edge must remain in front of the rear screw bosses.
+    // Keep this assertion with the physical-fit correction: a later footprint
+    // change must not silently recreate the first V2.1 interference.
+    assert(hub_v21_y + hub_w + 1.5 < dock_v21_d - 6.3 - 4.0,
+           "Dock V2.1 hub cradle overlaps the rear lid bosses");
     difference() {
         union() {
-            base_shell([dock_v2_w, dock_v2_d], dock_v2_base_h, dock_v2_corner);
-            board_standoffs([dock_v2_uno_x, dock_v2_uno_y]);
-            case_bosses([dock_v2_w, dock_v2_d], dock_v2_base_h);
-            hub_v2_cradle();
+            base_shell([dock_v21_w, dock_v21_d], dock_v21_base_h,
+                       dock_v21_corner);
+            board_standoffs_v21([dock_v21_uno_x, dock_v21_uno_y]);
+            case_bosses([dock_v21_w, dock_v21_d], dock_v21_base_h);
+            hub_v21_cradle();
+            cable_guides_v21();
         }
-        bottom_vents([dock_v2_uno_x, dock_v2_uno_y], floor_t + 0.4);
-        // Rear access for the outward-facing USB-C PD and data bank. Arduino
-        // does not publish plug-overmould dimensions, so this is deliberately
-        // one generous service opening rather than two tightly fitted holes.
-        translate([hub_v2_x + 14, dock_v2_d - wall - 0.2,
-                   hub_v2_bottom + 2.4])
-            cube([91, wall + 0.5, 11.2]);
-        // Cables plugged into the inward-facing USB-A/HDMI bank turn around
-        // the hub ends and leave through these rear strain-relief openings.
-        for (x = [4.0, dock_v2_w - 16.0])
-            translate([x, dock_v2_d - wall - 0.2, 7.0])
-                cube([12.0, wall + 0.5, 15.0]);
-        // The hub is installed with its RJ45 socket facing the right wall.
-        // This side opening accepts the Ethernet plug without opening the lid.
-        translate([dock_v2_w - wall - 0.2,
-                   hub_v2_y + (hub_w - 18.0) / 2,
-                   hub_v2_bottom + 0.5])
-            cube([wall + 0.5, 18.0, 16.5]);
-        // Internal channel for the hub's captive UNO Q cable.
-        translate([hub_v2_x - 2, hub_v2_y + hub_w / 2 - 6, 6.0])
-            cube([24, 12, hub_v2_bottom + 3]);
+        bottom_vents([dock_v21_uno_x, dock_v21_uno_y], floor_t + 0.4);
+        // Broad rear service opening for USB-C data and PD power. The extra
+        // height accepts real overmoulds without asking the lid to hold them.
+        translate([hub_v21_x + 10, dock_v21_d - wall - 0.2,
+                   hub_v21_bottom + 1.5])
+            cube([98, wall + 0.5, 13.5]);
+        // Optional routed cables can still leave at either rear corner.
+        for (x = [4.0, dock_v21_w - 18.0])
+            translate([x, dock_v21_d - wall - 0.2, 6.5])
+                cube([14.0, wall + 0.5, 18.0]);
+        // Ethernet remains accessible through the right wall.
+        translate([dock_v21_w - wall - 0.2,
+                   hub_v21_y + (hub_w - 19.0) / 2,
+                   hub_v21_bottom])
+            cube([wall + 0.5, 19.0, 17.5]);
+        // Clear the left end of the cradle so the fixed lead leaves tangentially
+        // and enters the full cable bay rather than a narrow slot.
+        translate([hub_v21_x - 3.0, hub_v21_y + 4.0, 5.5])
+            cube([18.0, hub_w - 8.0, hub_v21_bottom + 5.0]);
     }
 }
 
-module dock_v2_lid(full_logo = false) {
-    // A complete lid hides the hub. Only the Matrix window and ventilation
-    // remain on top; every cable leaves through the rear base openings.
+module dock_v21_lid(full_logo = false) {
     difference() {
-        lid_shell([dock_v2_w, dock_v2_d], 6.0, dock_v2_corner);
-        print_face_transform(dock_v2_d) {
-            lid_usb_c_relief(dock_v2_uno_y, 6.0);
-            matrix_window([dock_v2_uno_x, dock_v2_uno_y], top_t + 0.2);
+        lid_shell_v21([dock_v21_w, dock_v21_d], v21_lid_skirt_h,
+                      dock_v21_corner);
+        print_face_transform(dock_v21_d) {
+            matrix_window([dock_v21_uno_x, dock_v21_uno_y], top_t + 0.2);
             if (full_logo)
-                lid_logo_recess([dock_v2_w, dock_v2_d], 52.0, top_t,
-                                full_wordmark_recess);
+                lid_logo_recess([dock_v21_w, dock_v21_d], 54.0, top_t,
+                                v21_full_wordmark_recess);
             else
-                lid_logo_recess([dock_v2_w, dock_v2_d], 44.0, top_t);
-            vent_field([dock_v2_uno_x + 6, dock_v2_uno_y + 31,
+                lid_logo_recess([dock_v21_w, dock_v21_d], 46.0, top_t);
+            vent_field([dock_v21_uno_x + 6, dock_v21_uno_y + 31,
                         -0.2, top_t + 0.4], 8, 2, 7, 6, 5, 2);
+            // Additional rear ventilation sits above, but never opens directly
+            // over, the hub connector banks.
+            vent_field([hub_v21_x + 18, hub_v21_y + 8,
+                        -0.2, top_t + 0.4], 12, 2, 7, 6, 5, 2);
         }
+    }
+}
+
+module dock_v21_mount_fit_coupon() {
+    // Full mounting pattern on a lightweight web: verifies the four posts
+    // against the actual UNO Q before committing to the full enclosure print.
+    margin = 4.0;
+    difference() {
+        union() {
+            for (hole = uno_holes)
+                translate([hole[0], hole[1], 0])
+                    difference() {
+                        union() {
+                            cylinder(h = uno_standoff_top,
+                                     d = v21_standoff_d);
+                            cylinder(h = uno_standoff_foot_h,
+                                     d = v21_standoff_foot_d);
+                        }
+                        translate([0, 0, 0.8])
+                            cylinder(h = uno_standoff_top + 0.2, d = 2.7);
+                    }
+            // Thin rails preserve the exact hole relationship with little PLA.
+            for (pair = [[uno_holes[0], uno_holes[1]],
+                         [uno_holes[1], uno_holes[3]],
+                         [uno_holes[3], uno_holes[2]],
+                         [uno_holes[2], uno_holes[0]]])
+                hull() {
+                    translate([pair[0][0], pair[0][1], 0])
+                        cylinder(h = 1.0, d = margin);
+                    translate([pair[1][0], pair[1][1], 0])
+                        cylinder(h = 1.0, d = margin);
+                }
+        }
+    }
+}
+
+module dock_v21_wordmark_fit_coupon() {
+    // A thin recess gauge catches slicer or material shrinkage before a lid is
+    // printed. The maintained 100 x 30 mm backing should drop in without force.
+    difference() {
+        rounded_prism([v21_full_wordmark_recess[0] + 6,
+                       v21_full_wordmark_recess[1] + 6, 1.4], 3.0);
+        translate([3, 3, 0.55])
+            rounded_prism([v21_full_wordmark_recess[0],
+                           v21_full_wordmark_recess[1], 1.0], 2.2);
     }
 }
 
@@ -599,52 +728,45 @@ module board_proxy(origin = [0, 0], show_hub = false) {
             cube([hub_l, hub_w, hub_h]);
 }
 
-module hub_proxy_v2(bottom = hub_v2_bottom) {
-    // Contrasting blocks identify the hidden hub's connector banks in cutaway
-    // documentation renders. They are not printable geometry.
-    color("#20242a") translate([hub_v2_x, hub_v2_y, bottom])
+module hub_proxy_v21(bottom = hub_v21_bottom) {
+    color("#20242a") translate([hub_v21_x, hub_v21_y, bottom])
         cube([hub_l, hub_w, hub_h]);
-    // Rear-facing USB-C bank: PD power and USB-C data.
-    color("#ff2145") translate([hub_v2_x + 27, hub_v2_y + hub_w - 0.2,
-                                bottom + 5.3])
+    color("#ff2145") translate([hub_v21_x + 27,
+                                hub_v21_y + hub_w - 0.2, bottom + 5.3])
         cube([10, 1.0, 4.8]);
-    color("#00b9d8") translate([hub_v2_x + 48, hub_v2_y + hub_w - 0.2,
-                                bottom + 5.3])
+    color("#00b9d8") translate([hub_v21_x + 48,
+                                hub_v21_y + hub_w - 0.2, bottom + 5.3])
         cube([10, 1.0, 4.8]);
-    // Inward-facing bank: HDMI plus USB-A 2.0 and USB-A 3.0.
-    color("#c8ccd1") translate([hub_v2_x + 16, hub_v2_y - 0.8, bottom + 4.5])
-        cube([15, 1.0, 6.5]);
-    color("#c8ccd1") translate([hub_v2_x + 49, hub_v2_y - 0.8, bottom + 4.5])
-        cube([15, 1.0, 6.5]);
-    color("#00b9d8") translate([hub_v2_x + 77, hub_v2_y - 0.8, bottom + 4.5])
-        cube([15, 1.0, 6.5]);
-    // RJ45 Ethernet at the right end.
-    color("#c8ccd1") translate([hub_v2_x + hub_l - 0.2,
-                                hub_v2_y + 8.4, bottom + 2.8])
+    color("#c8ccd1")
+        for (x = [16, 49, 77])
+            translate([hub_v21_x + x, hub_v21_y - 0.8, bottom + 4.5])
+                cube([15, 1.0, 6.5]);
+    color("#c8ccd1") translate([hub_v21_x + hub_l - 0.2,
+                                hub_v21_y + 8.4, bottom + 2.8])
         cube([1.0, 11.0, 10.5]);
 }
 
-module hub_v2_plug_proxies(bottom = hub_v2_bottom) {
+module hub_v21_plug_proxies(bottom = hub_v21_bottom) {
     // Representative overmoulds show direct rear USB-C access plus one USB-A
     // plug fitted internally before closure. These never enter an STL.
-    color("#ff2145") translate([hub_v2_x + 26, hub_v2_y + hub_w,
+    color("#ff2145") translate([hub_v21_x + 26, hub_v21_y + hub_w,
                                 bottom + 4.8])
         cube([12, 22, 5.8]);
-    color("#00b9d8") translate([hub_v2_x + 47, hub_v2_y + hub_w,
+    color("#00b9d8") translate([hub_v21_x + 47, hub_v21_y + hub_w,
                                 bottom + 4.8])
         cube([12, 22, 5.8]);
-    color("#00b9d8") translate([hub_v2_x + 76, hub_v2_y - 22, bottom + 4.0])
+    color("#00b9d8") translate([hub_v21_x + 76, hub_v21_y - 22, bottom + 4.0])
         cube([17, 22, 7.5]);
-    color("#c8ccd1") translate([hub_v2_x + hub_l,
-                                hub_v2_y + 7.8, bottom + 2.3])
+    color("#c8ccd1") translate([hub_v21_x + hub_l,
+                                hub_v21_y + 7.8, bottom + 2.3])
         cube([25, 12.0, 11.5]);
     // Simplified internal cable route from the USB-A plug toward the right
     // rear strain-relief opening.
     color("#20242a") {
-        translate([hub_v2_x + 91, hub_v2_y - 13, bottom + 6.2])
-            cube([dock_v2_w - (hub_v2_x + 91) - 7, 4, 4]);
-        translate([dock_v2_w - 11, hub_v2_y - 13, bottom + 6.2])
-            cube([4, dock_v2_d - (hub_v2_y - 13), 4]);
+        translate([hub_v21_x + 91, hub_v21_y - 13, bottom + 6.2])
+            cube([dock_v21_w - (hub_v21_x + 91) - 7, 4, 4]);
+        translate([dock_v21_w - 11, hub_v21_y - 13, bottom + 6.2])
+            cube([4, dock_v21_d - (hub_v21_y - 13), 4]);
     }
 }
 
@@ -664,13 +786,13 @@ module dock_preview() {
         translate([0, dock_d, dock_base_h + top_t]) rotate([180, 0, 0]) dock_lid();
 }
 
-module dock_v2_preview() {
-    color("#20242a") dock_v2_base();
-    board_proxy([dock_v2_uno_x, dock_v2_uno_y]);
-    hub_proxy_v2();
-    color([0.15, 0.15, 0.17, 0.45])
-        translate([0, dock_v2_d, dock_v2_base_h + top_t])
-            rotate([180, 0, 0]) dock_v2_lid();
+module dock_v21_preview() {
+    color("#20242a") dock_v21_base();
+    board_proxy([dock_v21_uno_x, dock_v21_uno_y]);
+    hub_proxy_v21();
+    color([0.15, 0.15, 0.17, 0.30])
+        translate([0, dock_v21_d, dock_v21_base_h + top_t])
+            rotate([180, 0, 0]) dock_v21_lid();
 }
 
 module uno_exterior_preview() {
@@ -703,51 +825,51 @@ module dock_exterior_preview() {
     }
 }
 
-module dock_v2_exterior_preview() {
-    color("#20242a") dock_v2_base();
+module dock_v21_exterior_preview() {
+    color("#20242a") dock_v21_base();
     color("#2a2d33")
-        translate([0, dock_v2_d, dock_v2_base_h + top_t])
-            rotate([180, 0, 0]) dock_v2_lid();
+        translate([0, dock_v21_d, dock_v21_base_h + top_t])
+            rotate([180, 0, 0]) dock_v21_lid();
     // Kept inside the opaque shell so the rear openings show their purpose.
-    hub_proxy_v2();
+    hub_proxy_v21();
     color("#00b9d8")
-        translate([dock_v2_uno_x + 25.75, dock_v2_uno_y + 4.75,
-                   dock_v2_base_h + top_t + 0.05])
+        translate([dock_v21_uno_x + 25.75, dock_v21_uno_y + 4.75,
+                   dock_v21_base_h + top_t + 0.05])
             matrix_bezel();
-    translate([(dock_v2_w - 18) / 2, 44.25,
-               dock_v2_base_h + top_t - 0.8]) {
+    translate([(dock_v21_w - 18) / 2, 46.25,
+               dock_v21_base_h + top_t - 0.8]) {
         color("#111722") lid_logo_backing();
         color("#00d6ef") translate([0, 0, branding_pocket_floor]) lid_logo_cyan();
         color("#ff2145") translate([0, 0, branding_pocket_floor]) lid_logo_red();
     }
 }
 
-module dock_v2_port_access_preview() {
+module dock_v21_port_access_preview() {
     // A translucent lid reveals the inward-facing USB-A connection and its
     // cable route while the rear-facing USB-C plugs remain directly usable.
-    color("#20242a") dock_v2_base();
-    board_proxy([dock_v2_uno_x, dock_v2_uno_y]);
-    hub_proxy_v2();
-    hub_v2_plug_proxies();
+    color("#20242a") dock_v21_base();
+    board_proxy([dock_v21_uno_x, dock_v21_uno_y]);
+    hub_proxy_v21();
+    hub_v21_plug_proxies();
     color([0.15, 0.15, 0.17, 0.30])
-        translate([0, dock_v2_d, dock_v2_base_h + top_t])
-            rotate([180, 0, 0]) dock_v2_lid();
+        translate([0, dock_v21_d, dock_v21_base_h + top_t])
+            rotate([180, 0, 0]) dock_v21_lid();
 }
 
 module lid_logo_options_preview() {
-    // Two closed V2 lids show the selectable branding recesses. The left uses
+    // Two closed V2.1 lids show the selectable branding recesses. The left uses
     // the compact hand/target mark; the right uses the full wordmark.
     color("#2a2d33")
-        translate([0, dock_v2_d, top_t]) rotate([180, 0, 0])
-            dock_v2_lid(false);
-    translate([(dock_v2_w - 18) / 2, 44.25, top_t - branding_backing_h])
+        translate([0, dock_v21_d, top_t]) rotate([180, 0, 0])
+            dock_v21_lid(false);
+    translate([(dock_v21_w - 18) / 2, 46.25, top_t - branding_backing_h])
         lid_logo_multicolor();
 
-    translate([dock_v2_w + 20, 0, 0]) {
+    translate([dock_v21_w + 20, 0, 0]) {
         color("#2a2d33")
-            translate([0, dock_v2_d, top_t]) rotate([180, 0, 0])
-                dock_v2_lid(true);
-        translate([(dock_v2_w - 100) / 2, 52.4,
+            translate([0, dock_v21_d, top_t]) rotate([180, 0, 0])
+                dock_v21_lid(true);
+        translate([(dock_v21_w - 100) / 2, 54.4,
                    top_t - branding_backing_h])
             full_logo_multicolor();
     }
@@ -786,9 +908,9 @@ module dock_back_preview() {
         dock_exterior_preview();
 }
 
-module dock_v2_back_preview() {
-    translate([dock_v2_w, dock_v2_d, 0]) rotate([0, 0, 180])
-        dock_v2_exterior_preview();
+module dock_v21_back_preview() {
+    translate([dock_v21_w, dock_v21_d, 0]) rotate([0, 0, 180])
+        dock_v21_exterior_preview();
 }
 
 module uno_left_preview() {
@@ -811,14 +933,14 @@ module dock_right_preview() {
         dock_exterior_preview();
 }
 
-module dock_v2_left_preview() {
-    translate([dock_v2_d, 0, 0]) rotate([0, 0, 90])
-        dock_v2_exterior_preview();
+module dock_v21_left_preview() {
+    translate([dock_v21_d, 0, 0]) rotate([0, 0, 90])
+        dock_v21_exterior_preview();
 }
 
-module dock_v2_right_preview() {
-    translate([0, dock_v2_w, 0]) rotate([0, 0, -90])
-        dock_v2_exterior_preview();
+module dock_v21_right_preview() {
+    translate([0, dock_v21_w, 0]) rotate([0, 0, -90])
+        dock_v21_exterior_preview();
 }
 
 module uno_exploded_preview() {
@@ -867,20 +989,20 @@ module dock_exploded_preview() {
     }
 }
 
-module dock_v2_exploded_preview() {
+module dock_v21_exploded_preview() {
     // The hub remains below the closed lid. It is lifted here only to show the
     // cradle, rear-facing bank, and internal cable-routing space.
     lid_top_z = 104;
-    color("#20242a") dock_v2_base();
-    translate([0, 0, 22]) board_proxy([dock_v2_uno_x, dock_v2_uno_y]);
-    translate([0, 0, 42]) hub_proxy_v2();
+    color("#20242a") dock_v21_base();
+    translate([0, 0, 22]) board_proxy([dock_v21_uno_x, dock_v21_uno_y]);
+    translate([0, 0, 42]) hub_proxy_v21();
     color([0.16, 0.18, 0.20, 0.92])
-        translate([0, dock_v2_d, lid_top_z]) rotate([180, 0, 0]) dock_v2_lid();
+        translate([0, dock_v21_d, lid_top_z]) rotate([180, 0, 0]) dock_v21_lid();
     color("#00b9d8")
-        translate([dock_v2_uno_x + 25.75, dock_v2_uno_y + 4.75,
+        translate([dock_v21_uno_x + 25.75, dock_v21_uno_y + 4.75,
                    lid_top_z + 7])
             matrix_bezel();
-    translate([(dock_v2_w - 18) / 2, 44.25, 0]) {
+    translate([(dock_v21_w - 18) / 2, 46.25, 0]) {
         color("#111722") translate([0, 0, lid_top_z + 11]) lid_logo_backing();
         color("#00d6ef") translate([0, 0, lid_top_z + 15]) lid_logo_cyan();
         color("#ff2145") translate([0, 0, lid_top_z + 19]) lid_logo_red();
@@ -893,9 +1015,11 @@ else if (part == "uno_lid_full_logo") uno_lid(true);
 else if (part == "dock_base") dock_base();
 else if (part == "dock_lid") dock_lid();
 else if (part == "dock_lid_full_logo") dock_lid(true);
-else if (part == "dock_v2_base") dock_v2_base();
-else if (part == "dock_v2_lid") dock_v2_lid();
-else if (part == "dock_v2_lid_full_logo") dock_v2_lid(true);
+else if (part == "dock_v21_base") dock_v21_base();
+else if (part == "dock_v21_lid") dock_v21_lid();
+else if (part == "dock_v21_lid_full_logo") dock_v21_lid(true);
+else if (part == "dock_v21_mount_coupon") dock_v21_mount_fit_coupon();
+else if (part == "dock_v21_wordmark_coupon") dock_v21_wordmark_fit_coupon();
 else if (part == "matrix_bezel") matrix_bezel();
 else if (part == "lid_logo_backing") lid_logo_backing();
 else if (part == "lid_logo_cyan") lid_logo_cyan();
@@ -920,21 +1044,21 @@ else if (part == "uno_lid_logo_options_preview") uno_lid_logo_options_preview();
 else if (part == "usb_c_coupon") usb_c_fit_coupon();
 else if (part == "hub_coupon") hub_fit_coupon();
 else if (part == "dock_preview") dock_preview();
-else if (part == "dock_v2_preview") dock_v2_preview();
+else if (part == "dock_v21_preview") dock_v21_preview();
 else if (part == "uno_exterior_preview") uno_exterior_preview();
 else if (part == "dock_exterior_preview") dock_exterior_preview();
-else if (part == "dock_v2_exterior_preview") dock_v2_exterior_preview();
-else if (part == "dock_v2_port_access_preview") dock_v2_port_access_preview();
+else if (part == "dock_v21_exterior_preview") dock_v21_exterior_preview();
+else if (part == "dock_v21_port_access_preview") dock_v21_port_access_preview();
 else if (part == "uno_back_preview") uno_back_preview();
 else if (part == "dock_back_preview") dock_back_preview();
-else if (part == "dock_v2_back_preview") dock_v2_back_preview();
+else if (part == "dock_v21_back_preview") dock_v21_back_preview();
 else if (part == "uno_left_preview") uno_left_preview();
 else if (part == "uno_right_preview") uno_right_preview();
 else if (part == "dock_left_preview") dock_left_preview();
 else if (part == "dock_right_preview") dock_right_preview();
-else if (part == "dock_v2_left_preview") dock_v2_left_preview();
-else if (part == "dock_v2_right_preview") dock_v2_right_preview();
+else if (part == "dock_v21_left_preview") dock_v21_left_preview();
+else if (part == "dock_v21_right_preview") dock_v21_right_preview();
 else if (part == "uno_exploded_preview") uno_exploded_preview();
 else if (part == "dock_exploded_preview") dock_exploded_preview();
-else if (part == "dock_v2_exploded_preview") dock_v2_exploded_preview();
+else if (part == "dock_v21_exploded_preview") dock_v21_exploded_preview();
 else assembly_preview();

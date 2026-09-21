@@ -43,7 +43,7 @@ class EnclosureGeometryTests(unittest.TestCase):
         source = SOURCE.read_text()
         self.assertIn("lid_boss_relief_d = 9.2", source)
         self.assertIn("d = lid_boss_relief_d", source)
-        self.assertEqual(source.count("lid_usb_c_relief("), 4)
+        self.assertEqual(source.count("lid_usb_c_relief("), 3)
         self.assertIn("cube([wall + fit + 4.0, 31.0", source)
 
     def test_board_supports_clear_bottom_connectors(self):
@@ -52,23 +52,31 @@ class EnclosureGeometryTests(unittest.TestCase):
         self.assertIn("uno_standoff_foot_d = 6.4", source)
         self.assertIn("uno_standoff_foot_h = 1.6", source)
 
-    def test_v2_reserves_the_left_cable_bend_bay(self):
+    def test_v21_uses_photo_validated_clearances(self):
         source = SOURCE.read_text()
-        self.assertIn("dock_v2_uno_x = (dock_v2_w - uno_w) / 2 + 8.0", source)
-        self.assertIn("hub_v2_x = dock_v2_w - wall - hub_l - 0.6", source)
+        self.assertIn("dock_v21_w = 172", source)
+        self.assertIn("dock_v21_uno_x = 76.0", source)
+        self.assertIn("hub_v21_rear_gap = 14.0", source)
+        self.assertIn("hub_v21_y + hub_w + 1.5 < dock_v21_d - 6.3 - 4.0", source)
+        self.assertIn("v21_lid_skirt_h = 3.2", source)
+        self.assertIn("v21_lid_boss_relief_d = 11.0", source)
+        self.assertIn("v21_standoff_d = 4.8", source)
+        self.assertIn("v21_full_wordmark_recess = [102.0, 32.0]", source)
+        self.assertIn("cable_guides_v21();", source)
 
     def test_wordmark_recesses_match_the_printed_logo_sizes(self):
         source = SOURCE.read_text()
         self.assertIn("compact_wordmark_recess = [76.5, 23.3]", source)
         self.assertIn("full_wordmark_recess = [100.8, 30.8]", source)
         self.assertEqual(source.count("full_wordmark_recess);"), 2)
+        self.assertIn("v21_full_wordmark_recess = [102.0, 32.0]", source)
         self.assertEqual(source.count("compact_wordmark_recess);"), 1)
 
     def test_exported_lids_match_their_bases(self):
         expected = {
             "uno": (90.0, 76.0, 21.0, 8.4),
             "dock": (148.0, 104.0, 25.0, 8.4),
-            "dock-v2": (160.0, 122.0, 33.0, 8.4),
+            "dock-v2-1": (172.0, 126.0, 38.0, 5.6),
         }
         for stem, (width, depth, base_height, lid_height) in expected.items():
             with self.subTest(stem=stem):

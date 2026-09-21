@@ -834,9 +834,11 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(asset[1:], ("model/stl", "virtualglove-uno-base.stl"))
         self.assertGreater(len(asset[0]), 1000)
         for stl_name in (
-            "virtualglove-dock-v2-base.stl",
-            "virtualglove-dock-v2-lid.stl",
-            "virtualglove-dock-v2-lid-full-logo.stl",
+            "virtualglove-dock-v2-1-base.stl",
+            "virtualglove-dock-v2-1-lid.stl",
+            "virtualglove-dock-v2-1-lid-full-logo.stl",
+            "virtualglove-dock-v2-1-mount-fit-coupon.stl",
+            "virtualglove-dock-v2-1-wordmark-fit-coupon.stl",
             "virtualglove-uno-lid-full-logo.stl",
         ):
             with self.subTest(stl_name=stl_name):
@@ -866,19 +868,19 @@ class ControlStateTests(unittest.TestCase):
             "virtualglove-controller-dock-left.png",
             "virtualglove-controller-dock-right.png",
             "virtualglove-controller-dock-exploded.png",
-            "virtualglove-controller-dock-v2-exterior.png",
-            "virtualglove-controller-dock-v2-back.png",
-            "virtualglove-controller-dock-v2-left.png",
-            "virtualglove-controller-dock-v2-right.png",
-            "virtualglove-controller-dock-v2-exploded.png",
-            "virtualglove-controller-dock-v2-port-access.png",
+            "virtualglove-controller-dock-v2-1-exterior.png",
+            "virtualglove-controller-dock-v2-1-back.png",
+            "virtualglove-controller-dock-v2-1-left.png",
+            "virtualglove-controller-dock-v2-1-right.png",
+            "virtualglove-controller-dock-v2-1-exploded.png",
+            "virtualglove-controller-dock-v2-1-port-access.png",
             "virtualglove-enclosure-quick-reference.png",
             "virtualglove-enclosure-quick-reference-parts.png",
             "virtualglove-enclosure-quick-reference-uno.png",
             "virtualglove-enclosure-quick-reference-dock-v1.png",
             "virtualglove-enclosure-quick-reference-dock-v1-finish.png",
-            "virtualglove-enclosure-quick-reference-dock-v2.png",
-            "virtualglove-enclosure-quick-reference-dock-v2-finish.png",
+            "virtualglove-enclosure-quick-reference-dock-v2-1.png",
+            "virtualglove-enclosure-quick-reference-dock-v2-1-finish.png",
             "virtualglove-enclosure-quick-reference-finish.png",
             "virtualglove-lid-logo-options.png",
             "virtualglove-branding-insets.png",
@@ -895,7 +897,7 @@ class ControlStateTests(unittest.TestCase):
         for name in (
             "VirtualGlove-UNO-Q-Case-Print-Files.zip",
             "VirtualGlove-Controller-Dock-V1-Print-Files.zip",
-            "VirtualGlove-Controller-Dock-V2-Print-Files.zip",
+            "VirtualGlove-Controller-Dock-V2.1-Print-Files.zip",
         ):
             with self.subTest(name=name):
                 asset = enclosure_asset("bundles/" + name)
@@ -917,7 +919,7 @@ class ControlStateTests(unittest.TestCase):
         )
         for suffix in (
             "parts", "uno", "dock-v1", "dock-v1-finish",
-            "dock-v2", "dock-v2-finish", "finish",
+            "dock-v2-1", "dock-v2-1-finish", "finish",
         ):
             self.assertIn(
                 f"/help-enclosure/previews/virtualglove-enclosure-quick-reference-{suffix}.png",
@@ -994,26 +996,26 @@ class ControlStateTests(unittest.TestCase):
                 ("/help-enclosure/previews/virtualglove-controller-dock-left.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-right.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-controller-dock-exploded.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exterior.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-back.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-left.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-right.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-exploded.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-controller-dock-v2-port-access.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-exterior.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-back.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-left.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-right.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-exploded.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-controller-dock-v2-1-port-access.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-parts.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-uno.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v1-finish.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2.png", "image/png"),
-                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2-finish.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2-1.png", "image/png"),
+                ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-dock-v2-1-finish.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-enclosure-quick-reference-finish.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-lid-logo-options.png", "image/png"),
                 ("/help-enclosure/previews/virtualglove-branding-insets.png", "image/png"),
                 ("/help-enclosure/stl/virtualglove-uno-base.stl", "model/stl"),
-                ("/help-enclosure/stl/virtualglove-dock-v2-base.stl", "model/stl"),
-                ("/help-enclosure/stl/virtualglove-dock-v2-lid.stl", "model/stl"),
-                ("/help-enclosure/stl/virtualglove-dock-v2-lid-full-logo.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-1-base.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-1-lid.stl", "model/stl"),
+                ("/help-enclosure/stl/virtualglove-dock-v2-1-lid-full-logo.stl", "model/stl"),
                 ("/help-enclosure/stl/virtualglove-lid-logo-multicolor.3mf", "model/3mf"),
             ):
                 connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)

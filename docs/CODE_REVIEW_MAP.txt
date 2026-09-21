@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.0
-Git-visible files: 727
+Git-visible files: 729
 Python test modules: 78
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -177,12 +177,12 @@ back up modified managed files before replacement.
 The public static website is tracked under website/, reads bounded release facts
 from config/release.json, and produces a manual-upload ZIP. Enclosure print-file
 ownership is recorded in hardware/enclosures/enclosure-files.json; its builder
-creates separate UNO Q Case, Dock V1, and Dock V2 archives without changing the
+creates separate UNO Q Case, Dock V1, and Dock V2.1 archives without changing the
 stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-727 tracked or non-ignored files are present in this checkout. Ignored
+729 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -455,7 +455,7 @@ are intentionally omitted.
 |   `-- enclosures
 |       |-- bundles
 |       |   |-- VirtualGlove-Controller-Dock-V1-Print-Files.zip
-|       |   |-- VirtualGlove-Controller-Dock-V2-Print-Files.zip
+|       |   |-- VirtualGlove-Controller-Dock-V2.1-Print-Files.zip
 |       |   `-- VirtualGlove-UNO-Q-Case-Print-Files.zip
 |       |-- previews
 |       |   |-- virtualglove-branding-insets.png
@@ -464,17 +464,17 @@ are intentionally omitted.
 |       |   |-- virtualglove-controller-dock-exterior.png
 |       |   |-- virtualglove-controller-dock-left.png
 |       |   |-- virtualglove-controller-dock-right.png
-|       |   |-- virtualglove-controller-dock-v2-back.png
-|       |   |-- virtualglove-controller-dock-v2-exploded.png
-|       |   |-- virtualglove-controller-dock-v2-exterior.png
-|       |   |-- virtualglove-controller-dock-v2-left.png
-|       |   |-- virtualglove-controller-dock-v2-port-access.png
-|       |   |-- virtualglove-controller-dock-v2-right.png
+|       |   |-- virtualglove-controller-dock-v2-1-back.png
+|       |   |-- virtualglove-controller-dock-v2-1-exploded.png
+|       |   |-- virtualglove-controller-dock-v2-1-exterior.png
+|       |   |-- virtualglove-controller-dock-v2-1-left.png
+|       |   |-- virtualglove-controller-dock-v2-1-port-access.png
+|       |   |-- virtualglove-controller-dock-v2-1-right.png
 |       |   |-- virtualglove-controller-dock.png
 |       |   |-- virtualglove-enclosure-quick-reference-dock-v1-finish.png
 |       |   |-- virtualglove-enclosure-quick-reference-dock-v1.png
-|       |   |-- virtualglove-enclosure-quick-reference-dock-v2-finish.png
-|       |   |-- virtualglove-enclosure-quick-reference-dock-v2.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v2-1-finish.png
+|       |   |-- virtualglove-enclosure-quick-reference-dock-v2-1.png
 |       |   |-- virtualglove-enclosure-quick-reference-finish.png
 |       |   |-- virtualglove-enclosure-quick-reference-parts.png
 |       |   |-- virtualglove-enclosure-quick-reference-uno.png
@@ -496,9 +496,11 @@ are intentionally omitted.
 |       |   |-- virtualglove-dock-base.stl
 |       |   |-- virtualglove-dock-lid-full-logo.stl
 |       |   |-- virtualglove-dock-lid.stl
-|       |   |-- virtualglove-dock-v2-base.stl
-|       |   |-- virtualglove-dock-v2-lid-full-logo.stl
-|       |   |-- virtualglove-dock-v2-lid.stl
+|       |   |-- virtualglove-dock-v2-1-base.stl
+|       |   |-- virtualglove-dock-v2-1-lid-full-logo.stl
+|       |   |-- virtualglove-dock-v2-1-lid.stl
+|       |   |-- virtualglove-dock-v2-1-mount-fit-coupon.stl
+|       |   |-- virtualglove-dock-v2-1-wordmark-fit-coupon.stl
 |       |   |-- virtualglove-full-logo-backing.stl
 |       |   |-- virtualglove-full-logo-cyan.stl
 |       |   |-- virtualglove-full-logo-multicolor.3mf
@@ -981,7 +983,7 @@ are intentionally omitted.
 |   |   |   |-- about.css
 |   |   |   |-- dashboard.png
 |   |   |   |-- dock-v1.png
-|   |   |   |-- dock-v2.png
+|   |   |   |-- dock-v2-1.png
 |   |   |   |-- iain-virtualglove-recognition.jpg
 |   |   |   |-- pixel-pal-coach.png
 |   |   |   |-- pixel-pal-ready.png
@@ -1001,7 +1003,7 @@ are intentionally omitted.
 |   |   |   |-- about.css
 |   |   |   |-- dashboard.png
 |   |   |   |-- dock-v1.png
-|   |   |   |-- dock-v2.png
+|   |   |   |-- dock-v2-1.png
 |   |   |   |-- iain-virtualglove-recognition.jpg
 |   |   |   |-- pixel-pal-coach.png
 |   |   |   |-- pixel-pal-ready.png

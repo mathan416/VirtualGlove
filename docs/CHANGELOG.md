@@ -10,6 +10,26 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
+## [0.5.1] - Unreleased
+
+### Added
+
+- Added the photo-validated Controller Dock V2.1, which replaces the withdrawn
+  V2 design while retaining the compact UNO Q Case and Controller Dock V1.
+  The revised enclosed dock has a wider cable-loop bay, low strain-relief
+  guides, slimmer UNO Q posts, more vertical plug clearance, a shorter lid
+  skirt with larger boss reliefs, a roomier wordmark recess, and inexpensive
+  mount and logo fit coupons.
+
+### Fixed
+
+- Moved the V2.1 hub cradle and Ethernet opening 14 mm forward from the rear
+  wall, keeping the hub and its cradle clear of the rear-right cover screw
+  tower while retaining rear cable access.
+- Removed the superseded V2 STLs, bundle, renders, and current guide links so
+  builders cannot accidentally choose the enclosure that failed the physical
+  cable, board-mount, logo, and lid-clearance checks.
+
 ## [0.5.0] - 2026-09-20
 
 ### Changed
