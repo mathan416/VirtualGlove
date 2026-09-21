@@ -320,6 +320,15 @@ Close optional camera previews during gameplay. Keep lighting and camera setup
 stable, then compare deliberate movements and supported stationary holds. Avoid
 changing several camera, core, and display settings at once.
 
+On Batocera over Wi-Fi, movement that pauses and then jumps can be wireless
+packet buffering rather than slow gesture recognition. VirtualGlove turns off
+power saving on connected Wi-Fi interfaces when its service starts and again
+before a game, including the next launch after a wireless reconnection. A wired
+connection is unaffected. If this still happens, check
+`iw dev wlan0 get power_save` on the
+Batocera console (substitute the connected wireless interface if it is not
+`wlan0`); **Power save: off** is expected while VirtualGlove is running.
+
 Software status can locate processing delays but cannot measure the complete
 hand-to-screen delay. Follow the layered method in the
 [Engineering Journey](ENGINEERING_JOURNEY.md#validation-story-proving-that-movement-was-real)

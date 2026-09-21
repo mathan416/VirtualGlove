@@ -921,6 +921,28 @@ def install_batocera(peer, player1_device=None):
     run("batocera-services", "start", "VirtualGlove")
 
 
+def batocera_wifi_latency_ready():
+    """Return None on wired/offline hosts, or the connected Wi-Fi power state."""
+    if not shutil.which("iw"):
+        return False if list(Path("/sys/class/net").glob("*/wireless")) else None
+    try:
+        devices = subprocess.check_output(["iw", "dev"], text=True, timeout=5)
+        connected = False
+        for interface in re.findall(r"^\s*Interface\s+(\S+)$", devices, re.MULTILINE):
+            link = subprocess.check_output(["iw", "dev", interface, "link"],
+                                           text=True, timeout=5)
+            if not link.startswith("Connected to "):
+                continue
+            connected = True
+            state = subprocess.check_output(["iw", "dev", interface, "get", "power_save"],
+                                            text=True, timeout=5)
+            if state.strip() != "Power save: off":
+                return False
+        return True if connected else None
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return False
+
+
 def check_batocera(report):
     """Check persistent Batocera integration without inspecting private values."""
     root = Path("/userdata/system/virtualglove")
@@ -933,6 +955,9 @@ def check_batocera(report):
                  Path("/usr/lib/libretro/nestopia_libretro.so").is_file(), pending=True)
     report.check("Batocera service installed", Path("/userdata/system/services/VirtualGlove").is_file())
     report.check("Batocera game hook installed", Path("/userdata/system/scripts/virtualglove-game").is_file())
+    wifi_ready = batocera_wifi_latency_ready()
+    if wifi_ready is not None:
+        report.check("Connected Wi-Fi uses low-latency delivery", wifi_ready, pending=True)
     report.check("All Libretro systems use the merged controller",
                  "## VirtualGlove Controller Router" in
                  Path("/userdata/system/batocera.conf").read_text(errors="replace"), pending=True)

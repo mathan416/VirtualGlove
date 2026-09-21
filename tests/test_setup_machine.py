@@ -31,6 +31,39 @@ compose_spec.loader.exec_module(compose_config)
 
 
 class SetupTests(unittest.TestCase):
+    def test_batocera_wifi_latency_check_distinguishes_connected_power_save(self):
+        def response(_command, **_kwargs):
+            command = _command[1:]
+            if command == ["dev"]:
+                return "phy#0\n\tInterface wlan0\n"
+            if command == ["dev", "wlan0", "link"]:
+                return "Connected to 00:11:22:33:44:55\n"
+            if command == ["dev", "wlan0", "get", "power_save"]:
+                return "Power save: on\n"
+            raise AssertionError(command)
+
+        with patch.object(setup.shutil, "which", return_value="/usr/bin/iw"), \
+                patch.object(setup.subprocess, "check_output", side_effect=response):
+            self.assertFalse(setup.batocera_wifi_latency_ready())
+
+        def disconnected(command, **kwargs):
+            if command[1:] == ["dev", "wlan0", "link"]:
+                return "Not connected.\n"
+            return response(command, **kwargs)
+
+        with patch.object(setup.shutil, "which", return_value="/usr/bin/iw"), \
+                patch.object(setup.subprocess, "check_output", side_effect=disconnected):
+            self.assertIsNone(setup.batocera_wifi_latency_ready())
+
+        def power_off(command, **kwargs):
+            if command[1:] == ["dev", "wlan0", "get", "power_save"]:
+                return "Power save: off\n"
+            return response(command, **kwargs)
+
+        with patch.object(setup.shutil, "which", return_value="/usr/bin/iw"), \
+                patch.object(setup.subprocess, "check_output", side_effect=power_off):
+            self.assertTrue(setup.batocera_wifi_latency_ready())
+
     def test_compose_project_name_is_current_and_idempotent(self):
         legacy = "name: another-project\nservices:\n  main:\n    image: example\n"
         expected = "name: virtualglove\nservices:\n  main:\n    image: example\n"

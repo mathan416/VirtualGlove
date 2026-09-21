@@ -13,6 +13,9 @@ SESSION="$APP/run/active-game.json"
 
 case "${1:-}" in
     gameStart)
+        # A Wi-Fi reconnect can restore power saving after service startup.
+        # Reapply the Batocera-only latency setting before gameplay begins.
+        "$APP/batocera/VirtualGlove" network-latency
         emulator="${3:-}"
         if [ "$emulator" = libretro ]; then
             # Batocera regenerates retroarchcustom.cfg for every launch. Apply

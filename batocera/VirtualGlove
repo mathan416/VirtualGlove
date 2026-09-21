@@ -14,8 +14,23 @@ core_mount="$VIRTUALGLOVE_ROOT/batocera/virtualglove-core-mount"
 export VIRTUALGLOVE_CORE_MOUNT="$core_mount"
 service="$VIRTUALGLOVE_ROOT/recalbox/virtualglove-service"
 
+# Batocera may re-enable wireless power saving after a reconnect. Its DTIM
+# buffering otherwise delivers time-critical native glove samples in bursts.
+# Only touch an associated Wi-Fi interface; wired consoles are unaffected.
+low_latency_wifi() {
+    command -v iw >/dev/null 2>&1 || return 0
+    iw dev 2>/dev/null | awk '$1 == "Interface" { print $2 }' | while IFS= read -r iface; do
+        [ -n "$iface" ] || continue
+        iw dev "$iface" link 2>/dev/null | grep -q '^Connected to ' || continue
+        iw dev "$iface" get power_save 2>/dev/null | grep -q '^Power save: on$' || continue
+        iw dev "$iface" set power_save off ||
+            echo "ACTION  Could not disable Wi-Fi power saving on $iface; movement may stutter." >&2
+    done
+}
+
 case "${1:-}" in
     start)
+        low_latency_wifi
         exec "$service" start
         ;;
     stop)
@@ -23,9 +38,13 @@ case "${1:-}" in
         exec "$core_mount" stop
         ;;
     restart)
+        low_latency_wifi
         "$service" stop
         "$core_mount" restart || echo "ACTION  Native Super Glove Ball core is unavailable; FCEUmm remains usable." >&2
         exec "$service" start
+        ;;
+    network-latency)
+        low_latency_wifi
         ;;
     *) exec "$service" "$@" ;;
 esac

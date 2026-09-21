@@ -23,6 +23,10 @@ result before naming the underlying mechanism.
 
 ### Fixed
 
+- Batocera now disables power saving on a connected Wi-Fi interface when
+  VirtualGlove starts and before each game. This prevents wireless buffering
+  from delivering otherwise intact hand-position updates in jerky bursts;
+  wired connections and disconnected Wi-Fi interfaces are untouched.
 - Moved the V2.1 hub cradle and Ethernet opening 14 mm forward from the rear
   wall, keeping the hub and its cradle clear of the rear-right cover screw
   tower while retaining rear cable access.

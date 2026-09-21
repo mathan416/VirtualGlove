@@ -10,6 +10,9 @@
 
 """Verify console service, lifecycle, input-merge, and pairing assets."""
 
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -83,6 +86,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("virtualglove-core-mount", service)
         self.assertIn("/userdata/system/virtualglove", service)
         self.assertIn("gameStart", event)
+        self.assertIn('"$APP/batocera/VirtualGlove" network-latency', event)
         self.assertIn("controller_router apply", event)
         self.assertIn("gameStop", event)
         self.assertIn('emulator="lr-${4:-}"', event)
@@ -94,6 +98,35 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn("merge_batocera_config", router)
         self.assertIn('Path("/userdata/system/batocera.conf")', router)
         self.assertNotIn("systemctl", service + event)
+
+    def test_batocera_disables_power_save_only_for_connected_wifi(self):
+        service = ROOT / "batocera/VirtualGlove"
+        with tempfile.TemporaryDirectory() as folder:
+            fake_iw = Path(folder) / "iw"
+            log = Path(folder) / "calls"
+            fake_iw.write_text('''#!/bin/sh
+case "$*" in
+    dev) printf 'phy#0\\n\\tInterface wlan0\\n' ;;
+    'dev wlan0 link') printf '%s\\n' "$FAKE_IW_LINK" ;;
+    'dev wlan0 get power_save') printf '%s\\n' "$FAKE_IW_POWER" ;;
+    'dev wlan0 set power_save off') printf 'off\\n' >> "$FAKE_IW_LOG" ;;
+    *) exit 1 ;;
+esac
+''')
+            fake_iw.chmod(0o755)
+            env = dict(os.environ, PATH=folder + os.pathsep + os.environ["PATH"],
+                       FAKE_IW_LOG=str(log), FAKE_IW_LINK="Connected to 00:11:22:33:44:55",
+                       FAKE_IW_POWER="Power save: on")
+            subprocess.run(["sh", str(service), "network-latency"], check=True, env=env)
+            self.assertEqual(log.read_text(), "off\n")
+            log.unlink()
+            env["FAKE_IW_LINK"] = "Not connected."
+            subprocess.run(["sh", str(service), "network-latency"], check=True, env=env)
+            self.assertFalse(log.exists())
+            env["FAKE_IW_LINK"] = "Connected to 00:11:22:33:44:55"
+            env["FAKE_IW_POWER"] = "Power save: off"
+            subprocess.run(["sh", str(service), "network-latency"], check=True, env=env)
+            self.assertFalse(log.exists())
 
     def test_router_live_check_does_not_replace_unsaved_setup_choices(self):
         script = (ROOT / "src/virtualglove/controller_router_web.py").read_text()
