@@ -246,7 +246,7 @@ class DiagnosticTests(unittest.TestCase):
                      'commit': 'a'*40, 'dirty': False}), \
                  patch.object(preflight, 'inspect_remote', side_effect=[controller, console]) as remote:
                 self.assertEqual(preflight.main(), 0)
-            self.assertEqual([call.args[2] for call in remote.call_args_list],
+            self.assertEqual([call[0][2] for call in remote.call_args_list],
                              ['controller', 'batocera'])
             report = json.loads((destination / 'preflight.json').read_text())
             self.assertEqual(report['format'], 'virtualglove-end-to-end-preflight/2')

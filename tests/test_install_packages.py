@@ -862,7 +862,7 @@ class GameSetupTests(unittest.TestCase):
                  patch.object(setup, "run", side_effect=command) as run:
                 setup.configure_games(lambda message: "lr-nestopia-powerglove" in message)
 
-            self.assertFalse(any(call.args[:2] == ("apt-get", "install")
+            self.assertFalse(any(call[0][:2] == ("apt-get", "install")
                                  for call in run.call_args_list))
             self.assertIn("lr-nestopia-powerglove", system.read_text())
             games = prefix / "configs/all/emulators.cfg"
