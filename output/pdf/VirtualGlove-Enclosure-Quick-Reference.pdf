@@ -58,7 +58,7 @@ endobj
 9 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.1/hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.2/hardware/enclosures/bundles/VirtualGlove-UNO-Q-Case-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 24 103 260 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -73,7 +73,7 @@ endobj
 11 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.1/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.2/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V1-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 278 103 514 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -96,7 +96,7 @@ endobj
 14 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.1/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2.1-Print-Files.zip)
+/S /URI /Type /Action /URI (https://github.com/mathan416/VirtualGlove/raw/v0.5.2/hardware/enclosures/bundles/VirtualGlove-Controller-Dock-V2.1-Print-Files.zip)
 >> /Border [ 0 0 0 ] /Rect [ 532 103 768 438 ] /Subtype /Link /Type /Annot
 >>
 endobj
@@ -315,7 +315,7 @@ endobj
 endobj
 38 0 obj
 <<
-/Author (Iain Bennett) /CreationDate (D:20260921202211-04'00') /Creator (anonymous) /Keywords () /ModDate (D:20260921202211-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+/Author (Iain Bennett) /CreationDate (D:20260922115039-04'00') /Creator (anonymous) /Keywords () /ModDate (D:20260922115039-04'00') /Producer (ReportLab PDF Library - \(opensource\)) 
   /Subject (unspecified) /Title (VirtualGlove Enclosure Assembly Quick Reference) /Trapped /False
 >>
 endobj
@@ -433,7 +433,7 @@ xref
 trailer
 <<
 /ID 
-[<64059e171ced14b7aa6b0a6c2e6f3eef><64059e171ced14b7aa6b0a6c2e6f3eef>]
+[<a8fd17929b28d71733384c073799163e><a8fd17929b28d71733384c073799163e>]
 % ReportLab generated PDF document -- digest (opensource)
 
 /Info 38 0 R

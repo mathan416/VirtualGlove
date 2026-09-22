@@ -41,6 +41,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         })
 
     def test_generated_website_matches_upload_zip(self):
+        release_tag = json.loads((ROOT / "config/release.json").read_text())["release_tag"]
         dist = ROOT / "website/dist"
         archive = ROOT / "output/website/VirtualGlove-Website.zip"
         expected = {
@@ -55,7 +56,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             "index.html", "install.html", "build.html", "about.html",
             "engineering.html",
         ))
-        self.assertIn("v0.5.1", combined)
+        self.assertIn(release_tag, combined)
         self.assertNotIn("v0.5.1-rc.1", combined)
         self.assertNotIn("v0.4.1", combined)
         self.assertNotIn("Get ready to play", combined)
@@ -77,7 +78,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("Iain tests Super Glove Ball while VirtualGlove recognises his hand", about)
         self.assertIn("assets/iain-virtualglove-recognition.jpg", actual)
         home = (dist / "index.html").read_text()
-        self.assertIn("Stable release · v0.5.1", home)
+        self.assertIn("Stable release · " + release_tag, home)
         self.assertIn("current stable release", home)
         self.assertIn("Learn to play in Glove Academy", home)
         self.assertIn("how VirtualGlove recognises your hand movements and gestures", home)

@@ -10,7 +10,7 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
-## Unreleased
+## [0.5.2] - 2026-09-22
 
 ### Fixed
 

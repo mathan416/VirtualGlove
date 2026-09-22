@@ -16,9 +16,9 @@ VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current stable release: v0.5.1.** It includes smoother Batocera Wi-Fi input
-delivery, the revised Controller Dock V2.1, and verified release-package
-checksums. Use the same installation commands for a fresh setup or an upgrade.
+**Current stable release: v0.5.2.** It restores Recalbox's physical joypad
+hotkeys on the first game and gives pairing more time to complete a console
+receiver restart. Use the same installation commands for a fresh setup or an upgrade.
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
@@ -87,7 +87,7 @@ both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
 
-VirtualGlove `v0.5.1` is the current stable release. The unversioned commands
+VirtualGlove `v0.5.2` is the current stable release. The unversioned commands
 below select it through GitHub's latest stable release. To reproduce one exact
 installation later, use the pinned-version procedure in the
 [technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
@@ -365,11 +365,13 @@ pages, validates release-sensitive links and commands, and creates
 
 ## Project status
 
-VirtualGlove 0.5.1 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
+VirtualGlove 0.5.2 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
 live dead-zone visualization, and source-accurate
 rapid-fire behaviour. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie. This release also
 smooths Batocera Wi-Fi input delivery and includes the revised Dock V2.1.
+It also makes Recalbox's physical joypad hotkeys available on the first game
+and allows a console receiver restart to complete during pairing.
 
 The 0.5.x release line completed physical controller and VirtualGlove acceptance
 on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
