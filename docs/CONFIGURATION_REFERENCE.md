@@ -1326,7 +1326,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
 Existing pairing credentials and native emulator files need no format migration.
-VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.0. Update both machines
+VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.1. Update both machines
 together. The Controller package carries
 and flashes the matching checksum-verified Matrix firmware; do not skip that
 installer stage or mix it with an older Controller/receiver build. Native
@@ -2097,7 +2097,7 @@ they may still perform their normal work.
 | --- | --- | --- |
 | `scripts/build-app-lab-package.sh` | No flags or positional arguments | Builds `output/app-lab/VirtualGlove-Uno-Q.zip`; requires Bash, rsync, zip, and the existing public PDFs. |
 | `scripts/build-enclosure-packages.py` | No flags or positional arguments | Validates `hardware/enclosures/enclosure-files.json` and deterministically rebuilds the UNO Q Case, Dock V1, and Dock V2.1 print-file bundles. |
-| `website/build.py` | No flags or positional arguments | Reads `config/release.json`, renders and validates the four static public pages, and creates `output/website/VirtualGlove-Website.zip` for manual upload. |
+| `website/build.py` | No flags or positional arguments | Reads `config/release.json`, renders and validates the five static public pages, and creates `output/website/VirtualGlove-Website.zip` for manual upload. |
 | `scripts/verify-app-lab-package.py` | Optional `ARCHIVE` path; `-h`, `--help` | Checks the supplied ZIP or the default ZIP above; prints its SHA-256. Returns `0` on success, `1` on verification failure. |
 | `scripts/check-documentation.py` | `--require-pdfs`; `-h`, `--help` | Checks Markdown, links, and coverage. The optional flag also inspects the PDF set and needs `pypdf`. Returns `0` on success, `1` on failure. |
 | `scripts/check-source-docs.py` | No flags or positional arguments | Checks source headers and docstrings; returns `0` on success or `1` on failure. |
@@ -2757,7 +2757,7 @@ to enter the extracted `VirtualGlove` directory before running
 `launchbox\install-launchbox.ps1`.
 
 To pin a published release, append `--version TAG` to the saved script command,
-for example `bash install-uno-q.sh --version v0.5.0`. To test a published development
+for example `bash install-uno-q.sh --version v0.5.1`. To test a published development
 prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replace
 these example tags with actual published tags, and use the matching option on
 the selected Linux console. No GitHub release is created by running an installer.

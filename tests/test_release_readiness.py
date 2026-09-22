@@ -30,8 +30,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         version = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
         self.assertIsNotNone(version)
         self.assertEqual(version.group(1), facts["project_version"])
-        self.assertEqual(facts["release_tag"], "v" + facts["project_version"] + "-rc.1")
-        self.assertEqual(facts["channel"], "release-candidate")
+        self.assertEqual(facts["release_tag"], "v" + facts["project_version"])
+        self.assertEqual(facts["channel"], "stable")
         self.assertEqual(facts["oldest_supported_upgrade"], "v0.4.2")
         self.assertEqual(facts["upgrade_acceptance"], {
             "from": "v0.4.2",
@@ -53,8 +53,10 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         combined = "\n".join((dist / name).read_text() for name in (
             "index.html", "install.html", "build.html", "about.html",
+            "engineering.html",
         ))
-        self.assertIn("v0.5.1-rc.1", combined)
+        self.assertIn("v0.5.1", combined)
+        self.assertNotIn("v0.5.1-rc.1", combined)
         self.assertNotIn("v0.4.1", combined)
         self.assertNotIn("Get ready to play", combined)
         about = (dist / "about.html").read_text()
@@ -75,8 +77,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("Iain tests Super Glove Ball while VirtualGlove recognises his hand", about)
         self.assertIn("assets/iain-virtualglove-recognition.jpg", actual)
         home = (dist / "index.html").read_text()
-        self.assertIn("Release candidate · v0.5.1-rc.1", home)
-        self.assertIn("Release candidates are for testing", home)
+        self.assertIn("Stable release · v0.5.1", home)
+        self.assertIn("current stable release", home)
         self.assertIn("Learn to play in Glove Academy", home)
         self.assertIn("how VirtualGlove recognises your hand movements and gestures", home)
         self.assertNotIn("Learn safely in Glove Academy", home)
@@ -98,6 +100,19 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("Before you print", build)
         self.assertNotIn("Print safely", build)
         self.assertIn('class="shell actions build-actions"', build)
+        self.assertIn("not installed in the finished case", build)
+        engineering = (dist / "engineering.html").read_text()
+        self.assertIn("Engineering, explained", engineering)
+        for guide in (
+            "ARCHITECTURE.md", "INPUT_MODES.md", "CONFIGURATION_REFERENCE.md",
+            "ENGINEERING_TOOLKIT.md", "ENGINEERING_JOURNEY.md",
+            "power-glove-rom-input-audit.md", "SECURITY.md", "CONTRIBUTING.md",
+            "CHANGELOG.md", "NATIVE_EMULATION_EXPLAINED.md",
+            "super-glove-ball-native.md", "direction-response-benchmark.md",
+        ):
+            self.assertIn(guide, engineering)
+        for page in ("index.html", "install.html", "build.html", "about.html"):
+            self.assertIn('href="engineering.html"', (dist / page).read_text())
         styles = (dist / "assets/site.css").read_text()
         self.assertIn(".case{display:flex;flex-direction:column}", styles)
         self.assertIn(".case .button{align-self:flex-start;margin-top:auto}", styles)

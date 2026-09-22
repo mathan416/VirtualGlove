@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-21 - Added the Engineering page to the tracked release website.
 #   2026-09-20 - Added the tracked four-page release website build.
 # Full history: docs/CHANGELOG.md and Git history.
 """Build a dependency-free, uploadable VirtualGlove website."""
@@ -107,7 +108,8 @@ def render(text: str, replacements: dict[str, str]) -> str:
 def validate() -> None:
     """Check internal pages, current behaviour, install steps, and release identity."""
     pages = {path.name for path in DIST.glob("*.html")}
-    if pages != {"index.html", "install.html", "build.html", "about.html"}:
+    if pages != {"index.html", "install.html", "build.html", "about.html",
+                 "engineering.html"}:
         raise ValueError("Website page set is incomplete")
     combined = "\n".join(path.read_text() for path in DIST.glob("*.html"))
     if re.search(r"Get ready to play|Ready-to-Play|/ready", combined, re.I):
@@ -140,6 +142,12 @@ def validate() -> None:
             local = target.split("#", 1)[0]
             if local and not (DIST / local).is_file():
                 raise ValueError(f"Broken website link in {path.name}: {target}")
+    for source in SOURCE.glob("*.html"):
+        for linked_path in re.findall(r'@@DOC_ROOT@@/([^"#]+)', source.read_text()):
+            if not (ROOT / linked_path).is_file():
+                raise ValueError(
+                    f"Missing project guide linked from {source.name}: {linked_path}"
+                )
 
 
 def build() -> Path:

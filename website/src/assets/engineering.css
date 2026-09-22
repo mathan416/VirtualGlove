@@ -1,0 +1,45 @@
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-card h3 {
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.guide-card p {
+  margin-top: 0;
+}
+
+.guide-kind {
+  color: var(--cyan) !important;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.guide-card > a,
+.guide-links {
+  margin-top: auto;
+  font-weight: 800;
+}
+
+.guide-links {
+  display: flex;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 620px) {
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+}

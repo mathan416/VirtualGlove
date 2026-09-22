@@ -16,14 +16,9 @@ VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current stable release: v0.5.0**
-
-**Next release candidate: v0.5.1-rc.1.** It includes smoother Batocera
-Wi-Fi input delivery, the revised Controller Dock V2.1, and strengthened
-Batocera package verification. To test it, install the same pinned candidate
-on the Controller and console; the unversioned commands below continue to
-select stable v0.5.0. See the [Installation Guide](docs/INSTALL_README.md)
-for the candidate commands and upgrade checks.
+**Current stable release: v0.5.1.** It includes smoother Batocera Wi-Fi input
+delivery, the revised Controller Dock V2.1, and verified release-package
+checksums. Use the same installation commands for a fresh setup or an upgrade.
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
@@ -46,7 +41,7 @@ EmulationStation from becoming the game's first input.
 
 Ordinary NES games use FCEUmm. Super Glove Ball can also use the separately
 named Nestopia (VirtualGlove) core for native movement and glove actions without
-replacing stock Nestopia. The v0.5.0 installers provide a guarded upgrade from
+replacing stock Nestopia. The current installers provide a guarded upgrade from
 v0.4.2 while preserving players, calibration, tuning, pairing, device settings,
 game registrations, ROMs, saves, and controller assignments.
 
@@ -92,7 +87,7 @@ both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
 
-VirtualGlove `v0.5.0` is the current stable release. The unversioned commands
+VirtualGlove `v0.5.1` is the current stable release. The unversioned commands
 below select it through GitHub's latest stable release. To reproduce one exact
 installation later, use the pinned-version procedure in the
 [technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
@@ -364,18 +359,19 @@ Printable editions of all maintained guides are available in
 its local Help page.
 
 The public website is maintained with the application under [`website/`](website/).
-Its dependency-free builder reads `config/release.json`, renders four static
+Its dependency-free builder reads `config/release.json`, renders five static
 pages, validates release-sensitive links and commands, and creates
 `output/website/VirtualGlove-Website.zip` for manual upload.
 
 ## Project status
 
-VirtualGlove 0.5.0 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
+VirtualGlove 0.5.1 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
 live dead-zone visualization, and source-accurate
 rapid-fire behaviour. It extends the authenticated console integration to
-Recalbox, Batocera, and LaunchBox while retaining RetroPie.
+Recalbox, Batocera, and LaunchBox while retaining RetroPie. This release also
+smooths Batocera Wi-Fi input delivery and includes the revised Dock V2.1.
 
-The `v0.5.0` release completed physical controller and VirtualGlove acceptance
+The 0.5.x release line completed physical controller and VirtualGlove acceptance
 on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
 includes ordinary NES play, native Super Glove Ball, physical-controller
 coexistence, hotkeys, reboot persistence, and Controller Router remapping.

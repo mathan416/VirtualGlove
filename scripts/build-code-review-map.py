@@ -223,7 +223,7 @@ PDF rendering, UNO Q behaviour, and each affected console platform.
 
 CONSERVATIVE 0.5.0 CLEANUP AUDIT
 --------------------------------
-No complete runtime module is confirmed dead at the stable v0.5.0 boundary.
+No complete runtime module is confirmed dead at the stable v0.5.1 boundary.
 Several paths can look historical but still carry upgrade, rollback, packaging,
 or active platform responsibilities and must remain through this release:
 

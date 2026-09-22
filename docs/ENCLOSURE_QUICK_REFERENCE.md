@@ -27,7 +27,8 @@ Have the selected base and lid, UNO Q, Arduino hub, four board screws, four lid
 screws, four heat-set inserts, insert tool, M3 driver, and four rubber feet on
 the workbench. The Matrix bezel, one matching lid logo set, Ethernet cable, adhesive, foam,
 and TPU are optional. Print and check the fit coupons before installing
-electronics.
+electronics. Coupons are small, disposable fit tests; none is fitted to the
+finished enclosure.
 
 > **Stop:** Disconnect power before handling the board or hub. Heat-set inserts
 > can soften PLA quickly; keep them square and stop when they are flush.

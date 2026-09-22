@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.1
-Git-visible files: 729
+Git-visible files: 733
 Python test modules: 78
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -146,7 +146,7 @@ PDF rendering, UNO Q behaviour, and each affected console platform.
 
 CONSERVATIVE 0.5.0 CLEANUP AUDIT
 --------------------------------
-No complete runtime module is confirmed dead at the stable v0.5.0 boundary.
+No complete runtime module is confirmed dead at the stable v0.5.1 boundary.
 Several paths can look historical but still carry upgrade, rollback, packaging,
 or active platform responsibilities and must remain through this release:
 
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-729 tracked or non-ignored files are present in this checkout. Ignored
+733 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -984,6 +984,7 @@ are intentionally omitted.
 |   |   |   |-- dashboard.png
 |   |   |   |-- dock-v1.png
 |   |   |   |-- dock-v2-1.png
+|   |   |   |-- engineering.css
 |   |   |   |-- iain-virtualglove-recognition.jpg
 |   |   |   |-- pixel-pal-coach.png
 |   |   |   |-- pixel-pal-ready.png
@@ -996,6 +997,7 @@ are intentionally omitted.
 |   |   |   `-- virtualglove-logo.png
 |   |   |-- about.html
 |   |   |-- build.html
+|   |   |-- engineering.html
 |   |   |-- index.html
 |   |   `-- install.html
 |   |-- src
@@ -1004,6 +1006,7 @@ are intentionally omitted.
 |   |   |   |-- dashboard.png
 |   |   |   |-- dock-v1.png
 |   |   |   |-- dock-v2-1.png
+|   |   |   |-- engineering.css
 |   |   |   |-- iain-virtualglove-recognition.jpg
 |   |   |   |-- pixel-pal-coach.png
 |   |   |   |-- pixel-pal-ready.png
@@ -1016,6 +1019,7 @@ are intentionally omitted.
 |   |   |   `-- virtualglove-logo.png
 |   |   |-- about.html
 |   |   |-- build.html
+|   |   |-- engineering.html
 |   |   |-- index.html
 |   |   `-- install.html
 |   |-- build.py

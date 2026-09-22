@@ -10,6 +10,19 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
+## [0.5.1] - 2026-09-21
+
+### Changed
+
+- Released the validated 0.5.1 candidate as stable. Batocera's smoother Wi-Fi
+  response, Controller Dock V2.1, and release-package checksum checks are now
+  available through the normal install-or-upgrade commands.
+- Added an Engineering page to the independently published website. It explains
+  which technical guide to read for system architecture, input modes, native
+  emulation, measurement, configuration, and project history.
+- Clarified that enclosure fit coupons are small test prints, not pieces to
+  install in the finished case.
+
 ## [0.5.1-rc.1] - 2026-09-21
 
 ### Added

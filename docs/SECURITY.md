@@ -301,7 +301,7 @@ components. Both use three short sets of numerical samples in memory. The
 version-6 `data/gesture-tuning.json` file stores player names, one joystick centre-box
 size, gesture activation/release pairs shared across game profiles for each player, Academy progress, and a
 required-centre flag and separate saved calibration, plus a bounded pending reference during a calibration
-restore. VirtualGlove v0.4.2 is the oldest supported in-place upgrade to 0.5.0 and already
+restore. VirtualGlove v0.4.2 is the oldest supported in-place upgrade to 0.5.1 and already
 uses this store format. Portable hand-setup exports use the
 `virtualglove-hand-setup` format at version 4; older formats are rejected without
 changing their source or the active player.

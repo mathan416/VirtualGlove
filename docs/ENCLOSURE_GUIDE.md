@@ -97,6 +97,13 @@ Each bundle separates structural parts, matching branding, fit tests, finishing,
 and parametric source. Read its `PARTS.txt` before slicing. The optional large
 target badge is not included because it does not fit a lid recess.
 
+**Fit coupons are test prints, not enclosure pieces.** They reproduce only a
+small opening, cradle, mount pattern, or logo recess so you can try your real
+hardware before printing a full part. A coupon does not snap into the base or
+lid; set it aside after the fit check. For the compact UNO Q Case, only the
+base and one matching lid are structural prints. Its USB-C coupon tests the
+hub plug, while the hub itself stays outside the case.
+
 ### Shared hardware and tools
 
 | Item | Quantity | Purpose |
@@ -115,7 +122,7 @@ target badge is not included because it does not fit a lid recess.
 - [UNO Q base](../hardware/enclosures/stl/virtualglove-uno-base.stl)
 - Choose one lid: [small-emblem inset](../hardware/enclosures/stl/virtualglove-uno-lid.stl)
   or [full-wordmark inset](../hardware/enclosures/stl/virtualglove-uno-lid-full-logo.stl)
-- [USB-C fit coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl)
+- Optional print-first test: [USB-C opening coupon](../hardware/enclosures/stl/virtualglove-usb-c-fit-coupon.stl) (not installed in the case)
 
 The hub is still required, but it remains outside this enclosure and connects
 through the broad USB-C opening.

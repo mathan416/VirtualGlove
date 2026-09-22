@@ -4,58 +4,21 @@ This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
 pair them securely, centre your hand, and test the controls.
 
-VirtualGlove 0.5.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
+VirtualGlove 0.5.1 supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-VirtualGlove `v0.5.0` is the current stable release. The unversioned commands
+VirtualGlove `v0.5.1` is the current stable release. The unversioned commands
 in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
 
-**Testing v0.5.1-rc.1:** The same installers handle a fresh installation or an
-upgrade. Close games first and use the same pinned candidate on both devices.
-Run only the command for your console after installing the Controller. On the
-UNO Q, connect as `arduino` and run:
-
-```sh
-cd /home/arduino
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-uno-q.sh
-bash install-uno-q.sh --version v0.5.1-rc.1
-```
-
-For RetroPie, connect as the normal `pi` user and run:
-
-```sh
-cd "$HOME"
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-retropie.sh
-bash install-retropie.sh --version v0.5.1-rc.1
-```
-
-For Recalbox, connect as `root` and run:
-
-```sh
-cd /recalbox/share/system
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-recalbox.sh
-bash install-recalbox.sh --version v0.5.1-rc.1
-```
-
-For Batocera, connect as `root` and run:
-
-```sh
-cd /userdata/system
-curl -fLO https://github.com/mathan416/VirtualGlove/releases/download/v0.5.1-rc.1/install-batocera.sh
-bash install-batocera.sh --version v0.5.1-rc.1
-```
-
-For LaunchBox, download this candidate's `VirtualGlove-LaunchBox.zip`, extract
-it, open Administrator PowerShell, enter the extracted `VirtualGlove` folder,
-and follow the LaunchBox section below with your actual LaunchBox and RetroArch
-paths. Keep the backup paths printed by both installers. Reboot and check
-physical input, VirtualGlove input, exit hotkeys, and native Super Glove Ball
-if installed. The Batocera installer verifies the published ZIP checksum
-before changing anything; a mismatch is a safe failure, not a partial upgrade.
+The same installers handle a fresh installation or an upgrade. Close games
+first, run the Controller command and the command for your console below, and
+keep the backup paths they print. The Batocera installer checks the published
+ZIP checksum before changing anything; a mismatch is a safe failure, not a
+partial upgrade.
 
 ## 1. Before you begin
 
@@ -621,10 +584,10 @@ preserve private settings and user data.
 6. If installed, test native Super Glove Ball separately, then reboot both
    devices and repeat the game and exit checks.
 
-### Upgrade from v0.4.2 to v0.5.0
+### Upgrade from v0.4.2 to v0.5.1
 
-Version 0.5.0 includes a managed upgrade from the released v0.4.2 installation.
-Update the Controller and console from the same v0.5.0 release. The installers
+Version 0.5.1 includes a managed upgrade from the released v0.4.2 installation.
+Update the Controller and console from the same v0.5.1 release. The installers
 back up and remove retired application files while preserving:
 
 - players, calibration, tuning, and dead-zone settings;
@@ -644,7 +607,7 @@ Use this order for the release upgrade:
 
 1. Close every running game. On LaunchBox, also close LaunchBox, Big Box, and
    RetroArch.
-2. Install v0.5.0 on the Controller, then install the same release on the
+2. Install v0.5.1 on the Controller, then install the same release on the
    console. Run each command from the writable folder shown in its platform
    section; do not mix stable and release-candidate files.
 3. Keep every backup location printed by the installers until acceptance is
