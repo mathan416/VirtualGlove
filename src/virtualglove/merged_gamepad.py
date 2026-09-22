@@ -555,7 +555,22 @@ def platform_hotkey_bindings(saved: dict, global_config: str) -> dict[str, str]:
         return dict(BATOCERA_HOTKEY_BINDINGS)
     if saved.get("platform") == "retropie":
         return dict(RETROPIE_HOTKEY_BINDINGS)
-    return translated_hotkey_bindings(global_config, saved["mapping"])
+    translated = translated_hotkey_bindings(global_config, saved["mapping"])
+    # On a fresh Recalbox image, configgen may not create retroarchcustom.cfg
+    # until the first game starts.  The Router must provide the essential
+    # physical hotkeys before that first launch rather than preserving raw
+    # source-joypad button indices on its canonical output.
+    if not re.search(r"^\s*input_(?:exit_emulator|menu_toggle|save_state|load_state)_(?:btn|axis)\s*=",
+                     global_config, re.MULTILINE):
+        names = {BUTTON_NAMES[item["name"]] for item in saved["mapping"]
+                 if item["type"] == "button" and item["name"] in BUTTON_NAMES}
+        defaults = (("start", "input_exit_emulator_btn"),
+                    ("b", "input_menu_toggle_btn"),
+                    ("x", "input_load_state_btn"),
+                    ("y", "input_save_state_btn"))
+        translated.update({key: str(CANONICAL_BUTTON_INDEX[name])
+                           for name, key in defaults if name in names})
+    return translated
 
 
 def merge_retroarch_config(text: str, index: int,

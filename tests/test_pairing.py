@@ -16,6 +16,7 @@
 
 import json
 import importlib.util
+import inspect
 import tempfile
 import threading
 import socket
@@ -41,6 +42,11 @@ from virtualglove.pairing import (
 
 
 class PairingTests(unittest.TestCase):
+    def test_receiver_restart_has_pairing_verification_grace_period(self):
+        from virtualglove.pairing import verify_controller_pairing
+        self.assertGreaterEqual(
+            inspect.signature(verify_controller_pairing).parameters["timeout"].default, 15)
+
     def test_default_one_time_pairing_window_is_five_minutes(self):
         self.assertEqual(build_parser().parse_args([]).timeout, 300)
 

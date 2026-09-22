@@ -371,6 +371,35 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertIn('input_exit_emulator_btn = "11"', text)
         self.assertIn('input_menu_toggle_btn = "3"', text)
 
+    def test_recalbox_first_game_hotkeys_and_generated_config_refresh(self):
+        physical = source()
+        physical["mapping"] = [
+            {"name": name, "type": "button", "code": code, "value": 1}
+            for name, code in (("b", 0), ("a", 1), ("x", 2), ("y", 3), ("l1", 4),
+                               ("select", 8), ("start", 9), ("hotkey", 10))]
+        config = router.validate_config({"format": 2, "platform": "recalbox",
+            "players": [{"player": 1, "sources": [physical]}],
+            "virtualglove_player": 1})
+        first = router.merge_retroarch_config("", config, {1: 4})
+        for key, value in (("input_enable_hotkey_btn", "12"),
+                           ("input_exit_emulator_btn", "11"),
+                           ("input_menu_toggle_btn", "1"),
+                           ("input_load_state_btn", "3"),
+                           ("input_save_state_btn", "4")):
+            self.assertIn('%s = "%s"' % (key, value), first)
+        self.assertEqual(router.unmanaged_retroarch_config(first), "")
+        generated = '\n'.join(("input_enable_hotkey_btn = 10",
+            "input_exit_emulator_btn = 9", "input_menu_toggle_btn = 0",
+            "input_load_state_btn = 2", "input_save_state_btn = 3",
+            "input_screenshot_btn = 4"))
+        second = router.merge_retroarch_config(generated + '\n' + first,
+                                                config, {1: 4}, generated + '\n' + first)
+        self.assertEqual(second.count("# VirtualGlove Controller Router"), 1)
+        self.assertIn('input_screenshot_btn = "6"', second)
+        self.assertEqual(router.player_one_hotkeys(config, generated),
+                         router.player_one_hotkeys(config,
+                             router.unmanaged_retroarch_config(second)))
+
     def test_store_rejects_stale_updates_and_changes_during_fceumm(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory); es = base / "es.xml"; es.write_text("<inputList/>")

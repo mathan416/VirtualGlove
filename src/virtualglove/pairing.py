@@ -447,7 +447,7 @@ def pair_with_code(host: str, port: int, code: str, token: str,
     verify_controller_pairing(host, CONTROLLER_PORT, token)
 
 
-def verify_controller_pairing(host: str, port: int, token: str, timeout: float = 4.0) -> None:
+def verify_controller_pairing(host: str, port: int, token: str, timeout: float = 20.0) -> None:
     """Confirm the receiver accepts the newly installed token after pairing."""
     address = resolve_ipv4(host)
     session = secrets.token_hex(16)
@@ -470,7 +470,7 @@ def verify_controller_pairing(host: str, port: int, token: str, timeout: float =
                         return
             except (socket.timeout, ValueError, UnicodeError, RecursionError):
                 continue
-    raise ValueError("The console did not accept the paired token; pair again from this Controller")
+    raise ValueError("The console receiver did not respond after pairing; check its status before pairing again")
 
 
 def pair_over_ssh(

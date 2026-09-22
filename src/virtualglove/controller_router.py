@@ -446,6 +446,7 @@ class ControllerRouterDevice:
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
         self.installed_indexes: dict[int, int] = {}
+        self.installed_hotkeys: dict[str, str] = {}
         self.stop = threading.Event()
         self.lock = threading.Lock()
         try:
@@ -477,7 +478,8 @@ class ControllerRouterDevice:
                                      self.config["platform"])
             if len(indexes) == len(self.players):
                 global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
-                global_text = global_path.read_text() if global_path.exists() else ""
+                global_text = unmanaged_retroarch_config(
+                    global_path.read_text() if global_path.exists() else "")
                 config_paths = managed_retroarch_configs(
                     self.retroarch_config, global_path, self.config)
                 for config_path in config_paths:
@@ -490,6 +492,7 @@ class ControllerRouterDevice:
                     atomic_write(self.platform_config, merge_batocera_config(
                         current, self.config, indexes, global_text), 0o644)
                 self.installed_indexes = indexes
+                self.installed_hotkeys = player_one_hotkeys(self.config, global_text)
                 return
             time.sleep(0.05)
         raise RuntimeError("Controller Router outputs did not appear in /sys/class/input")
@@ -716,6 +719,13 @@ class ControllerRouterDevice:
                                             self.udev_root,
                                             self.config["platform"]) != self.installed_indexes:
                             self._install_indexes()
+                        elif self.config["platform"] == "recalbox":
+                            global_path = self.global_config or self.retroarch_config.with_name(
+                                "retroarchcustom.cfg")
+                            global_text = unmanaged_retroarch_config(
+                                global_path.read_text() if global_path.exists() else "")
+                            if player_one_hotkeys(self.config, global_text) != self.installed_hotkeys:
+                                self._install_indexes()
                     except (OSError, RuntimeError, ValueError, json.JSONDecodeError):
                         pass
                     self.config_checked_at = time.monotonic()
@@ -805,34 +815,48 @@ def _player_bindings(player: int) -> dict[str, str]:
     return result
 
 
+def unmanaged_retroarch_config(text: str) -> str:
+    """Exclude Router's own output when reading Recalbox's physical bindings."""
+    markers = {
+        "# VirtualGlove Controller Router": "# End VirtualGlove Controller Router",
+        "# VirtualGlove merged Player 1": "# End VirtualGlove merged Player 1",
+    }
+    output, end_marker = [], None
+    for line in text.splitlines():
+        if end_marker is not None:
+            if line.strip() == end_marker:
+                end_marker = None
+            continue
+        end_marker = markers.get(line.strip())
+        if end_marker is None and line.strip() != "# VirtualGlove Player 1 keyboard merge":
+            output.append(line)
+    return "\n".join(output)
+
+
+def player_one_hotkeys(config: dict[str, Any], global_config: str) -> dict[str, str]:
+    """Resolve the effective Player 1 hotkeys from the unmodified source."""
+    player_one = next((entry for entry in config["players"] if entry["player"] == 1), None)
+    if not player_one or not player_one["sources"]:
+        return {}
+    return platform_hotkey_bindings(
+        {**player_one["sources"][0], "platform": config["platform"]}, global_config)
+
+
 def merge_retroarch_config(text: str, config: dict[str, Any], indexes: dict[int, int],
                            global_config: str = "") -> str:
     """Replace only the router-managed joystick-core block for enabled slots."""
     begin, end = "# VirtualGlove Controller Router", "# End VirtualGlove Controller Router"
-    retired_begin, retired_end = "# VirtualGlove merged Player 1", "# End VirtualGlove merged Player 1"
-    output, inside = [], False
-    for line in text.splitlines():
-        if line.strip() in (begin, retired_begin):
-            inside = True
-            continue
-        if inside:
-            if line.strip() in (end, retired_end):
-                inside = False
-            continue
-        if line.strip() != "# VirtualGlove Player 1 keyboard merge":
-            output.append(line)
+    output = unmanaged_retroarch_config(text).splitlines()
     while output and not output[-1]:
         output.pop()
     output.extend(["", begin])
-    by_player = {entry["player"]: entry for entry in config["players"]}
+    hotkeys = player_one_hotkeys(config, unmanaged_retroarch_config(global_config))
     for player in enabled_players(config):
         if player not in indexes:
             raise ValueError("Merged Player %d is not available." % player)
         output.append('input_player%d_joypad_index = "%d"' % (player, indexes[player]))
         output.extend('%s = "%s"' % item for item in _player_bindings(player).items())
-        if player == 1 and by_player.get(1, {}).get("sources"):
-            hotkeys = platform_hotkey_bindings(
-                {**by_player[1]["sources"][0], "platform": config["platform"]}, global_config)
+        if player == 1 and hotkeys:
             output.extend('%s = "%s"' % item for item in hotkeys.items()
                           if item[0] not in MERGED_RETROARCH_BINDINGS)
     output.append(end)

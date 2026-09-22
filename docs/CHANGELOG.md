@@ -10,6 +10,15 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
+## Unreleased
+
+### Fixed
+
+- Fresh Recalbox installs now give the selected physical joypad working exit,
+  menu, save, and load hotkeys from the first game, then follow Recalbox's
+  generated bindings when they become available. Pairing on supported consoles
+  also waits for a receiver restart to finish before reporting a failure.
+
 ## [0.5.1] - 2026-09-21
 
 ### Changed
