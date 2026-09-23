@@ -21,6 +21,12 @@
       "stl/virtualglove-compact-full-logo-red.stl",
       "stl/virtualglove-compact-full-logo-multicolor.3mf"
     ],
+    "uno_wordmark": [
+      "stl/virtualglove-uno-wordmark-backing.stl",
+      "stl/virtualglove-uno-wordmark-cyan.stl",
+      "stl/virtualglove-uno-wordmark-red.stl",
+      "stl/virtualglove-uno-wordmark-multicolor.3mf"
+    ],
     "full_wordmark": [
       "stl/virtualglove-full-logo-backing.stl",
       "stl/virtualglove-full-logo-cyan.stl",
@@ -43,7 +49,7 @@
         "stl/virtualglove-uno-lid.stl",
         "stl/virtualglove-uno-lid-full-logo.stl"
       ],
-      "branding": ["small_emblem", "compact_wordmark"],
+      "branding": ["small_emblem", "uno_wordmark"],
       "fit_tests": ["usb_c_fit_coupon"]
     },
     "controller_dock_v1": {

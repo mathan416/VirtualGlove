@@ -66,15 +66,27 @@ class EnclosureGeometryTests(unittest.TestCase):
 
     def test_wordmark_recesses_match_the_printed_logo_sizes(self):
         source = SOURCE.read_text()
-        self.assertIn("compact_wordmark_recess = [76.5, 23.3]", source)
+        self.assertIn("uno_wordmark_recess = [60.5, 18.5]", source)
         self.assertIn("full_wordmark_recess = [100.8, 30.8]", source)
         self.assertEqual(source.count("full_wordmark_recess);"), 2)
         self.assertIn("v21_full_wordmark_recess = [102.0, 32.0]", source)
-        self.assertEqual(source.count("compact_wordmark_recess);"), 1)
+        self.assertEqual(source.count("uno_wordmark_recess);"), 1)
+
+    def test_compact_uno_fasteners_clear_the_board(self):
+        # Check both narrow PCB-to-wall strips. The M3 insert bosses must not
+        # touch the UNO Q, including ordinary PLA fit variation.
+        width, depth = 80.0, 69.0
+        board_width, board_depth = 68.58, 53.34
+        board_y = (depth - board_depth) / 2
+        boss_radius = 6.5 / 2
+        self.assertGreater(board_y - (3.5 + boss_radius), 1.0)
+        self.assertGreater((depth - 3.5 - boss_radius) -
+                           (board_y + board_depth), 1.0)
+        self.assertGreater((width - board_width) / 2 - 2.4, 3.0)
 
     def test_exported_lids_match_their_bases(self):
         expected = {
-            "uno": (90.0, 76.0, 21.0, 8.4),
+            "uno": (80.0, 69.0, 21.0, 5.6),
             "dock": (148.0, 104.0, 25.0, 8.4),
             "dock-v2-1": (172.0, 126.0, 38.0, 5.6),
         }
@@ -86,6 +98,11 @@ class EnclosureGeometryTests(unittest.TestCase):
                                  (width, depth, base_height))
                 self.assertEqual(tuple(round(value, 2) for value in lid),
                                  (width, depth, lid_height))
+
+    def test_uno_wordmark_fits_its_lid(self):
+        backing = stl_size(ENCLOSURE / "stl/virtualglove-uno-wordmark-backing.stl")
+        self.assertEqual(tuple(round(value, 2) for value in backing),
+                         (60.0, 18.0, 0.8))
 
     def test_exporter_has_apple_silicon_headless_fallback(self):
         script = (ENCLOSURE / "export-stl.sh").read_text()

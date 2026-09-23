@@ -38,12 +38,19 @@ hub_h = 16.0;
 hub_fit = 0.50;
 
 // Compact UNO Q enclosure ----------------------------------------------------
-uno_case_w = 90;
-uno_case_d = 76;
+uno_case_w = 80;
+uno_case_d = 69;
 uno_base_h = 21;
 uno_corner = 5;
 uno_x = (uno_case_w - uno_w) / 2;
 uno_y = (uno_case_d - uno_d) / 2;
+// Two centreline fasteners fit in the narrow strips beyond the PCB. The
+// original four corner towers would overlap the board in this smaller shell.
+uno_fasteners = [[uno_case_w / 2, 3.5],
+                 [uno_case_w / 2, uno_case_d - 3.5]];
+uno_fastener_boss_d = 6.5;
+uno_lid_skirt_h = 3.2;
+uno_lid_boss_relief_d = 8.5;
 
 // Integrated Controller Dock ------------------------------------------------
 dock_w = 148;
@@ -147,6 +154,28 @@ module case_bosses(size, height) {
             }
 }
 
+module uno_case_bosses() {
+    for (p = uno_fasteners)
+        translate([p[0], p[1], floor_t])
+            difference() {
+                cylinder(h = uno_base_h - floor_t - 0.8,
+                         d = uno_fastener_boss_d);
+                translate([0, 0, uno_base_h - floor_t - 6.8])
+                    cylinder(h = 7.0, d = insert_d);
+            }
+}
+
+module uno_lid_screw_holes() {
+    for (p = uno_fasteners) {
+        translate([p[0], p[1], -0.2])
+            cylinder(h = top_t + uno_lid_skirt_h + 0.4, d = screw_d);
+        translate([p[0], p[1], -0.2]) cylinder(h = 1.35, d = 6.4);
+        translate([p[0], p[1], top_t - 0.05])
+            cylinder(h = uno_lid_skirt_h + 0.1,
+                     d = uno_lid_boss_relief_d);
+    }
+}
+
 module lid_screw_holes(size, height) {
     for (p = [[6.3, 6.3], [size[0] - 6.3, 6.3],
               [6.3, size[1] - 6.3], [size[0] - 6.3, size[1] - 6.3]]) {
@@ -197,6 +226,27 @@ module lid_shell(size, skirt_h, corner) {
         }
         lid_screw_holes(size, top_t + skirt_h);
         lid_boss_reliefs(size, skirt_h);
+    }
+}
+
+module uno_lid_shell() {
+    difference() {
+        union() {
+            rounded_prism([uno_case_w, uno_case_d, top_t], uno_corner);
+            translate([wall + fit, wall + fit, top_t])
+                difference() {
+                    rounded_prism([uno_case_w - 2 * (wall + fit),
+                                   uno_case_d - 2 * (wall + fit),
+                                   uno_lid_skirt_h],
+                                  max(1, uno_corner - wall - fit));
+                    translate([1.8, 1.8, -0.1])
+                        rounded_prism([uno_case_w - 2 * (wall + fit + 1.8),
+                                       uno_case_d - 2 * (wall + fit + 1.8),
+                                       uno_lid_skirt_h + 0.2],
+                                      max(0.8, uno_corner - wall - fit - 1.8));
+                }
+        }
+        uno_lid_screw_holes();
     }
 }
 
@@ -258,18 +308,18 @@ module lid_logo_recess(size, y, z_height, recess_size = [18.5, 18.5]) {
                        min(0.85, z_height) + 0.1], 2.2);
 }
 
-// The compact UNO Q enclosure cannot accept the 100 mm plaque. Its wordmark
-// uses the 76 mm insert. Both dock lids use the actual 100 x 30 mm full logo,
-// with 0.4 mm clearance on every side for an ordinary PLA print.
-compact_wordmark_recess = [76.5, 23.3];
+// The UNO Q enclosure uses a 60 mm wordmark. The 76 mm compact plaque remains
+// available as a standalone decoration; it cannot fit between the smaller
+// lid's fasteners. Both docks use the 100 mm full logo.
+uno_wordmark_recess = [60.5, 18.5];
 full_wordmark_recess = [100.8, 30.8];
 
 module uno_base() {
     difference() {
         union() {
             base_shell([uno_case_w, uno_case_d], uno_base_h, uno_corner);
-            board_standoffs([uno_x, uno_y]);
-            case_bosses([uno_case_w, uno_case_d], uno_base_h);
+            board_standoffs_v21([uno_x, uno_y]);
+            uno_case_bosses();
         }
         broad_uno_usb_opening(uno_y, uno_base_h);
         bottom_vents([uno_x, uno_y], floor_t + 0.4);
@@ -278,21 +328,17 @@ module uno_base() {
 
 module uno_lid(full_logo = false) {
     difference() {
-        lid_shell([uno_case_w, uno_case_d], 6.0, uno_corner);
+        uno_lid_shell();
         print_face_transform(uno_case_d) {
-            lid_usb_c_relief(uno_y, 6.0);
+            lid_usb_c_relief(uno_y, uno_lid_skirt_h);
             matrix_window([uno_x, uno_y], top_t + 0.2);
             if (full_logo)
-                lid_logo_recess([uno_case_w, uno_case_d], 41.0, top_t,
-                                compact_wordmark_recess);
+                lid_logo_recess([uno_case_w, uno_case_d], 39.8, top_t,
+                                uno_wordmark_recess);
             else
-                lid_logo_recess([uno_case_w, uno_case_d], 54.0, top_t);
-            if (full_logo)
-                vent_field([uno_x + 8, 5.0, -0.2, top_t + 0.4],
-                           7, 2, 7, 5, 5, 2);
-            else
-                vent_field([uno_x + 8, uno_y + 32, -0.2, top_t + 0.4],
-                           7, 2, 7, 6, 5, 2);
+                lid_logo_recess([uno_case_w, uno_case_d], 40.0, top_t);
+            vent_field([uno_x + 8, 36.7, -0.2, top_t + 0.4],
+                       7, 1, 7, 6, 5, 2);
         }
     }
 }
@@ -641,6 +687,26 @@ module compact_full_logo_red() {
     scale([0.76, 0.76, 1]) full_logo_red();
 }
 
+module uno_wordmark_backing() {
+    scale([0.60, 0.60, 1]) full_logo_backing();
+}
+
+module uno_wordmark_cyan() {
+    scale([0.60, 0.60, 1]) full_logo_cyan();
+}
+
+module uno_wordmark_red() {
+    scale([0.60, 0.60, 1]) full_logo_red();
+}
+
+module uno_wordmark_multicolor() {
+    color("#111722") uno_wordmark_backing();
+    color("#00d6ef") translate([0, 0, branding_pocket_floor])
+        uno_wordmark_cyan();
+    color("#ff2145") translate([0, 0, branding_pocket_floor])
+        uno_wordmark_red();
+}
+
 module target_badge_multicolor() {
     color("#111722") target_badge_backing();
     color("#00d6ef") translate([0, 0, branding_pocket_floor])
@@ -802,7 +868,7 @@ module uno_exterior_preview() {
     color("#00b9d8")
         translate([uno_x + 25.75, uno_y + 4.75, uno_base_h + top_t + 0.05])
             matrix_bezel();
-    translate([(uno_case_w - 18) / 2, 54.25, uno_base_h + top_t - 0.8]) {
+    translate([(uno_case_w - 18) / 2, 40.25, uno_base_h + top_t - 0.8]) {
         color("#111722") lid_logo_backing();
         color("#00d6ef") translate([0, 0, branding_pocket_floor]) lid_logo_cyan();
         color("#ff2145") translate([0, 0, branding_pocket_floor]) lid_logo_red();
@@ -881,7 +947,7 @@ module uno_lid_logo_options_preview() {
     color("#2a2d33")
         translate([0, uno_case_d, top_t]) rotate([180, 0, 0])
             uno_lid(false);
-    translate([(uno_case_w - 18) / 2, 54.25,
+    translate([(uno_case_w - 18) / 2, 40.25,
                top_t - branding_backing_h])
         lid_logo_multicolor();
 
@@ -889,9 +955,9 @@ module uno_lid_logo_options_preview() {
         color("#2a2d33")
             translate([0, uno_case_d, top_t]) rotate([180, 0, 0])
                 uno_lid(true);
-        translate([(uno_case_w - 76) / 2, 41.25,
+        translate([(uno_case_w - 60) / 2, 40.05,
                    top_t - branding_backing_h])
-            compact_full_logo_multicolor();
+            uno_wordmark_multicolor();
     }
 }
 
@@ -955,7 +1021,7 @@ module uno_exploded_preview() {
     color("#00b9d8")
         translate([uno_x + 25.75, uno_y + 4.75, lid_top_z + 7])
             matrix_bezel();
-    translate([(uno_case_w - 18) / 2, 54.25, 0]) {
+    translate([(uno_case_w - 18) / 2, 40.25, 0]) {
         color("#111722") translate([0, 0, lid_top_z + 11]) lid_logo_backing();
         color("#00d6ef") translate([0, 0, lid_top_z + 15]) lid_logo_cyan();
         color("#ff2145") translate([0, 0, lid_top_z + 19]) lid_logo_red();
@@ -1036,6 +1102,10 @@ else if (part == "compact_full_logo_backing") compact_full_logo_backing();
 else if (part == "compact_full_logo_cyan") compact_full_logo_cyan();
 else if (part == "compact_full_logo_red") compact_full_logo_red();
 else if (part == "compact_full_logo_multicolor") compact_full_logo_multicolor();
+else if (part == "uno_wordmark_backing") uno_wordmark_backing();
+else if (part == "uno_wordmark_cyan") uno_wordmark_cyan();
+else if (part == "uno_wordmark_red") uno_wordmark_red();
+else if (part == "uno_wordmark_multicolor") uno_wordmark_multicolor();
 else if (part == "lid_logo_multicolor") lid_logo_multicolor();
 else if (part == "branding_preview") branding_preview();
 else if (part == "branding_insets_preview") branding_insets_preview();

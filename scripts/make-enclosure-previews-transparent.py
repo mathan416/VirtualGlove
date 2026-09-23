@@ -35,6 +35,11 @@ PREVIEW_NAMES = (
     "virtualglove-controller-dock-v2-1-right.png",
     "virtualglove-lid-logo-options.png",
     "virtualglove-uno-lid-logo-options.png",
+    "virtualglove-uno-case-exterior.png",
+    "virtualglove-uno-case-back.png",
+    "virtualglove-uno-case-left.png",
+    "virtualglove-uno-case-right.png",
+    "virtualglove-uno-case-exploded.png",
     "virtualglove-printable-branding.png",
 )
 

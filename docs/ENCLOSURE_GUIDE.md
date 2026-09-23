@@ -24,7 +24,7 @@ Choose the compact case when the Arduino hub will sit elsewhere in the arcade
 panel. The case protects the UNO Q, exposes only its USB-C connection, keeps the
 Matrix visible, and leaves airflow around the board.
 
-- Outside size: approximately **90 x 76 x 27 mm** when assembled.
+- Outside size: approximately **80 x 69 x 23.4 mm** when assembled.
 - Best for: a hidden Controller, short cable runs, or the smallest possible box.
 - The USB-C hub, camera cable, power cable, and optional Ethernet cable remain
   outside the enclosure.
@@ -111,8 +111,8 @@ hub plug, while the hub itself stays outside the case.
 | Arduino UNO Q | 1 | Runs VirtualGlove |
 | Arduino USB-C Hub (8 in 1) | 1 | Camera, power, and optional Ethernet; external with the compact case |
 | M3 x 8 mm board screws | 4 | Fasten the UNO Q to its standoffs |
-| M3 x 8-12 mm case screws | 4 | Fasten the lid to the base |
-| M3 heat-set inserts | 4 | Approximately 4.0-4.2 mm outside diameter; receive the case screws |
+| M3 x 8-12 mm case screws | 2 for UNO Q Case; 4 for either Dock | Fasten the lid to the base |
+| M3 heat-set inserts | 2 for UNO Q Case; 4 for either Dock | Approximately 4.0-4.2 mm outside diameter; receive the case screws |
 | Heat-set insert tool | 1 | Seats the inserts squarely |
 | M3 driver | 1 | Installs the board and case screws |
 | Adhesive rubber feet | 4 | Keeps the enclosure stable and allows bottom airflow |
@@ -158,7 +158,7 @@ for a finished edge around the display; choose one emblem only if wanted.
 | --- | --- |
 | Matrix bezel | [Cyan bezel](../hardware/enclosures/stl/virtualglove-matrix-bezel.stl) |
 | Small lid emblem | Separate: [dark backing](../hardware/enclosures/stl/virtualglove-lid-logo-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-lid-logo-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-lid-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-lid-logo-multicolor.3mf) |
-| Compact-case wordmark | For the UNO Q full-wordmark lid only. Separate: [inset backing](../hardware/enclosures/stl/virtualglove-compact-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-compact-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-compact-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-compact-full-logo-multicolor.3mf) |
+| UNO Q wordmark | For the smaller UNO Q full-wordmark lid only. Separate: [inset backing](../hardware/enclosures/stl/virtualglove-uno-wordmark-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-uno-wordmark-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-uno-wordmark-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-uno-wordmark-multicolor.3mf) |
 | Full-size dock wordmark | Fits the full-wordmark lid for Dock V1 and V2.1. Separate: [inset backing](../hardware/enclosures/stl/virtualglove-full-logo-backing.stl), [cyan hand and wordmark](../hardware/enclosures/stl/virtualglove-full-logo-cyan.stl), [red accents](../hardware/enclosures/stl/virtualglove-full-logo-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-full-logo-multicolor.3mf) |
 | Optional larger emblem | Separate: [inset backing](../hardware/enclosures/stl/virtualglove-target-badge-backing.stl), [cyan hand and target](../hardware/enclosures/stl/virtualglove-target-badge-cyan.stl), [red target beam](../hardware/enclosures/stl/virtualglove-target-badge-red.stl); ACE: [single multicolour 3MF](../hardware/enclosures/stl/virtualglove-target-badge-multicolor.3mf) |
 
@@ -188,7 +188,8 @@ Choose exactly one lid style and its matching logo set:
 The larger hand/target emblem is a separate decorative part and does not fit a
 lid recess. The 100 x 30 mm full-size wordmark fits the matching Dock V1 and
 Dock V2.1 lid recesses directly. It remains too wide for the compact UNO Q Case,
-which uses the 76 x 22.8 mm compact wordmark.
+which uses the new 60 x 18 mm UNO Q wordmark. The older 76 x 22.8 mm
+compact wordmark is retained as a standalone decoration, not a lid insert.
 
 The 3MF downloads contain the backing, cyan artwork, and red artwork in one
 file with material colours assigned. In Anycubic Slicer, verify that those
@@ -397,7 +398,7 @@ checks that accompany each action.
 
 These six steps match page 3 of the Assembly Quick Reference.
 
-1. **Seat the four inserts.** Heat the four inserts into the corner bosses. Keep them square and stop when
+1. **Seat the two inserts.** Heat the inserts into the two centreline bosses at the front and rear of the compact case. Keep them square and stop when
    they are flush; excess heat can soften the boss.
 2. **Place the UNO Q.** Set it on the four standoffs with the USB-C socket facing the
    broad opening.

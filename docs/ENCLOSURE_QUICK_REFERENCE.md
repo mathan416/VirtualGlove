@@ -23,8 +23,8 @@ benefits from a friendly second look.
 
 ![Parts, tools, quantities, and safety checks](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-parts.png)
 
-Have the selected base and lid, UNO Q, Arduino hub, four board screws, four lid
-screws, four heat-set inserts, insert tool, M3 driver, and four rubber feet on
+Have the selected base and lid, UNO Q, Arduino hub, four board screws, two lid
+screws and inserts for the UNO Q Case (four of each for either Dock), insert tool, M3 driver, and four rubber feet on
 the workbench. The Matrix bezel, one matching lid logo set, Ethernet cable, adhesive, foam,
 and TPU are optional. Print and check the fit coupons before installing
 electronics. Coupons are small, disposable fit tests; none is fitted to the
@@ -37,7 +37,7 @@ finished enclosure.
 
 ![Six-step UNO Q Case assembly](../hardware/enclosures/previews/virtualglove-enclosure-quick-reference-uno.png)
 
-1. Seat the four heat-set inserts square and flush.
+1. Seat the two heat-set inserts in the centreline bosses, square and flush.
 2. Place the UNO Q with USB-C facing the broad opening.
 3. Fasten the board with four M3 x 8 mm screws without bending it.
 4. Connect the external hub and check that its plug does not push sideways.

@@ -769,7 +769,8 @@ def _pict_check(canvas: Canvas, x: float, y: float, good: bool = True) -> None:
 
 
 def _pict_base(canvas: Canvas, x: float, y: float, width: float = 112,
-               height: float = 52, dock: bool = False) -> None:
+               height: float = 52, dock: bool = False,
+               uno_case: bool = False) -> None:
     """Draw a simplified black-line enclosure base."""
     canvas.setStrokeColor(NIGHT)
     canvas.setLineWidth(1.8)
@@ -777,8 +778,10 @@ def _pict_base(canvas: Canvas, x: float, y: float, width: float = 112,
     canvas.roundRect(x, y, width, height, 6, fill=1, stroke=1)
     canvas.setLineWidth(0.9)
     canvas.roundRect(x + 7, y + 7, width - 14, height - 14, 3, fill=0, stroke=1)
-    for px, py in ((x + 12, y + 12), (x + width - 12, y + 12),
-                   (x + 12, y + height - 12), (x + width - 12, y + height - 12)):
+    bosses = ((x + width / 2, y + 10), (x + width / 2, y + height - 10)) if uno_case else (
+        (x + 12, y + 12), (x + width - 12, y + 12),
+        (x + 12, y + height - 12), (x + width - 12, y + height - 12))
+    for px, py in bosses:
         canvas.circle(px, py, 3.3, fill=0, stroke=1)
     if dock:
         canvas.line(x + width * 0.53, y + 5, x + width * 0.53, y + height - 5)
@@ -855,13 +858,16 @@ def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
         else:
             base_width, base_height, dock = 160, 118, True
         base_x, base_y = cx - base_width / 2, y + 6
-        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock)
+        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock,
+                   uno_case=kind == "uno-inserts")
         targets = (
             (base_x + 12, base_y + 12),
             (base_x + base_width - 12, base_y + 12),
             (base_x + 12, base_y + base_height - 12),
             (base_x + base_width - 12, base_y + base_height - 12),
         )
+        if kind == "uno-inserts":
+            targets = ((cx, base_y + 10), (cx, base_y + base_height - 10))
         # Each insert travels straight into its own corner boss. Crossing paths
         # imply the wrong destination and make the procedure harder to follow.
         for tx, ty in targets:
@@ -873,7 +879,7 @@ def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
         _pict_driver(canvas, x + width - 45, y + height - 50, heat_tool=True)
         canvas.setFillColor(NIGHT)
         canvas.setFont("Helvetica-Bold", 8)
-        canvas.drawString(x + 8, y + height - 18, "x4")
+        canvas.drawString(x + 8, y + height - 18, "x2" if kind == "uno-inserts" else "x4")
         canvas.setFont("Helvetica-Bold", 6)
         canvas.drawRightString(x + width - 7, y + height - 64, "HEAT-SET TOOL")
     elif kind in {"board", "dock-board", "v2-board"}:
@@ -884,7 +890,8 @@ def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
         else:
             base_width, base_height, dock = 160, 118, True
         base_x, base_y = cx - base_width / 2, y + 5
-        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock)
+        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock,
+                   uno_case=kind == "board")
         board_y = min(y + height - 44, base_y + base_height + 14)
         _pict_board(canvas, cx - 37, board_y)
         _pict_arrow(canvas, cx - 23, board_y - 4, cx - 23,
@@ -905,7 +912,8 @@ def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
         else:
             base_width, base_height, dock = 160, 118, True
         base_x, base_y = cx - base_width / 2, y + 5
-        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock)
+        _pict_base(canvas, base_x, base_y, base_width, base_height, dock=dock,
+                   uno_case=kind == "screws")
         board_y = base_y + 20
         _pict_board(canvas, cx - 37, board_y)
         for px, py in ((cx - 30, board_y + 7), (cx + 30, board_y + 7),
@@ -944,7 +952,7 @@ def _pictogram(canvas: Canvas, kind: str, x: float, y: float,
         dock = kind == "dock-close"
         base_width, part_height = (104, 72) if dock else (82, 66)
         _pict_base(canvas, cx - base_width / 2, y + 5, base_width,
-                   part_height, dock=dock)
+                   part_height, dock=dock, uno_case=not dock)
         _pict_lid(canvas, cx - base_width / 2, y + 87, base_width,
                   part_height, dock=dock)
         _pict_arrow(canvas, cx - 27, y + 83, cx - 27, y + 74, BLUE)
@@ -1456,12 +1464,14 @@ def build_enclosure_quick_reference(output: Path) -> None:
     _draw_pixel_pal(canvas, "safety", 676, 448, 76, 76)
     _quick_paragraph(canvas, "Print the fit coupons first. Assemble only with power disconnected.",
                      24, 493, 620, 30, size=11, leading=14, bold=True)
+    _quick_paragraph(canvas, "For lid screws and heat inserts: 2 for the UNO Q Case, 4 for either Dock.",
+                     24, 466, 620, 20, size=9, leading=12)
     inventory = [
         ("board", "UNO Q", "1"), ("hub", "ARDUINO HUB", "1"),
         ("base", "CHOSEN BASE", "1"), ("lid", "CHOSEN LID", "1"),
         ("screw", "M3 BOARD SCREWS", "4"),
-        ("screw", "M3 LID SCREWS", "4"),
-        ("insert", "HEAT INSERTS", "4"), ("insert-tool", "INSERT TOOL", "1"),
+        ("screw", "M3 LID SCREWS", "2/4"),
+        ("insert", "HEAT INSERTS", "2/4"), ("insert-tool", "INSERT TOOL", "1"),
         ("driver", "M3 DRIVER", "1"), ("feet", "RUBBER FEET", "4"),
         ("bezel", "MATRIX BEZEL", "OPT"), ("logo", "LID LOGO SET", "OPT"),
     ]
@@ -1484,7 +1494,7 @@ def build_enclosure_quick_reference(output: Path) -> None:
     _build_six_step_page(
         canvas, title="UNO Q CASE - STEPS 1-6", page_number=3, accent=BLUE,
         steps=[
-            dict(number=1, title="Seat the four inserts", instruction="Keep each M3 insert square and stop when it is flush.", pictogram="uno-inserts", caution=True),
+            dict(number=1, title="Seat the two inserts", instruction="Use the two centreline bosses; keep each insert square and flush.", pictogram="uno-inserts", caution=True),
             dict(number=2, title="Place the UNO Q", instruction="USB-C faces the broad case opening; the board lies flat.", pictogram="board"),
             dict(number=3, title="Fasten the board", instruction="Use four M3 x 8 mm screws. Snug, never bend the board.", pictogram="screws"),
             dict(number=4, title="Check USB-C clearance", instruction="Connect the external hub; the plug must not push sideways.", pictogram="plug"),

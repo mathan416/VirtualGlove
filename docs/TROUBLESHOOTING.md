@@ -320,14 +320,24 @@ Close optional camera previews during gameplay. Keep lighting and camera setup
 stable, then compare deliberate movements and supported stationary holds. Avoid
 changing several camera, core, and display settings at once.
 
-On Batocera over Wi-Fi, movement that pauses and then jumps can be wireless
-packet buffering rather than slow gesture recognition. VirtualGlove turns off
-power saving on connected Wi-Fi interfaces when its service starts and again
-before a game, including the next launch after a wireless reconnection. A wired
-connection is unaffected. If this still happens, check
-`iw dev wlan0 get power_save` on the
-Batocera console (substitute the connected wireless interface if it is not
-`wlan0`); **Power save: off** is expected while VirtualGlove is running.
+If movement pauses and then catches up in a burst, check the connection before
+changing gesture or camera settings. This can happen on any supported platform
+when the Controller or console uses Wi-Fi: delayed packet delivery can look like
+slow or jerky recognition even when the hand is tracked correctly. Compare the
+same movement with a wired connection, if available. If the physical joypad is
+smooth but VirtualGlove catches up in bursts, investigate the Controller-to-console
+network path; if both lag, check the emulator and display path too. This is a
+diagnostic possibility on RetroPie, Recalbox, and LaunchBox, not a confirmed
+platform-specific fault or a reason to change their network settings by default.
+
+Batocera has a confirmed Wi-Fi power-saving case. VirtualGlove turns off power
+saving on connected Wi-Fi interfaces when its service starts and again before
+a game, including the next launch after a wireless reconnection. Wired and
+disconnected Wi-Fi interfaces are unaffected. If movement still pauses and
+jumps, run `iw dev wlan0 get power_save` on the Batocera console (substitute
+the connected wireless interface if it is not `wlan0`); **Power save: off** is
+expected while VirtualGlove is running. Check the Controller's link as well:
+the Batocera setting cannot change power saving on the Controller or router.
 
 Software status can locate processing delays but cannot measure the complete
 hand-to-screen delay. Follow the layered method in the

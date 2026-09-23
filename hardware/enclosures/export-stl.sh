@@ -92,11 +92,15 @@ export_part full_logo_red virtualglove-full-logo-red
 export_part compact_full_logo_backing virtualglove-compact-full-logo-backing
 export_part compact_full_logo_cyan virtualglove-compact-full-logo-cyan
 export_part compact_full_logo_red virtualglove-compact-full-logo-red
+export_part uno_wordmark_backing virtualglove-uno-wordmark-backing
+export_part uno_wordmark_cyan virtualglove-uno-wordmark-cyan
+export_part uno_wordmark_red virtualglove-uno-wordmark-red
 export_part usb_c_coupon virtualglove-usb-c-fit-coupon
 export_part hub_coupon virtualglove-hub-fit-coupon
 
 export_3mf lid_logo_multicolor virtualglove-lid-logo-multicolor
 export_3mf compact_full_logo_multicolor virtualglove-compact-full-logo-multicolor
+export_3mf uno_wordmark_multicolor virtualglove-uno-wordmark-multicolor
 export_3mf target_badge_multicolor virtualglove-target-badge-multicolor
 
 # This file is a complete Anycubic Slicer Next project with ACE assignments,
