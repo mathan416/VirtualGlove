@@ -197,6 +197,9 @@ def ensure_controller_authority(
     with tempfile.TemporaryDirectory(prefix="controller-tls-", dir=str(directory)) as name:
         temporary = Path(name)
         if not authority.is_file() or not authority_key.is_file():
+            # The local authority survives ordinary certificate renewal, so
+            # a console that trusted this Controller need not pair again just
+            # because its hostname/IP leaf certificate was refreshed.
             new_authority = temporary / authority.name
             new_authority_key = temporary / authority_key.name
             subprocess.run([
@@ -218,6 +221,8 @@ def ensure_controller_authority(
                   _valid_server_certificate(certificate, authority, hostname, addresses) and
                   _certificate_matches_key(certificate, private_key))
         if not usable:
+            # Generate in the private temporary directory, then replace the
+            # old leaf only after OpenSSL has completed the new one.
             new_certificate = temporary / certificate.name
             new_private_key = temporary / private_key.name
             request = temporary / "server.csr"

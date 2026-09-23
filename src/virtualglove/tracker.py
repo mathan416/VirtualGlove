@@ -851,10 +851,15 @@ class MediaPipeTracker:
             self._directional_search.next_offset(now)
             if self.directional_search and not self._tasks else (0.0, 0.0)
         )
+        # Search translates only the image presented to the legacy tracker;
+        # accepted landmarks are shifted back below before game coordinates
+        # are calculated. The player's calibrated centre never moves.
         if search_offset != (0.0, 0.0):
             rgb = _translate_tracker_input(rgb, search_offset, cv2, self.numpy)
         inference_started = time.monotonic()
         if self._tasks:
+            # Video Tasks requires strictly increasing millisecond stamps even
+            # when two captured frames share a rounded timestamp.
             timestamp_ms = max(self._last_timestamp_ms + 1, int(now * 1000))
             self._last_timestamp_ms = timestamp_ms
             image = self.mp.Image(image_format=self.mp.ImageFormat.SRGB, data=rgb)
@@ -867,6 +872,8 @@ class MediaPipeTracker:
         palm_detector_invoked, palm_detection_count = _palm_detector_evidence(result)
         hand_presence_score = _hand_presence_score_evidence(result)
         if not detected:
+            # Do not recycle the previous hand pose: downstream gesture logic
+            # needs an explicit missing result to release held controls safely.
             if self.directional_search:
                 self._directional_search.observe_missing()
             diagnostics = self._tracking_telemetry.observe(
@@ -905,6 +912,8 @@ class MediaPipeTracker:
                 hand_label = "Hand"
                 hand_score = 1.0
         if not _landmarks_valid(landmarks):
+            # A detector can report a hand with unusable geometry. Treat that
+            # as tracking loss rather than passing corrupt positions or curls.
             if self.directional_search:
                 self._directional_search.observe_missing()
             diagnostics = self._tracking_telemetry.observe(
@@ -941,6 +950,8 @@ class MediaPipeTracker:
         )
 
         height, width = frame.shape[:2]
+        # Finger bends use landmarks in camera-pixel geometry; palm movement
+        # remains in normalized coordinates for calibration and screen mapping.
         curl_points = _camera_curl_points(result, landmarks, self._tasks, width, height)
         bends = _finger_bends(curl_points)
         curls = _finger_curls_from_bends(bends)

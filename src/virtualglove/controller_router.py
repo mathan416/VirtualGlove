@@ -318,6 +318,9 @@ class PlayerState:
         """Compute merged output with physical axis priority."""
         if not self.active:
             return set(), {name: 0 for name in AXIS_CODES}
+        # Ordinary buttons are an OR of all sources. A physical hotkey is
+        # deliberately special: only Player 1 may pass it to RetroArch, and
+        # VirtualGlove's Select never creates that hotkey button.
         buttons = set().union(*(state.buttons for state in self.physical.values()),
                               self.virtual.buttons)
         if self.player != 1:
@@ -326,6 +329,9 @@ class PlayerState:
                                 for value in state.axes.values())
         axes = {}
         for axis in AXIS_CODES:
+            # Event numbers are transient, so ownership is based on each
+            # source's last actual axis change. A still-held older source
+            # resumes automatically when the newer source returns to centre.
             owners = [state for state in self.physical.values() if state.axes[axis]]
             if owners:
                 owner = max(owners, key=lambda state: state.axis_changed[axis])
@@ -502,6 +508,8 @@ class ControllerRouterDevice:
                     virtual_allowed: bool = True) -> None:
         """Grab or release physical sources across a supported-core transition."""
         if active:
+            # Freeze the mapping revision for this game. A frontend remap made
+            # mid-session takes effect next launch, never halfway through play.
             available = candidates if candidates is not None else (
                 self._current_candidates() if hasattr(self, "es_inputs") else [])
             self.session_mapping_revisions = {}
@@ -521,6 +529,8 @@ class ControllerRouterDevice:
         for state in self.players.values():
             state.active = active
             state.virtual.release()
+        # No pose seen in EmulationStation or a previous game may become the
+        # first action in a newly launched game; require a fresh neutral pose.
         self.virtual_allowed = bool(active and virtual_allowed)
         self.virtual_updated_at = 0.0
         self.virtual_armed = False
@@ -596,6 +606,9 @@ class ControllerRouterDevice:
                 continue
             joy_fd = event_fd = None
             try:
+                # js exposes the frontend's logical button numbering; evdev
+                # supplies live events and EVIOCGRAB. Both refer to the same
+                # saved physical identity, never to persisted jsN/eventN paths.
                 joy_fd = os.open(candidate["joystick"], os.O_RDONLY | os.O_NONBLOCK)
                 mapping = translate_es_mapping(live_mapping, joy_fd)
                 event_fd = os.open(candidate["event"], os.O_RDONLY | os.O_NONBLOCK)
@@ -695,6 +708,9 @@ class ControllerRouterDevice:
                     JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES))
                 now_virtual_allowed = core in JOYSTICK_CORE_NAMES
                 if (now_active, now_virtual_allowed) != (active, virtual_allowed):
+                    # Native Super Glove Ball still needs the physical merged
+                    # pad for menu/hotkey use, but its hand position arrives
+                    # through native state, not the RetroPad glove feed.
                     candidates = None
                     if now_active:
                         candidates = self._current_candidates()

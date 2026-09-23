@@ -113,6 +113,8 @@ def load_setup(source):
     module = importlib.util.module_from_spec(spec)
     previous = sys.dont_write_bytecode
     try:
+        # The staging directory is the verified release artifact. Importing
+        # setup must not add __pycache__ files before manifest comparison.
         sys.dont_write_bytecode = True
         spec.loader.exec_module(module)
     finally:

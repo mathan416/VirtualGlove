@@ -625,6 +625,8 @@ class MergeState:
         """Return the currently merged button and axis state."""
         if not self.active:
             return set(), {name: 0 for name in AXIS_CODES}
+        # Keep the physical controller's hotkey independent. The camera may
+        # send Select, but it must never become RetroArch's Hotkey Enable.
         virtual_buttons = set()
         buttons = self.virtual.get("buttons", {})
         for name in ("a", "b", "start", "select"):
@@ -641,6 +643,8 @@ class MergeState:
             virtual_axes[target] = max(-32767, min(32767, int(raw_axes.get(source, 0))))
         desired_axes = {}
         for name in AXIS_CODES:
+            # A non-neutral physical axis wins only while it is active;
+            # releasing it exposes the glove's current direction immediately.
             physical = self.physical_axes[name]
             desired_axes[name] = physical if physical else virtual_axes[name]
         return self.physical_buttons | virtual_buttons, desired_axes

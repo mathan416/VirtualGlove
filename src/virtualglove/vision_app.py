@@ -780,6 +780,9 @@ def _update_controller_state(
     """Publish the latest valid MediaPipe coordinate for native X/Y."""
     if not native_xy_active:
         return engine.update(result.observation), _native_xy_source(False)
+    # The ordinary gesture path updates discrete actions; the native path
+    # also uses this same frame's newest palm coordinate. Bounded smoothing
+    # remains an engineering comparison, not the production native route.
     return (
         engine.update_native_motion(
             result.observation, result.observation,
@@ -1070,6 +1073,9 @@ def main() -> int:
             if transition_requested:
                 last_controller_signature = None
                 if controller_enabled and engine is not None:
+                    # End the old profile with a release in its own sequence
+                    # space. The next session may restart numbering without a
+                    # stale held button crossing the game/profile boundary.
                     sender.send(ControllerState.released(
                         2_147_483_647, time.monotonic(), engine.profile, engine.calibrated
                     ))
@@ -1143,6 +1149,8 @@ def main() -> int:
             if isinstance(rapid_request, tuple) and len(rapid_request) == 4:
                 rapid_request_id, expected_game, rapid_a, rapid_b = rapid_request
                 lease_game = Path(active_game_lease.rom).name
+                # A Dashboard edit is live only for the authenticated running
+                # game it named. It cannot silently carry into the next ROM.
                 if (active_game_lease.session_id is None
                         or lease_game.casefold() != Path(expected_game).name.casefold()):
                     shared.finish_rapid_fire(

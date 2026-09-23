@@ -935,6 +935,9 @@ class GestureEngine:
             self._reset_native_motion()
             return self.update(observation)
         if gesture is not None:
+            # Applying gesture buttons also updates the ordinary palm filter.
+            # Restore its motion-path value before selecting this observation's
+            # native coordinate, including when gesture recognition was delayed.
             self.update(gesture)
             # A delayed recognition must not rewind the movement filter.
             self._filtered_palm_x, self._filtered_palm_y = previous_x, previous_y
@@ -972,6 +975,9 @@ class GestureEngine:
             field_y, reference.palm_y, cfg.coordinate_edge_margin,
             reference.reach_up, reference.reach_down,
         )
+        # Bounded mode is retained for engineering comparison. Normal native
+        # gameplay takes the latest valid coordinate, with only a short
+        # reacquisition guard after tracking loss.
         if bounded:
             selected_x, selected_y = self._native_point(
                 selected_x, selected_y, dt, reference
@@ -1019,6 +1025,8 @@ class GestureEngine:
             self._last_seen = observation.timestamp
         lost_for = observation.timestamp - self._last_seen
         if not observation.detected and lost_for * 1000 >= self.config.loss_release_ms:
+            # Clear every latched action and candidate together. Releasing only
+            # the public state would let an old gesture reappear on reacquisition.
             self._reset_depth_candidates(clear_active=True)
             self._zap_until = 0.0
             self._pull_was_active = False
@@ -1035,6 +1043,8 @@ class GestureEngine:
             )
             return self._last_state
         if not observation.detected:
+            # A very brief dropout may preserve the last positional state,
+            # but it must not invent a new event or extend a depth action.
             self._reset_depth_candidates(clear_active=False)
             self._zap_until = 0.0
             if (self.profile == "bad_street_brawler" and self._last_state is not None

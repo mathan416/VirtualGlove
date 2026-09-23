@@ -149,6 +149,9 @@ class NativeStateWriter:
         odd = self.guard + 1
         if arrived_ns is None:
             arrived_ns = monotonic_ns()
+        # The core accepts only a stable even guard. Writing the same record
+        # under an odd guard first prevents a concurrent reader from treating
+        # a partly copied hand position as a valid new sample.
         self.mapping[:] = encode_record(state, odd, arrived_ns)
         self.guard = odd + 1
         self.mapping[:] = encode_record(state, self.guard, arrived_ns)

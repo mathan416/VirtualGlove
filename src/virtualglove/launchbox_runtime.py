@@ -65,6 +65,8 @@ def ensure_background(settings_path: Path) -> None:
             stream.flush()
         if not _lock(stream):
             return
+    # Windows input must live in the signed-in desktop session; a WSL or
+    # detached system-service process cannot inject into this RetroArch.
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     executable = Path(sys.executable).with_name(
         "pythonw.exe" if os.name == "nt" else Path(sys.executable).name
@@ -94,6 +96,8 @@ def run(settings_path: Path) -> int:
         if not _lock(lock_stream):
             return 0
         while True:
+            # Pairing-key rotation or a requested restart replaces both child
+            # services together so the receiver and registry agree on identity.
             try:
                 token_stamp = Path(settings["token_file"]).stat().st_mtime_ns
                 if len(Path(settings["token_file"]).read_text().strip()) < 16:

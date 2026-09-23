@@ -259,6 +259,8 @@ def main() -> int:
     try:
         # The worker keeps its lightweight control plane alive while gestures
         # are paused and owns lazy camera/model activation for active profiles.
+        # Keep the web server and matrix in this supervisor: a failed model or
+        # camera can restart the worker without taking Setup and recovery down.
         while True:
             settings = control.load_config()
             matrix.set_profile(str(settings.get("profile", "off")))
@@ -268,6 +270,8 @@ def main() -> int:
                 worker_command(settings, model_path, control.controller_enabled()), cwd=APP_ROOT,
                 env=environment, start_new_session=True,
             )
+            # A separate process group lets _stop_worker reap uv, Python, and
+            # camera descendants together on a settings change or shutdown.
             control.update_supervisor(camera=False, running=True)
             configuration_changed = False
             camera_recovery_restart = False

@@ -182,6 +182,8 @@ class UdpSender:
                     if discovery_due else
                     "Waiting for the RetroPie controller handshake; update both computers if this persists.")
                 return False
+            # Send the newest state once, directly to the authenticated peer.
+            # Discovery never broadcasts gameplay or queues old observations.
             send_started_ns = time.monotonic_ns() if self.trace and self.trace.enabled else 0
             data = state.to_transport_dict()
             self.socket.sendto(encode_message("state", self.token, session=self.session,

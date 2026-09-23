@@ -171,6 +171,8 @@ def main() -> int:
     try:
         while True:
             now = time.monotonic()
+            # Receipt time, not a sender-supplied timestamp, controls safety:
+            # a paused Controller or stale network packet cannot hold buttons.
             if last_valid_at is not None and not released and now - last_valid_at >= timeout:
                 if device is not None:
                     device.release()
@@ -192,6 +194,8 @@ def main() -> int:
                     state, reply = sessions.receive(payload, _peer)
                 except (ValueError, UnicodeError, RecursionError):
                     continue
+                # Challenges are protocol maintenance; only a validated state
+                # below is allowed to renew the gameplay timeout.
                 if reply is not None:
                     try:
                         if reply_info:
@@ -210,6 +214,9 @@ def main() -> int:
                 native_first = native is not None and is_native_profile
                 native_started_ns = native_completed_ns = 0
                 if native_first:
+                    # The native core reads a shared-state record on its own
+                    # cadence. Publish it before the ordinary gamepad path so
+                    # that path cannot delay the newest hand coordinate.
                     native_started_ns = time.monotonic_ns() if received_ns else 0
                     native.write(state)
                     native_completed_ns = time.monotonic_ns() if received_ns else 0

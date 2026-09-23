@@ -510,12 +510,16 @@ class ControlState:
     def load_config(self) -> dict[str, Any]:
         """Return an independent copy of the cached private device configuration."""
         with self.config_lock:
+            # Callers may edit their result while validating a proposed save;
+            # never let that mutate the live snapshot seen by status polling.
             return copy.deepcopy(self._config)
 
     def _store_config(self, config: dict[str, Any], *, restart: bool) -> None:
         """Atomically persist and publish one validated configuration document."""
         from .game_registry import atomic_write
         with self.config_lock:
+            # Disk and memory change under one lock, so readers cannot see a
+            # new in-memory configuration whose durable write failed.
             atomic_write(self.config_path, json.dumps(config, indent=2) + "\n")
             self._config = copy.deepcopy(config)
             self._camera_inventory = None
@@ -1024,6 +1028,9 @@ class ControlState:
     def snapshot(self) -> dict[str, Any]:
         """Return a thread-safe dashboard snapshot of configuration and runtime health."""
         with self.lock:
+            # Copy worker-owned fields quickly, then release this lock before
+            # reading cached config/network status. Dashboard polling must not
+            # wait for camera enumeration or block the worker's status writes.
             status = dict(self.worker_status)
             status["worker_controller_enabled"] = status.get("controller_enabled")
             status["worker_status_age_seconds"] = None if self._worker_status_at is None else round(time.monotonic() - self._worker_status_at, 3)

@@ -98,6 +98,9 @@ class RetroArchRemoteDevice:
                 if not self._pressed:
                     self._condition.wait()
                     continue
+                # Refresh one held button per tick rather than resending the
+                # whole state. This keeps a hold alive on affected builds
+                # without flooding the emulator or changing physical XInput.
                 controls = sorted(self._pressed)
                 control_id = controls[self._refresh_index % len(controls)]
                 self._refresh_index += 1
@@ -114,6 +117,8 @@ class RetroArchRemoteDevice:
         with self._condition:
             if self.closed:
                 raise RuntimeError("RetroArch remote output is closed")
+            # Releases precede presses so a changed direction cannot briefly
+            # look like two held directions between UDP messages.
             for control_id in sorted(self._pressed - desired):
                 self._send(control_id, False)
             for control_id in sorted(desired - self._pressed):
