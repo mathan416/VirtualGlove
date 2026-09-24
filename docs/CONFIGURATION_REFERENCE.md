@@ -1456,6 +1456,7 @@ ports through a router or expose them directly to the Internet.
 | --- | --- | --- |
 | UDP `55355` | VirtualGlove Controller to console | Authenticated live controller state |
 | UDP `55356` | Console to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
+| TCP `80` | Browser to VirtualGlove Controller | Port-free Dashboard, Play, Help, Glove Academy, and ordinary Setup URL; published by the app's main container and released when the app stops |
 | TCP `8088` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
 | TCP `8443` | Browser to VirtualGlove Controller | TLS Setup and pairing workflow |
 | TCP `55358` | VirtualGlove Controller to console | Paired game registry reads, saves, and restoration |

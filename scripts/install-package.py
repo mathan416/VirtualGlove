@@ -100,9 +100,9 @@ def print_controller_urls(controller_hostname=None):
     print("\nVirtualGlove Controller is ready. Open one of these addresses:")
     for label, address in [("Hostname", hostname)] + [("IP address", value) for value in addresses]:
         print("\n  " + label + ":")
-        print("    Dashboard  http://" + address + ":8088/dashboard")
+        print("    Dashboard  http://" + address + "/dashboard")
         print("    Setup      https://" + address + ":8443/setup")
-        print("    Help       http://" + address + ":8088/help")
+        print("    Help       http://" + address + "/help")
     if not addresses:
         print("\n  IP address: not available yet; connect Ethernet or Wi-Fi and use the hostname above.")
 
@@ -599,7 +599,7 @@ def stage_unoq(source, setup):
         shutil.copytree(str(cache), str(setup.BACKUPS / "previous-sketch-cache"), symlinks=True)
     compose = APP / ".cache/app-compose.yaml"
     if compose.exists():
-        setup.run("runuser", "-u", "arduino", "--", "arduino-app-cli",
+        setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP), "arduino-app-cli",
                   "app", "stop", APP)
         setup.run("env", "APP_HOME=" + str(APP), "docker", "compose",
                   "-p", "virtualglove", "-f", compose, "down", "--remove-orphans")
@@ -624,7 +624,8 @@ def stage_unoq(source, setup):
     # Flash through factory OpenOCD. The release carries no compiler or sketch source.
     setup.run("python3", APP / "scripts/flash-matrix-firmware.py", APP / "firmware/matrix")
     # Starting an app without sketch/ starts its Linux services without compiling.
-    setup.run("runuser", "-u", "arduino", "--", "arduino-app-cli", "app", "start", APP)
+    setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP),
+              "arduino-app-cli", "app", "start", APP)
 
 
 def main(argv=None):

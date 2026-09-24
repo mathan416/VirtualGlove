@@ -32,9 +32,32 @@ def configure_project_name(text):
     return text[:match.start()] + line + text[match.end():]
 
 
+def configure_web_ports(text):
+    """Publish the same web server on 80 and 8088 in the app-owned container.
+
+    Keeping port 80 in the main service, rather than a separate host helper,
+    makes App Lab stop release both browser ports together.
+    """
+    lines = text.splitlines(keepends=True)
+    dashboard = next((index for index, line in enumerate(lines)
+                      if line.strip() == "- 8088:8088"), None)
+    if dashboard is None:
+        raise ValueError("Expected app port 8088 in Compose configuration")
+    if any(line.strip().startswith("- 80:") and line.strip() != "- 80:8088"
+           for line in lines):
+        raise ValueError("Port 80 is already assigned to another Compose destination")
+    indent = lines[dashboard][:len(lines[dashboard]) - len(lines[dashboard].lstrip())]
+    for mapping in ("80:8088", "8443:8443"):
+        entry = indent + "- " + mapping + "\n"
+        if not any(line.strip() == entry.strip() for line in lines):
+            lines.insert(dashboard + 1, entry)
+            dashboard += 1
+    return "".join(lines)
+
+
 def configure(path, project_only=False):
     """Preserve existing settings while supporting deployment before App Lab regeneration."""
-    text = configure_project_name(path.read_text())
+    text = configure_web_ports(configure_project_name(path.read_text()))
     if project_only:
         path.write_text(text)
         return

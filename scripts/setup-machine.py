@@ -405,11 +405,6 @@ def install_unoq(peer):
     backup.parent.mkdir(parents=True, exist_ok=True)
     backup.write_bytes(original)
     configure(compose)
-    text = compose.read_text()
-    if "- 8443:8443" not in text:
-        if "- 8088:8088" not in text:
-            raise ValueError("Expected app port 8088 in Compose configuration")
-        compose.write_text(text.replace("- 8088:8088", "- 8088:8088\n    - 8443:8443", 1))
     user = pwd.getpwnam("arduino")
     os.chown(str(compose), user.pw_uid, user.pw_gid)
     # App Lab properties belong to the non-root desktop account.
@@ -1197,6 +1192,11 @@ def check_unoq(report):
         report.check("Application HTTP status", bool(status.get("version")))
     except (OSError, ValueError):
         report.check("Application HTTP status", False)
+    try:
+        with urllib.request.urlopen("http://127.0.0.1/status", timeout=3) as response:
+            report.check("Port 80 Dashboard uses the app", bool(json.load(response).get("version")))
+    except (OSError, ValueError):
+        report.check("Port 80 Dashboard uses the app", False)
     report.check("App-owned Avahi resolver configured", "local:avahi_resolver" in (SOURCE / "app.yaml").read_text() and (SOURCE / "bricks/local/avahi_resolver/brick_compose.yaml").is_file())
     report.command("Profile UDP ingress published", ["docker", "port", "virtualglove-profile-relay-1", "55356/udp"])
     code = ("import json; from pathlib import Path; from virtualglove.resolver import resolve_ipv4; "

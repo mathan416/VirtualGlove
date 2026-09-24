@@ -77,6 +77,26 @@ class SetupTests(unittest.TestCase):
             compose_config.configure_project_name(
                 "name: old\nname: duplicate\nservices:\n  main:\n    image: example\n")
 
+    def test_browser_ports_belong_to_the_app_compose_service(self):
+        original = ("services:\n  main:\n    ports:\n"
+                    "    - 8088:8088\n")
+        configured = compose_config.configure_web_ports(original)
+        self.assertEqual(configured.count("- 80:8088"), 1)
+        self.assertEqual(configured.count("- 8088:8088"), 1)
+        self.assertEqual(configured.count("- 8443:8443"), 1)
+        self.assertEqual(compose_config.configure_web_ports(configured), configured)
+        self.assertNotIn("  redirect:\n", configured)
+        with self.assertRaisesRegex(ValueError, "Port 80"):
+            compose_config.configure_web_ports(original + "    - 80:80\n")
+        with tempfile.TemporaryDirectory() as directory:
+            compose = Path(directory) / "app-compose.yaml"
+            compose.write_text(original)
+            compose_config.configure(compose, project_only=True)
+            deployed = compose.read_text()
+            compose_config.configure(compose, project_only=True)
+            self.assertEqual(compose.read_text(), deployed)
+            self.assertEqual(deployed.count("- 80:8088"), 1)
+
     def test_retired_buster_source_is_detected_without_touching_pi_archive(self):
         sources = [
             ("/etc/apt/sources.list",
@@ -471,6 +491,7 @@ class SetupTests(unittest.TestCase):
             command.assert_any_call("systemctl", "enable", "--now", "avahi-daemon")
             self.assertEqual(first, compose.read_text())
             self.assertEqual(first.count("target: /run/avahi-daemon"), 1)
+            self.assertEqual(first.count("- 80:8088"), 1)
             self.assertEqual(first.count("- 8443:8443"), 1)
             self.assertEqual(first.count("bricks/local/profile_control/brick_compose.yaml"), 1)
             self.assertTrue(first.startswith("name: virtualglove\n"))

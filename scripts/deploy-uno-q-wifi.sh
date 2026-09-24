@@ -132,13 +132,9 @@ ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
 
 echo "Preparing the VirtualGlove App Lab runtime..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "if test ! -f '${REMOTE_COMPOSE}'; then arduino-app-cli app start '${REMOTE_APP_DIR}'; fi"
+  "if test ! -f '${REMOTE_COMPOSE}'; then APP_HOME='${REMOTE_APP_DIR}' arduino-app-cli app start '${REMOTE_APP_DIR}'; fi"
 
-echo "Ensuring the secure setup port is published..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "REMOTE_COMPOSE='${REMOTE_COMPOSE}' python3 -c \"import os, pathlib; p=pathlib.Path(os.environ['REMOTE_COMPOSE']); lines=p.read_text().splitlines(); found=any(line.strip() == '- 8443:8443' for line in lines); index=next((i for i, line in enumerate(lines) if line.strip() == '- 8088:8088'), None); assert found or index is not None, 'port 8088 is missing from App Lab compose file'; lines if found else lines.insert(index + 1, lines[index].replace('8088:8088', '8443:8443')); p.write_text('\\n'.join(lines) + '\\n')\""
-
-echo "Configuring persistent local hostname resolution..."
+echo "Configuring browser ports and persistent local hostname resolution..."
 ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only && { test ! -S /run/avahi-daemon/socket || python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}'; }"
 

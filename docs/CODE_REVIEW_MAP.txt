@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.2
-Git-visible files: 733
+Git-visible files: 737
 Python test modules: 78
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-733 tracked or non-ignored files are present in this checkout. Ignored
+737 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -518,6 +518,10 @@ are intentionally omitted.
 |       |   |-- virtualglove-uno-base.stl
 |       |   |-- virtualglove-uno-lid-full-logo.stl
 |       |   |-- virtualglove-uno-lid.stl
+|       |   |-- virtualglove-uno-wordmark-backing.stl
+|       |   |-- virtualglove-uno-wordmark-cyan.stl
+|       |   |-- virtualglove-uno-wordmark-multicolor.3mf
+|       |   |-- virtualglove-uno-wordmark-red.stl
 |       |   `-- virtualglove-usb-c-fit-coupon.stl
 |       |-- enclosure-files.json
 |       |-- export-stl.sh

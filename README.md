@@ -115,7 +115,7 @@ existing name.
 ### 3. Check the Controller
 
 Open the Dashboard address printed by the installer—normally
-`http://virtualglove.local:8088/dashboard`. The installer configures
+`http://virtualglove.local/dashboard`. The installer configures
 automatic startup, the matrix display, guarded camera recovery, and its required
 host helpers.
 
