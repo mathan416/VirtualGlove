@@ -89,3 +89,22 @@ class WebFeatureTests(unittest.TestCase):
         self.assertIn(b'/api/rapid-fire', DASHBOARD)
         self.assertNotIn(b'gesture-recorder-card', DASHBOARD)
         self.assertNotIn(b'/api/gesture-recording', DASHBOARD)
+
+    def test_setup_follows_the_console_to_game_workflow(self):
+        landmarks = (
+            b'id=setup-connect', b'id=connection-section',
+            b'id=connection-status-card', b'id=setup-controllers',
+            b'id=controller-router', b'id=setup-pair',
+            b'id=pairing-card', b'id=controller-trust', b'id=setup-hand',
+            b'id=camera-section', b'id=players', b'id=joystick-settings',
+            b'id=setup-preferences', b'id=matrix-attract',
+            b'id=statistics-settings', b'id=setup-games', b'id=games-section',
+        )
+        positions = [SETUP.index(item) for item in landmarks]
+        self.assertEqual(positions, sorted(positions))
+        for anchor in (b'setup-connect', b'setup-controllers', b'setup-pair',
+                       b'setup-hand', b'setup-preferences', b'setup-games'):
+            self.assertIn(b'href=#' + anchor, SETUP)
+        self.assertIn(b'Connect. Centre. Play.', SETUP)
+        self.assertNotIn(b'{{GAMES_CONTENT}}', SETUP)
+        self.assertNotIn(b'{{STATISTICS_CONTENT}}', SETUP)

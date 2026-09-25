@@ -184,9 +184,14 @@ PLAY = _page(
 )
 
 
-SETUP = _page("Setup", SETUP_CONTENT.replace("{{PROFILE_OPTIONS}}", _profile_options()), SETUP_SCRIPT)
+SETUP = _page(
+    "Setup",
+    SETUP_CONTENT.replace("{{PROFILE_OPTIONS}}", _profile_options())
+                 .replace("{{GAMES_CONTENT}}", GAMES_CONTENT)
+                 .replace("{{STATISTICS_CONTENT}}", STATISTICS_CONTENT),
+    SETUP_SCRIPT,
+)
 
-SETUP = SETUP.replace(b'</main>', (GAMES_CONTENT + STATISTICS_CONTENT).encode() + b'</main>', 1)
 SETUP = SETUP.replace(b'</body>', b'<script>' + (GAMES_SCRIPT + '\n' + STATISTICS_SCRIPT).encode() + b'</script></body>', 1)
 
 
