@@ -16,9 +16,10 @@ VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current stable release: v0.5.2.** It restores Recalbox's physical joypad
-hotkeys on the first game and gives pairing more time to complete a console
-receiver restart. Use the same installation commands for a fresh setup or an upgrade.
+**Current stable release: v0.5.3.** It makes the Setup page easier to follow,
+adds a compact standalone UNO Q enclosure, and makes the Controller website
+available without typing `:8088` when port 80 is free. Use the same installation
+commands for a fresh setup or an upgrade.
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
@@ -87,7 +88,7 @@ both devices** and close any running RetroArch game first. The scripts
 verify their downloads, ask for administrator access when needed, and preserve
 existing pairing and player settings during an update.
 
-VirtualGlove `v0.5.2` is the current stable release. The unversioned commands
+VirtualGlove `v0.5.3` is the current stable release. The unversioned commands
 below select it through GitHub's latest stable release. To reproduce one exact
 installation later, use the pinned-version procedure in the
 [technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
@@ -365,7 +366,7 @@ pages, validates release-sensitive links and commands, and creates
 
 ## Project status
 
-VirtualGlove 0.5.2 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
+VirtualGlove 0.5.3 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
 live dead-zone visualization, and source-accurate
 rapid-fire behaviour. It extends the authenticated console integration to
 Recalbox, Batocera, and LaunchBox while retaining RetroPie. This release also

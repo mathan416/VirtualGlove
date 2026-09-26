@@ -11,7 +11,7 @@ VirtualGlove Controller hostname and `CONSOLE-NAME.local`
 with your RetroPie, Recalbox, Batocera, or LaunchBox host name. Each command section identifies the machine
 on which to run it. Keep passwords and pairing tokens out of this document.
 
-The unversioned download commands select the current stable release, v0.5.2.
+The unversioned download commands select the current stable release, v0.5.3.
 Use the same commands to install or upgrade, and install the same release on
 the Controller and console. A failed checksum check changes no installed files.
 
@@ -746,7 +746,7 @@ Portable backups now use VirtualGlove version 4. New exports include the centre-
 personal and complete gesture sensitivity, software identity, and the player's saved calibration. Restore
 separately confirms complete sensitivity and calibration reuse. Version 4 is the
 only supported portable backup format. Current version-6 player stores are
-preserved by the supported in-place upgrade from VirtualGlove 0.4.2 to 0.5.2.
+preserved by the supported in-place upgrade from VirtualGlove 0.4.2 to 0.5.3.
 
 Off attract mode shows four faint pixels: app, console service, authenticated
 console, and independent Wi-Fi link. Setup distinguishes disconnected Wi-Fi from

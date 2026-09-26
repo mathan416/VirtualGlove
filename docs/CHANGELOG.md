@@ -10,6 +10,26 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
+## [0.5.3] - 2026-09-26
+
+### Changed
+
+- Reorganised the Controller Setup page into clearer, guided sections without
+  changing pairing or Controller Router behaviour.
+- Made the standalone UNO Q enclosure more compact while keeping its screen
+  visible and the external USB-C hub connection accessible. Updated the print
+  files, enclosure guides, and fit guidance to match.
+- Added explanatory comments around important runtime paths and clarified how
+  to recognise and troubleshoot delayed input on Batocera and other consoles.
+
+### Fixed
+
+- The Controller website is available at its local hostname without `:8088`
+  when port 80 is free, and VirtualGlove releases that port when stopped. This
+  does not take port 80 from another application.
+- Suppressed an unnecessary `APP_HOME` warning during VirtualGlove shutdown
+  and installation.
+
 ## [0.5.2] - 2026-09-22
 
 ### Fixed
