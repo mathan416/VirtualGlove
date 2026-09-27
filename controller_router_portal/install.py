@@ -117,8 +117,15 @@ def install() -> str:
         raise RuntimeError("Install the UNO Q launcher as the arduino user.")
     if not SOURCE.joinpath("host/portal-compose.yaml").is_file():
         raise RuntimeError("Incomplete Controller Router launcher package.")
-    if any(root.exists() and version(root) > version(SOURCE) for root in (DEST, LEGACY)):
-        return "A newer Controller Router launcher is already installed."
+    newer = next((root for root in (DEST, LEGACY)
+                  if root.exists() and version(root) > version(SOURCE)), None)
+    if newer is not None:
+        # Keep the newer shared software, but register a product just installed
+        # by this older bundle. Product data and existing assignments stay put.
+        command("python3", str(newer / "host/products.py"), "start-all")
+        command("systemctl", "--user", "enable", "--now", SERVICE.name)
+        command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
+        return "Kept the newer Controller Router launcher and started installed controller services."
     DEST.parent.mkdir(parents=True, exist_ok=True)
     listing = app_listing()
     for app_id, app in APPS.items():

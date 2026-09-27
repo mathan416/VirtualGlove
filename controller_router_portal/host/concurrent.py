@@ -73,6 +73,10 @@ class ConcurrentLauncher:
             path = self._lease_path(app_id)
             if not path.parent.is_dir():
                 continue
+            marker = path.with_name("controller-router-required")
+            if not marker.exists():
+                marker.write_text("1\n")
+                marker.chmod(0o600)
             data = {"schema": 1, "boot_id": BOOT_ID, "active": app_id == selected,
                     "until": self.clock() + 2 if app_id == selected else 0}
             temporary = path.with_name(".controller-router-lease.tmp")

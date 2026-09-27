@@ -51,13 +51,20 @@ from virtualglove.help_content import (
 )
 from virtualglove.help_content import cabinet_reference_content, request_browser_address
 from virtualglove.vision_app import (
-    _base_status, _effective_profile, _requested_rapid_fire,
+    _base_status, _effective_profile, _requested_rapid_fire, _router_lease_active,
 )
 from virtualglove.profile_control import ProfileRequest
 
 
 class AutomaticGameControllerTests(unittest.TestCase):
     """Check automatic launches without overriding explicit player actions."""
+
+    def test_missing_router_lease_fails_closed_only_after_router_install(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "controller-router-lease.json"
+            self.assertTrue(_router_lease_active(path))
+            path.with_name("controller-router-required").write_text("1\n")
+            self.assertFalse(_router_lease_active(path))
 
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()

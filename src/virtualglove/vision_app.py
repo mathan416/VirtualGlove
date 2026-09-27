@@ -75,10 +75,12 @@ from .transport import UdpSender
 PRACTICE_PROFILE = "practice"
 
 
-def _router_lease_active() -> bool:
-    path = Path(__file__).resolve().parents[2] / "data/controller-router-lease.json"
+def _router_lease_active(path: Path | None = None) -> bool:
+    path = path or Path(__file__).resolve().parents[2] / "data/controller-router-lease.json"
     if not path.exists():
-        return True  # Existing standalone installations remain compatible.
+        # Standalone installations have neither file. A Router-managed app
+        # must fail closed even when its renewable lease is missing.
+        return not path.with_name("controller-router-required").exists()
     try:
         lease = json.loads(path.read_text())
         boot = Path("/proc/sys/kernel/random/boot_id")

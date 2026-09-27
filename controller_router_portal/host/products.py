@@ -89,6 +89,13 @@ def product_compose(name: str) -> Path:
 
 
 def start(name: str) -> None:
+    root = ROOT / name
+    data = root / "data"
+    data.mkdir(parents=True, exist_ok=True)
+    marker = data / "controller-router-required"
+    if not marker.exists():
+        marker.write_text("1\n")
+        marker.chmod(0o600)
     compose = product_compose(name)
     subprocess.run(["docker", "compose", "-p", name + "-runtime", "-f", str(compose),
                     "up", "-d", "--remove-orphans"], check=True)
