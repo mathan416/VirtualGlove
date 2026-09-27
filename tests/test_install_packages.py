@@ -37,6 +37,23 @@ spec.loader.exec_module(installer)
 
 
 class PackageContentTests(unittest.TestCase):
+    def test_uno_q_brick_mounts_default_without_app_home(self):
+        # App Lab can invoke Compose without forwarding APP_HOME to the host.
+        app_home = '/home/arduino/ArduinoApps/virtualglove'
+        mounts = {
+            'bricks/local/avahi_resolver/brick_compose.yaml': (
+                'data', 'scripts/avahi-resolver-service.py'),
+            'bricks/local/profile_control/brick_compose.yaml': (
+                'scripts/profile-relay.py',),
+        }
+        for filename, sources in mounts.items():
+            with self.subTest(filename=filename):
+                compose = (ROOT / filename).read_text()
+                self.assertNotIn('${APP_HOME}/', compose)
+                for source in sources:
+                    self.assertIn(
+                        f'source: ${{APP_HOME:-{app_home}}}/{source}', compose)
+
     def test_completed_console_upgrade_rotates_only_routine_backups(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -261,6 +278,12 @@ class ArchiveTests(unittest.TestCase):
                          'src/virtualglove/profile_control.py',
                          'src/virtualglove/retropie_hook.py',
                          'src/virtualglove/controller_router.py',
+                         'src/router_shared/__init__.py',
+                         'src/router_shared/controller_router.py',
+                         'src/router_shared/merged_gamepad.py',
+                         'src/router_shared/storage.py',
+                         'src/router_shared/retroarch_udev.py',
+                         'src/router_shared/virtual_sources.py',
                          'config/games.json', 'config/profiles.json',
                          'THIRD_PARTY_NOTICES.md',
                          'retropie/virtualglove-receiver.service',

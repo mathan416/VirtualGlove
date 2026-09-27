@@ -249,7 +249,8 @@ def main() -> int:
     input_service = None
     router = settings.get("controller_router")
     if isinstance(router, dict):
-        from .controller_router import RouterService, RouterStore
+        from .controller_router import RouterService
+        from router_shared.controller_router import RouterStore
         required = ("path", "platform", "es_inputs", "retroarch_config")
         if all(isinstance(router.get(key), str) and router[key] for key in required):
             activate = None

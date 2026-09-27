@@ -34,6 +34,7 @@ ROUTER_CONTENT = r"""
 <p id=router-hotkey-warning class=router-hotkey-warning role=alert hidden>No physical controller is assigned to Player 1. RetroArch menu and exit hotkeys may be unavailable during Libretro gameplay. Keep a keyboard available or assign a physical controller to Player 1.</p>
 <div class=controls><button type=button id=router-save>Save assignments</button><button type=button class=secondary id=router-check>Check controllers</button><button type=button class=secondary id=router-rollback hidden>Restore previous assignments</button></div>
 <p id=router-notice role=status aria-live=polite></p>
+<p class=setup-help><a href=/help/controller-router>Read the Controller Router guide</a> for player assignments, testing, and recovery.</p>
 </div></section>
 """
 

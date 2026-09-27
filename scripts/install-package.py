@@ -159,6 +159,15 @@ def unpack(archive, destination, machine, version):
             "config/profiles.json",
             "THIRD_PARTY_NOTICES.md",
         ]
+        if machine in ("retropie", "recalbox", "batocera"):
+            required += [
+                "src/router_shared/__init__.py",
+                "src/router_shared/controller_router.py",
+                "src/router_shared/merged_gamepad.py",
+                "src/router_shared/storage.py",
+                "src/router_shared/retroarch_udev.py",
+                "src/router_shared/virtual_sources.py",
+            ]
         required += (["app.yaml", "scripts/flash-matrix-firmware.py",
                       "firmware/matrix/manifest.json", "firmware/matrix/virtualglove-matrix.elf-zsk.bin",
                       "firmware/matrix/zephyr-arduino_uno_q_stm32u585xx.elf",

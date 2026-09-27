@@ -13,4 +13,4 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 export PYTHONPATH="$PROJECT_DIR/src"
-exec python3 -m virtualglove.controller_router "$@"
+exec python3 -m router_shared.controller_router "$@"

@@ -273,6 +273,43 @@ class SetupTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     setup.write_file(link, "bad")
 
+    def test_retropie_config_updates_use_pi_even_when_existing_file_is_root_owned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory).resolve() / "emulators.cfg"
+            path.write_text("old\n")
+            with patch.object(setup.os, "geteuid", return_value=0), \
+                    patch.object(setup.os, "chown") as chown, \
+                    patch.object(setup, "BACKUPS", Path(directory) / "backups"):
+                setup.write_file(path, "new\n", owner=(1234, 1234))
+                chown.assert_any_call(str(path.with_name("emulators.cfg.setup-tmp")), 1234, 1234)
+                chown.reset_mock()
+                setup.write_file(path, "new\n", owner=(1234, 1234))
+                chown.assert_called_once_with(str(path), 1234, 1234)
+
+    def test_retropie_config_ownership_repair_is_scoped_and_refuses_symlinks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory).resolve()
+            nes = prefix / "configs/nes"
+            other = prefix / "configs/snes"
+            nes.mkdir(parents=True)
+            other.mkdir(parents=True)
+            retroarch = nes / "retroarch.cfg"
+            emulators = nes / "emulators.cfg"
+            retroarch.write_text("NES\n")
+            emulators.write_text("cores\n")
+            (other / "retroarch.cfg").write_text("SNES\n")
+            with patch.object(setup, "retropie_pi_owner", return_value=(1234, 1234)), \
+                    patch.object(setup.os, "chown") as chown:
+                setup.ensure_retropie_config_ownership(prefix)
+            self.assertEqual({call.args[0] for call in chown.call_args_list},
+                             {str(retroarch), str(emulators)})
+            emulators.unlink()
+            emulators.symlink_to(other / "retroarch.cfg")
+            with patch.object(setup, "retropie_pi_owner", return_value=(1234, 1234)), \
+                    patch.object(setup.os, "chown"):
+                with self.assertRaisesRegex(ValueError, "Refusing symlink"):
+                    setup.ensure_retropie_config_ownership(prefix)
+
     def test_runtime_name_migration_refuses_pending_shutdown_request(self):
         with tempfile.TemporaryDirectory() as directory:
             app = Path(directory)

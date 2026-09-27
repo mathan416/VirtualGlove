@@ -98,7 +98,30 @@ def managed_runtime_processes(proc_root=Path("/proc")):
         ["virtualglove.", "power" + "glove_vision."], proc_root)
 
 
-def write_file(path, content, mode=0o644, preserve=False):
+def retropie_pi_owner():
+    """Return RetroPie's writable configuration owner during a root install."""
+    if os.geteuid() != 0:
+        return None
+    return pwd.getpwnam("pi").pw_uid, grp.getgrnam("pi").gr_gid
+
+
+def ensure_retropie_config_ownership(prefix=Path("/opt/retropie")):
+    """Repair only the RetroPie configuration files VirtualGlove updates."""
+    owner = retropie_pi_owner()
+    if owner is None:
+        return
+    for relative in ("configs/nes/retroarch.cfg", "configs/nes/emulators.cfg",
+                     "configs/all/emulators.cfg"):
+        path = prefix / relative
+        if path.is_symlink():
+            raise ValueError("Refusing symlink: " + str(path))
+        if path.is_file():
+            details = path.stat()
+            if (details.st_uid, details.st_gid) != owner:
+                os.chown(str(path), *owner)
+
+
+def write_file(path, content, mode=0o644, preserve=False, owner=None):
     """Back up changed managed files; never overwrite a symlink or preserved setting."""
     path = Path(path)
     if any(parent.is_symlink() for parent in [path] + list(path.parents)):
@@ -108,6 +131,10 @@ def write_file(path, content, mode=0o644, preserve=False):
     data = content.encode() if isinstance(content, str) else content
     if path.exists():
         if path.read_bytes() == data and path.stat().st_mode & 0o777 == mode:
+            if owner is not None and os.geteuid() == 0:
+                details = path.stat()
+                if (details.st_uid, details.st_gid) != owner:
+                    os.chown(str(path), *owner)
             return
         backup = BACKUPS / str(path).lstrip("/")
         backup.parent.mkdir(parents=True, exist_ok=True)
@@ -119,9 +146,12 @@ def write_file(path, content, mode=0o644, preserve=False):
     with temporary.open("xb") as stream:
         stream.write(data)
     temporary.chmod(mode)
-    if path.exists() and os.geteuid() == 0:
-        owner = path.stat()
-        os.chown(str(temporary), owner.st_uid, owner.st_gid)
+    if os.geteuid() == 0:
+        if owner is not None:
+            os.chown(str(temporary), *owner)
+        elif path.exists():
+            previous = path.stat()
+            os.chown(str(temporary), previous.st_uid, previous.st_gid)
     os.replace(str(temporary), str(path))
 
 
@@ -213,6 +243,7 @@ def install_retropie(peer):
         raise ValueError("First installation requires --peer YOUR-UNO-Q.local")
     run("apt-get", "update")
     run("apt-get", "install", "-y", "python3", "python3-evdev", "openssl", "avahi-daemon", "libnss-mdns")
+    ensure_retropie_config_ownership(Path("/opt/retropie"))
     run("systemctl", "enable", "--now", "avahi-daemon")
     run("modprobe", "uinput")
     write_file("/etc/modules-load.d/virtualglove.conf", "uinput\n")
@@ -488,6 +519,7 @@ def registered_roms():
 def configure_games(confirm):
     """Prepare FCEUmm games and install or refresh the optional native core."""
     prefix = Path("/opt/retropie")
+    owner = retropie_pi_owner()
     core = prefix / "libretrocores/lr-fceumm/fceumm_libretro.so"
     retroarch = prefix / "emulators/retroarch/bin/retroarch"
     if not core.is_file() or not retroarch.is_file():
@@ -522,7 +554,7 @@ def configure_games(confirm):
     if super_glove_ball_roms and native.is_file():
         selector = runpy.run_path(str(SOURCE / "scripts/configure-super-glove-ball-core.py"))
         system_path, system_text, option_path, option_text = selector["native_registration"](prefix)
-        write_file(system_path, system_text)
+        write_file(system_path, system_text, owner=owner)
         write_file(option_path, option_text)
         print("PASS  Both Super Glove Ball emulators are available; FCEUmm remains selected until you choose native mode.")
     elif super_glove_ball_roms:
@@ -568,12 +600,15 @@ def configure_games(confirm):
                 if confirm("Use FCEUmm for " + rom.name + " so Glove Zap is supported?"):
                     text = games_path.read_text() if games_path.exists() else ""
                     text = "\n".join(line for line in text.splitlines() if not re.match(r"^\s*" + re.escape(key) + r"\s*=", line))
-                    write_file(games_path, text + "\n" + key + ' = "lr-fceumm"\n')
+                    write_file(games_path, text + "\n" + key + ' = "lr-fceumm"\n', owner=owner)
             result = zap["main"](["--rom", str(rom), "--apply"])
             if result:
                 print("ACTION  Finish Glove Zap setup for " + rom.name + "; rerun after resolving the message above.")
         except (ValueError, OSError) as error:
             print("ACTION  " + str(error))
+
+    # RetroPie Setup may have created NES configuration after the install pass.
+    ensure_retropie_config_ownership(prefix)
 
 
 def recalbox_custom_hook(text):
@@ -601,7 +636,7 @@ def controller_router_module():
     """Load the shared Player 1-4 Controller Router implementation."""
     if str(SOURCE / "src") not in sys.path:
         sys.path.insert(0, str(SOURCE / "src"))
-    from virtualglove import controller_router
+    from router_shared import controller_router
     return controller_router
 
 

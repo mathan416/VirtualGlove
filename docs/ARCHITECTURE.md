@@ -145,6 +145,18 @@ index synchronization, exclusive Libretro ownership, and physical-axis priority.
 The older cabinet program remains available only as a tested reference and
 one-command rollback.
 
+The console Router service and its configuration store use the vendored
+`router_shared` package from the separate Controller Router library. R.O.B.
+Vision vendors the same package. Device discovery, stable assignments, merged
+uinput outputs, and RetroArch index resolution therefore have one maintained
+source. VirtualGlove's `controller_router.py` remains a compatibility facade
+for existing imports and contains only its signed console-request protocol.
+VirtualGlove's installer and Setup choose its gesture player; R.O.B. Vision's
+adapter registers Buddy's two-button pad and assigns it to Player 2. Other
+projects can supply their own virtual-source descriptor without changing the
+shared engine. Library edits are synchronized into both vendored copies before
+either project is packaged.
+
 Router writes enabled Player indexes and canonical controls through each
 platform's supported late configuration layer. RetroPie updates the final
 system launch configuration after current joystick discovery. Batocera uses

@@ -18,8 +18,9 @@ services:
     security_opt: [no-new-privileges:true]
     ports:
       - "55356:55356/udp"
+    # App Lab may run Compose without exporting APP_HOME; keep its standard install path.
     volumes:
       - type: bind
-        source: ${APP_HOME}/scripts/profile-relay.py
+        source: ${APP_HOME:-/home/arduino/ArduinoApps/virtualglove}/scripts/profile-relay.py
         target: /profile-relay.py
         read_only: true

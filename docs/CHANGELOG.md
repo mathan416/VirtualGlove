@@ -10,6 +10,18 @@ notice. Release-candidate entries keep a little more workshop detail for readers
 who enjoy seeing how the machine was tuned, but they explain the practical
 result before naming the underlying mechanism.
 
+## [Unreleased]
+
+### Fixed
+
+- RetroPie installation and Super Glove Ball core selection now keep the NES
+  `retroarch.cfg` and VirtualGlove-managed `emulators.cfg` files owned by
+  `pi:pi`, including when an earlier sudo-run update left them owned by root.
+- Removed the remaining `APP_HOME` warnings when App Lab starts or stops the
+  UNO Q application without forwarding its environment to Compose. The
+  included services now default to the standard VirtualGlove installation
+  directory while still honouring an explicit `APP_HOME` for development.
+
 ## [0.5.3] - 2026-09-26
 
 ### Changed

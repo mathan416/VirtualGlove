@@ -640,6 +640,8 @@ class ControlStateTests(unittest.TestCase):
     def test_help_index_lists_the_public_guides(self):
         page = help_index_page()
         self.assertIn(b"Help, without leaving the glove", page)
+        self.assertIn(b"try another connected gamepad", page)
+        self.assertIn(b"assigned to Player 2", page)
         self.assertIn(b"/help/gameplay", page)
         self.assertIn(b"/help/installation", page)
         self.assertIn(b"/help/cabinet", page)
@@ -817,6 +819,7 @@ class ControlStateTests(unittest.TestCase):
             guide_pdf("input-modes")[1],
             "VirtualGlove-Input-Modes.pdf",
         )
+        self.assertEqual(guide_pdf("controller-router")[1], "VirtualGlove-Controller-Router.pdf")
         self.assertIsNone(guide_pdf("native-emulation"))
         self.assertIsNone(guide_pdf("native-super-glove-ball"))
         self.assertIsNone(guide_pdf("direction-response"))

@@ -197,6 +197,13 @@ state releases; VirtualGlove remains available. Reconnect that saved pad, or
 explicitly select its replacement. Seeing no response from the merged device in
 EmulationStation is expected—it deliberately becomes active only in RetroArch.
 
+### A gamepad does not control the game
+
+Try another connected gamepad. The one in your hands may be assigned to
+Player 2 while another pad is Player 1. In Setup > Controller Router,
+check which pad belongs to each player. Close the game before changing
+an assignment, then relaunch it to use the corrected routing.
+
 ### Controller Router reports an unavailable controller
 
 Select **Check controllers**, then press a direction or button on every connected

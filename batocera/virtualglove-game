@@ -23,7 +23,7 @@ case "${1:-}" in
             # for every ordinary Libretro core, not only FCEUmm. Native Super
             # Glove Ball owns its input path directly and remains separate.
             if [ "${4:-}" != nestopia_powerglove ]; then
-                /usr/bin/python3 -m virtualglove.controller_router apply \
+                /usr/bin/python3 -m router_shared.controller_router apply \
                     --platform batocera --config "$APP/data/controller-router.json" || exit 1
             fi
             case "${4:-}" in

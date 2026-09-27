@@ -16,7 +16,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from virtualglove import controller_router as router
+from router_shared import controller_router as router
+from virtualglove import controller_router as compatibility_router
+from virtualglove.controller_router import RouterService, PROTOCOL
 from virtualglove.controller_router_web import ROUTER_CONTENT, ROUTER_SCRIPT
 from virtualglove.profile_control import sign_message, verify_message
 from virtualglove.retropie_hook import configure_four_score
@@ -33,6 +35,11 @@ def source(identity="pad-one", name="Pad"):
 
 
 class ControllerRouterTests(unittest.TestCase):
+    def test_virtualglove_facade_uses_shared_engine(self):
+        self.assertIs(compatibility_router.RouterStore, router.RouterStore)
+        self.assertIs(compatibility_router.ControllerRouterDevice,
+                      router.ControllerRouterDevice)
+
     def test_setup_reload_event_prevents_false_unpaired_message(self):
         self.assertIn("dispatchEvent(new Event('virtualglove-config-loaded'))", SETUP_SCRIPT)
         self.assertIn("addEventListener('virtualglove-config-loaded',load)", ROUTER_SCRIPT)
@@ -134,7 +141,9 @@ class ControllerRouterTests(unittest.TestCase):
             (joystick / "name").write_text(router.output_name(1) + "\n")
             self.assertEqual(router.output_indexes([1], sys_root, udev_root, "batocera"), {1: 0})
             self.assertEqual(router.output_indexes([1], sys_root, udev_root, "recalbox"), {1: 0})
-            self.assertEqual(router.output_indexes([1], sys_root, udev_root, "retropie"), {1: 3})
+            with patch.object(router, "retroarch_udev_event_nodes", return_value=[]), \
+                    patch.object(router, "retroarch_index_for_js", return_value=3):
+                self.assertEqual(router.output_indexes([1], sys_root, udev_root, "retropie"), {1: 3})
 
     def test_batocera_overrides_survive_generated_retroarch_configuration(self):
         config = {"format": 2, "platform": "batocera",
@@ -219,7 +228,7 @@ class ControllerRouterTests(unittest.TestCase):
                 "players": [{"player": 1, "sources": [saved]}],
                 "virtualglove_player": 1}))
             store = router.RouterStore(path, "retropie", root / "es_input.cfg")
-            with patch("virtualglove.controller_router.controller_candidates",
+            with patch("router_shared.controller_router.controller_candidates",
                        return_value=[source()]):
                 result = store._materialize({"format": 2, "platform": "retropie",
                     "players": [{"player": 1, "sources": ["pad-one"]}],
@@ -637,10 +646,10 @@ class ControllerRouterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             token = "controller-router-test-token"
             token_file = Path(directory) / "token"; token_file.write_text(token)
-            service = router.RouterService(Store(), token_file, clock=lambda: 10)
-            challenge = service.exchange({"protocol": router.PROTOCOL,
+            service = RouterService(Store(), token_file, clock=lambda: 10)
+            challenge = service.exchange({"protocol": PROTOCOL,
                 "operation": "challenge", "request_id": "request"})["challenge"]
-            request = sign_message({"protocol": router.PROTOCOL, "operation": "read",
+            request = sign_message({"protocol": PROTOCOL, "operation": "read",
                 "request_id": "request", "challenge": challenge}, token)
             response = service.exchange(request)
             self.assertTrue(response["ok"]); self.assertTrue(verify_message(response, token))

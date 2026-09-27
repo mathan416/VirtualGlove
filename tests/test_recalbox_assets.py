@@ -55,7 +55,7 @@ class RecalboxAssetsTests(unittest.TestCase):
 
     def test_router_routes_physical_controls_globally_without_duplicate_native_input(self):
         setup = (ROOT / "scripts/setup-machine.py").read_text()
-        router = (ROOT / "src/virtualglove/controller_router.py").read_text()
+        router = (ROOT / "src/router_shared/controller_router.py").read_text()
         for root in ("/recalbox/share/system/configs/retroarch",
                      "/userdata/system/configs/retroarch"):
             self.assertIn(root + "/config/FCEUmm/FCEUmm.cfg", setup)
@@ -94,7 +94,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn('if [ "$emulator" = libretro ]', event)
         self.assertIn('if [ "${4:-}" != nestopia_powerglove ]', event)
         self.assertNotIn('if [ "$emulator" = lr-fceumm ]', event)
-        router = (ROOT / "src/virtualglove/controller_router.py").read_text()
+        router = (ROOT / "src/router_shared/controller_router.py").read_text()
         self.assertIn("merge_batocera_config", router)
         self.assertIn('Path("/userdata/system/batocera.conf")', router)
         self.assertNotIn("systemctl", service + event)

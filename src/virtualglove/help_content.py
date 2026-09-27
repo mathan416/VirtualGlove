@@ -40,6 +40,7 @@ HELP_GUIDES = (
     {'slug': 'cabinet', 'title': 'This console', 'file': None, 'description': 'Live VirtualGlove Controller links and the active console connection, generated for this cabinet.', 'group': 'User manuals'},
     {'slug': 'gameplay', 'title': 'Game and Gesture Guide', 'file': 'GAMEPLAY_GUIDE.md', 'description': 'Illustrated gesture instructions, program profiles, configured-game controls, and play tips.', 'group': 'User manuals'},
     {'slug': 'input-modes', 'title': 'VirtualGlove Input Modes', 'file': 'INPUT_MODES.md', 'description': 'Use launch-safe joystick mode, merged physical controls, and native Super Glove Ball input.', 'group': 'User manuals'},
+    {'slug': 'controller-router', 'title': 'Controller Router', 'file': 'CONTROLLER_ROUTER.md', 'description': 'Assign physical gamepads and VirtualGlove to players, test controls, and recover a wrong assignment.', 'group': 'User manuals'},
     {'slug': 'matrix', 'title': 'Matrix Display Guide', 'file': 'MATRIX_GUIDE.md', 'description': 'Recognise startup, glove animations, Academy letters, game profiles, pairing, and errors.', 'group': 'User manuals'},
     {'slug': 'camera', 'title': 'Camera Setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Select, position, tune, and troubleshoot the camera used for gesture controls.', 'group': 'User manuals'},
     {'slug': 'installation', 'title': 'Installation and Setup', 'file': 'INSTALL_README.md', 'description': 'Install the Controller and console, pair them, centre a hand, and test a game.', 'group': 'Installation guides'},
@@ -67,6 +68,7 @@ SLUG_BY_FILE = {
 HELP_PDFS = {
     "build-your-own": "VirtualGlove-Build-Your-Own.pdf",
     "input-modes": "VirtualGlove-Input-Modes.pdf",
+    "controller-router": "VirtualGlove-Controller-Router.pdf",
     "troubleshooting": "VirtualGlove-Troubleshooting.pdf",
     "camera": "VirtualGlove-Camera-Guide.pdf",
     "enclosure-quick-reference": "VirtualGlove-Enclosure-Quick-Reference.pdf",
@@ -198,6 +200,10 @@ def help_index_content() -> str:
         "<h1>Help, without leaving the glove.</h1>"
         "<p class=lead>Read the maintained VirtualGlove guides directly on this VirtualGlove Controller. "
         "Start with This console for your current connections, or choose a guide below. The manuals are available offline.</p>"
+        "<p><strong>Gamepad not responding in a game?</strong> On RetroPie, Recalbox, or Batocera, "
+        "try another connected gamepad. The one in your hands may be assigned to Player 2 while "
+        "another is Player 1. Check <a href='/help/controller-router'>Controller Router</a> "
+        "and <a href='/help/troubleshooting'>Troubleshooting</a> before changing assignments.</p>"
         + "".join(sections)
     )
 

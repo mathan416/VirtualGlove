@@ -14,6 +14,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,6 +74,25 @@ class SuperGloveBallCoreSetupTests(unittest.TestCase):
         sgb.register_native(self.prefix)
         self.assertEqual(system_path.read_text(), system_text)
         self.assertEqual(option_path.read_text(), option_text)
+
+    def test_emulator_selection_is_chowned_before_atomic_replace(self):
+        path = self.prefix / "configs/all/emulators.cfg"
+        with patch.object(sgb.os, "geteuid", return_value=0), \
+                patch.object(sgb.os, "fchown") as chown:
+            sgb.write_file(path, 'test = "lr-fceumm"\n', owner=(1234, 1234))
+        chown.assert_called_once()
+        self.assertEqual(chown.call_args.args[1:], (1234, 1234))
+        self.assertEqual(path.read_text(), 'test = "lr-fceumm"\n')
+
+    def test_emulator_selection_refuses_symlink(self):
+        target = self.prefix / "configs/all/original.cfg"
+        target.parent.mkdir(parents=True)
+        target.write_text("keep\n")
+        link = target.with_name("emulators.cfg")
+        link.symlink_to(target)
+        with self.assertRaisesRegex(ValueError, "Refusing symlink"):
+            sgb.write_file(link, "replace\n")
+        self.assertEqual(target.read_text(), "keep\n")
 
 
 if __name__ == "__main__":

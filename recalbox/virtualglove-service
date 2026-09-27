@@ -58,7 +58,11 @@ valid_pid() {
     pid="$(cat "$pidfile" 2>/dev/null)"
     case "$pid" in *[!0-9]*|'') return 1 ;; esac
     [ -d "/proc/$pid" ] || return 1
-    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "virtualglove.$name"
+    if [ "$name" = controller_router ]; then
+        tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "router_shared.controller_router"
+    else
+        tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "virtualglove.$name"
+    fi
 }
 
 start_one() {
@@ -69,8 +73,10 @@ start_one() {
     # Pairing is commonly run from an interactive SSH session. Recalbox's
     # native daemon launcher fully detaches the process and records its real
     # PID, so closing that terminal cannot stop a freshly restarted receiver.
+    module="virtualglove.$name"
+    [ "$name" = controller_router ] && module="router_shared.controller_router"
     start-stop-daemon -S -b -m -p "$RUN/$name.pid" -x /usr/bin/python3 -- \
-        -m "virtualglove.$name" "$@" \
+        -m "$module" "$@" \
         </dev/null >> "$LOG/$name.log" 2>&1
 }
 

@@ -14,8 +14,10 @@
 from __future__ import annotations
 
 import argparse
+import grp
 import hashlib
 import os
+import pwd
 import re
 import tempfile
 from pathlib import Path
@@ -38,14 +40,25 @@ def settings(path: Path) -> dict[str, str]:
     return result
 
 
-def write_file(path: Path, text: str) -> None:
-    """Atomically replace one configuration file and preserve its mode."""
+def retropie_pi_owner():
+    """Keep sudo-run emulator selections writable by RetroPie's pi account."""
+    if os.geteuid() != 0:
+        return None
+    return pwd.getpwnam("pi").pw_uid, grp.getgrnam("pi").gr_gid
+
+
+def write_file(path: Path, text: str, owner=None) -> None:
+    """Atomically replace one configuration file with its intended owner."""
+    if path.is_symlink():
+        raise ValueError("Refusing symlink: " + str(path))
     path.parent.mkdir(parents=True, exist_ok=True)
     mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
     descriptor, temporary = tempfile.mkstemp(prefix="." + path.name + ".", dir=path.parent)
     try:
         with os.fdopen(descriptor, "w") as stream:
             os.fchmod(stream.fileno(), mode)
+            if owner is not None and os.geteuid() == 0:
+                os.fchown(stream.fileno(), *owner)
             stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
@@ -111,7 +124,7 @@ def native_registration(prefix: Path) -> tuple[Path, str, Path, str]:
 def register_native(prefix: Path) -> None:
     """Expose both cores in the launch menu without changing any ROM selection."""
     system_path, system_text, option_path, option_text = native_registration(prefix)
-    write_file(system_path, system_text)
+    write_file(system_path, system_text, retropie_pi_owner())
     write_file(option_path, option_text)
 
 
@@ -148,8 +161,9 @@ def main(argv=None) -> int:
         raise ValueError("ROM path does not exist.")
     system_path, system_text, games_path, games_text = plan(args.prefix, args.rom, args.mode)
     if args.apply:
-        write_file(system_path, system_text)
-        write_file(games_path, games_text)
+        owner = retropie_pi_owner()
+        write_file(system_path, system_text, owner)
+        write_file(games_path, games_text, owner)
         if args.mode == "native":
             register_native(args.prefix)
         print("Selected " + ("native Nestopia" if args.mode == "native" else "FCEUmm fallback") + " for " + args.rom.name)

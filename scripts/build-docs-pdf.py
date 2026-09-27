@@ -1678,6 +1678,8 @@ def main():
           "Build Your Own: Parts, Cost, and Difficulty", "Parts, planning costs, tested hardware, and a staged first build.", "Community guide")
     build(docs / "INPUT_MODES.md", OUTPUT / "VirtualGlove-Input-Modes.pdf",
           "VirtualGlove Input Modes", "Joystick mode, merged physical controls, and native Super Glove Ball input.", "User guide")
+    build(docs / "CONTROLLER_ROUTER.md", OUTPUT / "VirtualGlove-Controller-Router.pdf",
+          "Controller Router", "Assign physical controllers and VirtualGlove to the right game players.", "User guide")
     build(docs / "TROUBLESHOOTING.md", OUTPUT / "VirtualGlove-Troubleshooting.pdf",
           "Troubleshooting by Symptom", "Find the first failing stage, from the camera to the displayed game.", "Community guide")
     build(docs / "CAMERA_GUIDE.md", OUTPUT / "VirtualGlove-Camera-Guide.pdf",
@@ -1689,7 +1691,7 @@ def main():
           "Engineering Journey", "One week of hypotheses, measurements, experiments, and play tests.", "Engineering history")
     build(docs / "ENGINEERING_TOOLKIT.md", OUTPUT / "VirtualGlove-Engineering-Toolkit.pdf",
           "Engineering Toolkit", "Repeatable camera, routing, tracing, analysis, and native-research workflows.", "Engineering guide")
-    print(f"Built 20 PDF guides on {date.today().isoformat()}")
+    print(f"Built 21 PDF guides on {date.today().isoformat()}")
 
 
 if __name__ == "__main__":

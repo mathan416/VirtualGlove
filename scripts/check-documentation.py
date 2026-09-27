@@ -58,6 +58,7 @@ PDF_EDITIONS = {
     "THIRD_PARTY_NOTICES.md": "VirtualGlove-Third-Party-Notices.pdf",
     "docs/BUILD_YOUR_OWN.md": "VirtualGlove-Build-Your-Own.pdf",
     "docs/INPUT_MODES.md": "VirtualGlove-Input-Modes.pdf",
+    "docs/CONTROLLER_ROUTER.md": "VirtualGlove-Controller-Router.pdf",
     "docs/TROUBLESHOOTING.md": "VirtualGlove-Troubleshooting.pdf",
     "docs/CAMERA_GUIDE.md": "VirtualGlove-Camera-Guide.pdf",
     "docs/ENCLOSURE_QUICK_REFERENCE.md": "VirtualGlove-Enclosure-Quick-Reference.pdf",

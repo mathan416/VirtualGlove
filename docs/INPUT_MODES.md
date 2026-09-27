@@ -8,6 +8,8 @@ it expects from the original glove.
 Most games use joystick mode. Super Glove Ball can use either mode, although
 native mode provides its distinctive continuous Robo-Glove movement.
 
+For a step-by-step player assignment and recovery walkthrough, open the [Controller Router Guide](CONTROLLER_ROUTER.md).
+
 This guide explains what the modes do, how physical controllers participate,
 how to choose the right mode, and what to check when controls do not behave as
 expected. The [Game and Gesture Guide](GAMEPLAY_GUIDE.md) remains the reference

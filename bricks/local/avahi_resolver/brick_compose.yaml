@@ -11,15 +11,16 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    # App Lab may run Compose without exporting APP_HOME; keep its standard install path.
     volumes:
       - type: bind
         source: /run/avahi-daemon
         target: /run/avahi-daemon
         read_only: true
       - type: bind
-        source: ${APP_HOME}/data
+        source: ${APP_HOME:-/home/arduino/ArduinoApps/virtualglove}/data
         target: /app/data
       - type: bind
-        source: ${APP_HOME}/scripts/avahi-resolver-service.py
+        source: ${APP_HOME:-/home/arduino/ArduinoApps/virtualglove}/scripts/avahi-resolver-service.py
         target: /resolver_service.py
         read_only: true
