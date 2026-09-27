@@ -1,0 +1,11 @@
+[Unit]
+Description=Controller Router UNO Q app launcher
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/arduino/.local/share/controller-router-portal/host/broker.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

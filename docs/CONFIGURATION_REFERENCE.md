@@ -8,6 +8,14 @@ Use the [installation guide](INSTALL_README.md) for the initial deployment and
 pairing procedure. Return here when you need to change a host, camera, game,
 gesture threshold, or network setting.
 
+On a shared UNO Q, Controller Router is the App Lab startup app and sole Matrix
+firmware owner. VirtualGlove's Linux service stays available at port 8100;
+R.O.B. Vision stays available at port 8101. Port 80 presents the chooser.
+Product installers preserve this startup choice and request their Matrix
+animations through Router. Standalone firmware commands later in this reference
+are maintenance procedures for an installation without the shared Router; do
+not use them to change the active Matrix on a shared installation.
+
 In this guide, **VirtualGlove Controller** means the Arduino UNO Q running
 the camera, recognition, dashboard, and controller-sending software. Hardware-
 specific commands and filenames retain `uno-q` where that literal name is required.

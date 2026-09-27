@@ -1053,7 +1053,8 @@ class ControlState:
                 "build": dict(self.build_identity),
                 "firmware": {"running": self.firmware_identity,
                     "expected": self.build_identity.get("firmware_expected"),
-                    "state": "unavailable" if not self.firmware_identity else
+                    "state": "shared" if self.firmware_identity == "controller-router" else
+                        "unavailable" if not self.firmware_identity else
                         "matched" if self.firmware_identity == self.build_identity.get("firmware_expected") else "different"},
             })
         config = self.load_config()

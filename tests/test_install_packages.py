@@ -165,9 +165,9 @@ class PackageContentTests(unittest.TestCase):
                 patch('sys.stdout', new_callable=io.StringIO) as output:
             installer.print_controller_urls()
         text = output.getvalue()
-        self.assertIn('http://VirtualGlove.local/dashboard', text)
+        self.assertIn('http://VirtualGlove.local:8100/dashboard', text)
         self.assertIn('https://10.0.2.96:8443/setup', text)
-        self.assertIn('http://192.168.1.42/help', text)
+        self.assertIn('http://192.168.1.42:8100/help', text)
         self.assertNotIn('172.17.0.1', text)
 
     def test_controller_urls_tolerate_address_discovery_failure(self):
@@ -176,7 +176,7 @@ class PackageContentTests(unittest.TestCase):
                 patch('sys.stdout', new_callable=io.StringIO) as output:
             installer.print_controller_urls()
         text = output.getvalue()
-        self.assertIn('http://virtualglove.local/dashboard', text)
+        self.assertIn('http://virtualglove.local:8100/dashboard', text)
         self.assertIn('IP address: not available yet', text)
 
     def test_precompiled_staging_replaces_sketch_sources_with_firmware(self):
@@ -200,7 +200,7 @@ class PackageContentTests(unittest.TestCase):
                     }):
                 module['stage'](root, destination, precompiled_matrix=True)
             self.assertTrue((destination / 'firmware/matrix/manifest.json').is_file())
-            self.assertFalse((destination / 'sketch/sketch.ino').exists())
+            self.assertTrue((destination / 'sketch/sketch.ino').exists())
 
     def test_app_lab_builder_refreshes_companion_checksum(self):
         builder = (ROOT / 'scripts/build-app-lab-package.sh').read_text()
@@ -214,6 +214,9 @@ class PackageContentTests(unittest.TestCase):
         self.assertIn('-czf "${LOCAL_ARCHIVE}"', deploy)
         self.assertIn('-xzf \'${REMOTE_ARCHIVE}\'', deploy)
         self.assertIn("configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only", deploy)
+        self.assertIn('Choose VirtualGlove at the UNO Q launcher before deploying', deploy)
+        self.assertIn('${UNO_HEALTH_AUTHORITY}:8100/status', deploy)
+        self.assertNotIn('properties set default', deploy)
 
     def test_local_matrix_exports_rejected_but_guide_images_allowed(self):
         spec = importlib.util.spec_from_file_location(

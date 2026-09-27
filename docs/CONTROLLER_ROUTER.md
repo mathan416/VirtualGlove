@@ -1,5 +1,15 @@
 # Controller Router
 
+## Choose a controller app on the UNO Q
+
+Start a game registered with VirtualGlove on the paired console and Controller Router selects VirtualGlove automatically. Gyromite and Stack-Up select R.O.B. Vision when that app is installed and paired. You do not need to open a website to play. Both services and websites remain online, but only the game's app controls input and the UNO Q Matrix. Router returns to its neutral animation when the game ends.
+
+Open your UNO Q's `.local` address or LAN IP address without a port to view or manually select an app. When only VirtualGlove is installed, that address opens it. When both apps are installed, it shows a chooser. Finish any live game before changing apps manually. A direct top-level visit to either product's browser port selects it when no game is active. Use **Choose controller** in either app to return to the chooser.
+
+Controller Router owns the UNO Q Matrix firmware. After reboot no app is selected and Router shows a neutral animation until a registered game reports its session. The selected app can request its own status, game, or temporary pairing animation. Its game input stops if Router's short lease expires. Pairing and manual controller changes are blocked during a live game. Existing console assignments, pairing, and game registries remain in place during upgrades.
+
+VirtualGlove's browser is on port **8100**; its secure Setup service remains on **8443**. This UNO Q app chooser is separate from the console player assignments described below.
+
 Controller Router gives physical gamepads and VirtualGlove clear player assignments in RetroArch. It creates up to four merged gamepads, named **VirtualGlove Merged Player 1–4**. Each merged player can receive one or more physical controllers; one chosen player can also receive VirtualGlove gestures in supported NES games.
 
 The original physical controllers still navigate EmulationStation. During a Libretro game, Router sends their input through the assigned merged player so one button press is not interpreted twice. The merged devices are deliberately neutral in EmulationStation. Controller Router does not manage standalone emulators outside Libretro.

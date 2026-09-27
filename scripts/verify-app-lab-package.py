@@ -431,9 +431,10 @@ def archive_errors(path: Path) -> list[str]:
                 except (ValueError, KeyError, AttributeError):
                     errors.append("invalid precompiled Matrix firmware manifest")
             for sketch_source in ("VirtualGlove/sketch/sketch.yaml",
-                                  "VirtualGlove/sketch/sketch.ino"):
-                if sketch_source in names:
-                    errors.append("source-build Matrix file included in ordinary package: " + sketch_source)
+                                  "VirtualGlove/sketch/sketch.ino",
+                                  "VirtualGlove/controller_router_portal/install.py"):
+                if sketch_source not in names:
+                    errors.append("UNO Q app switching file missing from package: " + sketch_source)
             license_path = "VirtualGlove/licenses/Apache-2.0.txt"
             if license_path in names and hashlib.sha256(archive.read(license_path)).hexdigest() != "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30":
                 errors.append("Apache 2.0 license text is missing or altered")

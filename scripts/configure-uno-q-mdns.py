@@ -33,21 +33,25 @@ def configure_project_name(text):
 
 
 def configure_web_ports(text):
-    """Publish the same web server on 80 and 8088 in the app-owned container.
-
-    Keeping port 80 in the main service, rather than a separate host helper,
-    makes App Lab stop release both browser ports together.
-    """
+    """Expose the browser on 8100 while retaining a loopback health endpoint."""
     lines = text.splitlines(keepends=True)
     dashboard = next((index for index, line in enumerate(lines)
-                      if line.strip() == "- 8088:8088"), None)
+                      if line.strip() in ("- 8088:8088", "- 127.0.0.1:8088:8088")), None)
     if dashboard is None:
         raise ValueError("Expected app port 8088 in Compose configuration")
     if any(line.strip().startswith("- 80:") and line.strip() != "- 80:8088"
            for line in lines):
-        raise ValueError("Port 80 is already assigned to another Compose destination")
+        raise ValueError("Port 80 belongs to the Controller Router launcher")
+    lines = [line for line in lines if line.strip() not in ("- 80:8088", "- 8100:8088",
+                                                     "- 127.0.0.1:8088:8088")]
+    dashboard = next(index for index, line in enumerate(lines) if line.strip() == "- 8088:8088") if any(
+        line.strip() == "- 8088:8088" for line in lines) else None
+    if dashboard is None:
+        # An already migrated Compose file needs no second port rewrite.
+        return text
     indent = lines[dashboard][:len(lines[dashboard]) - len(lines[dashboard].lstrip())]
-    for mapping in ("80:8088", "8443:8443"):
+    lines[dashboard] = indent + "- 127.0.0.1:8088:8088\n"
+    for mapping in ("8100:8088", "8443:8443"):
         entry = indent + "- " + mapping + "\n"
         if not any(line.strip() == entry.strip() for line in lines):
             lines.insert(dashboard + 1, entry)

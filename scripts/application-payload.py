@@ -21,7 +21,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_ROOTS = {"src", "python", "scripts", "sketch", "config", "docs", "models", "licenses", "retropie", "recalbox", "batocera", "launchbox", "native", "uno-q", "bricks", "hardware"}
+PUBLIC_ROOTS = {"src", "python", "scripts", "sketch", "matrix", "config", "docs", "models", "licenses", "retropie", "recalbox", "batocera", "launchbox", "native", "uno-q", "bricks", "hardware", "controller_router_portal"}
 PUBLIC_FILES = {"README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "pyproject.toml", "app.yaml", "assets/virtualglove-logo.png", "assets/virtualglove-logo-web.png", "assets/virtualglove-icon.png", "assets/favicon-32.png",
     "assets/favicon.ico", "assets/apple-touch-icon.png"}
 
@@ -59,8 +59,6 @@ def stage(root, destination, include_engineering=False, precompiled_matrix=False
     """Copy the selected files and stamp identity without exporting Git metadata."""
     subprocess.run(["python3", str(root / "scripts/stamp-firmware-version.py"), "--check"], check=True)
     names = selected_files(root, include_engineering=include_engineering)
-    if precompiled_matrix:
-        names = [name for name in names if not name.startswith("sketch/")]
     for name in names:
         source = root / name
         if source.is_symlink():
@@ -92,7 +90,7 @@ def main():
     parser.add_argument("--include-engineering", action="store_true",
                         help="retain repository research and maintainer tools for a development deployment")
     parser.add_argument("--precompiled-matrix", action="store_true",
-                        help="replace sketch sources with verified, precompiled Matrix firmware")
+                        help="include verified Matrix firmware alongside sketch sources")
     args = parser.parse_args()
     if args.destination.exists() and any(args.destination.iterdir()):
         parser.error("Use an empty staging directory")

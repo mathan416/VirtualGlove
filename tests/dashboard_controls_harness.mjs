@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 const html = fs.readFileSync(0, "utf8");
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-assert.equal(scripts.length, 4, "expected shared, metadata, Dashboard, and player scripts");
+assert.equal(scripts.length, 5, "expected shared, metadata, Router selection, Dashboard, and player scripts");
 
 class FakeClassList { toggle() {} }
 class FakeElement {

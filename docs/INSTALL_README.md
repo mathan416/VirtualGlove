@@ -14,6 +14,8 @@ in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
 
+The UNO Q installer also installs Controller Router at `http://UNO-Q-NAME.local/`. Starting a registered game on the paired console selects VirtualGlove automatically; Gyromite and Stack-Up select R.O.B. Vision when installed. You do not need a browser open for game input. Both services stay online, but only the game's app controls input and the UNO Q Matrix. Router returns to its neutral Matrix animation after the game. Open the address to view VirtualGlove or choose an app manually while no game is running. VirtualGlove’s browser pages use port **8100**, and secure pairing remains on **8443**. Controller Router’s console player assignments stay in VirtualGlove Setup.
+
 The same installers handle a fresh installation or an upgrade. Close games
 first, run the Controller command and the command for your console below, and
 keep the backup paths they print. The Batocera installer checks the published
@@ -151,7 +153,7 @@ creates.
 
 Open the Dashboard address printed by the installer, normally:
 
-`http://virtualglove.local:8088/dashboard`
+`http://virtualglove.local:8100/dashboard`
 
 The Dashboard should load. With gestures off, a closed camera is normal. Open
 **Play** or **Glove Academy** to confirm that the camera can show your whole
@@ -642,7 +644,7 @@ file from a different version.
 
 Try the Controller's IP address instead of its `.local` name:
 
-- Dashboard: `http://CONTROLLER-IP:8088/dashboard`
+- Dashboard: `http://CONTROLLER-IP:8100/dashboard`
 - secure Setup: `https://CONTROLLER-IP:8443/setup`
 
 Confirm the Controller and browser are on the same local network. The Matrix
@@ -724,12 +726,12 @@ See the [Matrix Guide](MATRIX_GUIDE.md) for every animation and display state.
 
 | Page | Normal address |
 | --- | --- |
-| Dashboard | `http://UNO-Q-NAME.local:8088/dashboard` |
-| Play | `http://UNO-Q-NAME.local:8088/play` |
-| Glove Academy | `http://UNO-Q-NAME.local:8088/learn` |
-| Setup and Games | `http://UNO-Q-NAME.local:8088/setup` |
+| Dashboard | `http://UNO-Q-NAME.local:8100/dashboard` |
+| Play | `http://UNO-Q-NAME.local:8100/play` |
+| Glove Academy | `http://UNO-Q-NAME.local:8100/learn` |
+| Setup and Games | `http://UNO-Q-NAME.local:8100/setup` |
 | Secure pairing | `https://UNO-Q-NAME.local:8443/setup` |
-| Help and printable manuals | `http://UNO-Q-NAME.local:8088/help` |
+| Help and printable manuals | `http://UNO-Q-NAME.local:8100/help` |
 
 For gestures and game controls, use the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 Technical details are in [Architecture](ARCHITECTURE.md),

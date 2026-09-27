@@ -274,7 +274,7 @@ def cabinet_reference_content(host_header: str, config: dict[str, Any]) -> tuple
     )
     paired = "Configured" if config.get("paired") else "Not configured"
     controller = "Armed" if config.get("controller_enabled") else "Stopped"
-    http_root = f"http://{board}:8088"
+    http_root = f"http://{board}:8100"
     https_root = f"https://{board}:8443"
 
     def row(label: str, value: str) -> str:

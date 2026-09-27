@@ -679,22 +679,22 @@ class ControlStateTests(unittest.TestCase):
         self.assertIsNone(help_document_page("field-guide"))
 
     def test_cabinet_reference_uses_request_address_and_public_config(self):
-        body, title = cabinet_reference_content("10.0.2.105:8088", self.state.public_config())
+        body, title = cabinet_reference_content("10.0.2.105:8100", self.state.public_config())
         self.assertEqual(title, "This console")
-        self.assertIn("http://10.0.2.105:8088/help", body)
-        self.assertIn("http://10.0.2.105:8088/play", body)
+        self.assertIn("http://10.0.2.105:8100/help", body)
+        self.assertIn("http://10.0.2.105:8100/play", body)
         self.assertIn("https://10.0.2.105:8443/setup", body)
         self.assertIn("retropieconsole.local", body)
         self.assertIn("55355", body)
         self.assertNotIn("private-token", body)
         self.assertIn("Stopped", body)
         self.state.set_controller_enabled(True)
-        body, _ = cabinet_reference_content("10.0.2.105:8088", self.state.public_config())
+        body, _ = cabinet_reference_content("10.0.2.105:8100", self.state.public_config())
         self.assertIn("Armed", body)
 
     def test_cabinet_reference_preserves_local_names_and_rejects_bad_hosts(self):
-        self.assertEqual(request_browser_address("arduiain.local:8088"), "arduiain.local")
-        self.assertEqual(request_browser_address("bad host:8088"), "UNO-Q-NAME.local")
+        self.assertEqual(request_browser_address("arduiain.local:8100"), "arduiain.local")
+        self.assertEqual(request_browser_address("bad host:8100"), "UNO-Q-NAME.local")
 
     def test_help_document_renders_markdown_with_contents_and_images(self):
         page = help_document_page("gameplay")

@@ -411,7 +411,8 @@ def install_unoq(peer):
     if str(app) != UNOQ_APP:
         raise ValueError("UNO Q setup currently requires App Lab path " + UNOQ_APP)
     compose = app / ".cache/app-compose.yaml"
-    if not compose.exists():
+    shared_matrix = (app / "controller_router_portal/app/sketch/sketch.ino").is_file()
+    if not compose.exists() and not shared_matrix:
         raise ValueError("Start the app with install-uno-q.sh before completing host setup")
     if (app / "data/shutdown-request").exists():
         raise ValueError("A pending shutdown request exists; remove it deliberately before setup")
@@ -431,20 +432,18 @@ def install_unoq(peer):
     # Use the same idempotent Compose transformation as Wi-Fi deployment.
     import runpy
     configure = runpy.run_path(str(app / "scripts/configure-uno-q-mdns.py"))["configure"]
-    original = compose.read_bytes()
-    backup = BACKUPS / "uno-q-app-compose.yaml"
-    backup.parent.mkdir(parents=True, exist_ok=True)
-    backup.write_bytes(original)
-    configure(compose)
-    user = pwd.getpwnam("arduino")
-    os.chown(str(compose), user.pw_uid, user.pw_gid)
-    # App Lab properties belong to the non-root desktop account.
-    run("runuser", "-u", "arduino", "--", "arduino-app-cli", "properties", "set", "default", app)
-    # App Lab's generated Compose file expands brick bind mounts from APP_HOME.
-    # setup-machine runs under sudo, outside the App Lab CLI environment, so pass
-    # it explicitly or Compose resolves those mounts from filesystem root.
-    run("env", "APP_HOME=" + str(app), "docker", "compose", "-f", compose,
-        "up", "-d", "--force-recreate")
+    if compose.exists():
+        original = compose.read_bytes()
+        backup = BACKUPS / "uno-q-app-compose.yaml"
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        backup.write_bytes(original)
+        configure(compose)
+        user = pwd.getpwnam("arduino")
+        os.chown(str(compose), user.pw_uid, user.pw_gid)
+    if not shared_matrix:
+        run("runuser", "-u", "arduino", "--", "arduino-app-cli", "properties", "set", "default", app)
+        run("env", "APP_HOME=" + str(app), "docker", "compose", "-f", compose,
+            "up", "-d", "--force-recreate")
     if peer:
         print("Receiver setting is preserved; choose " + peer + " on the Connection page if needed.")
 
@@ -492,7 +491,7 @@ def wait_unoq():
             with urllib.request.urlopen("http://127.0.0.1:8088/status", timeout=2) as response:
                 status = json.load(response)
             state = status.get("firmware", {}).get("state")
-            if state == "matched":
+            if state in ("matched", "shared"):
                 return
             last = "Matrix firmware status is " + str(state or "unavailable")
         except (OSError, ValueError, AttributeError) as error:
@@ -1176,6 +1175,7 @@ def check_retropie(report):
 
 def check_unoq(report):
     """Check boot persistence, the app-owned resolver and public application health."""
+    shared_matrix = (SOURCE / "controller_router_portal/app/sketch/sketch.ino").is_file()
     check_inventory(report, Path(UNOQ_APP))
     report.check("No retired VirtualGlove processes", not retired_runtime_processes())
     report.command("Avahi enabled at boot", ["systemctl", "is-enabled", "--quiet", "avahi-daemon"])
@@ -1195,9 +1195,11 @@ def check_unoq(report):
         if os.geteuid() == 0:
             args = ["runuser", "-u", "arduino", "--"] + args
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=True)
-        report.check("VirtualGlove is the startup app", json.loads(result.stdout)["app"]["FullPath"] == str(SOURCE))
+        expected = "/home/arduino/ArduinoApps/controller-router" if shared_matrix else str(SOURCE)
+        report.check("Controller Router is the startup app" if shared_matrix else "VirtualGlove is the startup app",
+                     json.loads(result.stdout)["app"]["FullPath"] == expected)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
-        report.check("VirtualGlove is the startup app", False)
+        report.check("Controller Router is the startup app" if shared_matrix else "VirtualGlove is the startup app", False)
 
     report.command("Arduino user starts at boot", ["test", "-f", "/var/lib/systemd/linger/arduino"])
     report.command("Early-start helper enabled", user_systemctl("is-enabled", "--quiet", "virtualglove-early-start.service"))
@@ -1228,16 +1230,20 @@ def check_unoq(report):
     except (OSError, ValueError):
         report.check("Application HTTP status", False)
     try:
-        with urllib.request.urlopen("http://127.0.0.1/status", timeout=3) as response:
-            report.check("Port 80 Dashboard uses the app", bool(json.load(response).get("version")))
+        endpoint = "http://127.0.0.1/api/state" if shared_matrix else "http://127.0.0.1/status"
+        with urllib.request.urlopen(endpoint, timeout=3) as response:
+            data = json.load(response)
+            report.check("Port 80 Controller Router" if shared_matrix else "Port 80 Dashboard uses the app",
+                         bool(data.get("apps")) if shared_matrix else bool(data.get("version")))
     except (OSError, ValueError):
-        report.check("Port 80 Dashboard uses the app", False)
+        report.check("Port 80 Controller Router" if shared_matrix else "Port 80 Dashboard uses the app", False)
     report.check("App-owned Avahi resolver configured", "local:avahi_resolver" in (SOURCE / "app.yaml").read_text() and (SOURCE / "bricks/local/avahi_resolver/brick_compose.yaml").is_file())
-    report.command("Profile UDP ingress published", ["docker", "port", "virtualglove-profile-relay-1", "55356/udp"])
+    prefix = "virtualglove-runtime" if shared_matrix else "virtualglove"
+    report.command("Profile UDP ingress published", ["docker", "port", prefix + "-profile-relay-1", "55356/udp"])
     code = ("import json; from pathlib import Path; from virtualglove.resolver import resolve_ipv4; "
             "d=json.loads(Path('/app/data/device.json').read_text()); resolve_ipv4(d['receiver'])")
     if status.get("connection_configured"):
-        report.command("Configured receiver resolves inside app", ["docker", "exec", "-e", "PYTHONPATH=/app/src", "virtualglove-main-1", "python3", "-c", code])
+        report.command("Configured receiver resolves inside app", ["docker", "exec", "-e", "PYTHONPATH=/app/src", prefix + "-main-1", "python3", "-c", code])
     else:
         report.check("Configure your RetroPie destination in Connection", False, pending=True)
     for route in ("help", "help/installation", "help-pdf/installation.pdf"):

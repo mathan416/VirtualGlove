@@ -81,8 +81,9 @@ class SetupTests(unittest.TestCase):
         original = ("services:\n  main:\n    ports:\n"
                     "    - 8088:8088\n")
         configured = compose_config.configure_web_ports(original)
-        self.assertEqual(configured.count("- 80:8088"), 1)
-        self.assertEqual(configured.count("- 8088:8088"), 1)
+        self.assertNotIn("- 80:8088", configured)
+        self.assertEqual(configured.count("- 8100:8088"), 1)
+        self.assertEqual(configured.count("- 127.0.0.1:8088:8088"), 1)
         self.assertEqual(configured.count("- 8443:8443"), 1)
         self.assertEqual(compose_config.configure_web_ports(configured), configured)
         self.assertNotIn("  redirect:\n", configured)
@@ -95,7 +96,7 @@ class SetupTests(unittest.TestCase):
             deployed = compose.read_text()
             compose_config.configure(compose, project_only=True)
             self.assertEqual(compose.read_text(), deployed)
-            self.assertEqual(deployed.count("- 80:8088"), 1)
+            self.assertEqual(deployed.count("- 8100:8088"), 1)
 
     def test_retired_buster_source_is_detected_without_touching_pi_archive(self):
         sources = [
@@ -528,7 +529,7 @@ class SetupTests(unittest.TestCase):
             command.assert_any_call("systemctl", "enable", "--now", "avahi-daemon")
             self.assertEqual(first, compose.read_text())
             self.assertEqual(first.count("target: /run/avahi-daemon"), 1)
-            self.assertEqual(first.count("- 80:8088"), 1)
+            self.assertEqual(first.count("- 8100:8088"), 1)
             self.assertEqual(first.count("- 8443:8443"), 1)
             self.assertEqual(first.count("bricks/local/profile_control/brick_compose.yaml"), 1)
             self.assertTrue(first.startswith("name: virtualglove\n"))

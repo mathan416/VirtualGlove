@@ -22,6 +22,8 @@ import time
 import re
 import threading
 import socket
+import sys
+from pathlib import Path
 from enum import IntEnum
 from typing import Any, Callable
 
@@ -64,6 +66,42 @@ def status_from_worker(status: dict) -> MatrixStatus:
     )
 
 
+class RouterMatrixCall:
+    """Translate VirtualGlove's existing Matrix states into shared Router cues."""
+
+    def __init__(self, display):
+        self.display = display
+        self.status = MatrixStatus.LOADING
+        self.profile = 0
+
+    def __call__(self, method, *args):
+        if method == "get_virtualglove_firmware":
+            return "controller-router"
+        if method == "set_virtualglove_pairing":
+            identity, pin = args
+            return self.display("virtualglove", "pairing",
+                                identity=f"{identity:07X}", pin=f"{pin:06d}")
+        if method == "set_virtualglove_attract":
+            return 0  # The shared Router artwork owns idle time.
+        if method == "set_virtualglove_profile":
+            self.profile = int(args[0])
+        elif method == "set_virtualglove_status":
+            self.status = MatrixStatus(args[0])
+        else:
+            raise ValueError("Unknown VirtualGlove Matrix call")
+        if self.status in (MatrixStatus.OFF, MatrixStatus.GESTURES_IDLE):
+            return self.display("virtualglove", "clear")
+        names = {MatrixStatus.LOADING: "loading", MatrixStatus.READY: "ready",
+                 MatrixStatus.TRACKING: "tracking", MatrixStatus.ERROR: "error",
+                 MatrixStatus.LEARNING: "learning", MatrixStatus.TUNING: "tuning"}
+        name = names.get(self.status)
+        if self.profile and self.status in (MatrixStatus.READY, MatrixStatus.TRACKING):
+            name = f"profile_{self.profile}"
+        if name:
+            return self.display("virtualglove", "play", animation=name)
+        return True
+
+
 class UnoQMatrix:
     """Optional bridge to the UNO Q's STM32-driven 8x13 LED matrix."""
 
@@ -74,6 +112,7 @@ class UnoQMatrix:
     ) -> None:
         self.enabled = enabled
         self.last_status: MatrixStatus | None = None
+        self._status_sent_at = 0.0
         self.last_error: str | None = None
         self.last_profile: str | None = None
         self.pairing_until = 0.0
@@ -89,6 +128,13 @@ class UnoQMatrix:
         self._probe_result = 0
         self._probe_at = -60.0
         self._probe_running = False
+        if enabled and self._call is None:
+            router_socket = Path('/run/user/1000/controller-router-portal/control.sock')
+            router_lease = Path(__file__).resolve().parents[2] / 'data/controller-router-lease.json'
+            if router_socket.exists() or router_lease.exists():
+                sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+                from controller_router_portal.client import display
+                self._call = RouterMatrixCall(display)
         if enabled and self._call is None:
             try:
                 from arduino.app_utils import Bridge
@@ -113,7 +159,8 @@ class UnoQMatrix:
         if self.available:
             try:
                 result = self._call("get_virtualglove_firmware")
-                if isinstance(result, str) and re.fullmatch(r"[0-9a-f]{64}", result):
+                if isinstance(result, str) and (result == 'controller-router' or
+                                                re.fullmatch(r"[0-9a-f]{64}", result)):
                     self._firmware_id = result
             except Exception:
                 # Older sketches do not expose the identity endpoint.
@@ -190,7 +237,8 @@ class UnoQMatrix:
         """Display a new status unless a temporary pairing display owns the matrix."""
         if status not in {MatrixStatus.OFF, MatrixStatus.PAIRING} and time.monotonic() < self.pairing_until:
             return self.available
-        if status == self.last_status:
+        shared = isinstance(self._call, RouterMatrixCall)
+        if status == self.last_status and (not shared or time.monotonic() - self._status_sent_at < 2):
             return self.available
         if time.monotonic() < self._status_retry_at:
             return False
@@ -200,6 +248,7 @@ class UnoQMatrix:
             assert self._call is not None
             self._call("set_virtualglove_status", int(status))
             self.last_status = status
+            self._status_sent_at = time.monotonic()
             self._status_retry_at = 0.0
             self.last_error = None
             return True

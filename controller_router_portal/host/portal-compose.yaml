@@ -1,0 +1,32 @@
+services:
+  main:
+    image: ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
+    entrypoint: [python3, /app/python/main.py]
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "80:80"
+    volumes:
+      - type: bind
+        source: /home/arduino/.local/share/controller-router-portal/python
+        target: /app/python
+        read_only: true
+  portal-host-bridge:
+    image: ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
+    entrypoint: [python3, /bridge.py]
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - type: bind
+        source: /run/user/1000/controller-router-portal
+        target: /broker
+      - type: bind
+        source: /home/arduino/.local/share/controller-router-portal/host/bridge.py
+        target: /bridge.py
+        read_only: true

@@ -39,8 +39,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 Usage: scripts/deploy-uno-q-wifi.sh [user@uno-q-host]
 
 Deploy the VirtualGlove Linux application over an authenticated SSH
-connection, preserve device settings, expose ports 8088 and 8443, keep it as
-the default startup app, restart the container, and verify its status. The
+connection, preserve device settings, expose ports 8100 and 8443, restart
+the selected VirtualGlove app, and verify its status. The
 default target is:
 
   arduino@arduiain.local
@@ -100,6 +100,10 @@ trap cleanup EXIT
 
 echo "Checking ${UNO_TARGET}..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" true >/dev/null
+ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+  "arduino-app-cli app list --format json | python3 -c 'import json,sys; apps=json.load(sys.stdin)[\"apps\"]; assert any(a.get(\"name\")==\"VirtualGlove\" and a.get(\"status\")==\"running\" for a in apps), \"Choose VirtualGlove at the UNO Q launcher before deploying\"'"
+ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
+  "curl -fsS --max-time 4 http://127.0.0.1:8088/status | python3 -c 'import json,sys; assert not json.load(sys.stdin).get(\"game_session_active\"), \"End the current game before deploying VirtualGlove\"'"
 UNO_CONNECTION="$(ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" 'printf "%s" "$SSH_CONNECTION"' 2>/dev/null | tr -d '\r' || true)"
 read -r _UNO_CLIENT _UNO_CLIENT_PORT UNO_HEALTH_HOST _UNO_SERVER_PORT <<< "${UNO_CONNECTION}"
 if [[ -z "${UNO_HEALTH_HOST}" ]]; then
@@ -156,13 +160,13 @@ ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
 
 echo "Restarting the UNO Q application..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "arduino-app-cli properties set default '${REMOTE_APP_DIR}' && APP_HOME='${REMOTE_APP_DIR}' docker compose -f '${REMOTE_COMPOSE}' up -d --force-recreate"
+  "APP_HOME='${REMOTE_APP_DIR}' docker compose -f '${REMOTE_COMPOSE}' up -d --force-recreate"
 
 echo "Waiting for the dashboard..."
 ready=false
 for _ in {1..60}; do
   if curl --location --max-redirs 3 --fail --silent --show-error --max-time 2 \
-      "http://${UNO_HEALTH_AUTHORITY}:8088/status" >/dev/null 2>&1; then
+      "http://${UNO_HEALTH_AUTHORITY}:8100/status" >/dev/null 2>&1; then
     ready=true
     break
   fi
@@ -170,45 +174,45 @@ for _ in {1..60}; do
 done
 
 if [[ "${ready}" != true ]]; then
-  echo "error: the UNO Q app did not become ready at http://${UNO_HOST}:8088" >&2
+  echo "error: the UNO Q app did not become ready at http://${UNO_HOST}:8100" >&2
   exit 1
 fi
 
 curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/dashboard" >/dev/null
+  "http://${UNO_HEALTH_AUTHORITY}:8100/dashboard" >/dev/null
 PLAY_HTML="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/play")"
+  "http://${UNO_HEALTH_AUTHORITY}:8100/play")"
 if [[ "${PLAY_HTML}" != *"Rock Paper Scissors"* || "${PLAY_HTML}" != *"data-src=/stream"* ]]; then
   echo "error: deployed Play page is incomplete" >&2
   exit 1
 fi
 curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/learn" >/dev/null
+  "http://${UNO_HEALTH_AUTHORITY}:8100/learn" >/dev/null
 curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/help" >/dev/null
+  "http://${UNO_HEALTH_AUTHORITY}:8100/help" >/dev/null
 for HELP_SLUG in build-your-own input-modes troubleshooting cabinet installation gameplay camera configuration security components contributing changelog input-audit engineering-journey engineering-toolkit; do
   curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/help/${HELP_SLUG}" >/dev/null
+    "http://${UNO_HEALTH_AUTHORITY}:8100/help/${HELP_SLUG}" >/dev/null
 done
 for PDF_SLUG in build-your-own input-modes troubleshooting overview installation gameplay camera configuration security components contributing changelog input-audit engineering-journey engineering-toolkit; do
   curl --location --max-redirs 3 --fail --silent --show-error --max-time 15 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/help-pdf/${PDF_SLUG}.pdf" >/dev/null
+    "http://${UNO_HEALTH_AUTHORITY}:8100/help-pdf/${PDF_SLUG}.pdf" >/dev/null
 done
 if curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/help-pdf/quick-reference.pdf" >/dev/null 2>&1; then
+    "http://${UNO_HEALTH_AUTHORITY}:8100/help-pdf/quick-reference.pdf" >/dev/null 2>&1; then
   echo "error: cabinet-specific quick-reference PDF was exposed" >&2
   exit 1
 fi
 curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/help-assets/gestures/actions/v-sign.png" >/dev/null
+  "http://${UNO_HEALTH_AUTHORITY}:8100/help-assets/gestures/actions/v-sign.png" >/dev/null
 GAMEPLAY_MARKDOWN="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/help/gameplay.md")"
+  "http://${UNO_HEALTH_AUTHORITY}:8100/help/gameplay.md")"
 if [[ "${GAMEPLAY_MARKDOWN}" != *"Take VirtualGlove off-script"* ]]; then
   echo "error: deployed gameplay Help is not the current edition" >&2
   exit 1
 fi
 GAMEPLAY_HTML="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-  "http://${UNO_HEALTH_AUTHORITY}:8088/help/gameplay")"
+  "http://${UNO_HEALTH_AUTHORITY}:8100/help/gameplay")"
 for EXPECTED_IMAGE in v2/v-sign.png v2/thumbs-up.png v2/curl-index.png v2/wrist-roll-left.png v2/push-toward-camera.png v2/pixel-pal-ready.png actions/finger-curl.png actions/close-all-fingers.png actions/wrist-roll.png; do
   if [[ "${GAMEPLAY_HTML}" != *"/help-assets/gestures/${EXPECTED_IMAGE}"* ]]; then
     echo "error: gameplay Help is missing ${EXPECTED_IMAGE}" >&2
@@ -220,7 +224,7 @@ if [[ "${GAMEPLAY_HTML}" != *"<img loading=lazy"* ]]; then
   exit 1
 fi
 if curl --location --max-redirs 0 --fail --silent --show-error --max-time 5 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/help/programs" >/dev/null 2>&1; then
+    "http://${UNO_HEALTH_AUTHORITY}:8100/help/programs" >/dev/null 2>&1; then
   echo "error: retired Help alias /help/programs is still available" >&2
   exit 1
 fi
@@ -235,7 +239,7 @@ for PAL_PAGE in dashboard play learn setup help; do
     *) PAL_IMAGE="pixel-pal-web.png" ;;
   esac
   PAL_HTML="$(curl --location --max-redirs 3 --fail --silent --show-error --max-time 5 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/${PAL_PAGE}")"
+    "http://${UNO_HEALTH_AUTHORITY}:8100/${PAL_PAGE}")"
   if [[ "${PAL_HTML}" != *"/help-assets/gestures/v2/${PAL_IMAGE}"* ]]; then
     echo "error: ${PAL_PAGE} is missing its ${PAL_IMAGE} Pixel Pal pose" >&2
     exit 1
@@ -243,7 +247,7 @@ for PAL_PAGE in dashboard play learn setup help; do
 done
 for PAL_IMAGE in pixel-pal-web.png pixel-pal-coach.png pixel-pal-ready.png pixel-pal-thinking.png pixel-pal-safety.png pixel-pal-success.png pixel-pal-gold-cup.png; do
   curl --location --max-redirs 3 --fail --silent --show-error --max-time 10 \
-    "http://${UNO_HEALTH_AUTHORITY}:8088/help-assets/gestures/v2/${PAL_IMAGE}" >/dev/null
+    "http://${UNO_HEALTH_AUTHORITY}:8100/help-assets/gestures/v2/${PAL_IMAGE}" >/dev/null
 done
 
 CONTAINERS="$(ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -255,10 +259,10 @@ for EXPECTED_CONTAINER in virtualglove-main-1 virtualglove-profile-relay-1 virtu
   fi
 done
 echo "Deployment complete."
-echo "  Play:   http://${UNO_HOST}:8088/play"
-echo "  Learn:  http://${UNO_HOST}:8088/learn"
-echo "  Dashboard:  http://${UNO_HOST}:8088/dashboard"
-echo "  Help:   http://${UNO_HOST}:8088/help"
+echo "  Play:   http://${UNO_HOST}:8100/play"
+echo "  Learn:  http://${UNO_HOST}:8100/learn"
+echo "  Dashboard:  http://${UNO_HOST}:8100/dashboard"
+echo "  Help:   http://${UNO_HOST}:8100/help"
 echo "  Setup:  https://${UNO_HOST}:8443/setup"
 if [[ "${PRIVILEGED_READY}" != true ]]; then
   echo "Run this directly in an UNO Q terminal only if host helpers or Matrix firmware changed:"

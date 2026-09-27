@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.3
-Git-visible files: 737
+Git-visible files: 765
 Python test modules: 78
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-737 tracked or non-ignored files are present in this checkout. Ignored
+765 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -219,6 +219,30 @@ are intentionally omitted.
 |   |-- launcher.example.json
 |   |-- profiles.json
 |   `-- release.json
+|-- controller_router_portal
+|   |-- app
+|   |   |-- python
+|   |   |   `-- main.py
+|   |   |-- sketch
+|   |   |   |-- sketch.ino
+|   |   |   `-- sketch.yaml
+|   |   |-- app.yaml
+|   |   `-- VERSION
+|   |-- host
+|   |   |-- bridge.py
+|   |   |-- broker.py
+|   |   |-- concurrent.py
+|   |   |-- controller-router-portal.service
+|   |   |-- controller-router-products.service
+|   |   |-- display_runtime.py
+|   |   |-- portal-compose.yaml
+|   |   `-- products.py
+|   |-- python
+|   |   `-- main.py
+|   |-- client.py
+|   |-- display_protocol.py
+|   |-- install.py
+|   `-- VERSION
 |-- docs
 |   |-- images
 |   |   |-- architecture
@@ -436,6 +460,7 @@ are intentionally omitted.
 |   |-- CODE_REVIEW_MAP.txt
 |   |-- CONFIGURATION_REFERENCE.md
 |   |-- CONTRIBUTING.md
+|   |-- CONTROLLER_ROUTER.md
 |   |-- direction-response-benchmark.md
 |   |-- ENCLOSURE_GUIDE.md
 |   |-- ENCLOSURE_QUICK_REFERENCE.md
@@ -537,6 +562,8 @@ are intentionally omitted.
 |-- licenses
 |   |-- Apache-2.0.txt
 |   `-- GPL-2.0.txt
+|-- matrix
+|   `-- manifest.json
 |-- models
 |   |-- hand_landmarker.task
 |   `-- SHA256SUMS
@@ -674,6 +701,7 @@ are intentionally omitted.
 |   |   |-- VirtualGlove-Changelog.pdf
 |   |   |-- VirtualGlove-Configuration-Reference.pdf
 |   |   |-- VirtualGlove-Contributing.pdf
+|   |   |-- VirtualGlove-Controller-Router.pdf
 |   |   |-- VirtualGlove-Enclosure-Guide.pdf
 |   |   |-- VirtualGlove-Enclosure-Quick-Reference.pdf
 |   |   |-- VirtualGlove-Engineering-Journey.pdf
@@ -825,6 +853,14 @@ are intentionally omitted.
 |   |-- sketch.ino
 |   `-- sketch.yaml
 |-- src
+|   |-- router_shared
+|   |   |-- __init__.py
+|   |   |-- controller_router.py
+|   |   |-- LICENSE
+|   |   |-- merged_gamepad.py
+|   |   |-- retroarch_udev.py
+|   |   |-- storage.py
+|   |   `-- virtual_sources.py
 |   `-- virtualglove
 |       |-- __init__.py
 |       |-- academy_diagnostics.py

@@ -1,0 +1,14 @@
+[Unit]
+Description=VirtualGlove and R.O.B. Vision Linux services
+After=controller-router-portal.service
+Wants=controller-router-portal.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /home/arduino/.local/share/controller-router-portal/host/products.py start-all
+ExecStop=/usr/bin/python3 /home/arduino/.local/share/controller-router-portal/host/products.py stop-all
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

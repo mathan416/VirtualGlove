@@ -3,7 +3,7 @@
 A camera-to-controller system for the **VirtualGlove Controller (Arduino
 UNO Q)** and supported RetroArch consoles.
 
-This guide describes the current implementation reviewed on September 18, 2026.
+This guide describes the current implementation reviewed on September 27, 2026.
 It is a map of production responsibilities, data flows, interfaces, and failure
 behaviour—not a chronology of experiments. The decisions and discarded paths
 that led here are recorded in the [Engineering Journey](ENGINEERING_JOURNEY.md).
@@ -16,8 +16,9 @@ maintenance remains in the complete Git checkout.
 VirtualGlove observes a hand on the VirtualGlove Controller, turns its measurements into
 controller states, and sends those states to a virtual input device on the console.
 The browser configures and explains that process; it is not required in the
-per-frame gameplay path. The VirtualGlove Controller microcontroller drives the status matrix;
-Linux performs hand tracking and gesture recognition.
+per-frame gameplay path. On a shared UNO Q, Controller Router owns the Matrix
+firmware and gives the selected app a short input lease. VirtualGlove Linux
+performs hand tracking and gesture recognition.
 
 There are four independent questions: which game profile is selected, whether
 the camera is running, whether the player has armed controller delivery, and whether
@@ -47,7 +48,7 @@ itself establish that the camera, receiver, or game is working.
 | --- | --- | --- |
 | Browser | Dashboard, Play, Glove Academy, Tune, Setup, Games, Help; live feedback and user commands | Authoritative per-frame recognition or gamepad output |
 | VirtualGlove Controller Linux application | Web server, vision-worker supervision, camera tracking, calibration, thresholds, profile mapping, network sender | RetroArch button consumption |
-| VirtualGlove Controller microcontroller | Arduino sketch, Router Bridge commands, LED matrix animations and pairing display | Camera inference or personal thresholds |
+| Controller Router Matrix service and microcontroller | Sole App Lab sketch, validated product animations, pairing display, neutral idle animation, and delivery acknowledgements | Camera inference or product game logic |
 | RetroPie services | Receive controller packets, expose the standard `VirtualGlove` gamepad, signal game launches, serve paired game-registry edits | Camera processing or physical-controller remapping |
 | Controller Router | Combine EmulationStation-configured physical sources into stable Libretro Players 1–4 and admit one VirtualGlove to a supported NES player | Raw keyboards, mice, frontend navigation, LaunchBox, or native glove-packet generation |
 | Recovered RetroPie cabinet merger | Preserve the proven I-PAC/8BitDo implementation as historical reference and tested rollback | The cabinet's active routing, which now uses Controller Router |
@@ -56,14 +57,20 @@ itself establish that the camera, receiver, or game is working.
 | LaunchBox integration | Wrap 64-bit RetroArch launches, exact-match the game registry, and publish Player 1 through a LAN-isolated loopback RetroPad beside physical XInput and real-keyboard fallback controls | LaunchBox database files and global joypad configuration |
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
-App Lab starts `python/main.py` in the main application container. This
-supervisor runs the website and starts an isolated Python 3.12 vision worker
+Controller Router is the UNO Q's App Lab startup app. Its sketch is the sole
+Matrix owner; its Linux broker runs on port 80 and grants one active controller
+lease. VirtualGlove and R.O.B. Vision Linux services remain online on ports
+8100 and 8101. Opening either direct site selects that app when no game is
+active. The selected product submits named animations from its validated
+manifest; Router sends frames to the Matrix and returns delivery status.
+
+VirtualGlove's `python/main.py` supervises its website and starts an isolated Python 3.12 vision worker
 with the sole packaged MediaPipe 0.10.35 ARM64 wheel. There is no installed
 0.10.18 fallback or runtime selector.
 
-The supervisor polls worker status, updates the matrix, and retries a worker
+The supervisor polls worker status, requests Matrix updates through Router, and retries a worker
 that stops. The worker's internal HTTP interface is on loopback port 8089. The
-public website is on 8088, with secure Setup on 8443.
+public website is on 8100 (internal port 8088), with secure Setup on 8443.
 
 On Recalbox and Batocera, Controller Router creates each enabled uinput gamepad
 before RetroArch starts. RetroPie installs the same subsystem disabled and keeps

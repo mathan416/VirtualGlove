@@ -75,6 +75,21 @@ from .transport import UdpSender
 PRACTICE_PROFILE = "practice"
 
 
+def _router_lease_active() -> bool:
+    path = Path(__file__).resolve().parents[2] / "data/controller-router-lease.json"
+    if not path.exists():
+        return True  # Existing standalone installations remain compatible.
+    try:
+        lease = json.loads(path.read_text())
+        boot = Path("/proc/sys/kernel/random/boot_id")
+        boot_id = boot.read_text().strip() if boot.exists() else "development"
+        return (lease.get("schema") == 1 and lease.get("boot_id") == boot_id and
+                lease.get("active") is True and
+                isinstance(lease.get("until"), (int, float)) and time.monotonic() < lease["until"])
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def _controller_signature(state: ControllerState) -> tuple:
     """Return gameplay-visible state without sequence, time, or confidence noise."""
     return (
@@ -978,6 +993,7 @@ def main() -> int:
     profile_source = "startup"
     current_emulator = ""
     controller_enabled = args.controller_enabled
+    router_was_active = _router_lease_active()
     practice_mode = False
     token = load_worker_token(args)
     sender = UdpSender(args.receiver, args.port, token)
@@ -1380,8 +1396,14 @@ def main() -> int:
             controller_context_active = _controller_context_active(
                 active_game_lease, profile_source
             )
+            router_active = _router_lease_active()
+            if router_was_active and not router_active:
+                sender.send(ControllerState.released(
+                    state.sequence, time.monotonic(), engine.profile, engine.calibrated
+                ))
+            router_was_active = router_active
             receiver_available = sender.send(state) if (
-                controller_enabled and not practice_mode and not tuning_active
+                router_active and controller_enabled and not practice_mode and not tuning_active
                 and not needs_center
                 and controller_context_active and not launch_guard_active
             ) else False

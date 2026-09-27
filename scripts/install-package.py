@@ -19,6 +19,7 @@
 
 """Install a downloaded, checksum-verified package on its intended Linux host."""
 import argparse
+from contextlib import contextmanager
 import importlib.util
 import ipaddress
 import json
@@ -100,9 +101,10 @@ def print_controller_urls(controller_hostname=None):
     print("\nVirtualGlove Controller is ready. Open one of these addresses:")
     for label, address in [("Hostname", hostname)] + [("IP address", value) for value in addresses]:
         print("\n  " + label + ":")
-        print("    Dashboard  http://" + address + "/dashboard")
+        print("    Choose     http://" + address + "/")
+        print("    Dashboard  http://" + address + ":8100/dashboard")
         print("    Setup      https://" + address + ":8443/setup")
-        print("    Help       http://" + address + "/help")
+        print("    Help       http://" + address + ":8100/help")
     if not addresses:
         print("\n  IP address: not available yet; connect Ethernet or Wi-Fi and use the hostname above.")
 
@@ -579,6 +581,56 @@ def restart_managed_runtime(machine):
         subprocess.run(["batocera-services", "start", "VirtualGlove"], check=False)
 
 
+def app_lab_as_arduino(*arguments):
+    """Run the UNO Q's App Lab CLI without giving containers host privileges."""
+    return subprocess.run(["runuser", "-u", "arduino", "--", "arduino-app-cli", *map(str, arguments)],
+                          check=True, text=True, capture_output=True)
+
+
+@contextmanager
+def preserve_active_rob(machine, shared_matrix=False):
+    """Keep an active R.O.B. Vision session selected across a VirtualGlove install."""
+    if machine != "uno-q":
+        yield False
+        return
+    listing = json.loads(app_lab_as_arduino("app", "list", "--format", "json").stdout)
+    active = any(item.get("name") == "R.O.B. Vision" and item.get("status") == "running"
+                 for item in listing.get("apps", []))
+    if not active:
+        yield False
+        return
+    with urllib.request.urlopen("http://127.0.0.1:8766/api/state", timeout=3) as response:
+        state = json.load(response)
+    if state.get("live_game_active") or (state.get("game") and state.get("input", {}).get("frame_hook")):
+        raise ValueError("End the R.O.B. Vision game before upgrading VirtualGlove.")
+    if shared_matrix:
+        # The shared Router installer stops the legacy App Lab container and
+        # starts both Linux services. Restarting R.O.B. Vision here would flash
+        # its retired sketch over Router's Matrix firmware.
+        yield False
+        return
+    rob = Path("/home/arduino/ArduinoApps/rob-vision")
+    app_lab_as_arduino("app", "stop", rob)
+    try:
+        yield True
+    finally:
+        running = not shared_matrix
+        if shared_matrix:
+            listing = json.loads(app_lab_as_arduino("app", "list", "--format", "json").stdout)
+            running = any(item.get("name") == "VirtualGlove" and item.get("status") == "running"
+                          for item in listing.get("apps", []))
+        if running:
+            app_lab_as_arduino("app", "stop", APP)
+        app_lab_as_arduino("app", "start", rob)
+        portal = Path("/home/arduino/ArduinoApps/controller-router-portal")
+        if (portal / "host/broker.py").is_file():
+            subprocess.run(["runuser", "-u", "arduino", "--", "python3", "-c",
+                            "import sys; sys.path.insert(0, " + repr(str(portal)) + "); "
+                            "from host.broker import configure_ports; configure_ports('rob_vision')"],
+                           check=True)
+        app_lab_as_arduino("properties", "set", "default", rob)
+
+
 def rotate_console_backups(source, setup, machine, keep=5):
     """Bound completed console-upgrade backups without touching named recovery sets."""
     if machine == "uno-q":
@@ -607,19 +659,36 @@ def stage_unoq(source, setup):
     if cache.is_dir() and not (setup.BACKUPS / "previous-sketch-cache").exists():
         shutil.copytree(str(cache), str(setup.BACKUPS / "previous-sketch-cache"), symlinks=True)
     compose = APP / ".cache/app-compose.yaml"
+    shared_matrix = (source / "controller_router_portal/app/sketch/sketch.ino").is_file()
+    runtime = Path("/home/arduino/.local/share/controller-router-portal/runtime/virtualglove.json")
+    if runtime.is_file():
+        setup.run("docker", "compose", "-p", "virtualglove-runtime", "-f", runtime, "down")
     if compose.exists():
-        setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP), "arduino-app-cli",
-                  "app", "stop", APP)
+        # An upgrade may be migrating a currently running App Lab app to the
+        # shared Router runtime. Stop its old container and sketch first.
+        running = not shared_matrix
+        if shared_matrix:
+            listing = json.loads(app_lab_as_arduino("app", "list", "--format", "json").stdout)
+            running = any(item.get("name") == "VirtualGlove" and item.get("status") == "running"
+                          for item in listing.get("apps", []))
+        if running:
+            setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP), "arduino-app-cli",
+                      "app", "stop", APP)
         setup.run("env", "APP_HOME=" + str(APP), "docker", "compose",
                   "-p", "virtualglove", "-f", compose, "down", "--remove-orphans")
     APP.mkdir(parents=True, exist_ok=True)
     setup.installation_manifest()["apply"](source, APP, setup.BACKUPS / "application-payload")
+    # Keep the managed sketch so App Lab can restore VirtualGlove's Matrix
+    # firmware when the user switches back from another controller app.
     sketch_directory = APP / "sketch"
-    if sketch_directory.is_dir():
+    source_sketch = source / "sketch"
+    if sketch_directory.is_dir() and not source_sketch.is_dir():
         if any(sketch_directory.iterdir()):
             raise ValueError("Unmanaged files remain in the retired sketch directory: "
                              + str(sketch_directory))
         sketch_directory.rmdir()
+    if cache.is_dir():
+        shutil.rmtree(cache)
     for path in files:
         target = APP / path.relative_to(source)
         os.chown(str(target), user.pw_uid, user.pw_gid)
@@ -630,11 +699,12 @@ def stage_unoq(source, setup):
     for name in (".virtualglove-install.json", ".virtualglove-install.lock"):
         os.chown(str(APP / name), user.pw_uid, user.pw_gid)
     setup.SOURCE = APP
-    # Flash through factory OpenOCD. The release carries no compiler or sketch source.
-    setup.run("python3", APP / "scripts/flash-matrix-firmware.py", APP / "firmware/matrix")
-    # Starting an app without sketch/ starts its Linux services without compiling.
-    setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP),
-              "arduino-app-cli", "app", "start", APP)
+    # Flash the verified firmware now; App Lab retains sketch source for later switches.
+    if not shared_matrix:
+        setup.run("python3", APP / "scripts/flash-matrix-firmware.py", APP / "firmware/matrix")
+        setup.run("runuser", "-u", "arduino", "--", "env", "APP_HOME=" + str(APP),
+                  "arduino-app-cli", "app", "start", APP)
+    return shared_matrix
 
 
 def main(argv=None):
@@ -662,8 +732,10 @@ def main(argv=None):
         temporary_root = (pwd.getpwnam("arduino").pw_dir if args.machine == "uno-q" else
                           ({"retropie": "/var/tmp", "recalbox": "/recalbox/share/system",
                             "batocera": "/userdata/system"}[args.machine]))
+        with zipfile.ZipFile(args.archive) as package:
+            shared_package = "VirtualGlove/controller_router_portal/app/sketch/sketch.ino" in package.namelist()
         with tempfile.TemporaryDirectory(prefix="virtualglove-install-",
-                                         dir=temporary_root) as temporary:
+                                         dir=temporary_root) as temporary, preserve_active_rob(args.machine, shared_package) as other_selected:
             source = unpack(args.archive, Path(temporary), args.machine, args.version)
             setup = load_setup(source)
             if args.peer:
@@ -692,9 +764,14 @@ def main(argv=None):
             try:
                 if args.machine == "uno-q":
                     active_hostname = configure_controller_hostname(setup, selected_hostname)
-                    stage_unoq(source, setup)
+                    shared_matrix = stage_unoq(source, setup)
                     setup.install_unoq(args.peer)
-                    setup.wait_unoq()
+                    if not shared_matrix:
+                        setup.wait_unoq()
+                    setup.run("runuser", "-u", "arduino", "--", "python3",
+                              APP / "controller_router_portal/install.py")
+                    if shared_matrix:
+                        setup.wait_unoq()
                 elif args.machine == "retropie":
                     setup.install_retropie(args.peer)
                     setup.configure_games(confirm)
@@ -711,7 +788,11 @@ def main(argv=None):
              "recalbox": setup.check_recalbox,
              "batocera": setup.check_batocera}[args.machine](report)
             if args.machine == "uno-q":
-                print_controller_urls(active_hostname)
+                if other_selected:
+                    print("R.O.B. Vision remains active. Open the Controller Router page at http://" +
+                          active_hostname + ".local/ to choose VirtualGlove.")
+                else:
+                    print_controller_urls(active_hostname)
             else:
                 token = ({"retropie": Path("/etc/virtualglove/token"),
                           "recalbox": Path("/recalbox/share/system/virtualglove/data/token"),
