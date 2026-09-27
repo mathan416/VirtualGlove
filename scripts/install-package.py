@@ -733,7 +733,10 @@ def main(argv=None):
                           ({"retropie": "/var/tmp", "recalbox": "/recalbox/share/system",
                             "batocera": "/userdata/system"}[args.machine]))
         with zipfile.ZipFile(args.archive) as package:
-            shared_package = "VirtualGlove/controller_router_portal/app/sketch/sketch.ino" in package.namelist()
+            members = set(package.namelist())
+            shared_package = "VirtualGlove/controller_router_portal/app/sketch/sketch.ino" in members
+            if shared_package and "VirtualGlove/controller_router_portal/app/sketch/sketch.yaml" not in members:
+                raise ValueError("Incomplete Controller Router Matrix build profile in installation package")
         with tempfile.TemporaryDirectory(prefix="virtualglove-install-",
                                          dir=temporary_root) as temporary, preserve_active_rob(args.machine, shared_package) as other_selected:
             source = unpack(args.archive, Path(temporary), args.machine, args.version)

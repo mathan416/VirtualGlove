@@ -115,8 +115,6 @@ def command(*args: str, check: bool = True) -> subprocess.CompletedProcess:
 def install() -> str:
     if os.geteuid() != 1000:
         raise RuntimeError("Install the UNO Q launcher as the arduino user.")
-    if not SOURCE.joinpath("host/portal-compose.yaml").is_file():
-        raise RuntimeError("Incomplete Controller Router launcher package.")
     newer = next((root for root in (DEST, LEGACY)
                   if root.exists() and version(root) > version(SOURCE)), None)
     if newer is not None:
@@ -126,6 +124,12 @@ def install() -> str:
         command("systemctl", "--user", "enable", "--now", SERVICE.name)
         command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
         return "Kept the newer Controller Router launcher and started installed controller services."
+    required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py",
+                "app/VERSION", "app/app.yaml", "app/python/main.py",
+                "app/sketch/sketch.ino", "app/sketch/sketch.yaml")
+    missing = [name for name in required if not (SOURCE / name).is_file()]
+    if missing:
+        raise RuntimeError("Incomplete Controller Router launcher package: " + ", ".join(missing))
     DEST.parent.mkdir(parents=True, exist_ok=True)
     listing = app_listing()
     for app_id, app in APPS.items():
