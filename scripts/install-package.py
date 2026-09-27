@@ -496,7 +496,7 @@ def preflight(machine):
                 status = json.load(response)
         except OSError:
             status = None
-        if APP.exists() and status is None:
+        if (APP / "app.yaml").is_file() and status is None:
             if not confirm("Cannot determine application activity. Continue with an app restart?"):
                 raise ValueError("No changes made; could not confirm safe restart")
         elif status and (status.get("controller_enabled") or status.get("practice_mode") or
@@ -725,7 +725,7 @@ def main(argv=None):
         if ((args.player1_device or args.list_player1_devices) and
                 args.machine not in ("recalbox", "batocera")):
             raise ValueError("Player 1 selection applies only to Recalbox and Batocera")
-        existing_install = APP.exists() if args.machine == "uno-q" else False
+        existing_install = (APP / "app.yaml").is_file() if args.machine == "uno-q" else False
         selected_hostname = (select_controller_hostname(args.hostname, existing_install)
                              if args.machine == "uno-q" else None)
         preflight(args.machine)

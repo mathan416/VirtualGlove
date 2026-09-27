@@ -41,7 +41,12 @@ COMMENTED_CONFIGS = {
     "pyproject.toml",
 }
 UNDOCUMENTED_FRAMEWORK_METHODS = {"__init__", "do_GET", "do_POST", "log_message"}
-THIRD_PARTY_PREFIXES = ("third_party/", "vendor/")
+THIRD_PARTY_PREFIXES = (
+    "third_party/",
+    "vendor/",
+    "controller_router_portal/",
+    "src/router_shared/",
+)
 
 
 def tracked_source_files() -> list[Path]:

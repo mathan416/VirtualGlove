@@ -722,6 +722,29 @@ class PreflightTests(unittest.TestCase):
                 installer.preflight('uno-q')
             command.assert_not_called()
 
+    def test_deleted_unoq_app_with_preserved_data_is_safe_to_reinstall(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory) / 'virtualglove'
+            (app / 'data').mkdir(parents=True)
+            (app / 'data' / 'saved-setting').write_text('keep me')
+            self.assertFalse((app / 'app.yaml').is_file())
+            with patch.object(installer, 'APP', app), \
+                 patch.object(installer.sys, 'platform', 'linux'), \
+                 patch.object(installer.os, 'geteuid', return_value=0), \
+                 patch.object(installer.shutil, 'which', return_value='/usr/bin/command'), \
+                 patch.object(installer.shutil, 'disk_usage', return_value=SimpleNamespace(free=10 * 1024 ** 3)), \
+                 patch.object(Path, 'read_bytes', return_value=b'arduino,imola'), \
+                 patch.object(Path, 'is_file', autospec=True,
+                              side_effect=lambda path: str(path) == '/opt/openocd/bin/openocd'), \
+                 patch.object(installer.pwd, 'getpwnam'), \
+                 patch.object(installer.subprocess, 'check_output',
+                              return_value=b'CLI version 0.13.0\ndaemon version: 0.13.0'), \
+                 patch.object(installer.urllib.request, 'urlopen', side_effect=OSError('offline')), \
+                 patch.object(installer, 'confirm') as confirm:
+                installer.preflight('uno-q')
+                confirm.assert_not_called()
+            self.assertEqual((app / 'data' / 'saved-setting').read_text(), 'keep me')
+
     def test_active_retropie_requires_closed_game(self):
         with patch.object(installer.sys, 'platform', 'linux'), patch.object(installer.os, 'geteuid', return_value=0), \
              patch.object(installer.shutil, 'which', return_value='/usr/bin/command'), \

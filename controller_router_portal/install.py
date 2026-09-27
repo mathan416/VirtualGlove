@@ -60,6 +60,7 @@ def install_matrix_app() -> tuple[Path | None, bool]:
 
 
 def start_shared_matrix() -> None:
+    print("Building and starting the Controller Router Matrix app; the first install may take a few minutes.", flush=True)
     command("arduino-app-cli", "app", "start", str(MATRIX))
     compose = MATRIX / ".cache/app-compose.yaml"
     original = compose.read_text()

@@ -75,6 +75,7 @@ class RouterMatrixCall:
         self.profile = 0
 
     def __call__(self, method, *args):
+        """Map a legacy Matrix method call to a Router display request."""
         if method == "get_virtualglove_firmware":
             return "controller-router"
         if method == "set_virtualglove_pairing":

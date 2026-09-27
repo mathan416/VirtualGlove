@@ -204,6 +204,20 @@ Player 2 while another pad is Player 1. In Setup > Controller Router,
 check which pad belongs to each player. Close the game before changing
 an assignment, then relaunch it to use the corrected routing.
 
+### A wireless controller falls asleep or wakes during a game
+
+On RetroPie, a known Controller Router hotplug issue can shift RetroArch's
+numbered device slots when a wireless pad sleeps or reconnects during a
+Libretro game. That pad may stop controlling its merged player even though
+Setup still shows its correct saved assignment. This can affect any wireless
+controller.
+
+Turn on the wireless controllers you plan to use before launching a game. If
+one sleeps or wakes during play and input stops, wait for it to reconnect,
+then exit and relaunch the game. In RetroArch, Port 1 should show
+**VirtualGlove Merged Player 1**; a different merged player indicates the
+shifted slot. A routing fix is pending.
+
 ### Controller Router reports an unavailable controller
 
 Select **Check controllers**, then press a direction or button on every connected

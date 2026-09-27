@@ -76,6 +76,7 @@ PRACTICE_PROFILE = "practice"
 
 
 def _router_lease_active(path: Path | None = None) -> bool:
+    """Report whether this app currently holds the Router input lease."""
     path = path or Path(__file__).resolve().parents[2] / "data/controller-router-lease.json"
     if not path.exists():
         # Standalone installations have neither file. A Router-managed app

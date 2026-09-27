@@ -1,7 +1,12 @@
 # Project: VirtualGlove
+# File: src/virtualglove/controller_router.py
 # Purpose: VirtualGlove integration and compatibility facade for the shared Router.
+# Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-27 - Kept product protocol separate from the shared Router core.
+# Full history: docs/CHANGELOG.md and Git history.
 """Keep VirtualGlove's signed console protocol outside the reusable Router core."""
 
 from __future__ import annotations
