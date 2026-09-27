@@ -1317,6 +1317,15 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
                 _send(self, 200, json.dumps(state.snapshot()).encode(), "application/json")
             elif path == "/api/connection-status":
                 _send(self, 200, json.dumps(state.connection_status()).encode(), "application/json")
+            elif path == "/api/installed-apps":
+                try:
+                    from controller_router_portal.client import request as portal_request
+                    portal_state = portal_request({"action": "state"})
+                    if "apps" not in portal_state:
+                        raise ValueError("Controller Router is unavailable.")
+                    _send(self, 200, json.dumps({"apps": portal_state["apps"]}).encode(), "application/json")
+                except (ImportError, OSError, ValueError):
+                    _send(self, 503, b'{"apps":{}}', "application/json")
             elif path == "/api/support-report":
                 _send(self, 200, json.dumps(state.support_report(), indent=2).encode(), "application/json")
             elif path == "/api/config":

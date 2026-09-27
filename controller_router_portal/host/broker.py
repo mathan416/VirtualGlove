@@ -93,94 +93,12 @@ def configure_ports(app_id: str) -> None:
                        text=True, capture_output=True, timeout=90)
 
 
-class Launcher:
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.busy = False
-        self.error = ""
-        self.target = None
+try:
+    from .concurrent import ConcurrentLauncher
+except ImportError:  # Executed from the installed host script.
+    from concurrent import ConcurrentLauncher
 
-    def state(self) -> dict:
-        listing = app_listing()
-        apps = {}
-        for app_id, app in APPS.items():
-            present = installed(app_id, listing)
-            running = present and listing.get(app["name"]) == "running"
-            ready, game = health(app_id) if running else (False, False)
-            apps[app_id] = {"installed": present, "running": running,
-                            "ready": ready, "game_active": game, "port": app["port"]}
-        with self.lock:
-            return {"apps": apps, "busy": self.busy, "target": self.target, "error": self.error}
-
-    def select(self, app_id: str) -> dict:
-        if app_id not in APPS:
-            return {"error": "Unknown controller app."}
-        state = self.state()
-        if not state["apps"][app_id]["installed"]:
-            return {"error": "That controller app is not installed."}
-        with self.lock:
-            if self.busy:
-                return {"error": "A controller switch is already in progress."}
-            self.busy, self.target, self.error = True, app_id, ""
-        threading.Thread(target=self._switch, args=(app_id,), daemon=True).start()
-        return {"accepted": True}
-
-    def _switch(self, target: str) -> None:
-        previous = None
-        try:
-            listing = app_listing()
-            running = [key for key, app in APPS.items() if listing.get(app["name"]) == "running"]
-            for key in running:
-                ready, game = health(key)
-                if not ready:
-                    raise RuntimeError("The running controller is unavailable; recover it locally before switching.")
-                if game:
-                    raise RuntimeError("End the current game before switching controllers.")
-            previous = next((key for key in running if key != target), None)
-            for key in running:
-                if key != target:
-                    cli("app", "stop", str(APPS[key]["path"]))
-            if target not in running:
-                cli("app", "start", str(APPS[target]["path"]))
-            configure_ports(target)
-            deadline = time.monotonic() + 300
-            while time.monotonic() < deadline:
-                ready, _ = health(target)
-                if ready:
-                    cli("properties", "set", "default", str(APPS[target]["path"]), timeout=20)
-                    return
-                if app_listing().get(APPS[target]["name"]) == "failed":
-                    raise RuntimeError("App Lab could not start the selected controller.")
-                time.sleep(2)
-            raise RuntimeError("The selected controller did not become ready.")
-        except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
-            message = str(exc)
-            if previous:
-                try:
-                    cli("app", "stop", str(APPS[target]["path"]), timeout=30)
-                except (OSError, subprocess.SubprocessError):
-                    pass
-                try:
-                    cli("app", "start", str(APPS[previous]["path"]))
-                    configure_ports(previous)
-                    cli("properties", "set", "default", str(APPS[previous]["path"]), timeout=20)
-                except (OSError, subprocess.SubprocessError):
-                    message += " The previous controller could not be restored automatically."
-            with self.lock:
-                self.error = message
-        finally:
-            with self.lock:
-                self.busy, self.target = False, None
-
-
-if (ROOT / "controller-router/app.yaml").is_file():
-    try:
-        from .concurrent import ConcurrentLauncher
-    except ImportError:
-        from concurrent import ConcurrentLauncher
-    LAUNCHER = ConcurrentLauncher()
-else:
-    LAUNCHER = Launcher()
+LAUNCHER = ConcurrentLauncher()
 
 
 class Handler(socketserver.StreamRequestHandler):

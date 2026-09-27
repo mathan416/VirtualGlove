@@ -4,36 +4,12 @@ from __future__ import annotations
 import json
 from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlsplit
 
 
-HTML = """<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Choose a controller</title><style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#081625;color:#e9f7ff}*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(circle at 70% 10%,#18445a,#081625 60%)}
-main{max-width:850px;margin:auto;padding:clamp(24px,6vw,70px)}header{display:flex;gap:14px;align-items:center;border-bottom:1px solid #477388;padding-bottom:22px}
-.icon{font-size:33px;display:grid;place-items:center;width:60px;height:60px;border:2px solid #5ce2ee;border-radius:18px}h1{font-size:clamp(32px,6vw,56px);margin:28px 0 8px;line-height:1}p{color:#b1ccda;line-height:1.5}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:18px;margin-top:28px}.card{background:#102b3b;border:1px solid #3d667b;border-radius:17px;padding:25px;min-height:205px}
-.card h2{font-size:27px;margin:4px 0}.card p{min-height:45px}.badge{display:inline-block;font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#75e6ed}button{font:700 16px system-ui;width:100%;padding:13px;border:0;border-radius:8px;background:#f7795f;color:#12222b;cursor:pointer}button:disabled{opacity:.5;cursor:wait}
-#message{min-height:32px;margin-top:24px;color:#87e9ed}.error{color:#ffaca1!important}a{color:#87e9ed}
-</style><main><header><span class="icon">🎮</span><div><strong>CONTROLLER ROUTER</strong><div style="color:#9bc1d1">UNO Q controller selection</div></div></header>
-<h1>Choose your controller.</h1><p>Pick the companion you want to use on this UNO Q. An active game must finish before you can switch.</p>
-<div class="cards" id="cards"></div><p id="message" role="status" aria-live="polite"></p></main>
-<script>
-const names={virtualglove:['VirtualGlove','Play with hand gestures.','✋'],rob_vision:['R.O.B. Vision','Play alongside Buddy.','🤖']};
-const cards=document.getElementById('cards'),message=document.getElementById('message');let requested=false,selected=null,singleAutoAttempted=false;
-async function request(path,body){const options=body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{};const response=await fetch(path,options);return response.json()}
-function destination(port){location.assign(location.protocol+'//'+location.hostname+':'+port+'/')}
-async function select(key){requested=true;selected=key;try{const value=await request('/api/select',{app:key});if(value.error){requested=false;selected=null;message.className='error';message.textContent=value.error}else{message.className='';message.textContent='Starting '+names[key][0]+'…'}}catch(error){requested=false;selected=null;message.className='error';message.textContent='The launcher is unavailable. Please retry.'}}
-async function tick(){try{const state=await request('/api/state');if(state.error)throw Error(state.error);const installed=Object.keys(names).filter(k=>state.apps[k]?.installed);
- if(!installed.length){cards.innerHTML='';message.textContent='No controller app is installed yet.';return}
- if(installed.length===1&&!requested&&!state.error){const key=installed[0];if(state.apps[key].selected&&state.apps[key].ready){destination(state.apps[key].port);return}if(!singleAutoAttempted&&!state.busy&&state.apps[key].ready){singleAutoAttempted=true;select(key);return}}
- if(selected&&state.apps[selected]?.ready&&!state.busy&&(state.selected===undefined||state.selected===selected)){destination(state.apps[selected].port);return}
- cards.innerHTML=installed.map(k=>{const a=state.apps[k],n=names[k];return `<section class="card"><span class="badge">${a.selected?'SELECTED':a.ready?'READY':a.running?'STARTING':'AVAILABLE'}</span><h2>${n[2]} ${n[0]}</h2><p>${n[1]}</p><button data-app="${k}" ${state.busy||a.game_active?'disabled':''}>${a.selected?'Open '+n[0]:'Use '+n[0]}</button></section>`}).join('');
- cards.querySelectorAll('button').forEach(b=>b.onclick=()=>select(b.dataset.app));
- if(state.error){message.className='error';message.textContent=state.error;requested=false}else if(state.busy){message.className='';message.textContent='Starting '+names[state.target]?.[0]+'…'}else if(!requested){message.textContent=''}
- }catch(error){message.className='error';message.textContent=error.message||'The launcher is unavailable. Please retry.'}setTimeout(tick,1200)}tick();
-</script></html>"""
+ASSETS = Path(__file__).with_name("assets")
+PAGE = Path(__file__).with_name("index.html")
 
 
 def broker(message: dict) -> dict:
@@ -87,10 +63,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, broker({"action": "state"}))
             except (OSError, ValueError):
                 self.send_json(503, {"error": "The UNO Q launcher is unavailable."})
-        elif path == "/":
-            body = HTML.encode()
+        elif path == "/" or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
+            asset = PAGE if path == "/" else ASSETS / path.rsplit("/", 1)[-1]
+            body = asset.read_bytes()
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Type", "text/html; charset=utf-8" if path == "/" else "image/png")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()

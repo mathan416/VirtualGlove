@@ -613,6 +613,14 @@ class ControlStateTests(unittest.TestCase):
         for page in (DASHBOARD, LEARN, PLAY, SETUP, help_index_page()):
             self.assertIn(b"href=/help>Help", page)
 
+    def test_apps_navigation_matches_the_other_controller(self):
+        chooser = b"onclick=\"this.href='http://'+location.hostname+'/'\">Apps</a>"
+        for page in (DASHBOARD, LEARN, PLAY, SETUP, help_index_page()):
+            self.assertIn(chooser, page)
+            self.assertIn(b"id=apps-link hidden", page)
+            self.assertIn(b"/api/installed-apps", page)
+            self.assertNotIn(b"Choose controller</a>", page)
+
     def test_play_page_has_camera_controlled_rock_paper_scissors(self):
         self.assertIn(b"Rock Paper Scissors", PLAY)
         self.assertIn(b"data-src=/stream", PLAY)
