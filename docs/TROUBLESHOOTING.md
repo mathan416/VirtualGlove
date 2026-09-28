@@ -40,7 +40,7 @@ pairing and settings remain intact.
 
 1. Check power and give the Controller time to finish starting.
 2. Put your browser device on the same reachable LAN. Check the router's client list for the Controller's current IP address.
-3. Try `http://CONTROLLER-IP:8088/setup`. Secure pairing uses `https://CONTROLLER-IP:8443/setup`.
+3. Try `http://CONTROLLER-IP:8100/setup`. Secure pairing uses `https://CONTROLLER-IP:8443/setup`.
 4. If the IP works but `.local` does not, investigate hostname resolution and guest-network/client isolation. With Wi-Fi and USB Ethernet connected, the Controller can have more than one address.
 
 Use the plain `/setup` address; no `?ui=2` suffix is needed. Old query-string bookmarks still open Setup.

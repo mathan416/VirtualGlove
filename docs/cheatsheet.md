@@ -37,15 +37,15 @@ Open these pages on a computer or phone connected to the same trusted network.
 
 | Page | Address |
 | --- | --- |
-| Dashboard: camera and controller output | [Open Dashboard](http://UNO-Q-NAME.local:8088/dashboard) |
-| Play: Rock Paper Scissors | [Open Play](http://UNO-Q-NAME.local:8088/play) |
-| Learn: practice and tune gestures | [Open Learn](http://UNO-Q-NAME.local:8088/learn) |
-| Games: edit game mappings | [Open Games](http://UNO-Q-NAME.local:8088/setup#games-section) |
-| Help: manuals and live cabinet reference | [Open Help](http://UNO-Q-NAME.local:8088/help) |
-| Setup: connection and startup settings | [Open Setup](http://UNO-Q-NAME.local:8088/setup) |
+| Dashboard: camera and controller output | [Open Dashboard](http://UNO-Q-NAME.local:8100/dashboard) |
+| Play: Rock Paper Scissors | [Open Play](http://UNO-Q-NAME.local:8100/play) |
+| Learn: practice and tune gestures | [Open Learn](http://UNO-Q-NAME.local:8100/learn) |
+| Games: edit game mappings | [Open Games](http://UNO-Q-NAME.local:8100/setup#games-section) |
+| Help: manuals and live cabinet reference | [Open Help](http://UNO-Q-NAME.local:8100/help) |
+| Setup: connection and startup settings | [Open Setup](http://UNO-Q-NAME.local:8100/setup) |
 | Secure Setup: pairing | [Open secure Setup](https://UNO-Q-NAME.local:8443/setup) |
-| Status: diagnostic readings | [Open status](http://UNO-Q-NAME.local:8088/status) |
-| Camera stream | [Open camera stream](http://UNO-Q-NAME.local:8088/stream) |
+| Status: diagnostic readings | [Open status](http://UNO-Q-NAME.local:8100/status) |
+| Camera stream | [Open camera stream](http://UNO-Q-NAME.local:8100/stream) |
 | Project repository | [VirtualGlove on GitHub](https://github.com/mathan416/VirtualGlove) |
 
 The links above contain example hostnames. Replace them in the browser's address
@@ -226,7 +226,7 @@ does not arm output or verify game delivery.
 From your computer, open the status URL above or run:
 
 ```sh
-curl -sS http://UNO-Q-NAME.local:8088/status
+curl -sS http://UNO-Q-NAME.local:8100/status
 ```
 
 Once you have selected an active profile and completed calibration, the
@@ -689,7 +689,7 @@ user service; LaunchBox starts the receiver in the signed-in desktop session.
 
 | Port | Direction | Purpose |
 | --- | --- | --- |
-| TCP `8088` | Browser → VirtualGlove Controller | Dashboard, Play, Learn, Help, Setup, status, and camera stream |
+| TCP `8100` | Browser → VirtualGlove Controller | Dashboard, Play, Learn, Help, Setup, status, and camera stream |
 | TCP `8443` | Browser → VirtualGlove Controller | Secure Setup and pairing |
 | UDP `55355` | VirtualGlove Controller → console | Controller-state packets |
 | UDP `55356` | Console → VirtualGlove Controller | Profile requests and acknowledgements |

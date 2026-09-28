@@ -16,10 +16,9 @@ VirtualGlove recognises the pose, sends authenticated controller input across
 your local network, and lets RetroArch see controller input or a native
 Power Glove controller.
 
-**Current stable release: v0.5.3.** It makes the Setup page easier to follow,
-adds a compact standalone UNO Q enclosure, and makes the Controller website
-available without typing `:8088` when port 80 is free. Use the same installation
-commands for a fresh setup or an upgrade.
+**Current stable release: v0.5.3.** Use the same installation commands for a fresh setup or an upgrade.
+
+The development branch adds a shared Controller Router entry page and Matrix service. The UNO Q address opens VirtualGlove directly when it is the sole installed product, or shows a chooser when R.O.B. Vision is installed too. Both services stay online on ports 8100 and 8101. Registered games select their controller automatically without an open browser. **Apps** returns to the chooser and appears only when both products are installed. These development changes require the matching release candidate or a source installation; the latest stable command does not select a prerelease.
 
 VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
 64-bit Windows. Recalbox and Batocera use **Controller Router** to combine

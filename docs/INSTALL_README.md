@@ -22,6 +22,8 @@ keep the backup paths they print. The Batocera installer checks the published
 ZIP checksum before changing anything; a mismatch is a safe failure, not a
 partial upgrade.
 
+With both products installed, **Apps** returns to the chooser. With only VirtualGlove installed, the link is hidden and the UNO Q entry address opens VirtualGlove directly. Choosing an app opens its running website; it does not start or stop product services. A first shared Matrix build can take several minutes. Keep the installer open while App Lab prepares it. A newer installed Router is retained, and newly installed products are registered without clearing existing settings.
+
 ## 1. Before you begin
 
 You need:
@@ -128,8 +130,7 @@ cd /home/arduino
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh && bash install-uno-q.sh
 ```
 
-The installer verifies the release, installs VirtualGlove, loads the matching
-Matrix firmware, and configures automatic startup. It also installs the guarded
+The installer verifies the release, installs VirtualGlove’s Linux service, and installs or upgrades Controller Router as the startup app and sole Matrix owner. It does not flash VirtualGlove’s separate sketch. Both product services remain running when R.O.B. Vision is installed. It also installs the guarded
 camera-recovery and shutdown helpers used by the Controller.
 
 ### Questions the installer asks

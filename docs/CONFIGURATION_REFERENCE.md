@@ -10,7 +10,7 @@ gesture threshold, or network setting.
 
 On a shared UNO Q, Controller Router is the App Lab startup app and sole Matrix
 firmware owner. VirtualGlove's Linux service stays available at port 8100;
-R.O.B. Vision stays available at port 8101. Port 80 presents the chooser.
+R.O.B. Vision stays available at port 8101. Port 80 opens the sole installed product or presents the chooser when both are installed. **Apps** appears only in the two-product case.
 Product installers preserve this startup choice and request their Matrix
 animations through Router. Standalone firmware commands later in this reference
 are maintenance procedures for an installation without the shared Router; do
@@ -68,7 +68,7 @@ In commands and examples, replace these placeholders:
 Open the ordinary Setup page at:
 
 ```text
-http://UNO-Q-NAME.local:8088/setup
+http://UNO-Q-NAME.local:8100/setup
 ```
 
 Pairing uses the secure Setup page instead:
@@ -1335,9 +1335,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 
 Existing pairing credentials and native emulator files need no format migration.
 VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.3. Update both machines
-together. The Controller package carries
-and flashes the matching checksum-verified Matrix firmware; do not skip that
-installer stage or mix it with an older Controller/receiver build. Native
+together. The Controller installer includes the shared Router package and its Matrix firmware. Controller Router owns the active sketch; a normal VirtualGlove installation or restart does not flash the separate VirtualGlove sketch. Keep Controller and console software compatible, and retain existing pairing and player settings. Native
 emulator cores do not require a rebuild solely for this migration.
 
 ## RetroPie receiver and virtual controller
@@ -1464,8 +1462,10 @@ ports through a router or expose them directly to the Internet.
 | --- | --- | --- |
 | UDP `55355` | VirtualGlove Controller to console | Authenticated live controller state |
 | UDP `55356` | Console to VirtualGlove Controller | Authenticated game-profile requests and acknowledgements |
-| TCP `80` | Browser to VirtualGlove Controller | Port-free Dashboard, Play, Help, Glove Academy, and ordinary Setup URL; published by the app's main container and released when the app stops |
-| TCP `8088` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
+| TCP `80` | Browser to Controller Router | Opens the sole installed product or displays the chooser; remains available independently of product web services |
+| TCP `8100` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
+| TCP `8088` | UNO Q host to VirtualGlove container | Internal web port; the shared install publishes it to the LAN as `8100` |
+| TCP `8101` / `8766` | Browser / paired console to R.O.B. Vision | R.O.B. Vision web pages / existing receiver API when that product is installed |
 | TCP `8443` | Browser to VirtualGlove Controller | TLS Setup and pairing workflow |
 | TCP `55358` | VirtualGlove Controller to console | Paired game registry reads, saves, and restoration |
 | TCP `55357` | VirtualGlove Controller to console | Temporary one-time-code pairing helper |
@@ -2355,7 +2355,9 @@ which is why the helper preserves the inherited settings instead of writing only
 one option.
 
 
-### Matrix startup hourglass
+### Legacy standalone Matrix startup hourglass
+
+This section describes the separate VirtualGlove sketch retained for standalone maintenance. On shared installs, Router’s sketch shows neutral artwork after boot; product loading and profile animations are named manifest requests. The product does not upload its own sketch, and its saved attract preferences do not alter Router’s idle display.
 
 After the system boot display, the Arduino sketch draws a pulsing hourglass
 before connecting to Router Bridge. Its display task runs independently of the
@@ -2560,7 +2562,7 @@ the installed software and normally start faster.
 
 ### Setup page does not open
 
-- Ordinary settings: `http://UNO-Q-NAME.local:8088/setup`
+- Ordinary settings: `http://UNO-Q-NAME.local:8100/setup`
 - Secure pairing: `https://UNO-Q-NAME.local:8443/setup`
 - Try the board's IP address if `.local` does not resolve.
 - HTTPS and HTTP are not interchangeable on these ports.
@@ -2688,7 +2690,7 @@ sudo systemctl daemon-reload
 ```
 
 
-### Build and install matrix firmware
+### Build and install legacy standalone Matrix firmware
 
 The footer's **Software and matrix firmware** details show the candidate when
 available, exact software commit, modified-source indicator, and source SHA-256

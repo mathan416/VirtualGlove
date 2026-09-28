@@ -8,12 +8,19 @@ pairing. It does not show a game's score or confirm that a game accepted a butto
 Use the photographs and descriptions below to recognise the display and decide
 what to do next.
 
+## Shared Controller Router display
+
+On current Router-managed installations, Controller Router owns the Matrix. After reboot it shows a neutral animation until a registered game selects its product or you open a product’s direct website. The unselected product cannot replace the display. When a game ends, Router returns to neutral. VirtualGlove requests loading, learning, tuning, error, and profile animations from its manifest. Pairing requests temporarily show the certificate identity and PIN; pairing is blocked during a live game.
+
+The legacy attract brightness and connection-pixel preferences remain saved for standalone firmware; they do not change Router’s shared idle artwork. A product restart does not flash Matrix firmware. If the Matrix remains neutral during a game, check Router selection and Matrix delivery before reinstalling VirtualGlove.
+
 ## Recognise the display
 
 | What you see | See it | What it means | What to do |
 | --- | --- | --- | --- |
 | Arduino boot logo | <img src="images/matrix/Boot.jpg" alt="Boot matrix display" width="104"> | The VirtualGlove Controller's system software is starting, before VirtualGlove controls the display. | Wait for the app's hourglass or normal display. |
 | System heart animation | <img src="images/matrix/Heart.jpg" alt="Heart matrix display" width="104"> | The board is progressing through system startup. | Wait for the app display. |
+| Router’s neutral animation | — | No selected product has an active Matrix request. | Start a registered game or open the UNO Q entry page to choose an app. |
 | Pulsing hourglass | <img src="images/matrix/Hourglass.jpg" alt="Hourglass matrix display" width="104"> | VirtualGlove is starting. | Allow startup to finish. If it persists, check Dashboard. |
 | Lightning flash, moving cuff, curling glove, and a spark | <img src="images/matrix/idle-glove.png" alt="Simulated idle glove display" width="104"> | Gestures are off; the app is in its idle mode. | Open Glove Academy to practice, or choose a game profile on Dashboard. |
 | A large scanning **L** | <img src="images/matrix/L.jpg" alt="L matrix display" width="104"> | Play or Glove Academy lessons are active. L stands for local play or lessons. | Follow the game or practice moves shown in your browser; controller output is paused. |
@@ -24,7 +31,7 @@ what to do next.
 | A flashing **X** | <img src="images/matrix/X.jpg" alt="X matrix display" width="104"> | The app has requested an error display. | Read Dashboard's error message before deciding whether to reconnect the camera or restart. |
 | A blank matrix | <img src="images/matrix/Blank.jpg" alt="Blank matrix display" width="104"> | The display has been turned off, the app is stopping, or the board is still starting. It may also have lost power. | Use the browser and board power indicators to distinguish these cases. Blank does not prove shutdown is complete. |
 
-## Startup: logo, hourglass, then your mode
+## Legacy standalone startup: logo, hourglass, then your mode
 
 A typical startup with **Gestures off** selected is:
 
@@ -44,13 +51,15 @@ or playing.
 The hourglass means startup is in progress. If it stays on the display, open
 Dashboard and check the startup or error message.
 
-Public releases include the Matrix firmware already compiled for the UNO Q.
+The standalone firmware workflow below applies to older installations without shared Controller Router. Current shared installers update Router’s Matrix package instead.
+
+Standalone releases include the Matrix firmware already compiled for the UNO Q.
 Installation verifies its checksum and the board model, then uses the board's
 factory flashing support. It does not download the large Zephyr compiler on the
 Controller. Developers can still rebuild the same pinned source through the
 repository engineering workflow.
 
-## Attract brightness and connection pixels
+## Legacy standalone attract brightness and connection pixels
 
 In **Setup → Matrix attract mode**, select **On**, **Dim**, or **Off** and choose
 **Save attract mode**. The preference survives upgrades and restarts. On is the
@@ -83,7 +92,7 @@ T, L, startup, errors, pairing, and application shutdown retain their normal
 brightness and behaviour. Saving does not restart the tracker. Install updated
 matrix firmware before using these controls; the footer identifies older firmware.
 
-## The idle glove show
+## The legacy standalone idle glove show
 
 <img src="images/matrix/idle-glove.png" alt="Simulated idle glove: separated fingers, thumb, and wrist cuff." width="320">
 

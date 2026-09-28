@@ -58,10 +58,10 @@ itself establish that the camera, receiver, or game is working.
 | RetroArch and game | Consume virtual-gamepad input using emulator and game mappings | Glove Academy/Tune feedback |
 
 Controller Router is the UNO Q's App Lab startup app. Its sketch is the sole
-Matrix owner; its Linux broker runs on port 80 and grants one active controller
+Matrix owner; its entry page runs on port 80 and its host broker grants one active controller
 lease. VirtualGlove and R.O.B. Vision Linux services remain online on ports
 8100 and 8101. Opening either direct site selects that app when no game is
-active. The selected product submits named animations from its validated
+active; **Apps** is visible only when both products are installed. A registered game selects its product from authenticated session state without a browser. Router returns to neutral after that session ends and rejects manual switches during play. Leases expire after two seconds, are refreshed about every 250 ms, and carry the current boot ID. Router-managed installs reject missing or invalid leases. If both products report games, neither receives input. The selected product submits named animations from its validated
 manifest; Router sends frames to the Matrix and returns delivery status.
 
 VirtualGlove's `python/main.py` supervises its website and starts an isolated Python 3.12 vision worker
@@ -798,7 +798,8 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 
 | Interface | Direction | Contract |
 | --- | --- | --- |
-| HTTP 8088 | Browser to VirtualGlove Controller | Pages, live status/video, ordinary settings and commands |
+| HTTP 80 | Browser to Controller Router | Single-product redirect or two-product chooser |
+| HTTP 8100 | Browser to VirtualGlove Controller | Pages, live status/video, ordinary settings and commands; internal container port 8088 |
 | HTTPS 8443 | Browser to VirtualGlove Controller | Secure Setup and pairing workflow |
 | HTTP 8089, loopback | Supervisor/web proxy to worker | Internal status, frame and control requests |
 | UDP 55355 | VirtualGlove Controller to console | Signed controller states, session, challenge, and sequence; handshake replies return to the sender socket |
@@ -882,8 +883,7 @@ The verified platform supplies Arduino_LED_Matrix **0.1.3**. Retain the complete
 `sketch/sketch.yaml` when synchronizing with App Lab.
 
 Installing that platform makes build tools available. Compile-only validation
-builds against it but does not flash hardware. App Lab **Run**, or its supported
-app-restart command, compiles the Arduino sketch and uploads the matrix firmware.
+builds against it but does not flash hardware. Normal installation runs Controller Router’s shared App Lab Matrix app. Product Linux services run separately and do not upload their own sketches. App Lab **Run** on a legacy product sketch is a standalone maintenance operation; it replaces the active firmware and must not be used on a shared Router installation.
 
 Back up the installed source and firmware cache, verify compilation, upload,
 then check application health, bridge response, physical matrix appearance, and
