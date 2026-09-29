@@ -48,6 +48,8 @@ class VersionTests(unittest.TestCase):
     def test_main_and_dev_labels(self):
         for branch, expected in [("main", "0.2.5"), ("dev", "0.2.5-dev")]:
             self.assertEqual(versioning.display_version({"version": "0.2.5", "branch": branch}), expected)
+        self.assertEqual(versioning.display_version({"version": "0.6.0rc1", "branch": "dev",
+                                                     "release": "v0.6.0-rc.1"}), "0.6.0-rc.1")
 
     def test_exported_app_uses_stamp_without_git(self):
         with tempfile.TemporaryDirectory() as d:

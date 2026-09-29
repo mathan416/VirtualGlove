@@ -86,6 +86,9 @@ def build_identity(root):
 
 def display_version(identity):
     """Mark dev builds while keeping main release numbers unchanged."""
+    release = identity.get("release")
+    if release:
+        return release[1:] if release.startswith("v") else release
     return identity["version"] + ("-dev" if identity["branch"] == "dev" else "")
 
 
