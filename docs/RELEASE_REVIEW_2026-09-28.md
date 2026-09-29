@@ -58,3 +58,15 @@ Before final release, build candidate packages from the reviewed commit, update 
 The current development code was installed on retropie.local and retropieconsole.local with the bundled Controller Router, followed by current R.O.B. Vision source. Both consoles rebooted into EmulationStation with all three controller services active, zero service restarts, no boot error entries for those services, and executable shared pairing helpers. The NES `retroarch.cfg` checksums remained unchanged and both that file and `emulators.cfg` remained owned by `pi:pi`. Pairing files were present; game input was not exercised in this deployment check.
 
 The first retropie.local install rolled back because its saved short UNO Q name, `arduiain`, did not resolve there. The same device's `arduiain.local` name resolved, so the saved destination was corrected before repeating the install. On retropieconsole.local, the previous recovery code attempted to copy 36 GB of RetroPie configuration, mostly untouched Skyscraper cache and downloaded game media. That pre-change attempt was interrupted and restored without changing software. Recovery now preserves those collections in place without copying them; the successful snapshot was about 627 MB. A regression test verifies that these directories survive rollback unchanged. Both successful installs reported zero technical failures and pending in-game control confirmation.
+
+## Recalbox development validation — 29 September 2026
+
+Recalbox 10.1.1 on the `rpizero2` target retained shared Controller Router
+pairing after repeat installation and a reboot. Super Glove Ball selected
+VirtualGlove automatically, and the player confirmed that the game responded
+to glove input. Recalbox's saved quit button number did not match the merged
+controller's Start button; the Router adapter now corrects it only in temporary
+session settings. The player confirmed PlayStation Home + Start exited a fresh
+game session. No saved Recalbox RetroArch configuration was changed. These live
+checks used the development installation; published candidate assets still
+require a separate install and upgrade check.
