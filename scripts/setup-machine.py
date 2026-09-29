@@ -1057,13 +1057,13 @@ class Report:
             self.failures += 1
             print("FAIL  " + label)
 
-    def command(self, label, args):
+    def command(self, label, args, pending=False):
         """Check a command without displaying logs that may contain private data."""
         try:
             result = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-            self.check(label, result.returncode == 0)
+            self.check(label, result.returncode == 0, pending=pending)
         except (OSError, subprocess.TimeoutExpired):
-            self.check(label, False)
+            self.check(label, False, pending=pending)
 
     def release(self):
         """Display the installed package tag without reading private runtime settings."""
@@ -1240,7 +1240,9 @@ def check_unoq(report):
     code = ("import json; from pathlib import Path; from virtualglove.resolver import resolve_ipv4; "
             "d=json.loads(Path('/app/data/device.json').read_text()); resolve_ipv4(d['receiver'])")
     if status.get("connection_configured"):
-        report.command("Configured receiver resolves inside app", ["docker", "exec", "-e", "PYTHONPATH=/app/src", prefix + "-main-1", "python3", "-c", code])
+        report.command("Configured receiver resolves inside app (check when console is on)",
+                       ["docker", "exec", "-e", "PYTHONPATH=/app/src", prefix + "-main-1", "python3", "-c", code],
+                       pending=True)
     else:
         report.check("Configure your RetroPie destination in Connection", False, pending=True)
     for route in ("help", "help/installation", "help-pdf/installation.pdf"):
