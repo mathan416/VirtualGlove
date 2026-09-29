@@ -1,5 +1,32 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pair console · Controller Router</title>
-<style>body{margin:0;background:#101a2a;color:#edf4fc;font:18px system-ui,sans-serif}main{max-width:850px;margin:40px auto;padding:24px}a{color:#55d7e5}section{background:#192638;border:1px solid #405265;border-radius:18px;padding:24px;margin:24px 0}label{display:block;margin:18px 0}input{display:block;box-sizing:border-box;width:100%;padding:12px;margin-top:8px;background:#101a2a;color:#fff;border:1px solid #8497a8;border-radius:7px;font:inherit}button{font:inherit;background:#3979ed;color:white;padding:12px 18px;border:0;border-radius:8px;cursor:pointer;margin:8px 8px 8px 0}button:disabled{opacity:.5}p{line-height:1.6}.pairing-commands{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px;text-align:left}.pairing-commands caption{text-align:left;color:#a9becf;margin-bottom:8px;font-size:14px}.pairing-commands th,.pairing-commands td{padding:10px 8px;border-bottom:1px solid #405265}.pairing-commands thead th{color:#a9becf;font-size:13px}.pairing-commands code{overflow-wrap:anywhere}.pairing-commands button{margin:0;padding:10px 12px;min-height:44px;font-size:14px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:600px){main{padding:14px}section{padding:16px}ol{padding-left:20px}.pairing-commands thead{display:none}.pairing-commands tr{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid #405265;padding:8px 0;align-items:center}.pairing-commands th,.pairing-commands td{border:0;padding:4px}.pairing-commands .command-cell{grid-column:1 / -1;grid-row:2}.pairing-commands .copy-cell{grid-column:2;grid-row:1}}#copy-feedback{font-size:16px}.quiet{background:#344457}.error{color:#ffb6a6}</style></head>
+<style>body{margin:0;background:#101a2a;color:#edf4fc;font:18px system-ui,sans-serif}main{max-width:850px;margin:40px auto;padding:24px}a{color:#55d7e5}section{background:#192638;border:1px solid #405265;border-radius:18px;padding:24px;margin:24px 0}label{display:block;margin:18px 0}input{display:block;box-sizing:border-box;width:100%;padding:12px;margin-top:8px;background:#101a2a;color:#fff;border:1px solid #8497a8;border-radius:7px;font:inherit}button{font:inherit;background:#3979ed;color:white;padding:12px 18px;border:0;border-radius:8px;cursor:pointer;margin:8px 8px 8px 0}button:disabled{opacity:.5}p{line-height:1.6}.pairing-commands{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px;text-align:left}.pairing-commands caption{text-align:left;color:#a9becf;margin-bottom:8px;font-size:14px}.pairing-commands th,.pairing-commands td{padding:10px 8px;border-bottom:1px solid #405265}.pairing-commands thead th{color:#a9becf;font-size:13px}.pairing-commands code{overflow-wrap:anywhere}.pairing-commands button{margin:0;padding:10px 12px;min-height:44px;font-size:14px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:600px){main{padding:14px}section{padding:16px}ol{padding-left:20px}.pairing-commands thead{display:none}.pairing-commands tr{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid #405265;padding:8px 0;align-items:center}.pairing-commands th,.pairing-commands td{border:0;padding:4px}.pairing-commands .command-cell{grid-column:1 / -1;grid-row:2}.pairing-commands .copy-cell{grid-column:2;grid-row:1}}#copy-feedback{font-size:16px}.quiet{background:#344457}.error{color:#ffb6a6}
+.console-table{width:100%;border-collapse:collapse;margin:12px 0 20px;text-align:left;font-size:16px}
+.console-table thead th{color:#a9becf;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.console-table th,.console-table td{padding:16px 12px;border-bottom:1px solid #405265;vertical-align:top}
+.console-table tbody tr:last-child th,.console-table tbody tr:last-child td{border-bottom:0}
+.console-name{font-size:17px;overflow-wrap:anywhere;min-width:125px}
+.connection-state{display:inline-block;border-radius:100px;padding:5px 10px;background:#354457;color:#edf4fc;font-weight:650;white-space:nowrap}
+.connection-state.connected{background:#183d39;color:#85e5ce}
+.connection-state.unavailable{background:#453929;color:#ffd297}
+.connection-state.attention{background:#50333c;color:#ffc0ca}
+.application-list{display:grid;gap:8px;min-width:250px}
+.application-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(90px,auto) auto;align-items:center;gap:8px}
+.application-row strong{overflow-wrap:anywhere}
+.app-state{color:#bfd0dc}
+.application-row button,.console-table td:last-child button{margin:0;padding:8px 12px;font-size:14px;min-height:40px;white-space:nowrap}
+.cell-label{display:none}
+@media(max-width:760px){
+ .console-table,.console-table tbody,.console-table tr,.console-table th,.console-table td{display:block;width:auto}
+ .console-table thead{display:none}
+ .console-table tbody tr{border:1px solid #405265;border-radius:12px;padding:14px;margin:12px 0;background:#142234}
+ .console-table th,.console-table td,.console-table tbody tr:last-child th,.console-table tbody tr:last-child td{border:0;padding:5px 0}
+ .console-name{font-size:18px}
+ .cell-label{display:block;color:#a9becf;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:4px 0 7px}
+ .application-list{min-width:0}
+ .application-row{grid-template-columns:minmax(80px,1fr) auto auto}
+}
+@media(max-width:440px){.application-row{grid-template-columns:1fr auto}.application-row .app-state{grid-column:1}.application-row button{grid-column:2;grid-row:1 / 3}}
+</style></head>
 <body><main><nav><a id="apps" href="#">🎮 Apps</a> · <a id="routing" href="#">Players and Systems</a></nav><h1>Connect your console</h1><p>Pair each console once. You can save multiple consoles on this UNO Q. VirtualGlove and R.O.B. Vision use each connection automatically when installed on both devices.</p>
 <section><h2>Pair console</h2><ol><li>On the console you want to connect, run the command for its platform below. It prints a connection code that lasts five minutes.
 <table class="pairing-commands"><caption>Run on your console</caption><thead><tr><th scope="col">Platform</th><th scope="col">Command</th><th scope="col"><span class="sr-only">Copy command</span></th></tr></thead><tbody>
@@ -11,7 +38,7 @@
 <p id="copy-feedback" role="status" aria-live="polite"></p>
 <form id="begin"><label>Console hostname or IP<input name="host" required placeholder="retropie.local" autocomplete="off"></label><label>Connection code<input name="code" required placeholder="CR1-…" autocomplete="off" spellcheck="false"></label><button>Continue</button></form>
 <form id="confirm" hidden><p id="identity"></p><label>Matrix confirmation code<input name="pin" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label><button>Connect</button><button id="cancel" type="button" class="quiet">Cancel</button></form><p id="feedback" role="status" aria-live="polite"></p></section>
-<section><h2>Your consoles</h2><p>Each console connects to one UNO Q at a time. You can turn off access for an individual app without removing the connection.</p><div id="consoles"></div><button id="repair" class="quiet">Check and repair connections</button></section>
+<section><h2>Your consoles</h2><p>Each console connects to one UNO Q at a time. You can turn off access for an individual app without removing the connection.</p><div id="consoles" aria-live="polite"></div><button id="repair" class="quiet">Check and repair connections</button></section>
 <section><h2>Trust this Setup page</h2><p>The installer prints this UNO Q’s certificate fingerprint. Compare it with the certificate shown by your browser before accepting the local certificate. You can <a href="certificate.pem">download the certificate</a> to trust it on your own device. Do not continue if the fingerprints differ.</p><p><a id="guide" href="#">Read the Pairing Guide (PDF)</a></p></section></main>
 <script>
 const host=location.hostname, root='http://'+(host.includes(':')?'['+host+']':host)+'/';document.querySelector('#apps').href=root;document.querySelector('#routing').href=root+'setup';document.querySelector('#guide').href=root+'guides/Controller-Router-Pairing-Guide.pdf';let session='',busy=false;
@@ -23,7 +50,39 @@ document.querySelectorAll('.copy-command').forEach(button=>button.addEventListen
 const feedback=document.querySelector('#feedback');const names={virtualglove:'VirtualGlove',rob_vision:'R.O.B. Vision'};
 async function request(data){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);feedback.textContent='Connecting…';try{const r=await fetch('/api/pairing',{method:'POST',headers:{'Content-Type':'application/json','X-Controller-Router-Action':'pairing'},body:JSON.stringify(data)});const value=await r.json();if(!r.ok)throw Error(value.error);feedback.textContent=data.operation==='confirm'?'Connected. You’re ready to play.':'';return value;}catch(e){feedback.textContent=e.message;return null;}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
 function node(tag,text){const e=document.createElement(tag);e.textContent=text;return e;}
-function render(data){if(!data)return;const area=document.querySelector('#consoles');area.replaceChildren();if(!data.consoles.length)area.append(node('p','No consoles paired yet.'));for(const c of data.consoles){const row=node('div','');row.append(node('h3',c.host+' · '+c.status));for(const [app,value] of Object.entries(c.apps)){row.append(node('p',(names[app]||app)+' · '+value.status));const toggle=node('button',value.enabled?'Disable '+names[app]:'Enable '+names[app]);toggle.className='quiet';toggle.onclick=async()=>render(await request({operation:'access',id:c.id,app,enabled:!value.enabled}));row.append(toggle);}const remove=node('button','Remove console');remove.className='quiet';remove.onclick=async()=>{if(confirm('Remove '+c.host+' and its app access?'))render(await request({operation:'remove',id:c.id}));};row.append(remove);area.append(row);}for(const conflict of data.conflicts)area.append(node('p','Needs attention: '+conflict.message));}
+function labeledCell(label){const cell=node('td',''),heading=node('span',label);heading.className='cell-label';cell.append(heading);return cell;}
+function render(data){
+ if(!data)return;
+ const area=document.querySelector('#consoles');area.replaceChildren();
+ if(!data.consoles.length)area.append(node('p','No consoles paired yet.'));
+ else{
+  const table=node('table','');table.className='console-table';
+  const caption=node('caption','Paired consoles and application access');caption.className='sr-only';table.append(caption);
+  const head=node('thead',''),headRow=node('tr','');
+  for(const label of ['Console','Connection','Applications','Actions']){const th=node('th',label);th.scope='col';headRow.append(th);}
+  head.append(headRow);table.append(head);
+  const body=node('tbody','');
+  for(const c of data.consoles){
+   const row=node('tr',''),machine=node('th',c.host);machine.scope='row';machine.className='console-name';row.append(machine);
+   const connection=labeledCell('Connection'),state=node('span',c.status);state.className='connection-state '+(c.status==='Connected'?'connected':c.status==='Unavailable'?'unavailable':'attention');connection.append(state);row.append(connection);
+   const apps=labeledCell('Applications'),list=node('div','');list.className='application-list';
+   for(const [app,value] of Object.entries(c.apps)){
+    const item=node('div',''),appName=names[app]||app;item.className='application-row';
+    const name=node('strong',appName),status=node('span',value.enabled?value.status:'Access off'),toggle=node('button',value.enabled?'Disable':'Enable');
+    status.className='app-state';toggle.className='quiet';toggle.type='button';toggle.setAttribute('aria-label',(value.enabled?'Disable ':'Enable ')+appName+' on '+c.host);
+    toggle.onclick=async()=>render(await request({operation:'access',id:c.id,app,enabled:!value.enabled}));
+    item.append(name,status,toggle);list.append(item);
+   }
+   if(!list.children.length)list.append(node('span','No applications installed'));
+   apps.append(list);row.append(apps);
+   const actions=labeledCell('Actions'),remove=node('button','Remove');remove.type='button';remove.className='quiet';remove.setAttribute('aria-label','Remove '+c.host);
+   remove.onclick=async()=>{if(confirm('Remove '+c.host+' and its app access?'))render(await request({operation:'remove',id:c.id}));};
+   actions.append(remove);row.append(actions);body.append(row);
+  }
+  table.append(body);area.append(table);
+ }
+ for(const conflict of data.conflicts)area.append(node('p','Needs attention: '+conflict.message));
+}
 document.querySelector('#begin').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const data=await request({operation:'begin',host:f.get('host'),code:f.get('code')});if(data){session=data.session;e.target.hidden=true;document.querySelector('#confirm').hidden=false;document.querySelector('#identity').textContent='Matrix ID '+data.certificate_id+'. Compare this ID with the beginning of your browser certificate’s SHA-256 fingerprint, then read all six digits after PN.';}};
 document.querySelector('#confirm').onsubmit=async e=>{e.preventDefault();const data=await request({operation:'confirm',session,pin:new FormData(e.target).get('pin')});if(data){e.target.reset();e.target.hidden=true;document.querySelector('#begin').reset();document.querySelector('#begin').hidden=false;render(data);}};
 document.querySelector('#cancel').onclick=async()=>{await request({operation:'cancel'});document.querySelector('#confirm').hidden=true;document.querySelector('#begin').hidden=false;};document.querySelector('#repair').onclick=async()=>render(await request({operation:'repair'}));fetch('/api/connections').then(r=>r.json()).then(render);
