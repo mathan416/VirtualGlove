@@ -574,13 +574,34 @@ SNAPSHOT_EXCLUDES = {'data', '.cache', '.venv', '__pycache__', '.git',
                      'skyscraper', 'downloaded_media', 'gamelists'}
 
 
-def console_recovery_paths(machine):
-    """Bound recovery to the product payload, integrations and touched configuration."""
-    if machine == 'retropie':
-        return [Path(value) for value in (
+def retropie_config_recovery_paths(configs=Path('/opt/retropie/configs')):
+    """Save only RetroPie settings that this installer can change."""
+    paths = [configs / 'all' / name for name in
+             ('runcommand-onstart.sh', 'runcommand-onend.sh',
+              'emulationstation/es_input.cfg', 'retroarch.cfg')]
+    paths += [configs / 'nes' / name for name in
+              ('retroarch.cfg', 'powerglove-native.cfg')]
+    autoconfig = configs / 'all/retroarch/autoconfig'
+    paths.append(autoconfig / 'VirtualGlove.cfg')
+    for player in range(1, 5):
+        profile = 'VirtualGlove Merged Player %d.cfg' % player
+        paths.extend((autoconfig / profile, autoconfig / 'udev' / profile))
+    paths += [configs / 'all/retroarch/config/FCEUmm',
+              configs / 'all/retroarch/config/Nestopia/Nestopia.cfg']
+    # Include paths that do not exist yet: an optional core may create its
+    # emulators.cfg during installation, and recovery must use the same list.
+    paths.extend(sorted(directory / 'emulators.cfg' for directory in configs.iterdir()
+                        if directory.is_dir() and not any(
+                            marker in directory.name for marker in
+                            ('.backup', '.before', '.bak'))))
+    return paths
+
+
+def retropie_software_recovery_paths():
+    return [Path(value) for value in (
             '/opt/virtualglove-src', '/opt/virtualglove/bin', '/opt/controller-router',
             '/etc/virtualglove', '/etc/modules-load.d/virtualglove.conf',
-            '/usr/local/bin/virtualglove-controller-router', '/opt/retropie/configs',
+            '/usr/local/bin/virtualglove-controller-router',
             '/opt/retropie/libretrocores/lr-nestopia-powerglove',
             '/opt/retropie/libretrocores/lr-powerglove-dot',
             '/home/pi/RetroPie/roms/ports/VirtualGlove Calibration Test.sh',
@@ -588,6 +609,20 @@ def console_recovery_paths(machine):
             '/etc/systemd/system/virtualglove-games.service.d',
             *('/etc/systemd/system/multi-user.target.wants/' + unit for unit in CONSOLE_UNITS),
             *('/etc/systemd/system/timers.target.wants/' + unit for unit in CONSOLE_UNITS))]
+
+
+def legacy_recovery_paths(machine):
+    """Recognize journals written before RetroPie snapshots were narrowed."""
+    if machine != 'retropie':
+        return []
+    software = retropie_software_recovery_paths()
+    return software[:6] + [Path('/opt/retropie/configs')] + software[6:]
+
+
+def console_recovery_paths(machine):
+    """Bound recovery to the product payload, integrations and touched configuration."""
+    if machine == 'retropie':
+        return retropie_software_recovery_paths() + retropie_config_recovery_paths()
     prefix = '/userdata/system' if machine == 'batocera' else '/recalbox/share/system'
     paths = [Path(prefix + '/virtualglove'), Path(prefix + '/controller-router')]
     paths += [Path(prefix + '/virtualglove/data/' + name) for name in (
@@ -823,7 +858,11 @@ class ConsoleRecovery:
             self.clear_journal()
             print('RECOVERED  Previous service activation restored; software replacement had not begun.', flush=True)
             return
-        if [record['path'] for record in state['paths']] != list(map(str, self.paths)):
+        recorded = [record['path'] for record in state['paths']]
+        allowed = [list(map(str, self.paths))]
+        if self.machine == 'retropie':
+            allowed.append(list(map(str, legacy_recovery_paths(self.machine))))
+        if recorded not in allowed:
             raise ValueError('Invalid console recovery paths; backups retained')
         # Validate every recovery source before removing installed files.
         for index, record in enumerate(state['paths']):

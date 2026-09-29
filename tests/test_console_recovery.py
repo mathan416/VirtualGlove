@@ -24,6 +24,21 @@ spec.loader.exec_module(installer)
 
 
 class ConsoleRecoveryTests(unittest.TestCase):
+    def test_retropie_snapshot_targets_managed_configs_not_retroarch_collections(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            configs = Path(temporary)
+            for name in ('all', 'nes', 'megadrive', 'megadrive.backup'):
+                (configs / name).mkdir()
+            paths = installer.retropie_config_recovery_paths(configs)
+            self.assertIn(configs / 'nes/emulators.cfg', paths)
+            self.assertIn(configs / 'megadrive/emulators.cfg', paths)
+            self.assertIn(configs / 'nes/retroarch.cfg', paths)
+            self.assertIn(configs / 'all/retroarch/autoconfig/udev/VirtualGlove Merged Player 2.cfg', paths)
+            self.assertNotIn(configs / 'megadrive.backup/emulators.cfg', paths)
+            self.assertFalse(any(part in ('assets', 'cheats', 'database', 'shaders', 'thumbnails')
+                                 for path in paths for part in path.parts))
+            self.assertNotIn(configs, paths)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -110,6 +125,19 @@ class ConsoleRecoveryTests(unittest.TestCase):
         self.assert_restored()
         later.commit()
 
+    def test_interrupted_previous_version_snapshot_can_still_recover(self):
+        legacy_file = self.root / 'legacy-config'
+        legacy_file.write_text('old setting')
+        legacy_paths = self.paths + [legacy_file]
+        old = installer.ConsoleRecovery('retropie', self.setup, legacy_paths)
+        old.begin()
+        self.change_install()
+        legacy_file.write_text('changed setting')
+        with patch.object(installer, 'legacy_recovery_paths', return_value=legacy_paths):
+            self.recovery.restore()
+        self.assert_restored()
+        self.assertEqual(legacy_file.read_text(), 'old setting')
+
     def test_corrupt_backup_blocks_restore_without_deleting_installed_files(self):
         self.recovery.begin()
         self.change_install()
@@ -156,6 +184,25 @@ class ConsoleRecoveryTests(unittest.TestCase):
         self.recovery.restore()
         for name in ('skyscraper', 'downloaded_media', 'gamelists'):
             self.assertEqual((self.payload / name / 'personal.txt').read_text(), 'after')
+
+    def test_retropie_recovery_restores_config_without_copying_assets(self):
+        configs = self.root / 'configs'
+        (configs / 'nes').mkdir(parents=True)
+        assets = configs / 'all/retroarch/assets'
+        assets.mkdir(parents=True)
+        saved = configs / 'nes/emulators.cfg'
+        saved.write_text('old emulator')
+        artwork = assets / 'large-image.png'
+        artwork.write_bytes(b'old artwork')
+        recovery = installer.ConsoleRecovery(
+            'retropie', self.setup, installer.retropie_config_recovery_paths(configs))
+        recovery.begin()
+        saved.write_text('new emulator')
+        artwork.write_bytes(b'new artwork')
+        recovery.restore()
+        self.assertEqual(saved.read_text(), 'old emulator')
+        self.assertEqual(artwork.read_bytes(), b'new artwork')
+        self.assertFalse(any(path.name == 'large-image.png' for path in recovery.backup.rglob('*')))
 
     def test_exception_and_interrupt_use_outer_transaction_recovery(self):
         for failure in (ValueError('validation failed'), KeyboardInterrupt()):
