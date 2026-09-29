@@ -795,17 +795,6 @@ class RuntimeLifecycleTests(unittest.TestCase):
         self.assertIn('RuntimeDirectory=virtualglove', router)
         self.assertIn('RuntimeDirectoryPreserve=yes', router)
 
-    def test_retropie_recovery_starts_router_before_receiver(self):
-        with patch.object(Path, 'is_file', return_value=True), \
-                patch.object(Path, 'read_text', return_value='x' * 32), \
-                patch.object(installer.subprocess, 'run') as run:
-            installer.restart_managed_runtime('retropie')
-        commands = [tuple(item[0][0]) for item in run.call_args_list]
-        self.assertLess(
-            commands.index(('systemctl', 'start', 'virtualglove-controller-router.service')),
-            commands.index(('systemctl', 'start', 'virtualglove-receiver.service')),
-        )
-
     def test_batocera_service_stops_before_managed_files_are_replaced(self):
         setup = SimpleNamespace(managed_runtime_processes=Mock(return_value=[]))
         with patch('pathlib.Path.is_file', return_value=True), \

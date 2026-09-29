@@ -14,15 +14,11 @@ in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
 
-The UNO Q installer also installs Controller Router at `http://UNO-Q-NAME.local/`. Starting a registered game on the paired console selects VirtualGlove automatically; Gyromite and Stack-Up select R.O.B. Vision when installed. You do not need a browser open for game input. Both services stay online, but only the game's app controls input and the UNO Q Matrix. Router returns to its neutral Matrix animation after the game. Open the address to view VirtualGlove or choose an app manually while no game is running. VirtualGlove’s browser pages use port **8100**, and secure pairing remains on **8443**. Controller Router’s console player assignments stay in VirtualGlove Setup.
+The same command installs or upgrades each device. Close games first and keep the backup locations printed by the installer.
 
-The same installers handle a fresh installation or an upgrade. Close games
-first, run the Controller command and the command for your console below, and
-keep the backup paths they print. The Batocera installer checks the published
-ZIP checksum before changing anything; a mismatch is a safe failure, not a
-partial upgrade.
+Controller Router is included on the UNO Q. Open the UNO Q's address to visit VirtualGlove, or choose an app if R.O.B. Vision is installed too. Starting a registered game selects its app automatically. You do not need a browser open to play.
 
-With both products installed, **Apps** returns to the chooser. With only VirtualGlove installed, the link is hidden and the UNO Q entry address opens VirtualGlove directly. Choosing an app opens its running website; it does not start or stop product services. A first shared Matrix build can take several minutes. Keep the installer open while App Lab prepares it. A newer installed Router is retained, and newly installed products are registered without clearing existing settings.
+The first shared Matrix setup can take several minutes. Leave the installer open until it finishes. Upgrades keep your pairing, players, and game registrations.
 
 ## 1. Before you begin
 
@@ -39,6 +35,14 @@ Close RetroArch and any running game before installation. Keep both devices
 powered and connected while the installers run. First installation can take
 several minutes.
 
+### If a console upgrade fails
+
+If an upgrade fails, the console installer restores the previous controller software and settings. Your pairing and game registrations are kept. Keep the printed backup folder until you have tested a game.
+
+If power is lost or the installer is terminated abruptly, rerun the same installation command. It recovers the interrupted installation before attempting the upgrade again. If recovery reports a checksum or service error, keep the backup directory and pending journal; do not delete them to bypass the error.
+
+Recovery covers the controller installation. It does not undo operating-system package updates or packages installed through RetroPie Setup.
+
 ### Choose your console section
 
 | Platform | Where you install | How Player 1 works |
@@ -52,61 +56,17 @@ Ordinary NES games can use FCEUmm or the platform's stock Nestopia core. Super G
 special **Nestopia (VirtualGlove)** core, which provides its native three-axis
 movement and glove actions. FCEUmm remains a complete joystick-mode fallback.
 
-### Optional Controller Router
+### Check your player choices after pairing
 
-After pairing, Setup shows **Controller Router**. It lists only controllers
-already configured by EmulationStation. Review the suggested Player 1–4 choices,
-choose one player or Unassigned for each physical controller, choose at most one
-VirtualGlove player, then save. Opening the card never changes the console.
-Newly configured EmulationStation controllers appear automatically as
-**Unassigned**. If you remap an assigned controller in EmulationStation, Router
-keeps its player assignment and uses the validated new mapping on the next game
-launch; Setup marks it **Mapping refreshed**.
+1. Open **Setup** from the Controller Router page at your UNO Q address.
+2. Select the console under **Console connection**.
+3. Under **Players**, check that the pad you use is assigned to Player 1.
+4. Under **Systems**, keep NES enabled for Buddy and VirtualGlove. Choose **My existing setup** for systems where you want your normal controls.
+5. With the game closed, choose **Save assignments**.
 
-Recalbox and Batocera automatically carry their released Player 1 selection into
-the new format. A normal RetroPie install keeps its separate `VirtualGlove`
-gamepad until Router is explicitly saved and applied. Original physical
-controllers remain the frontend controllers; merged outputs stay neutral in
-EmulationStation and become active during Libretro gameplay.
+New Router setups enable NES only. Upgrades keep your previous choices. For input tests, other players, and recovery, see the [Controller Router Guide](CONTROLLER_ROUTER.md).
 
-| Input | Where it works after Router is enabled |
-| --- | --- |
-| Assigned physical controllers | Their selected merged Player 1-4 slot in any RetroArch/Libretro game. Several physical controllers may share one player. |
-| VirtualGlove joystick gestures | Its selected player in supported FCEUmm and stock Nestopia NES games. |
-| VirtualGlove native gestures | Super Glove Ball in Nestopia (VirtualGlove), through the separate native-input path. |
-| Original physical controllers | Console menus and EmulationStation. Router temporarily takes ownership during Libretro gameplay to prevent doubled input. |
-| Standalone, non-Libretro emulators | Not managed by Controller Router. They retain the platform's normal controller setup. |
-
-Assigning a physical controller in Router does not reconfigure its buttons.
-Router uses the mapping already saved by EmulationStation and adopts a valid
-later remap at the next game launch. Player 1 is special: only a physical
-controller assigned to Player 1 carries the platform's menu and exit hotkey.
-VirtualGlove Select never becomes a hotkey.
-
-At each Libretro game launch, physical controllers work immediately. Router
-discards any glove state seen in the frontend. In a game that accepts
-VirtualGlove gestures, rest the hand at neutral once; VirtualGlove then joins
-the selected merged player. This startup handshake prevents a held frontend
-gesture from becoming an accidental first game input.
-
-Use **Check controllers** and press a direction or button on each pad during the
-ten-second test. The result names each responding or unavailable controller,
-shows its stable identity suffix and assigned player, and keeps an unavailable
-warning visible even when another pad responds. Close any running RetroArch
-game before changing assignments. **Restore previous assignments** provides an
-atomic rollback after a save.
-
-The same assignments can be managed locally without pairing. Open the console
-terminal and run the platform's persistent command:
-
-- RetroPie: `sudo /opt/virtualglove/bin/virtualglove-controller-router setup`
-- Recalbox: `sh /recalbox/share/system/virtualglove/scripts/virtualglove-controller-router setup`
-- Batocera: `sh /userdata/system/virtualglove/scripts/virtualglove-controller-router setup`
-
-The terminal screen detects the platform, shows controller connection state,
-tests live controls, assigns Players 1–4, and provides save and rollback actions.
-This local tool changes controller assignments only; secure
-Controller-to-console pairing remains a separate Setup step.
+A standard RetroPie installation can use its separate VirtualGlove gamepad; enabling console routing is optional there. Recalbox and Batocera use Router for their shared player controls.
 
 ### Open a Controller terminal
 
@@ -223,7 +183,7 @@ VirtualGlove into shared arcade-player devices. Its original cabinet merger is
 retained as a tested rollback reference, but is no longer the active path.
 Router is not enabled by the normal RetroPie installer. Most RetroPie systems
 should keep the separate-controller arrangement above. See [VirtualGlove Input
-Modes](INPUT_MODES.md#standard-retropie-and-the-virtualglove-arcade-cabinet)
+Modes](CONTROLLER_ROUTER.md)
 for the two designs and when each is appropriate.
 
 For Super Glove Ball, FCEUmm is the safe fallback. To use native glove control,
@@ -450,55 +410,24 @@ rename, or modify the ROM.
 
 ## 4. Pair the devices
 
-Pairing securely gives the Controller and console the same private credential.
-It does not start controller output.
+Pair once for the UNO Q and console. VirtualGlove and R.O.B. Vision receive their own private credentials automatically when installed on both devices. Installing the other app later adds its access without another pairing. No SSH username or password is required.
 
-1. Open the secure Setup address, normally
-   `https://virtualglove.local:8443/setup`. A first visit may show a privacy
-   warning because the Controller is a private local device.
-2. Under **Connection and startup**, choose RetroPie, Recalbox, Batocera, or
-   LaunchBox. Enter the console hostname or IP address, then select
-   **Save connection**. Pairing stays unavailable until both fields are saved.
-3. Select **Check console address**. This confirms that the saved name or address
-   can be reached; you can run the check again whenever needed.
-4. Under **Pair this Controller**, choose **One-time code (recommended)** and
-   select **Continue**.
-5. Compare the Matrix `ID` with the beginning of the browser certificate's
-   SHA-256 fingerprint. If they differ, stop. If they match, confirm the match,
-   enter the six-digit Matrix approval PIN, and continue.
-6. Run the one-time pairing command shown by Setup on the selected console.
-   Enter its 20-character code in the browser within five minutes, then select
-   **Pair with console**.
-7. Wait for **Pairing complete**. This confirms an authenticated connection; a
-   game test is still required.
+Finish the game before pairing, changing app access, or removing a connection. Each console connects to one UNO Q at a time. Connecting it to another requires a new console code and Matrix confirmation.
 
-![Guided pairing starts with the saved console and a choice of one-time code or SSH password.](images/setup-pairing-method.png)
+1. Open **Apps > Setup > Pair console**. Both product Setup pages have an **Open Pair console** link to this same page.
+2. Open the secure address printed by the UNO Q installer, using its `.local` name or LAN IP. Pairing uses HTTPS port **8444**.
+3. Before accepting the local certificate, compare the browser's SHA-256 fingerprint with the fingerprint printed by the UNO Q installer. During confirmation, its beginning also appears after **ID** on the Matrix. Stop if they differ.
+4. Enter the console hostname or IP address and paste its complete **CR1 connection code**. The console installer prints this single-use code; it lasts five minutes.
+5. Choose **Continue**, read the six Matrix digits after **PN**, and enter them within two minutes.
+6. Choose **Connect**. Wait for **Connected** and check each app's readiness below it.
 
-![Controller confirmation with certificate comparison, matrix approval PIN, and remaining time.](images/setup-pairing-confirm.png)
+### Check or repair a connection
 
-![Pairing in progress while the request waits for the selected console.](images/setup-pairing-progress.png)
+Open **Pair console > Your consoles**. **Connected** means Router has verified the console connection. **Unavailable** means it could not reach the console. **Needs attention** means the certificate, identity, or app setup needs review. App readiness is shown separately.
 
-![Pairing complete, with the next step on Dashboard.](images/setup-pairing-complete.png)
+Choose **Check and repair connections** after reconnecting a device or installing another app. Use **Disable** beside an app to remove only its access, or **Remove console** to remove the whole connection. Finish any game first. A certificate change requires a fresh pairing; do not ignore the mismatch.
 
-The confirmation window lasts two minutes. If it expires or pairing fails,
-select **Start a new confirmation** and obtain a new console code.
-
-### Optional: pair with your console password
-
-RetroPie, Recalbox, and Batocera can instead use **SSH password** in the pairing
-card. Complete the same certificate and Matrix PIN checks, then enter the
-console's SSH username and password. The Controller uses the password only for
-that attempt and does not save it.
-
-LaunchBox uses one-time-code pairing only and never requests a Windows password.
-If neither method works, see
-[Pairing and token management](CONFIGURATION_REFERENCE.md#pairing-and-token-management).
-
-### Optional: trust the Controller certificate
-
-After confirming that the Matrix ID matches the browser certificate, Setup can
-download a trust certificate for that phone or computer. Installing it removes
-future privacy warnings. Never install it if the IDs do not match.
+For another code, rerun the console installer or its pairing command. Existing game filenames and player assignments remain saved. Incorrect, expired, or already-used codes require a new window; five incorrect Matrix confirmations lock the current window.
 
 ## 5. Calibrate and test a game
 
@@ -646,7 +575,8 @@ file from a different version.
 Try the Controller's IP address instead of its `.local` name:
 
 - Dashboard: `http://CONTROLLER-IP:8100/dashboard`
-- secure Setup: `https://CONTROLLER-IP:8443/setup`
+- app settings: `https://CONTROLLER-IP:8443/setup`
+- Pair console: `https://CONTROLLER-IP:8444/setup`
 
 Confirm the Controller and browser are on the same local network. The Matrix
 hourglass means VirtualGlove is still starting; a blinking X means Dashboard
@@ -662,10 +592,7 @@ the automatic configuration has been tested.
 
 ### Pairing fails or expires
 
-Confirm the saved platform and address, run **Check console address**, and start
-a new Controller confirmation. Obtain a new console code; expired PINs and
-one-time codes cannot be reused. LaunchBox does not support SSH-password
-pairing. Never copy pairing credentials between consoles manually.
+Open Controller Router **Pair console**, check the console hostname or IP address, and obtain a new connection code by rerunning the console installer. Read the current Matrix PIN; expired or used codes cannot be reused. Never copy pairing credentials between consoles manually.
 
 ### The game launches but hand controls do not work
 
@@ -731,7 +658,7 @@ See the [Matrix Guide](MATRIX_GUIDE.md) for every animation and display state.
 | Play | `http://UNO-Q-NAME.local:8100/play` |
 | Glove Academy | `http://UNO-Q-NAME.local:8100/learn` |
 | Setup and Games | `http://UNO-Q-NAME.local:8100/setup` |
-| Secure pairing | `https://UNO-Q-NAME.local:8443/setup` |
+| Pair console | `https://UNO-Q-NAME.local:8444/setup` |
 | Help and printable manuals | `http://UNO-Q-NAME.local:8100/help` |
 
 For gestures and game controls, use the [Gameplay Guide](GAMEPLAY_GUIDE.md).

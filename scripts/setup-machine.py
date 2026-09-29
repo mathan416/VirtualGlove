@@ -307,6 +307,10 @@ def install_retropie(peer):
         run("systemctl", "restart", "virtualglove-receiver.service")
     run("systemctl", "enable", "--now", "virtualglove-receiver.timer")
     controller_router_module()
+    from router_shared.pairing_install import install as install_link
+    install_link('virtualglove', {'kind': 'json', 'token_file': str(token), 'target_file': str(launcher),
+        'restart': ['systemctl', 'restart', 'virtualglove-receiver.service', 'virtualglove-games.service'],
+        'stop': ['systemctl', 'stop', 'virtualglove-receiver.service', 'virtualglove-games.service']})
     from router_shared.launch_install import install_retropie as install_session_routing
     install_session_routing(Path("/opt/retropie/configs"), Path("/opt/controller-router"))
 
@@ -807,6 +811,11 @@ def install_recalbox(peer, player1_device=None):
     backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
     run("sh", service, "restart")
+    controller_router_module()
+    from router_shared.pairing_install import install as install_link
+    install_link('virtualglove', {'kind': 'json', 'token_file': str(data / 'token'),
+        'target_file': str(launcher), 'restart': ['sh', str(service), 'restart-receiver'],
+        'stop': ['sh', str(service), 'stop']})
 
 
 def check_recalbox(report):
@@ -959,6 +968,11 @@ def install_batocera(peer, player1_device=None):
     from router_shared.launch_install import install_batocera as install_session_routing
     install_session_routing()
     run("batocera-services", "start", "VirtualGlove")
+    controller_router_module()
+    from router_shared.pairing_install import install as install_link
+    install_link('virtualglove', {'kind': 'json', 'token_file': str(data / 'token'),
+        'target_file': str(launcher), 'restart': ['batocera-services', 'restart', 'VirtualGlove'],
+        'stop': ['batocera-services', 'stop', 'VirtualGlove']})
 
 
 def batocera_wifi_latency_ready():

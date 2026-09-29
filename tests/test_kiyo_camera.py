@@ -318,6 +318,44 @@ class KiyoTests(unittest.TestCase):
         self.assertEqual(writes,[(camera_controls.EXPOSURE_AUTO,3),
                                  (camera_controls.EXPOSURE_AUTO_PRIORITY,0)])
 
+    def test_automatic_resets_sticky_manual_exposure_and_priority(self):
+        values = {camera_controls.EXPOSURE_AUTO: 1,
+                  camera_controls.EXPOSURE_AUTO_PRIORITY: 0}
+        writes = []
+        def ioctl(_fd, request, data):
+            control = struct.unpack_from('I', data, 0)[0]
+            if request == camera_controls.VIDIOC_QUERYCTRL:
+                struct.pack_into('II', data, 0, control, 1)
+                maximum, default = (3, 3) if control == camera_controls.EXPOSURE_AUTO else (1, 1)
+                struct.pack_into('iiii', data, 40, 0, maximum, 1, default)
+                struct.pack_into('I', data, 56, 0)
+            elif request == camera_controls.VIDIOC_S_CTRL:
+                _, value = struct.unpack('Ii', data)
+                writes.append((control, value)); values[control] = value
+            elif request == camera_controls.VIDIOC_G_CTRL:
+                struct.pack_into('i', data, 4, values[control])
+        with patch.object(camera_controls.sys, 'platform', 'linux'), \
+             patch.object(camera_controls.os, 'open', return_value=7), \
+             patch.object(camera_controls.os, 'close') as close:
+            report = camera_controls.configure_automatic('/dev/video2', ioctl)
+        self.assertTrue(report['applied'])
+        self.assertEqual(writes, [(camera_controls.EXPOSURE_AUTO, 3),
+                                 (camera_controls.EXPOSURE_AUTO_PRIORITY, 1)])
+        close.assert_called_once_with(7)
+
+    def test_automatic_does_not_write_unsupported_controls(self):
+        writes = []
+        def ioctl(_fd, request, _data):
+            if request == camera_controls.VIDIOC_QUERYCTRL:
+                raise OSError('unsupported')
+            writes.append(request)
+        with patch.object(camera_controls.sys, 'platform', 'linux'), \
+             patch.object(camera_controls.os, 'open', return_value=7), \
+             patch.object(camera_controls.os, 'close'):
+            report = camera_controls.configure_automatic('/dev/video9', ioctl)
+        self.assertFalse(report['applied'])
+        self.assertEqual(writes, [])
+
     def test_unsupported_standard_controls_never_write(self):
         writes=[]
         def ioctl(_fd,request,_data):

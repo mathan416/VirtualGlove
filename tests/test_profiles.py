@@ -96,6 +96,28 @@ class ProfileTests(unittest.TestCase):
                 with self.subTest(value=value), self.assertRaises(ValueError):
                     load_registry(path)
 
+    def test_each_shared_console_uses_its_own_credential(self):
+        credentials = [{'host':'first.local', 'token':'first-console-private-token'},
+                       {'host':'second.local','token':'second-console-private-token'}]
+        server = ProfileCommandServer('127.0.0.1', 0, 'unused-default-token', lambda:credentials)
+        try:
+            for item in credentials:
+                ack = send_request('127.0.0.1', server.socket.getsockname()[1],
+                                   item['token'], 'program_h', 'nes', 'Example.7z', .2)
+                self.assertTrue(ack['accepted'])
+                request = server.take()
+                self.assertEqual(request.connection_host, item['host'])
+                self.assertEqual(request.connection_token, item['token'])
+                self.assertNotIn(item['token'], repr(request))
+            credentials.clear()
+            with self.assertRaises((TimeoutError, OSError)):
+                send_request('127.0.0.1', server.socket.getsockname()[1],
+                             'second-console-private-token', 'program_h', 'nes', 'Example.7z', .05,
+                             discovery_addresses=lambda:())
+            self.assertIsNone(server.take())
+        finally:
+            server.close()
+
     def test_request_is_acknowledged_while_worker_is_busy(self):
         server = ProfileCommandServer("127.0.0.1", 0, "a-long-test-token")
         try:

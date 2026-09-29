@@ -150,6 +150,8 @@ def main():
     args = parser.parse_args()
     from .controller_router import load_config, routes_physical_core
     try:
+        if Path('/run/controller-router/pairing.pending').exists():
+            raise RuntimeError('A console connection is being updated. Wait for pairing to finish, then launch again.')
         if not args.config.exists():
             arguments = args.arguments[1:] if args.arguments[:1] == ["--"] else args.arguments
             if args.output:

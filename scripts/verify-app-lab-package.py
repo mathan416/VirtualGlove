@@ -65,6 +65,8 @@ PUBLIC_PDF_NAMES = {
     "VirtualGlove-Input-Audit.pdf",
 }
 PUBLIC_PDF_PATHS = {f"output/pdf/{name}" for name in PUBLIC_PDF_NAMES}
+PUBLIC_PDF_PATHS |= {f"controller_router_portal/python/guides/Controller-Router-{name}.pdf"
+                     for name in ("Pairing-Guide", "User-Guide", "Integration-Guide", "Deployment-Guide", "Technical-Reference")}
 REQUIRED_FILES = {
     "VirtualGlove/docs/BUILD_YOUR_OWN.md",
     "VirtualGlove/docs/INPUT_MODES.md",

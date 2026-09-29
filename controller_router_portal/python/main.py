@@ -63,11 +63,63 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, broker({"action": "state"}))
             except (OSError, ValueError):
                 self.send_json(503, {"error": "The UNO Q launcher is unavailable."})
-        elif path in ("/", "/setup", "/setup.html") or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
-            asset = PAGE if path == "/" else PAGE.with_name("setup.html") if path in ("/setup", "/setup.html") else ASSETS / path.rsplit("/", 1)[-1]
-            body = asset.read_bytes()
+        elif path in ('/api/pairing-certificate', '/controller-router.crt', '/controller-router.mobileconfig'):
+            try:
+                public = broker({'action': 'pairing-certificate'})
+                if 'certificate' not in public or 'fingerprint' not in public:
+                    raise ValueError('Certificate not ready')
+            except (OSError, ValueError):
+                self.send_error(503, 'Secure Setup is starting. Try again shortly.')
+                return
+            if path == '/api/pairing-certificate':
+                self.send_json(200, {'fingerprint': public['fingerprint']})
+            elif path == '/controller-router.mobileconfig':
+                import ssl, uuid, plistlib
+                identity = str(uuid.uuid5(uuid.NAMESPACE_URL, public['fingerprint']))
+                payload = {'PayloadType': 'com.apple.security.root', 'PayloadVersion': 1,
+                    'PayloadIdentifier': 'org.controller-router.certificate.' + identity,
+                    'PayloadUUID': str(uuid.uuid5(uuid.NAMESPACE_URL, identity + '.certificate')),
+                    'PayloadDisplayName': 'Controller Router Secure Setup',
+                    'PayloadContent': ssl.PEM_cert_to_DER_cert(public['certificate'])}
+                body = plistlib.dumps({'PayloadType': 'Configuration', 'PayloadVersion': 1,
+                    'PayloadIdentifier': 'org.controller-router.setup.' + identity,
+                    'PayloadUUID': identity, 'PayloadDisplayName': 'Controller Router Secure Setup',
+                    'PayloadDescription': 'Trust the local certificate for this UNO Q’s secure pairing page.',
+                    'PayloadContent': [payload]}, fmt=plistlib.FMT_XML)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/x-apple-aspen-config')
+                self.send_header('Content-Disposition', 'attachment; filename="Controller-Router.mobileconfig"')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                body = public['certificate'].encode()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/x-x509-ca-cert')
+                self.send_header('Content-Disposition', 'attachment; filename="Controller-Router.crt"')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+        elif path.startswith('/guides/Controller-Router-') and path.endswith('.pdf') and path.count('/') == 2:
+            try:
+                body = PAGE.parent.joinpath('guides', path.rsplit('/', 1)[-1]).read_bytes()
+            except OSError:
+                self.send_error(404)
+                return
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8" if path in ("/", "/setup", "/setup.html") else "image/png")
+            self.send_header('Content-Type', 'application/pdf')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif path in ("/", "/setup", "/setup.html", "/pair", "/pair.html") or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
+            asset = PAGE.with_name("trust.html") if path in ("/pair", "/pair.html") else PAGE if path == "/" else PAGE.with_name("setup.html") if path in ("/setup", "/setup.html") else ASSETS / path.rsplit("/", 1)[-1]
+            try:
+                body = asset.read_bytes()
+            except OSError:
+                self.send_error(503, "Launcher asset unavailable; rerun the installer.")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8" if path in ("/", "/setup", "/setup.html", "/pair", "/pair.html") else "image/png")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -86,8 +138,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(403, {"error": "Cross-site requests are blocked."})
             return
         origin = self.headers.get("Origin")
-        if origin and not self.app_origin() and (urlsplit(origin).scheme != "http" or
-                       urlsplit(origin).netloc.lower() != self.headers.get("Host", "").lower()):
+        try:
+            allowed = not origin or self.app_origin() or (urlsplit(origin).scheme == "http" and
+                       urlsplit(origin).netloc.lower() == self.headers.get("Host", "").lower())
+        except ValueError:
+            allowed = False
+        if not allowed:
             self.send_json(403, {"error": "Cross-site requests are blocked."})
             return
         try:

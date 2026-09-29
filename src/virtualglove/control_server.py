@@ -1231,7 +1231,7 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
             if require_json and self.headers.get_content_type() != "application/json":
                 raise ValueError("Content-Type must be application/json")
             length = int(self.headers.get("Content-Length", "0"))
-            limit = MAX_REQUEST if self.path in ("/api/games", "/api/controller-router") else 8192
+            limit = 32768 if self.path == '/api/router-pairing' else MAX_REQUEST if self.path in ("/api/games", "/api/controller-router") else 8192
             if not 0 <= length <= limit:
                 raise ValueError("Request is too large.")
             data = json.loads(self.rfile.read(length) or b"{}")
@@ -1349,7 +1349,23 @@ def make_handler(state: ControlState) -> type[BaseHTTPRequestHandler]:
 
         def do_POST(self) -> None:
             path = self.path.split("?", 1)[0]
+            if path == '/api/router-pairing':
+                from router_shared.pairing_adapter import authorized, glove_operation
+                if not authorized(state.config_path.parent, self.headers):
+                    _send(self, 403, b'{"error":"Private pairing adapter authorization required."}', 'application/json')
+                    return
+                try:
+                    incoming = self.json_body(require_json=True)
+                    if state.snapshot().get('game_session_active') and incoming.get('operation') not in ('export', 'status', 'restore'):
+                        raise ValueError('Finish the game before changing its connection.')
+                    result = glove_operation(state, incoming)
+                    _send(self, 200, json.dumps(result).encode(), 'application/json')
+                except (OSError, ValueError, TypeError, KeyError):
+                    _send(self, 400, b'{"error":"The app could not update its connection."}', 'application/json')
+                return
             try:
+                if path.startswith('/api/pair/') and (state.config_path.parent / 'controller-router-required').exists():
+                    raise ValueError('Open Apps > Setup > Pair console to connect through Controller Router.')
                 origin = self.headers.get("Origin")
                 if (self.headers.get("Sec-Fetch-Site", "").lower() == "cross-site" or
                         (origin and origin not in ("http://"+self.headers.get("Host", ""), "https://"+self.headers.get("Host", "")))):

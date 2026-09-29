@@ -19,50 +19,33 @@ Use these settings first:
 - **Camera:** Automatic
 - **Camera frame rate:** Automatic
 - **Camera buffers:** 1 buffer
-- **Camera reader:** Compatible - OpenCV
+- **Camera reader:** Recommended - OpenCV
 - **Exposure behaviour:** Automatic
 
 Connect one ordinary UVC camera, place the whole hand in view, and check the
 Dashboard. Change advanced settings only to solve a visible problem or compare
 latency.
 
-## Find the best camera settings
+## Let Pixel Pal help choose settings
 
-Setup includes a Pixel Pal-guided camera test. Choose **Start camera test**, keep
-one open hand visible, and follow the centre, corner-sweep, and edge cues. The
-test takes about one to two minutes because it repeats the same short movements with each
-safe setting supported by the attached camera.
+1. In VirtualGlove **Setup**, choose **Start camera test**.
+2. Keep one open hand visible and follow the centre, corner, and edge cues.
+3. Wait for the results. The test usually takes one to two minutes.
+4. Choose **Use recommended settings** if you want to keep the recommendation.
 
-A mirrored live view shows the normal hand landmarks, a centre target, and
-camera-edge guides. Use it to keep the whole hand visible during the centre
-hold, corner sweeps, and edge check. The view opens only while a candidate is
-being measured and closes between candidates and when the test ends. Frames are
-displayed temporarily; they are not recorded or saved.
+Your game controls pause during the test. **Stop test** returns to normal operation. Nothing is permanently changed until you accept the recommendation.
 
-Pixel Pal compares the current settings with supported frame rates, buffering,
-camera readers, and automatic-exposure choices. A setting is not recommended if
-the requested reader fell back, the requested high frame rate was not actually
-delivered, or hand continuity fell materially below the best trial. Among the
-remaining choices, lower camera-to-controller age wins.
+The camera view appears only while a setting is being tested. Pictures and video are not saved. If the camera disconnects, reconnect it and choose **Stop test**, then try again.
 
-Controller output is stopped during the test. The original camera settings are
-restored before results appear, and nothing changes permanently until you choose
-**Use recommended settings**. Choose **Stop test** at any time to restore normal
-operation. If the camera disconnects, reconnect it and choose **Stop test**;
-Setup restores any pending original settings, restarts normal vision, and then
-offers a clean **Start camera test** action. A Controller restart also restores
-the exact original settings. The test stores aggregate rates and timings only;
-it does not retain camera frames, pictures, or video.
+The recommendation belongs to the camera you tested. If you change cameras before saving, run the test again.
 
-Recommendations belong to the tested physical camera. If the connected camera
-changes before saving, Setup asks you to run the test again.
+## Optional camera settings
+
+Leave these at their automatic or recommended values unless you are solving a visible problem. Setup reports when your camera cannot use a requested setting.
 
 ## Camera buffers
 
-Setup can explicitly save **1 buffer** or **2 buffers**. One buffer minimizes
-the driver's queue depth; two can provide steadier delivery on some cameras and
-hubs. Neither choice creates a software frame queue—VirtualGlove still
-keeps only the newest captured frame. Start with one buffer, or use Pixel Pal's
+Setup can explicitly save **1 buffer** or **2 buffers**. One buffer is the best starting point. Two can give a steadier picture with some cameras and hubs. Start with one buffer, or use Pixel Pal's
 camera test to compare both choices with the attached camera.
 
 ## Camera selection

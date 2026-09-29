@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-09-29 - Recover console software, configuration and service activation across failed upgrades.
 #   2026-09-19 - Restart Controller Router safely across RetroPie upgrades.
 #   2026-09-11 - Made virtualglove the canonical App Lab directory and added recoverable legacy migration.
 #   2026-09-11 - Prevented renamed and legacy App Lab projects from overlapping on upgrade.
@@ -22,6 +23,7 @@ import argparse
 from contextlib import contextmanager
 import importlib.util
 import ipaddress
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -565,23 +567,307 @@ def stop_managed_runtime(machine, setup):
     return machine if present else None
 
 
-def restart_managed_runtime(machine):
-    """Best-effort recovery when an upgrade fails after stopping an old runtime."""
-    if machine == "retropie":
-        subprocess.run(["systemctl", "start", "virtualglove-games.service"], check=False)
-        if Path("/etc/virtualglove/controller-router.json").is_file():
-            subprocess.run(["systemctl", "start", "virtualglove-controller-router.service"],
-                           check=False)
-        subprocess.run(["systemctl", "start", "virtualglove-receiver.timer"], check=False)
-        token = Path("/etc/virtualglove/token")
-        if token.is_file() and len(token.read_text().strip()) >= 16:
-            subprocess.run(["systemctl", "start", "virtualglove-receiver.service"], check=False)
-    elif machine == "recalbox":
-        service = Path("/recalbox/share/system/virtualglove/recalbox/virtualglove-service")
-        if service.is_file():
-            subprocess.run(["sh", str(service), "start"], check=False)
-    elif machine == "batocera":
-        subprocess.run(["batocera-services", "start", "VirtualGlove"], check=False)
+CONSOLE_UNITS = ('virtualglove-controller-router.service', 'virtualglove-games.service',
+                 'virtualglove-receiver.service', 'virtualglove-receiver.timer')
+SNAPSHOT_EXCLUDES = {'data', '.cache', '.venv', '__pycache__', '.git'}
+
+
+def console_recovery_paths(machine):
+    """Bound recovery to the product payload, integrations and touched configuration."""
+    if machine == 'retropie':
+        return [Path(value) for value in (
+            '/opt/virtualglove-src', '/opt/virtualglove/bin', '/opt/controller-router',
+            '/etc/virtualglove', '/etc/modules-load.d/virtualglove.conf',
+            '/usr/local/bin/virtualglove-controller-router', '/opt/retropie/configs',
+            '/opt/retropie/libretrocores/lr-nestopia-powerglove',
+            '/opt/retropie/libretrocores/lr-powerglove-dot',
+            '/home/pi/RetroPie/roms/ports/VirtualGlove Calibration Test.sh',
+            *('/etc/systemd/system/' + unit for unit in CONSOLE_UNITS),
+            '/etc/systemd/system/virtualglove-games.service.d',
+            *('/etc/systemd/system/multi-user.target.wants/' + unit for unit in CONSOLE_UNITS),
+            *('/etc/systemd/system/timers.target.wants/' + unit for unit in CONSOLE_UNITS))]
+    prefix = '/userdata/system' if machine == 'batocera' else '/recalbox/share/system'
+    paths = [Path(prefix + '/virtualglove'), Path(prefix + '/controller-router')]
+    paths += [Path(prefix + '/virtualglove/data/' + name) for name in (
+        'launcher.json', 'games.json', 'token', 'controller-router.json',
+        'controller-router-migration.json')]
+    if machine == 'batocera':
+        paths += [Path(prefix + '/services/VirtualGlove'),
+                  Path(prefix + '/services/VirtualGlove.enabled'),
+                  Path(prefix + '/scripts/virtualglove-game'),
+                  Path(prefix + '/configs/retroarch'), Path(prefix + '/batocera.conf')]
+    else:
+        paths += [Path(prefix + '/custom.sh'), Path(prefix + '/configs/retroarch'),
+                  Path('/recalbox/share/roms/.retroarch.cfg')]
+    return paths
+
+
+def mounted_router_generator():
+    """Identify only Router's own Batocera bind overlay, not arbitrary mounts."""
+    record = Path('/userdata/system/controller-router/generator-path')
+    if not record.is_file():
+        return None
+    target = record.read_text().strip()
+    for line in Path('/proc/self/mountinfo').read_text().splitlines():
+        fields = line.split()
+        if (len(fields) > 5 and fields[4] == target and
+                fields[3].endswith('/controller-router/libretroGenerator.py')):
+            return target
+    return None
+
+
+def detach_router_generator(machine):
+    """Detach an installed overlay before its backing files are replaced or restored."""
+    if machine == 'batocera':
+        target = mounted_router_generator()
+        if target:
+            subprocess.run(['umount', target], check=True)
+
+
+def console_service_state(machine, setup):
+    """Record activation before stopping anything; never infer it from credentials."""
+    if machine != 'retropie':
+        return {'running': bool(setup.managed_runtime_processes()),
+                'generator_mount': mounted_router_generator() if machine == 'batocera' else None}
+    states = {}
+    for unit in CONSOLE_UNITS:
+        states[unit] = {}
+        for key, command in (('enabled', 'is-enabled'), ('active', 'is-active')):
+            result = subprocess.run(['systemctl', command, unit], text=True,
+                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                    timeout=15)
+            states[unit][key] = result.stdout.strip()
+    return states
+
+
+def restore_console_services(machine, states):
+    """Reload restored units and restart only services that were active beforehand."""
+    if machine == 'retropie':
+        subprocess.run(['systemctl', 'daemon-reload'], check=True)
+        for unit in CONSOLE_UNITS:
+            state = states[unit]
+            enabled = state['enabled']
+            if enabled in ('enabled', 'enabled-runtime', 'disabled'):
+                command = ['systemctl', 'enable' if enabled.startswith('enabled') else 'disable']
+                if enabled == 'enabled-runtime':
+                    command.append('--runtime')
+                subprocess.run(command + [unit], check=True)
+            if state['active'] == 'active':
+                subprocess.run(['systemctl', 'start', unit], check=True)
+    elif states['running']:
+        if machine == 'batocera':
+            subprocess.run(['batocera-services', 'start', 'VirtualGlove'], check=True)
+        else:
+            subprocess.run(['sh', '/recalbox/share/system/virtualglove/recalbox/virtualglove-service',
+                            'start'], check=True)
+    elif machine == 'batocera' and states.get('generator_mount'):
+        subprocess.run(['mount', '--bind', '/userdata/system/controller-router/libretroGenerator.py',
+                        states['generator_mount']], check=True)
+
+
+class ConsoleRecovery:
+    """Durable whole-install rollback, including failures after payload commit."""
+    def __init__(self, machine, setup, paths=None):
+        self.machine, self.setup = machine, setup
+        self.paths = paths if paths is not None else console_recovery_paths(machine)
+        self.backup = setup.BACKUPS / 'console-transaction'
+        self.pending = setup.BACKUPS.parent / '.console-upgrade-pending.json'
+
+    @staticmethod
+    def copy_tree(source, target):
+        """Mirror software files with symlinks and original ownership; skip runtime data."""
+        if source.is_symlink():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.symlink_to(os.readlink(source))
+        elif source.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            for child in source.iterdir():
+                if child.name not in SNAPSHOT_EXCLUDES:
+                    ConsoleRecovery.copy_tree(child, target / child.name)
+            shutil.copystat(source, target, follow_symlinks=False)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target, follow_symlinks=False)
+        if os.geteuid() == 0:
+            details = source.lstat()
+            os.chown(target, details.st_uid, details.st_gid, follow_symlinks=False)
+            # chown may clear special permission bits; copy metadata after ownership.
+            shutil.copystat(source, target, follow_symlinks=False)
+
+    @staticmethod
+    def checksum(path):
+        """Verify recovery bytes, links and ownership without displaying private contents."""
+        digest = hashlib.sha256()
+        def visit(item, name):
+            details = item.lstat()
+            digest.update(json.dumps([name, stat.S_IMODE(details.st_mode),
+                                      details.st_uid, details.st_gid]).encode())
+            if item.is_symlink():
+                digest.update(b'link' + os.fsencode(os.readlink(item)))
+            elif item.is_dir():
+                digest.update(b'directory')
+                for child in sorted(item.iterdir()):
+                    if child.name not in SNAPSHOT_EXCLUDES:
+                        visit(child, name + '/' + child.name)
+            elif item.is_file():
+                digest.update(b'file')
+                with item.open('rb') as stream:
+                    for block in iter(lambda: stream.read(1024 * 1024), b''):
+                        digest.update(block)
+            else:
+                raise ValueError('Unsupported recovery file: ' + str(item))
+        visit(path, '')
+        return digest.hexdigest()
+
+    @staticmethod
+    def remove_managed(path):
+        if path.is_symlink() or path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            for child in path.iterdir():
+                if child.name not in SNAPSHOT_EXCLUDES:
+                    ConsoleRecovery.remove_managed(child)
+            if not any(path.iterdir()):
+                path.rmdir()
+
+    @staticmethod
+    def sync_tree(path):
+        """Persist snapshot bytes and metadata before authorizing file replacement."""
+        if path.is_symlink():
+            return
+        if path.is_dir():
+            for child in path.iterdir():
+                if child.name not in SNAPSHOT_EXCLUDES:
+                    ConsoleRecovery.sync_tree(child)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+    def write_journal(self, state):
+        fd, temporary = tempfile.mkstemp(prefix='.console-journal-', dir=self.pending.parent)
+        try:
+            with os.fdopen(fd, 'w') as stream:
+                json.dump(state, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.pending)
+            self.sync_directory(self.pending.parent)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    @staticmethod
+    def sync_directory(path):
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+    def clear_journal(self):
+        self.pending.unlink()
+        self.sync_directory(self.pending.parent)
+
+    def begin(self):
+        if self.pending.exists():
+            self.restore()
+        print('Preparing verified console recovery backup before replacing software.', flush=True)
+        states = console_service_state(self.machine, self.setup)
+        self.backup.mkdir(parents=True, mode=0o700)
+        state = {'schema': 1, 'machine': self.machine, 'backup': str(self.backup),
+                 'phase': 'preparing', 'paths': [], 'services': states}
+        # Persist activation before stopping services, even if snapshot creation is interrupted.
+        self.write_journal(state)
+        records = []
+        try:
+            stop_managed_runtime(self.machine, self.setup)
+            detach_router_generator(self.machine)
+            for index, path in enumerate(self.paths):
+                if any(parent.is_symlink() for parent in path.parents):
+                    raise ValueError('Refusing symbolic recovery ancestor: ' + str(path))
+                existed = path.exists() or path.is_symlink()
+                if existed:
+                    self.copy_tree(path, self.backup / str(index))
+                    if self.checksum(path) != self.checksum(self.backup / str(index)):
+                        raise ValueError('Recovery snapshot differs from installed file')
+                records.append({'path': str(path), 'existed': existed,
+                                'sha256': self.checksum(self.backup / str(index)) if existed else None})
+            self.sync_tree(self.backup)
+            state.update(phase='prepared', paths=records)
+            self.write_journal(state)
+        except BaseException:
+            self.restore()
+            raise
+
+    def restore(self):
+        state = json.loads(self.pending.read_text())
+        if (state.get('schema') != 1 or state.get('machine') != self.machine or
+                state.get('phase') not in ('preparing', 'prepared')):
+            raise ValueError('Invalid console recovery journal; backups retained')
+        backup = Path(state['backup'])
+        if backup.parent.parent != self.setup.BACKUPS.parent or backup.name != 'console-transaction':
+            raise ValueError('Invalid console recovery backup location')
+        if state['phase'] == 'preparing':
+            restore_console_services(self.machine, state['services'])
+            self.clear_journal()
+            print('RECOVERED  Previous service activation restored; software replacement had not begun.', flush=True)
+            return
+        if [record['path'] for record in state['paths']] != list(map(str, self.paths)):
+            raise ValueError('Invalid console recovery paths; backups retained')
+        # Validate every recovery source before removing installed files.
+        for index, record in enumerate(state['paths']):
+            saved = backup / str(index)
+            if record['existed'] and not (saved.exists() or saved.is_symlink()):
+                raise ValueError('Missing console recovery file; backups retained')
+            if record['existed'] and self.checksum(saved) != record['sha256']:
+                raise ValueError('Console recovery checksum failed; backups retained')
+            if any(parent.is_symlink() for parent in Path(record['path']).parents):
+                raise ValueError('Recovery path has a symbolic ancestor; backups retained')
+        stop_managed_runtime(self.machine, self.setup)
+        detach_router_generator(self.machine)
+        for index, record in enumerate(state['paths']):
+            target, saved = Path(record['path']), backup / str(index)
+            self.remove_managed(target)
+            if record['existed']:
+                self.copy_tree(saved, target)
+                if self.checksum(target) != record['sha256']:
+                    raise ValueError('Restored console file verification failed; journal retained')
+                self.sync_tree(target)
+        restore_console_services(self.machine, state['services'])
+        self.clear_journal()
+        print('RECOVERED  Previous console software, configuration and service state restored.', flush=True)
+
+    def commit(self):
+        for path in self.paths:
+            if path.exists() or path.is_symlink():
+                self.sync_tree(path)
+        self.clear_journal()
+
+
+@contextmanager
+def console_install_transaction(machine, setup):
+    """Hold an exclusive installer lock until validation succeeds or recovery finishes."""
+    if machine == 'uno-q':
+        yield
+        return
+    import fcntl
+    lock = setup.BACKUPS.parent / '.console-upgrade.lock'
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    recovery = ConsoleRecovery(machine, setup)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        recovery.begin()
+        try:
+            yield
+        except BaseException:
+            recovery.restore()
+            raise
+        else:
+            recovery.commit()
+    finally:
+        os.close(fd)
 
 
 def app_lab_as_arduino(*arguments):
@@ -762,12 +1048,17 @@ def main(argv=None):
             setup.BACKUPS.chmod(0o700)
             print("Backups: " + str(setup.BACKUPS), flush=True)
             (setup.BACKUPS / "RESTORE.txt").write_text(
-                "Stop VirtualGlove before recovery. Saved paths below mirror absolute host paths.\n"
-                "Copy only the files you need back to those paths, retaining ownership/permissions.\n"
-                "Private settings were preserved in place. To recover code/firmware, rerun the previous release installer.\n"
-                "Then reload systemd and rerun the installer --check. Do not copy the entire backup over /.\n")
-            stopped_runtime = stop_managed_runtime(args.machine, setup)
-            try:
+                ("Console upgrades restore previous managed software, configuration and service state "
+                 "automatically if installation or validation fails. After an abrupt interruption, "
+                 "rerun the same installation command to recover before retrying. "
+                 "The private console-transaction backup is checksum-verified. "
+                 "If recovery fails, retain the pending journal and all backups for diagnosis. "
+                 "System package-manager changes are not rolled back.\n")
+                if args.machine != "uno-q" else
+                ("Stop VirtualGlove before recovery. Saved paths mirror absolute host paths.\n"
+                 "Restore only the files you need, retaining ownership and permissions. "
+                 "Do not copy the entire backup over /.\n"))
+            with console_install_transaction(args.machine, setup):
                 if args.machine == "uno-q":
                     active_hostname = configure_controller_hostname(setup, selected_hostname)
                     shared_matrix = stage_unoq(source, setup)
@@ -785,34 +1076,32 @@ def main(argv=None):
                     setup.install_recalbox(args.peer, args.player1_device)
                 else:
                     setup.install_batocera(args.peer, args.player1_device)
-            except BaseException:
-                if stopped_runtime:
-                    restart_managed_runtime(stopped_runtime)
-                raise
-            report = setup.Report()
-            {"uno-q": setup.check_unoq, "retropie": setup.check_retropie,
-             "recalbox": setup.check_recalbox,
-             "batocera": setup.check_batocera}[args.machine](report)
-            if args.machine == "uno-q":
-                if other_selected:
-                    print("R.O.B. Vision remains active. Open the Controller Router page at http://" +
-                          active_hostname + ".local/ to choose VirtualGlove.")
-                else:
-                    print_controller_urls(active_hostname)
-            else:
-                token = ({"retropie": Path("/etc/virtualglove/token"),
-                          "recalbox": Path("/recalbox/share/system/virtualglove/data/token"),
-                          "batocera": Path("/userdata/system/virtualglove/data/token")}[args.machine])
-                if not token.is_file() or len(token.read_text().strip()) < 16:
-                    if args.machine == "retropie":
-                        print("NEXT  Pair using sudo /opt/virtualglove/bin/virtualglove-pair.")
+                report = setup.Report()
+                {"uno-q": setup.check_unoq, "retropie": setup.check_retropie,
+                 "recalbox": setup.check_recalbox,
+                 "batocera": setup.check_batocera}[args.machine](report)
+                if args.machine == "uno-q":
+                    if other_selected:
+                        print("R.O.B. Vision remains active. Open the Controller Router page at http://" +
+                              active_hostname + ".local/ to choose VirtualGlove.")
                     else:
-                        command = ("sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair"
-                                   if args.machine == "recalbox" else
-                                   "/userdata/system/services/VirtualGlove pair")
-                        print("NEXT  On this console, run " + command + ", then use the one-time code in Controller Setup.")
-                print("NEXT  Test VirtualGlove and the physical Player 1 joypad together in FCEUmm.")
-            result = report.finish()
+                        print_controller_urls(active_hostname)
+                else:
+                    token = ({"retropie": Path("/etc/virtualglove/token"),
+                              "recalbox": Path("/recalbox/share/system/virtualglove/data/token"),
+                              "batocera": Path("/userdata/system/virtualglove/data/token")}[args.machine])
+                    if not token.is_file() or len(token.read_text().strip()) < 16:
+                        if args.machine == "retropie":
+                            print("NEXT  Pair using sudo /opt/virtualglove/bin/virtualglove-pair.")
+                        else:
+                            command = ("sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair"
+                                       if args.machine == "recalbox" else
+                                       "/userdata/system/services/VirtualGlove pair")
+                            print("NEXT  On this console, run " + command + ", then use the one-time code in Controller Setup.")
+                    print("NEXT  Test VirtualGlove and the physical Player 1 joypad together in FCEUmm.")
+                result = report.finish()
+                if result == 1 and args.machine != "uno-q":
+                    raise ValueError("Installed console validation failed; restoring previous installation")
             rotate_console_backups(source, setup, args.machine)
             return result
     except (OSError, ValueError, KeyError, argparse.ArgumentTypeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:

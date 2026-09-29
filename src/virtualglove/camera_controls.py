@@ -64,6 +64,53 @@ def _set_verified(fd: int, control: dict, value: int, ioctl: Callable) -> bool:
     return struct.unpack("Ii", data)[1] == value
 
 
+def configure_automatic(device: str, ioctl: Callable | None = None) -> dict:
+    """Restore standard automatic exposure before opening a capture stream.
+
+    UVC settings can outlive the process that changed them. Automatic must be
+    applied explicitly rather than inheriting an earlier manual exposure.
+    """
+    report = {"requested": "auto", "supported": False, "applied": False,
+              "auto_exposure": False, "fixed_frame_rate": False}
+    if not sys.platform.startswith("linux"):
+        report["reason"] = "standard V4L2 controls require Linux"
+        return report
+    if ioctl is None:
+        from fcntl import ioctl as system_ioctl
+        ioctl = system_ioctl
+    fd = os.open(str(device), os.O_RDWR | getattr(os, "O_CLOEXEC", 0))
+    try:
+        automatic = _query(fd, EXPOSURE_AUTO, ioctl)
+        priority = _query(fd, EXPOSURE_AUTO_PRIORITY, ioctl)
+        report["supported"] = automatic is not None
+        if automatic:
+            # Standard automatic modes: aperture priority (3), or full auto (0).
+            # Prefer the camera's own automatic default when available.
+            modes = [automatic["default"], 3, 0]
+            for value in dict.fromkeys(modes):
+                if value not in (0, 3):
+                    continue
+                try:
+                    if _set_verified(fd, automatic, value, ioctl):
+                        report["auto_exposure"] = True
+                        break
+                except OSError:
+                    continue
+            report["applied"] = report["auto_exposure"]
+        if priority and report["applied"]:
+            try:
+                if _set_verified(fd, priority, priority["default"], ioctl):
+                    report["fixed_frame_rate"] = priority["default"] == 0
+            except OSError:
+                pass  # Optional frame-rate priority must not prevent auto exposure.
+        if not report["applied"]:
+            report["reason"] = ("camera rejected automatic exposure" if automatic
+                                else "camera exposes no standard automatic exposure")
+        return report
+    finally:
+        os.close(fd)
+
+
 def configure_low_latency(device: str, ioctl: Callable | None = None) -> dict:
     """Disable variable frame-rate exposure when the camera supports that control.
 

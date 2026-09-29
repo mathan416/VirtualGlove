@@ -28,7 +28,7 @@ import struct
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -86,6 +86,8 @@ class ProfileRequest:
     lease_seconds: float = 0.0
     rapid_a: bool | None = None
     rapid_b: bool | None = None
+    connection_host: str = field(default='', repr=False)
+    connection_token: str = field(default='', repr=False)
 
 
 @dataclass
@@ -153,8 +155,9 @@ class ActiveGameLease:
 class ProfileCommandServer:
     """Authenticated Pi-to-UNO-Q profile requests with explicit acknowledgements."""
 
-    def __init__(self, host: str, port: int, token: str) -> None:
+    def __init__(self, host: str, port: int, token: str, connections=None) -> None:
         self.token = token
+        self.connections = connections
         self.requests: queue.SimpleQueue[ProfileRequest] = queue.SimpleQueue()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -182,8 +185,11 @@ class ProfileCommandServer:
                 if len(payload) > MAX_PACKET_BYTES:
                     raise ValueError("packet too large")
                 data = json.loads(payload)
-                if data.get("protocol") != PROTOCOL or not verify_message(data, self.token):
+                credentials = self.connections() if self.connections else [{'token': self.token, 'host': ''}]
+                credential = next((item for item in credentials if isinstance(item.get('token'), str) and len(item['token']) >= 16 and verify_message(data, item['token'])), None)
+                if data.get("protocol") != PROTOCOL or credential is None:
                     raise ValueError("invalid request")
+                request_token = credential['token']
                 request_id = str(data["request_id"])
                 if data.get("kind") == "discover":
                     if (len(request_id) != 32 or
@@ -195,7 +201,7 @@ class ProfileCommandServer:
                         "protocol": PROTOCOL,
                         "kind": "discover_ack",
                         "request_id": request_id,
-                    }, self.token)
+                    }, request_token)
                     try:
                         self.socket.sendto(
                             json.dumps(reply, separators=(",", ":")).encode(), peer
@@ -257,11 +263,13 @@ class ProfileCommandServer:
                     lease_seconds=float(lease_seconds or 0.0),
                     rapid_a=rapid_a,
                     rapid_b=rapid_b,
+                    connection_host=credential.get('host', ''),
+                    connection_token=request_token,
                 )
                 self.requests.put(request)
                 # Camera/model startup may block the consumer; acknowledge queue admission.
                 self.acknowledge(request, True, profile, queued=True)
-            except (AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError, RecursionError):
+            except (OSError, AttributeError, KeyError, TypeError, ValueError, json.JSONDecodeError, RecursionError):
                 continue
 
     def take(self) -> ProfileRequest | None:
@@ -280,7 +288,7 @@ class ProfileCommandServer:
             "accepted": accepted,
             "profile": profile,
             "queued": queued,
-        }, self.token)
+        }, request.connection_token or self.token)
         payload = json.dumps(data, separators=(",", ":")).encode()
         self._acks[request.request_id] = payload
         try:

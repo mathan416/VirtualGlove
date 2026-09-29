@@ -71,6 +71,21 @@ class MatrixScheduler:
         self.last_delivery = 0.0
         self.last_error = None
         self.manifests = {}
+        self.pairing_override = None
+
+    def begin_pairing(self, identity, pin):
+        if len(identity) != 7 or len(pin) != 6:
+            raise ValueError('Invalid physical confirmation.')
+        with self.lock:
+            self.pairing_override = {'identity': identity, 'pin': pin, 'at': self.clock()}
+            self.last_frame = None
+        self.tick()
+        return self.status()['delivered']
+
+    def clear_pairing(self):
+        with self.lock:
+            self.pairing_override = None
+            self.last_frame = None
 
     @staticmethod
     def _send(rows: list[str]) -> bool:
@@ -114,6 +129,14 @@ class MatrixScheduler:
     def frame(self, now: float | None = None) -> list[str] | None:
         now = self.clock() if now is None else now
         with self.lock:
+            if self.pairing_override:
+                override = self.pairing_override
+                elapsed = now - override['at']
+                if elapsed < 120:
+                    segments = ['ID', override['identity'][:3], override['identity'][3:6],
+                                override['identity'][6:], 'PN', override['pin'][:3], override['pin'][3:]]
+                    return code_frame(segments[int(elapsed / .9) % len(segments)])
+                self.pairing_override = None
             message = self.request
             if not message or message["app"] != self.selected:
                 return None

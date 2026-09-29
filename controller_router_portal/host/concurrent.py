@@ -125,6 +125,7 @@ class ConcurrentLauncher:
                     return
                 self._write_leases(owner)
                 self.selected = owner
+                self.matrix.clear_pairing()
                 self.matrix.select(owner)
             self.game_owned = True
             self.error = ""

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import subprocess
 from pathlib import Path
 
@@ -89,6 +90,13 @@ def product_compose(name: str) -> Path:
 
 
 def start(name: str) -> None:
+    data = ROOT / name / 'data'
+    if (ROOT / name / 'app.yaml').exists():
+        data.mkdir(parents=True, exist_ok=True)
+        capability = data / 'router-pairing-adapter-token'
+        if not capability.exists():
+            capability.write_text(secrets.token_urlsafe(48) + '\n')
+            capability.chmod(0o600)
     root = ROOT / name
     data = root / "data"
     data.mkdir(parents=True, exist_ok=True)

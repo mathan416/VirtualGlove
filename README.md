@@ -1,4 +1,6 @@
 <p align="centre">
+
+This checkout documents the current development version. The stable installer downloads the latest published final release; prerelease testing uses an explicit release tag.
   <img src="assets/virtualglove-logo.png" alt="VirtualGlove" width="760">
 </p>
 

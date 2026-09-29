@@ -29,6 +29,21 @@ MATRIX = HOME / "ArduinoApps/controller-router"
 MATRIX_STATE = HOME / ".local/state/controller-router"
 
 
+def wait_secure_setup():
+    """Wait for the secure server independently of port 80 readiness."""
+    import ssl
+    for _ in range(30):
+        try:
+            with urlopen('https://127.0.0.1:8444/api/connections', timeout=2,
+                         context=ssl._create_unverified_context()) as response:
+                if response.status == 200:
+                    return
+        except OSError:
+            pass
+        time.sleep(1)
+    raise RuntimeError('Controller Router secure Setup did not become available.')
+
+
 def install_matrix_app() -> tuple[Path | None, bool]:
     """Install the only active App Lab sketch without touching product data."""
     source = SOURCE / "app"
@@ -55,7 +70,12 @@ def install_matrix_app() -> tuple[Path | None, bool]:
     if MATRIX.exists():
         command("arduino-app-cli", "app", "stop", str(MATRIX), check=False)
         os.replace(MATRIX, backup)
-    os.replace(staged, MATRIX)
+    try:
+        os.replace(staged, MATRIX)
+    except BaseException:
+        if backup.exists():
+            os.replace(backup, MATRIX)
+        raise
     return (backup if backup.exists() else None), True
 
 
@@ -83,6 +103,15 @@ def start_shared_matrix() -> None:
 
 
 def start_products() -> None:
+    for app in APPS.values():
+        if not (app['path'] / 'app.yaml').exists():
+            continue
+        data = app['path'] / 'data'
+        data.mkdir(parents=True, exist_ok=True)
+        capability = data / 'router-pairing-adapter-token'
+        if not capability.exists():
+            capability.write_text(secrets.token_urlsafe(48) + '\n')
+            capability.chmod(0o600)
     try:
         from .host.products import start
     except ImportError:
@@ -116,14 +145,27 @@ def command(*args: str, check: bool = True) -> subprocess.CompletedProcess:
 def validate_package(source: Path) -> None:
     """Reject incomplete bundles before replacing a working launcher."""
     required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py",
+                "host/controller-router-portal.service", "host/controller-router-products.service",
                 "app/VERSION", "app/app.yaml", "app/python/main.py",
                 "app/sketch/sketch.ino", "app/sketch/sketch.yaml",
-                "python/main.py", "python/index.html", "python/setup.html",
+                "python/main.py", "python/index.html", "python/setup.html", "python/trust.html",
+                "host/pairing.py", "host/secure_pairing.py", "host/pairing.html", "shared/pairing.py",
                 "python/assets/pixel-pal.png", "python/assets/buddy.png")
     missing = [name for name in required if not (source / name).is_file()
                or (source / name).stat().st_size == 0]
     if missing:
         raise RuntimeError("Incomplete Controller Router launcher package: " + ", ".join(missing))
+
+
+def restore_services() -> None:
+    """Restore unit definitions and both services from the recovered launcher."""
+    for unit in (SERVICE, PRODUCT_SERVICE):
+        saved = DEST / 'host' / unit.name
+        if saved.is_file():
+            shutil.copy2(saved, unit)
+    command('systemctl', '--user', 'daemon-reload', check=False)
+    command('systemctl', '--user', 'start', SERVICE.name, check=False)
+    command('systemctl', '--user', 'start', PRODUCT_SERVICE.name, check=False)
 
 
 def install() -> str:
@@ -206,6 +248,11 @@ def install() -> str:
     matrix_backup = None
     changed = False
     try:
+        try:
+            from .host.secure_pairing import certificates
+        except ImportError:
+            from host.secure_pairing import certificates
+        certificates(MATRIX_STATE)
         for app_id, app in APPS.items():
             if listing.get(app["name"]) == "running":
                 command("arduino-app-cli", "app", "stop", str(app["path"]))
@@ -229,6 +276,7 @@ def install() -> str:
                 time.sleep(2)
         else:
             raise RuntimeError("Controller Router did not become available on port 80.")
+        wait_secure_setup()
     except BaseException:
         command("systemctl", "--user", "stop", SERVICE.name, check=False)
         command("systemctl", "--user", "stop", PRODUCT_SERVICE.name, check=False)
@@ -250,11 +298,11 @@ def install() -> str:
                 os.replace(DEST, failed_portal)
             if portal_backup.exists():
                 os.replace(portal_backup, DEST)
-        if had_portal:
-            command("systemctl", "--user", "start", SERVICE.name, check=False)
         if previous_default and Path(previous_default).is_dir():
             command("arduino-app-cli", "app", "start", previous_default, check=False)
             command("arduino-app-cli", "properties", "set", "default", previous_default, check=False)
+        if had_portal:
+            restore_services()
         raise
     if LEGACY.is_dir():
         saved = DEST.with_name(DEST.name + ".app-lab-backup")
@@ -263,6 +311,21 @@ def install() -> str:
             saved = DEST.with_name(DEST.name + f".app-lab-backup-{suffix}")
             suffix += 1
         os.replace(LEGACY, saved)
+    try:
+        from .host.secure_pairing import certificates, lan_addresses
+        from .shared.pairing import fingerprint
+    except ImportError:
+        from host.secure_pairing import certificates, lan_addresses
+        from shared.pairing import fingerprint
+    import ssl, socket
+    cert, _ = certificates(MATRIX_STATE)
+    print('Secure Setup certificate SHA-256: ' + fingerprint(ssl.PEM_cert_to_DER_cert(cert.read_text())), flush=True)
+    hostname = socket.gethostname().split('.')[0] + '.local'
+    print('Pair console: http://' + hostname + '/pair', flush=True)
+    print('Secure Setup: https://' + hostname + ':8444/setup', flush=True)
+    for address in lan_addresses():
+        print('Pair console: http://' + address + '/pair', flush=True)
+        print('Secure Setup: https://' + address + ':8444/setup', flush=True)
     return "Controller Router launcher and shared Matrix installed; product services remain online."
 
 

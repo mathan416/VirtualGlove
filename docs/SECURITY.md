@@ -57,64 +57,19 @@ both paired hosts.
 
 ## Pairing boundaries
 
-The VirtualGlove Controller and selected console share one random token of at least 16 characters. The
-active token belongs only in the VirtualGlove Controller's private `data/device.json` and
-the console's private VirtualGlove data directory: `/etc/virtualglove` on
-RetroPie, `/recalbox/share/system/virtualglove/data` on Recalbox,
-`/userdata/system/virtualglove/data` on Batocera, or
-`%LOCALAPPDATA%\VirtualGlove\data` on LaunchBox. It must not be committed, placed in a shell
-argument, stored in `launcher.json`, or included in a screenshot or log.
+Controller Router owns the UNO Q–console relationship. VirtualGlove and R.O.B. Vision receive independent, revocable credentials; neither can use the other app’s credential. Router’s management credential remains in its private connection registry. Product credentials remain in each app’s private settings and its console token file, never browser responses, process arguments, diagnostics, or logs.
 
-The supervised vision worker reads its token using `--device-config`, keeping
-the secret out of process arguments. Device settings are created and replaced
-atomically with restrictive permissions. Console processes use a token file;
-the token is never a command-line value.
-Browser mutation routes reject cross-site origins, and connection-setting writes
-require JSON. These browser protections do not add local-user authentication or
-change the trusted-network model.
+Fresh pairing uses Router’s HTTPS Setup on port **8444**. The user checks the UNO Q certificate fingerprint, supplies the console’s **CR1 connection code**, and enters the six-digit PIN delivered to the physical Matrix. The console code pins its TLS certificate before any code or credential is transmitted. Console codes expire after five minutes and are single-use; Matrix confirmation expires after two minutes. Five incorrect attempts close the current confirmation window. No SSH password is collected.
 
-The recommended setup path uses a short-lived one-time code to authenticate
-the selected console's pairing server over pinned TLS. Linux-console password
-pairing uses authenticated SSH; LaunchBox intentionally supports code pairing
-only. After the initial connection
-establishes trust, subsequent connections verify the saved remote host key.
-The password is not placed on the process command line.
+The console’s persistent TLS management service uses port **55359**; opening a pairing window grants only temporary authorization to provision a connection. Requests have bounded sizes, timeouts, and concurrency. Browser writes require matching HTTPS Origin, JSON, and the pairing action header. These protections preserve the trusted-LAN administration model; they do not create browser user accounts.
 
-Each Controller owns a persistent private local certificate authority. It signs
-the HTTPS leaf for the Controller's stable `.local` name. Secure Setup can
-download only the public authority certificate;
-plain HTTP receives no certificate download. A user may explicitly trust that
-public certificate on each phone or computer to remove later browser warnings.
-The authority and website private keys remain mode `0600` in the Controller's
-private data directory and are never served.
+Router creates stable local certificates with private keys restricted to mode `0600`. The installer prints the public fingerprint. Users may trust the downloaded public certificate on their own browser device after checking it. Certificate mismatches require investigation or an explicit new pairing; they are not accepted silently.
 
-Both browser pairing methods still require the user to compare the current
-website certificate identity with the identifier on the physical VirtualGlove
-Controller matrix and enter its single-use PIN before a token is released. The
-first trust download should occur only after this physical comparison. Locally
-trusting the Controller authority improves repeat visits but does not replace
-the Matrix ceremony or turn the Controller into a public certificate authority.
+Migration binds a fresh HMAC proof to the observed console identity and certificate. It never consolidates records solely by hostname. Conflicting records remain intact for an explicit physical re-pairing. Private recovery journals retain prior credentials and configuration; failed provisioning restores the previous connection, or reports that service recovery is still required.
 
-Fresh interactive installation proposes `virtualglove.local`, accepts a
-different validated single-label name, and checks whether that name visibly
-belongs to another LAN address before changing the host. Unattended installation
-requires an explicit `--hostname` to rename the board. Upgrades never accept a
-rename, preventing an update command from silently changing the trusted website
-identity. Hostname files are included in the installer's recovery backup.
-The installer also records that approved host label in private application data;
-the containerized website reads it instead of trusting its transient Docker
-hostname when issuing the HTTPS leaf.
+Pairing and access changes are blocked during a live game. Installing another supported app provisions its own access over the existing authenticated relationship. Individual revocation leaves the other app connected. Complete removal revokes Router and both app credentials. Pairing does not rewrite saved RetroArch configuration.
 
-After installing the token, the Controller sends a signed controller hello and
-reports success only after the console returns a valid matching challenge. This
-post-write check confirms that the receiver accepts the newly shared token; it
-does not arm output or establish that an emulator consumed controller input.
-
-Pairing sessions limit how long a connection handshake can take and how long
-the pairing service remains available. Reusing a PIN, removing
-the physical display requirement, accepting pairing credentials over ordinary
-HTTP, or extending the listener indefinitely weakens the intended boundary and
-requires explicit security review.
+The supervised vision worker reads credentials from private device settings. Signed profile renewals are checked against the console-specific credential and replies use that same credential. The console stores its VirtualGlove credential in a restricted token file; `launcher.json` records its path and destination only. Older product-specific pairing code remains a compatibility path for installations without the shared Router authority.
 
 ## Console input boundaries
 
@@ -126,10 +81,9 @@ fixed-capability devices named **VirtualGlove Merged Player 1–4**. Only Player
 Malformed mappings and local states are rejected, tracking timeout clears only
 the VirtualGlove source, and a physical disconnect releases only that source.
 Outputs are neutral and physical devices are not grabbed outside Libretro
-gameplay, so Router cannot duplicate EmulationStation navigation. Its
+gameplay on Router-enabled systems, so Router cannot duplicate EmulationStation navigation. Its
 Unix socket and versioned record remain inside the platform's private
-VirtualGlove directories. Managed physical Player indexes are applied through
-the platform's bounded Libretro configuration layer. Nestopia (VirtualGlove)
+VirtualGlove directories. RetroPie and Batocera use temporary session routing settings; runtime does not rewrite saved RetroArch configuration. Core and game overrides can load afterward and replace those settings. Nestopia (VirtualGlove)
 uses a separate native-input path for gestures; it never admits VirtualGlove as
 a duplicate RetroPad source.
 
@@ -156,8 +110,9 @@ are reported only as degradation of that manual fallback.
 | `55355` | UDP | VirtualGlove Controller to console | Authenticated virtual-controller packets |
 | `55356` | UDP | Console to VirtualGlove Controller | HMAC-authenticated profile commands and acknowledgements |
 | `55357` | TCP/TLS | Pairing client to temporary server | Short-lived code-pairing exchange only |
-| `8088` | HTTP | Browser to VirtualGlove Controller | Local dashboard, Play, public Help guides, diagnostics, and ordinary controls; no pairing credentials accepted |
+| `8100` | HTTP | Browser to VirtualGlove Controller | Local dashboard, Play, public Help guides, diagnostics, and ordinary controls; no pairing credentials accepted |
 | `8443` | HTTPS | Browser to VirtualGlove Controller | Protected setup and pairing operations |
+| `80` | HTTP | Browser to shared Controller Router | App selection and shared routing Setup on the trusted LAN |
 
 Keep these ports on a trusted LAN. Do not configure router port forwarding,
 public reverse proxies, cloud tunnels, or Internet firewall exceptions for
@@ -175,7 +130,7 @@ Controller and profile UDP traffic is authenticated but not encrypted. Anyone
 with access to the local network can observe packet timing and size even when
 they cannot create accepted input without the token. The dashboard can expose
 camera imagery and operational status to clients that can reach it, so network
-access to port `8088` is itself sensitive.
+access to port `8100` is itself sensitive.
 
 The Help library serves a fixed list of public Markdown guides and images from
 the installed application. It must not expose `data/`, the machine-specific

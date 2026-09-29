@@ -235,6 +235,14 @@ if ($LASTEXITCODE -ne 0) {
 
 & $Python -m virtualglove.launchbox_runtime ensure --settings $Settings
 
+$LinkDescriptor = Join-Path $DataRoot "router-link-adapter.json"
+@{ kind = "json"; token_file = $Token; target_file = $Settings;
+    restart = @($Python, "-m", "virtualglove.launchbox_runtime", "restart", "--settings", $Settings);
+    stop = @($Python, "-m", "virtualglove.launchbox_runtime", "stop", "--settings", $Settings)
+} | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 $LinkDescriptor
+& $Python -m router_shared.pairing_install --app virtualglove --descriptor $LinkDescriptor
+if ($LASTEXITCODE -ne 0) { throw "Controller Router console connection installation failed." }
+
 Write-Host "VirtualGlove LaunchBox support installed for this Windows user."
 Write-Host "Windows may ask whether Python can listen on the network; allow Private networks only."
 Write-Host "Pair from Controller Setup using the LaunchBox one-time-code command."

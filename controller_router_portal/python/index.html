@@ -39,13 +39,13 @@
 <body>
   <main>
     <header><span class="mark" aria-hidden="true">🎮</span><div><div class="brand">CONTROLLER ROUTER</div><div class="subtitle">Your UNO Q companions</div></div></header>
-    <nav style="margin-top:20px"><a href="/setup" style="color:#8de8ec">Setup · Controller assignments</a></nav>
+    <nav style="margin-top:20px"><a href="/setup" style="color:#8de8ec">Setup · Controller assignments</a> · <a class="pair-console-link" href="#">Pair console</a></nav>
     <h1>Who’s playing?</h1>
     <p class="intro">Choose your companion. Both are ready in the background; opening one gives it control when no game is in progress.</p>
     <div class="cards" id="cards"></div>
     <p id="message" role="status" aria-live="polite"></p>
   </main>
-  <script>
+  <script>document.querySelector('.pair-console-link').href='http://'+(location.hostname.includes(':')?'['+location.hostname+']':location.hostname)+'/pair';
     const names = {
       virtualglove: { name: 'VirtualGlove', description: 'Move with Pixel Pal.', image: '/assets/pixel-pal.png' },
       rob_vision: { name: 'R.O.B. Vision', description: 'Play alongside Buddy.', image: '/assets/buddy.png' }

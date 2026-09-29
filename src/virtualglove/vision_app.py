@@ -315,6 +315,14 @@ def _open_camera(args: argparse.Namespace):
             exposure_mode = "manual-test" if manual_test else "manual"
         exposure_report = {"requested": exposure_mode, "supported": False, "applied": False}
         camera_control_error = None
+        if exposure_mode == "auto" and sys.platform.startswith("linux"):
+            from .camera_controls import configure_automatic
+            try:
+                exposure_report = configure_automatic(_v4l2_device_path(camera_device))
+            except (OSError, ValueError, RuntimeError) as exc:
+                camera_control_error = str(exc)
+                exposure_report["reason"] = camera_control_error
+                print(f"Camera controls unavailable: {exc}", file=sys.stderr, flush=True)
         if exposure_mode in ("low-latency", "kiyo-low-latency"):
             from .camera_controls import configure_low_latency
             try:
@@ -999,12 +1007,21 @@ def main() -> int:
     router_was_active = _router_lease_active()
     practice_mode = False
     token = load_worker_token(args)
+    selected_receiver, selected_token = args.receiver, token
     sender = UdpSender(args.receiver, args.port, token)
     trace = getattr(sender, "trace", None)
     # Extra MediaPipe evidence exists only for an explicitly enabled finite
     # diagnostic trace; the normal gameplay graph remains unchanged.
     args.tracking_evidence = trace is not None
-    profile_server = ProfileCommandServer(args.profile_listen, args.profile_port, token)
+    def paired_connections():
+        if not args.device_config:
+            return [{'token': token, 'host': args.receiver}]
+        config = json.loads(args.device_config.read_text())
+        records = list(config.get('router_connections', {}).values())
+        if not records:
+            return [{'token': config.get('token', ''), 'host': config.get('receiver', '')}]
+        return [record for record in records if record.get('token')]
+    profile_server = ProfileCommandServer(args.profile_listen, args.profile_port, token, paired_connections)
     shared = SharedDebugState()
     shared.tuning = TuningManager(calibration_path.with_name("gesture-tuning.json"))
     preview_encoder = LatestPreviewEncoder(shared.update_frame)
@@ -1050,9 +1067,29 @@ def main() -> int:
         while True:
             old_vision_profile = _effective_profile(current_profile, practice_mode)
             old_rapid_fire = (current_rapid_a, current_rapid_b)
+            incoming = profile_server.take()
+            # One UNO Q has one live game. A second console cannot steal its input lease.
+            if (incoming and active_game_lease.session_id and incoming.connection_token
+                    and incoming.connection_token != token):
+                profile_server.acknowledge(incoming, False, current_profile)
+                incoming = None
+            if incoming and incoming.connection_host and incoming.connection_token != token:
+                sender.send(ControllerState.released(2_147_483_647, time.monotonic(), current_profile or "off"))
+                sender.close()
+                token = incoming.connection_token
+                sender = UdpSender(incoming.connection_host, args.port, token)
+                trace = getattr(sender, "trace", None)
             request, lease_expired = _consume_game_lease(
-                profile_server.take(), active_game_lease, time.monotonic()
+                incoming, active_game_lease, time.monotonic()
             )
+            if (lease_expired or (request is not None and request.profile is None)) and token != selected_token:
+                # End the game's scoped connection before returning manual controls
+                # to the user's saved console selection.
+                sender.send(ControllerState.released(2_147_483_647, time.monotonic(), current_profile or "off"))
+                sender.close()
+                token = selected_token
+                sender = UdpSender(selected_receiver, args.port, token)
+                trace = getattr(sender, "trace", None)
             if live_rapid_session != active_game_lease.session_id:
                 live_rapid_session = None
                 live_rapid_values = (None, None)

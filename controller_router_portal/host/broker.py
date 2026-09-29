@@ -99,6 +99,7 @@ except ImportError:  # Executed from the installed host script.
     from concurrent import ConcurrentLauncher
 
 LAUNCHER = ConcurrentLauncher()
+PAIRING = None
 
 
 class Handler(socketserver.StreamRequestHandler):
@@ -108,12 +109,25 @@ class Handler(socketserver.StreamRequestHandler):
             action = message.get("action")
             if action == "state":
                 result = LAUNCHER.state()
+            elif action == 'connections' and PAIRING is not None:
+                result = PAIRING.inspect()
+            elif action == 'pairing-certificate':
+                try:
+                    from .secure_pairing import public_certificate
+                    from .pairing import STATE
+                except ImportError:
+                    from secure_pairing import public_certificate
+                    from pairing import STATE
+                result = public_certificate(STATE)
             elif action == "routing":
                 try:
                     from .routing import routing
                 except ImportError:
                     from routing import routing
-                result = routing(message, LAUNCHER.state())
+                if PAIRING is not None and PAIRING.inspect()['consoles']:
+                    result = PAIRING.routing(message)
+                else:
+                    result = routing(message, LAUNCHER.state())
             elif action == "select":
                 result = LAUNCHER.select(message.get("app"))
             elif action == "display" and hasattr(LAUNCHER, "display"):
@@ -145,6 +159,28 @@ def start_portal() -> None:
 
 
 def main() -> None:
+    global PAIRING
+    try:
+        from .pairing import PairingManager, STATE
+        from .secure_pairing import serve as serve_pairing
+    except ImportError:
+        from pairing import PairingManager, STATE
+        from secure_pairing import serve as serve_pairing
+    def game_active():
+        return any(app.get('game_active') for app in LAUNCHER.state().get('apps', {}).values())
+    PAIRING = PairingManager(LAUNCHER.matrix, game_active)
+    def reconcile():
+        while True:
+            try:
+                if game_active():
+                    PAIRING.cancel()
+                PAIRING.reconcile()
+            except (OSError, ValueError):
+                pass
+            time.sleep(15)
+    threading.Thread(target=reconcile, daemon=True, name='router-connections').start()
+    threading.Thread(target=serve_pairing, args=(PAIRING, STATE), daemon=True,
+                     name='router-secure-setup').start()
     SOCKET_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     SOCKET_DIR.chmod(0o700)
     try:

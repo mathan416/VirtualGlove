@@ -569,6 +569,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     """Run the selected pairing role and return a process exit status."""
+    from router_shared.pairing_console import default_root, open_window
+    if (default_root() / 'adapters.json').exists():
+        open_window(default_root())
+        return 0
     args = build_parser().parse_args()
 
     def restart_receiver() -> None:

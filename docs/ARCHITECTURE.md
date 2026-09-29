@@ -70,7 +70,7 @@ with the sole packaged MediaPipe 0.10.35 ARM64 wheel. There is no installed
 
 The supervisor polls worker status, requests Matrix updates through Router, and retries a worker
 that stops. The worker's internal HTTP interface is on loopback port 8089. The
-public website is on 8100 (internal port 8088), with secure Setup on 8443.
+public website is on 8100 (internal port 8088), with app settings on HTTPS 8443. Shared device pairing uses Controller Router HTTPS 8444.
 
 On Recalbox and Batocera, Controller Router creates each enabled uinput gamepad
 before RetroArch starts. RetroPie installs the same subsystem disabled and keeps
@@ -164,13 +164,9 @@ projects can supply their own virtual-source descriptor without changing the
 shared engine. Library edits are synchronized into both vendored copies before
 either project is packaged.
 
-Router writes enabled Player indexes and canonical controls through each
-platform's supported late configuration layer. RetroPie updates the final
-system launch configuration after current joystick discovery. Batocera uses
-managed `batocera.conf` RetroArch settings. Recalbox uses the persistent
-ROM-root `.retroarch.cfg` source that its generator folds into the temporary
-override for every Libretro launch. This avoids persisting `jsN` and avoids
-editing Recalbox's regenerated output file.
+Router resolves enabled merged outputs by name and vendor/product identity before execution. RetroPie uses the shared launch adapter and a temporary appended configuration; Batocera inserts that adapter after config generation through a narrow Libretro generator overlay. RetroArch 1.19.1 uses resolved udev indexes, while supported newer builds use strict native reservations. Runtime routing never rewrites saved RetroArch settings. Installer registration backs up changed `emulators.cfg` files and retains `pi:pi` ownership. Recalbox retains its separate platform integration; the new session adapter has been validated on RetroPie and Batocera.
+
+Per-system policy is shared by the adapter and physical-source forwarding. New Router configurations enable NES only; upgrades retain NES, all-systems, or selected-system policy. Disabled systems retain their normal launch configuration and physical controls. Merged outputs remain alive as sources disconnect and reconnect; a Router process failure requires ending and relaunching the game.
 
 The native-input boundary applies to VirtualGlove, not to the physical pad.
 Nestopia (VirtualGlove) consumes glove gestures through the guarded native
@@ -414,9 +410,7 @@ buttons use keyboard-class event codes.
 The service never treats `/dev/input/eventN`, `/dev/input/jsN`, or a RetroArch
 joypad index as identity. It resolves the current event device from the saved
 hardware identity and resolves the merged RetroArch index from the current
-udev joystick order. Batocera repeats the index synchronization in its
-`gameStart` hook; the persistent service also detects later enumeration
-changes.
+udev joystick order immediately before execution. Batocera’s generator overlay supplies the same session adapter after configuration generation; its `gameStart` hook reports the session only. Physical enumeration changes reconnect sources without rebuilding merged outputs.
 
 New EmulationStation-configured devices appear in Setup as unassigned sources.
 Router never silently assigns them after initial installation. If a saved
@@ -424,7 +418,7 @@ device's live mapping is missing, incomplete, or ambiguous, that source remains
 neutral and unavailable while the other merged sources continue working. A
 mapping is never replaced during a running game.
 
-The original physical controller owns EmulationStation. When RetroArch starts,
+The original physical controller owns EmulationStation. When RetroArch starts on a Router-enabled system,
 the merger uses `EVIOCGRAB` to take exclusive ownership of that controller's
 event stream, clears any retained physical state, and publishes only the
 canonical merged device. This prevents the same Select or hotkey press from
@@ -800,12 +794,14 @@ unavailable; this introduces no firmware RPC in the vision worker's frame path.
 | --- | --- | --- |
 | HTTP 80 | Browser to Controller Router | Single-product redirect or two-product chooser |
 | HTTP 8100 | Browser to VirtualGlove Controller | Pages, live status/video, ordinary settings and commands; internal container port 8088 |
-| HTTPS 8443 | Browser to VirtualGlove Controller | Secure Setup and pairing workflow |
+| HTTPS 8443 | Browser to VirtualGlove Controller | Product settings |
+| HTTPS 8444 | Browser to Controller Router | Shared pairing, Matrix confirmation, and app access |
+| TLS 55359 | UNO Q Router to console Router | Certificate-pinned pairing and authenticated management |
 | HTTP 8089, loopback | Supervisor/web proxy to worker | Internal status, frame and control requests |
 | UDP 55355 | VirtualGlove Controller to console | Signed controller states, session, challenge, and sequence; handshake replies return to the sender socket |
 | UDP 55356 | Console to Controller relay to worker | Signed profile requests and acknowledgements |
 | Native-state record | Authenticated console receiver to native cores | `/run/virtualglove/native-state` on Linux or a per-user mapped file on LaunchBox; guarded latest sample for Super Glove Ball |
-| TCP 55357 | Pairing participants | Temporary one-time-code pairing service |
+| TCP 55357 | Legacy installations only | Retired product-specific pairing helper |
 | TCP 55358 | VirtualGlove Controller to console | Paired game-registry and Controller Router services (`/registry` and `/inputs`) |
 | Private Unix sockets | App resolver to host Avahi; Recalbox/Batocera receiver to Player 1 merger | Local hostname resolution and bounded local VirtualGlove state delivery |
 | Router Bridge RPC | Linux supervisor to microcontroller | Matrix status/profile/pairing commands |
@@ -888,7 +884,7 @@ builds against it but does not flash hardware. Normal installation runs Controll
 Back up the installed source and firmware cache, verify compilation, upload,
 then check application health, bridge response, physical matrix appearance, and
 actual controls. Keep private settings intact. Detailed commands are in the
-[Installation Guide](CONFIGURATION_REFERENCE.md#build-and-install-matrix-firmware).
+[Installation Guide](CONFIGURATION_REFERENCE.md#build-and-install-legacy-standalone-matrix-firmware).
 
 Documentation has an editable Markdown source, generated diagrams, built-in Help
 rendering, and a PDF edition. `scripts/build-architecture-diagrams.py` regenerates
@@ -985,7 +981,7 @@ T/L displays, and game-state paths are unchanged.
 
 ## Signed controller session lifecycle
 
-After either supported pairing method installs the shared token, the Controller
+After Controller Router provisions VirtualGlove’s scoped credential, the Controller
 sends a new signed hello to UDP 55355 and requires a matching receiver challenge
 before reporting success. This verifies that RetroPie is running the receiver
 and accepts the token just written. It does not arm controller delivery or prove
@@ -1022,3 +1018,9 @@ maintained page from the owning module. The unused compatibility re-export and
 duplicate worker homepage have been removed.
 
 For a guided symptom check, see [Troubleshooting by symptom](TROUBLESHOOTING.md).
+
+## Shared connection authority
+
+Controller Router owns the UNO Q connection registry and HTTPS pairing page. Its console service verifies single-use connection codes and stages separate app credentials. Product adapters import only their own credential through capability-protected host requests. VirtualGlove’s profile listener checks the saved console credentials independently and sends replies with the credential that authenticated the request. One live session keeps control; a second console cannot take its lease. Router never rewrites saved RetroArch configurations while pairing.
+
+The console certificate is pinned before any code or credential is transmitted. A fresh HMAC proof binds legacy migration to the console ID and observed certificate. Router retains conflicting records for explicit physical re-pairing. Private recovery journals restore credentials and configurations after interrupted provisioning. Product settings, calibration, ROM registries, and player assignments remain separate.

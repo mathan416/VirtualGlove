@@ -48,7 +48,7 @@ SETUP_CONTENT = """<style>main a{color:var(--cyan)}#players{margin-bottom:14px}#
 </section>
 <section class=setup-phase id=setup-pair aria-labelledby=setup-pair-title>
 <div class=setup-phase-heading><span class=setup-step>03 / PAIRING</span><h2 id=setup-pair-title>Pair this Controller</h2><p>Authorise the connection once, then check that the console responds.</p></div>
-<section id=pairing-card class=card style="margin-bottom:14px"><div id=pairing-section role=region aria-labelledby=pair-title><h2 id=pair-title>Pair this Controller</h2>
+<section id=pairing-card class=card style="margin-bottom:14px"><div class=shared-pairing><h2>Pair console</h2><p>Pair your UNO Q and console once through Controller Router. VirtualGlove and R.O.B. Vision use that connection automatically.</p><a class=button id=router-pair-console href=#>Open Pair console</a><p>Finish any live game before changing a connection.</p></div><style>#pairing-section,#controller-trust{display:none!important}</style><div id=pairing-section role=region aria-labelledby=pair-title><h2 id=pair-title>Pair this Controller</h2>
 <p id=secure-note></p>
 <div id=pair-wizard hidden>
 <p class=pair-destination>Saved console: <strong id=pair-destination>Loading…</strong> <a id=pair-change href=#connection-section>Change</a></p>
@@ -297,6 +297,7 @@ async function beginPairing(){
  }catch(e){retryConfirmation=pairStep===2;$('pair-notice').textContent=e.message||'Could not start confirmation. Try again.'}
  finally{pairingBusy=false;expirePairing()}
 }
+document.getElementById('router-pair-console').href='http://'+(location.hostname.includes(':')?'['+location.hostname+']':location.hostname)+'/pair';
 $('secure-note').textContent=secure?'Pair this Controller with your saved console. Both methods use a physical confirmation on the Controller matrix.':'Pairing requires the secure Setup page.';
 $('pair-wizard').hidden=!secure;
 if(!secure){const target='https://'+location.hostname+':8443/setup',a=document.createElement('a');a.href=target;a.textContent='Open secure Setup';a.className='button';$('secure-note').append(' ',a);$('trust-download').href=target;$('trust-download').removeAttribute('download');$('trust-download').textContent='Open secure Setup first';$('trust-note').textContent='The trust certificate is available only through secure Setup.'}else $('trust-note').textContent='After trusting it, reopen https://'+location.hostname+':8443/setup.';

@@ -24,6 +24,20 @@ specific commands and filenames retain `uno-q` where that literal name is requir
 > authenticate controller packets and profile changes. Never paste it into an
 > issue, screenshot, command line, public backup, or Git commit.
 
+## Find the reference you need
+
+| Need | Start here |
+| --- | --- |
+| Identify the file actually read at runtime | [Where configuration lives](#where-configuration-lives) |
+| Edit game filenames or profiles | [Register games](#register-games-and-select-profiles) |
+| Inspect or extend routing | [Controller Router](#configure-controller-router) |
+| Find a command and its arguments | [Command-line reference](#command-line-reference) |
+| Diagnose a deployment | [Back up and update safely](#back-up-and-update-safely) |
+| Understand data flow before editing | [Architecture and Flows](ARCHITECTURE.md) |
+
+Examples use the literal field names consumed by the code. Distinguish repository templates, installed files, and generated runtime state before editing. Pairing credentials stay in private device files; a reference example never requires their contents.
+
+
 ## Where configuration lives
 
 VirtualGlove runs on a Controller and one console. A repository template is not always the
@@ -56,7 +70,7 @@ In commands and examples, replace these placeholders:
 | --- | --- |
 | Install and pair both machines | [Installation Guide](INSTALL_README.md) |
 | Change the camera or startup profile | [VirtualGlove Controller settings](#virtualglove-controller-settings) |
-| Repair pairing or token permissions | [Pairing and token management](#pairing-and-token-management) |
+| Repair pairing or token permissions | [Pairing and token management](#shared-device-pairing) |
 | Change the VirtualGlove Controller destination on the console | [Console connection settings](#console-connection-settings) |
 | Make a game select a profile | [Register games and select profiles](#register-games-and-select-profiles) |
 | Adjust gesture sensitivity | [Tune gesture sensitivity](#tune-gesture-sensitivity) |
@@ -219,21 +233,7 @@ restarts the vision worker using the saved calibration.
 Recalibrate only if you have moved the camera, changed your playing position,
 or notice unwanted movement while your hand is at rest.
 
-Setup pairing uses the saved console platform and address, with one active step at a time:
-choose a method, confirm the Controller certificate and matrix approval PIN,
-then provide the selected console's one-time code or SSH credentials. The page
-shows only the command for that platform and supplies its normal SSH username
-(`pi` for RetroPie, `root` for Recalbox and Batocera). LaunchBox uses
-one-time-code pairing and never accepts SSH password pairing. Unsaved settings block
-pairing. The existing two-minute authorization window and server attempt limits
-remain authoritative; changing the console or method is disabled during the
-active window. The console verifies that the selected platform matches its
-installed operating system before changing its token. Expiry clears secrets and
-offers fresh confirmation. A failed submitted request also requires confirmation
-again. Password entry is disabled until the certificate comparison and six-digit
-PIN step is complete. Ordinary HTTP shows only a link to secure Setup. Start/Stop
-and shutdown remain on Dashboard.
-See the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices).
+Setup links to Router’s shared HTTPS Pair console page on port 8444. Enter the console address and CR1 code, then confirm with the Matrix PIN. No SSH credentials are collected. See the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices).
 
 The Controller authority is stable across ordinary upgrades and website-leaf
 renewals. The leaf is renewed before expiry and regenerated if the Controller
@@ -698,7 +698,7 @@ it retain the original animation. The separate guarded `POST /api/attract`
 accepts `{"mode":"on"}`, `dim`, or `off`, with JSON content type and the
 same-origin `X-VirtualGlove-Action: attract` header. Connection indicators use the
 existing authenticated Games service in a background thread; see the
-[Matrix guide](MATRIX_GUIDE.md#attract-brightness-and-connection-pixels) for their
+[Matrix guide](CONFIGURATION_REFERENCE.md#legacy-standalone-attract-brightness-and-connection-pixels) for their
 meaning and refresh interval. Updated matrix firmware is required.
 
 Use the Setup page for routine changes. If you must edit the JSON directly,
@@ -743,66 +743,19 @@ program_f  program_g  program_h  program_i
 The startup profile does not assign a profile to a ROM. Per-game selection is
 controlled by the game registry on the selected console.
 
-## Pairing and token management
+## Shared device pairing
 
-Both machines must hold the same token:
+Controller Router is the connection authority. The UNO Q host broker runs secure Setup on TCP **8444** and stores schema-1 connections under `/home/arduino/.local/state/controller-router/connections.json`. The persistent console TLS service listens on TCP **55359**. Router has a management credential; VirtualGlove and R.O.B. Vision have distinct, independently revocable credentials. Browser responses contain only public connection and readiness fields.
 
-| Machine | Active private file |
-| --- | --- |
-| VirtualGlove Controller | Application `data/device.json`, in the `token` field |
-| RetroPie | `/etc/virtualglove/token` |
-| Recalbox | `/recalbox/share/system/virtualglove/data/token` |
-| Batocera | `/userdata/system/virtualglove/data/token` |
+`router_shared.pairing.Peer` checks the console certificate before sending a code or credential. The CR1 code contains a 100-bit certificate fingerprint prefix and a 60-bit authorization value. Console windows last 300 seconds, accept one successful transaction, and lock after five incorrect codes. Physical Matrix confirmation lasts 120 seconds and allows five attempts. Requests are bounded; servers allow at most 16 concurrent workers and require TLS 1.2 or later. Secure browser writes require matching HTTPS Origin, a fixed action header, and JSON content.
 
-Use one-time-code pairing whenever possible:
+Provisioning uses prepare, commit, and finalize. Private journals retain the previous Router registry and app configuration; interrupted or failed transactions restore those snapshots. Successful changes keep private before-connection backups. Legacy migration verifies an HMAC over a fresh nonce, canonical console ID, and observed TLS certificate; adoption signs the new connection transcript. Hostnames alone never authorize consolidation. Conflicting records remain unchanged for an explicit re-pairing choice.
 
-```sh
-sudo /opt/virtualglove/bin/virtualglove-pair
-```
+Products expose `/api/router-pairing` only to a capability-bearing local host request. Capability files are named `data/router-pairing-adapter-token` and must not be exposed to browsers. Adapters import app credentials into live caches without replacing ROM registries, calibration, or player settings. Router polls for newly installed console and UNO adapters and provisions them using its pinned management connection. Disabled app access stays disabled.
 
-On Recalbox use:
+The console helper has `/identity`, `/pair`, `/legacy-proof`, `/adopt`, `/manage`, and `/router` interfaces. `/manage` uses Router's credential for inspection, provisioning, and removal. `/router` uses the same credential with `RouterStore` revision checks for assignments and system policy. It never writes saved RetroArch configurations. Buddy's first-pair adapter adds only its Player 2 source to Router configuration; emulator configuration migration remains installation-only.
 
-```sh
-sh /recalbox/share/system/virtualglove/recalbox/virtualglove-service pair
-```
-
-On Batocera use:
-
-```sh
-/userdata/system/services/VirtualGlove pair
-```
-
-Leave the matching command running on the console, then complete pairing at
-`https://UNO-Q-NAME.local:8443/setup`. The code is single use and expires after
-five minutes. Setup shows only the command matching the saved platform. Password
-pairing is also available when the console accepts SSH password login; use
-`pi` on a standard RetroPie installation and `root` on Recalbox or Batocera.
-The password is used for one encrypted operation and is not stored. Both methods
-reject a platform mismatch before replacing the console token.
-
-The RetroPie token must contain at least 16 characters and should remain owned
-by `root`, readable by the `input` group, and inaccessible to other users:
-
-```sh
-sudo chown root:input /etc/virtualglove/token
-sudo chmod 0640 /etc/virtualglove/token
-```
-
-### Recover without browser pairing
-
-Use this fallback only when neither browser pairing method works. Both machines
-must already have the software installed.
-
-1. In App Lab, open the active application's private `data/device.json` and locate its `token` value.
-2. On the console, open the token file in its private data location listed at the start of this guide. Replace the contents with that same value on one line, without quotation marks. Do not enter it as a shell command.
-3. Restore the restrictive ownership and permissions required by that platform, then restart its VirtualGlove receiver.
-4. Test controller delivery from Dashboard. Clear the token from your clipboard and close the private file afterward.
-
-Manual token copying is an emergency Linux-console recovery path. LaunchBox
-should be repaired with its one-time-code pairing command instead.
-
-Do not transfer a pairing token through a command-line argument; process listings
-and shell history can expose it.
+Back up the UNO Q connection registry, its `tls` directory, and the private before-connection backups. On RetroPie, also back up `/var/lib/controller-router/link/{console-id,adapters.json,connection.json,certificate.pem,private-key.pem}` and each product's credential files. Restore requires the separately installed shared link service. Keep backups private; never include credentials in diagnostics or support reports. Do not snapshot a provisioning transaction in progress.
 
 ## Console connection settings
 
@@ -1466,9 +1419,9 @@ ports through a router or expose them directly to the Internet.
 | TCP `8100` | Browser to VirtualGlove Controller | Dashboard, Play, Help, Glove Academy, and ordinary Setup UI, including Games |
 | TCP `8088` | UNO Q host to VirtualGlove container | Internal web port; the shared install publishes it to the LAN as `8100` |
 | TCP `8101` / `8766` | Browser / paired console to R.O.B. Vision | R.O.B. Vision web pages / existing receiver API when that product is installed |
-| TCP `8443` | Browser to VirtualGlove Controller | TLS Setup and pairing workflow |
+| TCP `8443` | Browser to VirtualGlove Controller | VirtualGlove secure settings |
 | TCP `55358` | VirtualGlove Controller to console | Paired game registry reads, saves, and restoration |
-| TCP `55357` | VirtualGlove Controller to console | Temporary one-time-code pairing helper |
+| TCP `55357` | VirtualGlove Controller to console | Legacy pairing helper for older builds |
 
 The two UDP ports serve different purposes despite their similar numbers. The
 `port` in VirtualGlove Controller `device.json` is normally `55355`; the `port` in RetroPie
@@ -1820,15 +1773,11 @@ terminal-interface dependency. It detects the platform automatically, displays
 connection state, tests controls, assigns Players 1–4, and confirms save or
 rollback operations. Lower-level commands are `list`, `show`, `configure`,
 `check`, `apply`, and `rollback`. `--platform` can override automatic detection.
-`configure` accepts `--document PATH`; `apply` updates the platform's managed
-Libretro Player assignments. RetroPie resolves the final system configuration
-from its launch hook, Batocera persists managed RetroArch keys in
-`batocera.conf`, and Recalbox writes the managed block to
-`/recalbox/share/roms/.retroarch.cfg`. Recalbox's
-`retroarchcustom.cfg.overrides.cfg` is regenerated output and is not a durable
-configuration target. RetroPie keeps Router disabled until an
-authenticated Setup save or an explicit `apply`. Recalbox and Batocera migrate
-their existing version-1 Player 1 record automatically.
+`configure` accepts `--document PATH`; `apply` verifies configured outputs rather than writing saved RetroArch settings. `prepare-launch` requires `--retroarch EXECUTABLE` and `--output SESSION_FILE` and emits routing diagnostics plus temporary settings. The shared launch adapter manages that file for a game’s lifetime.
+
+RetroPie installs the adapter in existing `emulators.cfg` commands. Batocera inserts it at the final Libretro execution boundary after config generation. Both use the same per-system policy as physical-source forwarding. Recalbox retains its separate platform integration. RetroPie’s standalone VirtualGlove path remains available until Router assignments are saved or another product installs Router.
+
+On RetroPie, installation backs up changed emulator registrations and Router-owned profiles and keeps them `pi:pi`. It also removes recognised obsolete Router-owned indexes from the FCEUmm and Nestopia core overrides. It preserves their button and hotkey settings. Service startup, game hooks, idle checks, and assignment saves never rewrite saved `retroarch.cfg` files. Core or game overrides loaded afterward can still override session routing; troubleshoot those without replacing unrelated settings.
 
 When Libretro gameplay becomes active, Router begins its physical output
 neutral, resolves the current sources and indexes, and then admits physical
@@ -1847,7 +1796,7 @@ persistent-share launchers with `sh`, because the shares do not permit direct
 program execution.
 
 The version-2 `controller-router.json` document contains `platform`, `players`,
-and `virtualglove_player`. Each player entry contains a slot from 1–4 and stable
+`virtualglove_player`, `physical_scope`, and `physical_systems`. Scope is `nes`, `all`, or `systems`; selected mode lists canonical console system IDs. Fresh configurations use NES only, while existing policy is retained. Each player entry contains a slot from 1–4 and stable
 physical source records. Sources contain the friendly identity and authoritative
 last-known EmulationStation mapping, never `eventN`, `jsN`, or a saved RetroArch
 index. While idle and before each supported launch, Router validates the live
@@ -1904,23 +1853,11 @@ sudo /opt/virtualglove/bin/virtualglove-receiver --listen 0.0.0.0 --token-file /
 sudo systemctl start virtualglove-receiver.service
 ```
 
-### Start one-time-code pairing
+### Open a shared pairing window
 
-Use `/opt/virtualglove/bin/virtualglove-pair` on RetroPie with `sudo`. It opens a
-temporary TLS server, prints a code, installs the received token, and restarts
-the receiver. Complete the browser steps while it is running.
+Rerun the console installer, or run the installed Controller Router `pair-console` helper. On RetroPie it is `/var/lib/controller-router/pair-console`; on Batocera it is `/userdata/system/controller-router/pair-console`. The helper obtains local administrative permission when needed and prints a CR1 code that expires in five minutes. It never prints a permanent credential.
 
-| Flag | Default | Meaning |
-| --- | --- | --- |
-| `--listen ADDRESS` | `0.0.0.0` | Local IPv4 address for the temporary server. |
-| `--port NUMBER` | `55357` | Pairing server TCP port. The browser pairing client uses the standard port; keep the default for that workflow. |
-| `--token-file PATH` | `/etc/virtualglove/token` | Destination for the paired token; keep it aligned with the receiver's token file. |
-| `--timeout SECONDS` | `300` | Lifetime of the pairing server. The five-minute default gives time to confirm the correct console; the code remains single use and attempts are limited. Use a positive value. |
-| `--receiver-service NAME` | `virtualglove-receiver.service` | systemd service to restart after pairing succeeds. |
-| `-h`, `--help` | — | Prints usage and exits. |
-
-The command returns `0` after pairing completes or `2` when the pairing window
-times out. Other failures are reported as errors.
+Open **Apps > Setup > Pair console** on the UNO Q, verify its certificate, enter the console address and CR1 code, then enter the Matrix PIN. No additional receiver-start command is needed. Existing connections do not need new pairing during an ordinary upgrade.
 
 ### Select a profile from RetroPie
 
@@ -2274,7 +2211,7 @@ factory `/opt/openocd`; it does not install Arduino CLI, `arm-zephyr-eabi`, or a
 compiler. Source compilation remains a repository engineering workflow.
 Platform installation, compile-only validation, and firmware upload are
 separate operations; see
-[Build and install matrix firmware](CONFIGURATION_REFERENCE.md#build-and-install-matrix-firmware).
+[Build and install matrix firmware](CONFIGURATION_REFERENCE.md#build-and-install-legacy-standalone-matrix-firmware).
 
 ## Bad Street Brawler Glove Zap
 
@@ -2563,7 +2500,7 @@ the installed software and normally start faster.
 ### Setup page does not open
 
 - Ordinary settings: `http://UNO-Q-NAME.local:8100/setup`
-- Secure pairing: `https://UNO-Q-NAME.local:8443/setup`
+- Shared secure pairing: `https://UNO-Q-NAME.local:8444/setup`
 - Try the board's IP address if `.local` does not resolve.
 - HTTPS and HTTP are not interchangeable on these ports.
 
@@ -2586,13 +2523,9 @@ Keep Camera set to **Automatic — choose the connected camera** unless you inte
 For stage timings and further checks, see
 [Vision startup and timing](CONFIGURATION_REFERENCE.md#vision-startup-and-timing).
 
-### Password pairing fails
+### Pairing does not complete
 
-- Prepare a new attempt and use its new matrix PIN.
-- Confirm the selected console's username and password can log in through SSH.
-- RetroPie normally uses `pi`, which must be allowed to run `sudo`; Recalbox and
-  Batocera normally use `root` and do not use `sudo` for this pairing step.
-- Prefer the one-time-code method if password SSH is disabled.
+Use Controller Router’s **Pair console** page on HTTPS port 8444. This flow does not use SSH usernames or passwords. Obtain a fresh CR1 code, finish any game, check the console address, and read the current Matrix PIN. A certificate mismatch needs a new verified pairing; an unavailable Matrix must recover before confirmation.
 
 ### Controller does not appear on RetroPie
 
@@ -2993,11 +2926,11 @@ Updates take an exclusive lock, validate all paths before writing, back up chang
 and removed files, and publish the new manifest last. A failed write rolls back
 the payload. A process interruption leaves `.virtualglove-install-pending.json`;
 another update refuses to proceed until recovery. Backups include the old manifest,
-changed files, `transaction.json`, and `RESTORE.txt`. An installation failure after
-payload staging (for example, host setup or App Lab startup) does not undo a
-successfully committed payload; use the reported backup or previous release.
+changed files, `transaction.json`, and `RESTORE.txt`. The manifest transaction alone covers payload copying. The console installer adds
+recovery through host setup and final validation, as described below. Standalone
+payload updates require their backup for failures after payload commit.
 
-The normal installer `--check` reports missing or modified managed files and an
+The setup checker `--check` reports missing or modified managed files and an
 unfinished transaction without changing anything. In 0.5.0 it also reports any
 retired Python package left behind by a v0.4.2 upgrade. For payload-only checks:
 
@@ -3018,6 +2951,12 @@ recovery. The manifest never scans or deletes unknown user files or directories.
 `--source STAGING --backup BACKUP` applies a staged payload; BACKUP must be a new
 location outside both source and installation trees. This is used by the deployment
 script; normal users should use the two standard installers.
+
+### Console installer recovery
+
+`install-package.py` holds an exclusive console-upgrade lock and takes a checksummed snapshot before replacing the payload or its integrations. The snapshot includes service definitions, launcher and Router settings, private pairing credentials, emulator registrations and profiles, and VirtualGlove-managed native cores. Existing ownership and permissions are retained. Runtime data and caches are excluded. On Batocera, only Router’s own generator bind overlay is detached before replacement or recovery.
+
+The private `.console-upgrade-pending.json` journal remains until final checks succeed. A caught failure restores the snapshot immediately; an abrupt termination is recovered on the next installation attempt. Recovery verifies all saved copies before deleting installed files, verifies restored copies, reloads restored service definitions, and restores previous activation. If recovery cannot complete, it retains the journal and backups rather than reporting success. A pending pairing or gameplay verification does not count as a software failure. Package-manager operations are outside this transaction.
 
 ## Optional native latency diagnostics
 
@@ -3087,3 +3026,150 @@ reported. Use `benchmark-vision-replay.py` followed by
 `benchmark-native-motion-curve.py` to compare the old deployed experiment, its
 safely capped form, the bounded speed curve, and unsmoothed latest coordinates.
 See the [Engineering Journey](ENGINEERING_JOURNEY.md).
+
+## Standalone Matrix firmware reference
+
+These retained procedures describe earlier standalone firmware. Current shared installations use Controller Router as the sole Matrix owner. Do not flash a product sketch over the shared Router sketch.
+
+### Legacy standalone startup: logo, hourglass, then your mode
+
+A typical startup with **Gestures off** selected is:
+
+1. The board shows its Arduino boot logo and system heart animation.
+2. The hourglass appears while VirtualGlove starts.
+3. Once startup finishes, gestures-off mode shows the selected attract animation or connection pixels.
+
+| Arduino boot logo | System heart | VirtualGlove hourglass |
+| --- | --- | --- |
+| <img src="images/matrix/Boot.jpg" alt="Arduino boot logo: system startup before the app display." width="190"> | <img src="images/matrix/Heart.jpg" alt="System heart animation: startup is progressing; the app may still be loading." width="190"> | <img src="images/matrix/Hourglass.jpg" alt="Hourglass: VirtualGlove is starting." width="190"> |
+
+With an active startup profile, the later display can instead be its profile
+letters. Opening Play or Glove Academy selects **L**; enabling tuning selects **T**.
+Wait for the camera view and startup message in your browser before practicing
+or playing.
+
+The hourglass means startup is in progress. If it stays on the display, open
+Dashboard and check the startup or error message.
+
+The standalone firmware workflow below applies to older installations without shared Controller Router. Current shared installers update Router’s Matrix package instead.
+
+Standalone releases include the Matrix firmware already compiled for the UNO Q.
+Installation verifies its checksum and the board model, then uses the board's
+factory flashing support. It does not download the large Zephyr compiler on the
+Controller. Developers can still rebuild the same pinned source through the
+repository engineering workflow.
+
+### Legacy standalone attract brightness and connection pixels
+
+In **Setup → Matrix attract mode**, select **On**, **Dim**, or **Off** and choose
+**Save attract mode**. The preference survives upgrades and restarts. On is the
+default and preserves all eight brightness levels; Dim retains the animation
+with lit pixels mapped to levels 1–2. Off suppresses the animation.
+
+Off keeps four faint pixels along the bottom-left edge, with a dark pixel
+between each indicator. From left to right: app running; console Games service
+reachable; authenticated console response; and **Networking**, meaning a physical
+Wi-Fi or Ethernet link is up. Ethernet through a USB dock counts when Linux
+recognises it as a physical Ethernet interface. Docker bridges and loopback do not.
+
+A dark fourth pixel can mean disconnected or unavailable telemetry; Setup uses
+red and grey to distinguish them. A green link does not prove an IP address,
+Internet access, or game delivery. Update the host sampler for Ethernet support;
+its script, service, and `wifi-status.json` filenames are retained for upgrades.
+The existing four-pixel firmware needs no new format or flash for this change.
+
+![Attract-mode controls in Setup](images/matrix/attract-settings.png)
+
+Setup repeats these four checks in a labelled **Controller status** panel at the top of the page, alongside tracking, controller output, and the saved console. Green means confirmed, red means disconnected or not confirmed, and grey means unknown. The physical pixels remain faint and monochrome.
+
+Connection checks run in the background while Off is selected and the display
+is idle, or while a visible Setup page requests status, at most once every ten seconds. Results expire after thirty seconds.
+They never send gameplay input. This uses the selected console's Games service
+on TCP port `55358`; no receiver change is required.
+
+The setting affects only the gestures-off attract display. Game/profile artwork,
+T, L, startup, errors, pairing, and application shutdown retain their normal
+brightness and behaviour. Saving does not restart the tracker. Install updated
+matrix firmware before using these controls; the footer identifies older firmware.
+
+### The legacy standalone idle glove show
+
+<img src="images/matrix/idle-glove.png" alt="Simulated idle glove: separated fingers, thumb, and wrist cuff." width="320">
+
+The roughly four-second loop opens with a lightning bolt flashing twice. The
+cuff slides in from the right and the hand rises above it, curls into a fist,
+and reopens. A small spark climbs toward the fingertips, then the glove gently
+brightens and settles. Separated fingers and a distinct thumb keep the silhouette
+readable; a dim palm, highlighted edges, and a wrist buckle use the matrix's
+eight brightness levels (0 is off, 1–7 are lit). The bottom two wrist rows sit one
+pixel farther right, with the cuff entrance and wrist spark aligned to match.
+
+The illustration above simulates the LED levels; actual brightness and glow
+depend on the physical display. Open Glove Academy to practice, or choose a game
+profile on Dashboard when ready to play. Existing installations need a
+[matrix firmware update](CONFIGURATION_REFERENCE.md#build-and-install-legacy-standalone-matrix-firmware)
+to show the revised animation; copying website files alone does not update it.
+
+A flashing spark here does **not** mean you performed Glove Zap. This animation
+means gestures are off. It is different from selecting a game profile and merely
+pressing **Stop controller**: that keeps the camera/profile active and can leave
+profile letters visible.
+
+
+
+## Diagnose console input delivery
+
+These platform checks are for maintaining a console installation after the player-facing [troubleshooting steps](TROUBLESHOOTING.md) have been tried.
+
+If the ROM was added after VirtualGlove was installed, refresh the frontend's
+game list before testing it. Recalbox and Batocera also need a VirtualGlove
+service restart or reboot after a newly registered Super Glove Ball ROM so the
+missing exact-ROM native choice can be created. In LaunchBox, rerun the current
+installer if an older installation still points **VirtualGlove RetroArch** at a
+batch file or leaves standard RetroArch assigned to an NES game. The current
+installer uses the Python bridge directly and migrates standard RetroArch NES
+assignments while preserving genuinely different emulator overrides.
+The bridge also ensures the managed receiver on every launch. If Dashboard
+shows **Controller connection stopped** while a LaunchBox game is active, close
+the game and LaunchBox, rerun the current installer, and relaunch the game. The
+upgrade stops duplicate receivers left by an older Python environment without
+changing ROMs, saves, pairing, or the game registry.
+
+If native hand movement reaches Super Glove Ball on LaunchBox but the V-sign
+Start gesture or thumbs-up Select gesture does not, close RetroArch and rerun
+the current installer. Current builds keep native gestures on the guarded Power
+Glove channel instead of also sending ordinary RetroPad input. Dashboard recognition plus a working physical joypad does not
+by itself prove that an older Windows receiver has this correction.
+
+On generic RetroPie, confirm the separate `VirtualGlove` input device and its
+Player 1 mapping. If optional Controller Router is enabled—or on Recalbox and
+Batocera—open its Setup card or run `virtualglove-controller-router check`.
+Confirm each saved source is connected, every enabled **VirtualGlove Merged
+Player 1–4** output exists, and the current RetroArch player indexes are assigned.
+Merged devices are intentionally neutral in EmulationStation and become active
+for physical input during Libretro gameplay. VirtualGlove gesture input remains
+limited to supported FCEUmm, stock Nestopia, and native Super Glove Ball paths.
+On Recalbox, the installer check must report **Persistent Libretro routing
+override**. Its generated `retroarchcustom.cfg.overrides.cfg` is expected to be
+rewritten at launch; do not repair that temporary file manually.
+On LaunchBox, the installer must
+report `network-retropad`, a random high loopback port, and a validated isolation
+rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
+and physical XInput remain available. If gestures are recognised but FCEUmm does
+not move, rerun the current installer to restore the managed ordinary-game
+configuration and receiver route rather than changing global RetroArch settings.
+If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
+the matching VirtualGlove Windows installer. The affected game continues in
+FCEUmm joystick mode. On Batocera, an **ACTION** result for the packaged native
+core means the architecture could not be resolved or the on-console load test
+failed; leave FCEUmm selected and do not copy a core from another target.
+Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
+before editing RetroArch settings.
+
+If a fresh Recalbox/Batocera update reports several possible initial Player 1 controllers,
+run the installer with `--list-player1-devices`, identify the intended pad, and
+repeat it with `--player1-device DEVICE-ID`. Two identical, non-serialized pads
+are not guessed. If the selected pad disconnects during play, only its held
+state releases; VirtualGlove remains available. Reconnect that saved pad, or
+explicitly select its replacement. Seeing no response from the merged device in
+EmulationStation is expected—it deliberately becomes active only in RetroArch.

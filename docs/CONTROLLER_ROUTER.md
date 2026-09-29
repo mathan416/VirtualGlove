@@ -1,100 +1,111 @@
-# Controller Router
+# Controller Router: get your controllers ready to play
 
-## Choose a controller app on the UNO Q
+Controller Router lets you choose which gamepad controls each player, and which systems use those choices. It also gives VirtualGlove and Buddy a shared home on your UNO Q.
 
-Start a game registered with VirtualGlove on the paired console and Controller Router selects VirtualGlove automatically. Gyromite and Stack-Up select R.O.B. Vision when that app is installed and paired. You do not need to open a website to play. Both services and websites remain online, but only the game's app controls input and the UNO Q Matrix. Router returns to its neutral animation when the game ends.
+Already happy with your controls? Keep your saved choices. You only need this guide when you want to change a player, choose a system, or troubleshoot a pad.
 
-Open your UNO Q's `.local` address or LAN IP address without a port to view or manually select an app. When only VirtualGlove is installed, that address opens it. When both apps are installed, it shows a chooser. Finish any live game before changing apps manually. A direct top-level visit to either product's browser port selects it when no game is active. Use **Apps** in either app to return to the chooser. **Apps** appears only when both products are installed. The chooser opens the selected product’s already-running website; it does not start or stop either product.
+## Open Setup
 
-Controller Router owns the UNO Q Matrix firmware. After reboot no app is selected and Router shows a neutral animation until a registered game reports its session. The selected app can request its own status, game, or temporary pairing animation. Its game input stops if Router's short lease expires. Pairing and manual controller changes are blocked during a live game. Existing console assignments, pairing, and game registries remain in place during upgrades.
+1. In your browser, open your UNO Q's address, such as `http://your-uno-q.local/`.
+2. Choose **Setup** on the Controller Router page.
+3. Select your paired console under **Console connection**.
 
-VirtualGlove's browser is on port **8100**; its secure Setup service remains on **8443**. This UNO Q app chooser is separate from the console player assignments described below.
+You will see **Players** first, then **Systems**. Each console keeps its own settings. If no console appears, choose **Pair console** in Controller Router Setup first.
 
-Controller Router gives physical gamepads and VirtualGlove clear player assignments in RetroArch. It creates up to four merged gamepads, named **VirtualGlove Merged Player 1–4**. Each merged player can receive one or more physical controllers; one chosen player can also receive VirtualGlove gestures in supported NES games.
+## Choose who plays
 
-The original physical controllers still navigate EmulationStation. During a Libretro game, Router sends their input through the assigned merged player so one button press is not interpreted twice. The merged devices are deliberately neutral in EmulationStation. Controller Router does not manage standalone emulators outside Libretro.
+Before assigning a gamepad, configure its buttons in EmulationStation, your console's game menu.
 
-## Where Router is used
+1. Exit any running game.
+2. In Router **Setup > Players**, find your gamepad by name.
+3. Choose **Player 1**, **Player 2**, **Player 3**, or **Player 4**. Choose **Unassigned** if you do not want that pad to join a Router player.
+4. Choose your gesture player under **VirtualGlove player**, or leave it **Unassigned**.
+5. Choose **Save assignments**.
+6. Launch a game to try the new choices.
 
-| Platform | What to expect |
+Keep a physical gamepad assigned to **Player 1** for the usual menu and exit controls. Several pads can share one player; a pad can belong to only one player. Buddy stays on **Player 2** for Gyromite's red and blue gates.
+
+A game must support additional players for Player 3 or Player 4 to do anything. Assigning four pads does not turn a two-player game into a four-player game.
+
+## Choose which systems use Router
+
+Want Router for NES but your normal controls for Mega Drive / Genesis? You can choose each system separately.
+
+1. With the game closed, open **Setup > Systems**.
+2. Under **Routing selection**, choose **Choose systems individually**.
+3. For each listed system, choose one of the following options.
+4. Choose **Save assignments**, then launch your next game.
+
+| Choose | What happens in a game |
 | --- | --- |
-| RetroPie | A standard VirtualGlove installation keeps its separate gamepad. Controller Router is optional unless another installed project has enabled the shared Router. |
-| Recalbox and Batocera | Controller Router is the normal route for physical gamepads and supported VirtualGlove input. Existing Player 1 selection is carried into the Router configuration. |
-| LaunchBox | Uses its separate Network RetroPad path; the Linux Controller Router card does not apply. |
+| **Controller Router** | The system uses the player assignments you saved in **Players**, with the buttons you configured in EmulationStation. |
+| **My existing setup** | The system uses its normal controller setup. Router adds no player-routing changes for that game. |
 
-Controller Router changes *which player receives input*. It does not change a game's player count, remap buttons in EmulationStation, register ROMs, or turn an ordinary NES game into a native Power Glove game.
+**Buddy's games and VirtualGlove require Controller Router enabled for NES.** You can still choose **My existing setup** for NES when you want to use your own controls instead.
 
-## Assign players in Setup
+New Router setups start with **NES only**. Upgrades keep your choices. **All Libretro systems, including newly added systems** applies Router to every supported RetroArch system. In individual mode, a newly discovered system starts with **My existing setup**.
 
-1. Configure each physical gamepad in EmulationStation first. Router reads those saved button mappings and shows the controllers by name and a short identity suffix.
-2. Open the live VirtualGlove **Setup** page, select the paired RetroPie, Recalbox, or Batocera console, and find **Controller Router**. Opening the card does not save or change anything.
-3. Review each physical controller's suggested or saved player. Choose **Player 1–4** or **Unassigned**. Several physical pads may share one player; one physical pad belongs to only one player.
-4. Choose the **VirtualGlove player** if you want joystick gestures in supported FCEUmm or stock Nestopia NES games. Only one player can receive this VirtualGlove. You can leave it unassigned for a physical-only configuration.
-5. Close any running RetroArch game, then choose **Save assignments**. Relaunch a game to use the saved routing.
+The list covers systems that offer supported RetroArch emulators. Separate emulators, such as a standalone Amiga emulator, keep their own controls. Your choice also stays saved if a system is temporarily unavailable.
 
-**Player 1 needs a physical controller** for the usual RetroArch menu and exit hotkeys. Setup warns when it has none. VirtualGlove Select remains NES Select and never becomes the physical hotkey. The original pad continues to work in EmulationStation; test the merged pad inside a Libretro game.
+## Check a gamepad
 
-## Check controllers and recover a save
+1. In Router Setup, choose **Test inputs**.
+2. Press a direction or button on the pad during the next five seconds.
+3. Read the result, then repeat for another pad if needed.
 
-Choose **Check controllers**, then press a direction or button on each connected pad during the ten-second test. The result names the responding controls, the saved player, and any unavailable controller. A connected pad with no reported input may simply not have been pressed during the test. **Restore previous assignments** returns to the last saved configuration after a change; close the game before restoring it.
+**No button presses detected** can simply mean you did not press anything during the test. Try again before changing settings.
 
-- **Connected:** the saved device is present now.
-- **Unavailable:** Router cannot find that saved device. Reconnect the same pad, or configure a replacement in EmulationStation and assign it in Setup.
-- **Mapping refreshed:** EmulationStation has a newer valid button map for the same pad. Its player assignment remains; the new map is used at the next game launch.
+| Status | What to do |
+| --- | --- |
+| Connected | The pad is available. Try **Test inputs** to identify it. |
+| Unavailable | Turn on or reconnect the saved pad. If you replaced it, configure and assign the new one. |
+| Mapping refreshed or updated | Router found your newer EmulationStation button setup. Exit and relaunch the game to use it. |
 
-Router saves a stable controller identity, not a Linux `eventN` or `jsN` number. It resolves the current RetroArch port at launch. A reboot or another USB pad can change device numbers without requiring a new player assignment.
+**Reload** brings back the saved choices and discards unsaved edits. **Restore previous** restores the preceding saved setup. Exit the game before saving or restoring.
 
-## What happens in a game
+## Start a game or choose an app
 
-Assigned physical pads work immediately in Libretro games. VirtualGlove joystick gestures are admitted only in supported FCEUmm and stock Nestopia NES paths. After a game starts, rest your hand at neutral once; Router discards glove input held in the frontend so it cannot become an accidental first move. Native Super Glove Ball still uses its separate Nestopia (VirtualGlove) input path.
+Launch a registered game on your paired console. Router selects VirtualGlove or R.O.B. Vision automatically, so you do not need a browser open for the controller to join the game. Only that app supplies game input and display cues. When the game ends, the UNO Q returns to its neutral display.
 
-If two physical pads share Player 1, either can control that player. A held button remains active until all sources holding it release. If a pad disconnects, Router releases only that pad's held input. At game exit, Router releases every merged input and returns the physical pads to normal frontend use.
+To open an app yourself, visit the UNO Q address. With one app installed, it opens directly. With both installed, choose VirtualGlove or R.O.B. Vision. **Apps** in either app returns to the chooser; it appears only when both are installed. Finish a game before changing apps manually. Both apps stay available in the background.
 
-## If the wrong controller responds
+After a reboot, the UNO Q waits for a game or your choice. You do not need to reinstall or pair again.
 
-**My usual pad works in EmulationStation but not in the game.** Try another connected pad first. Your usual pad may be assigned to Player 2 while another is Player 1. Check the names and slots in Router, run **Check controllers**, then correct the assignment with the game closed.
+## Get back to your game
 
-**A pad is marked Unavailable.** Reconnect that exact pad and test it in EmulationStation. A replacement with a different identity is not silently substituted; assign the replacement explicitly.
+**My pad works in the game menu but not in the game.** Try another connected pad: yours may be assigned to Player 2. Exit the game, check **Players**, and use **Test inputs** to identify the pad you want on Player 1. Save and relaunch.
 
-**VirtualGlove recognises my hand but the game does not move.** Confirm a supported NES core, the selected VirtualGlove player, active controller delivery, and one fresh neutral hand after game launch. Test a physical pad separately to tell routing from recognition apart.
+**A wireless pad went to sleep.** Wake it or reconnect it. Router keeps its player controllers connected and returns the pad to its saved player. If the Router service itself restarted, exit and relaunch the game once it is ready.
 
-**Buttons changed after an EmulationStation remap.** Exit and relaunch the game. Router uses the new valid mapping for the saved device without moving it to another player.
+**My buttons changed after I remapped them.** Exit the game, confirm the new buttons in EmulationStation, and relaunch. Your player assignment stays saved.
 
-For the differences between joystick and native glove input, see [Input Modes](INPUT_MODES.md). For platform-specific failures, see [Troubleshooting by Symptom](TROUBLESHOOTING.md).
+**I cannot save.** Finish the running game first. If another page changed the settings, choose **Reload**, make your choices again, and save.
 
+**The UNO Q is showing the wrong app.** Check that the game is registered in the right app and that the console is paired with this UNO Q. Exit the game before making changes.
 
-## Stable game routing
+## Play with VirtualGlove
 
-The console adapter resolves each merged controller by name and vendor/product
-identity immediately before RetroArch starts. Missing or duplicate outputs stop
-the routed launch with instructions to check Router and relaunch.
+After the game starts, rest your hand at its saved centre once, then make your first gesture. A physical Player 1 pad supplies menu and exit hotkeys; glove Select remains the game’s Select button.
 
-RetroArch 1.19.1 uses a temporary appended configuration containing its current
-udev indexes. Supported newer executables use strict device reservations. The
-installed RetroArch does not need an upgrade. Saved `retroarch.cfg` files are not
-rewritten by Router startup, game detection, or launch hooks. The installer may
-register the adapter in `emulators.cfg`; RetroPie files remain owned by `pi:pi`.
+For joystick versus native Super Glove Ball controls, see [Input Modes](INPUT_MODES.md). For camera, pairing, or game problems, see [Troubleshooting](TROUBLESHOOTING.md). Advanced routing details are in the [Configuration Reference](CONFIGURATION_REFERENCE.md#configure-controller-router).
 
-Physical controllers can sleep, wake, disconnect, and reconnect while the merged
-outputs remain connected. They return to their saved players. Assignment changes
-apply on the next launch. If Router itself restarts or loses its output devices,
-end the game and relaunch after the service is ready; rebuilding outputs during
-play cannot safely restore a legacy session's slots.
+## Pair once for both apps
 
-The same routing covers ordinary Libretro games, including PSP. Super Glove Ball
-keeps its native hand-input path, while merged pads supply physical controls and
-hotkeys. Existing core arguments, appended configurations, and cabinet hooks are
-preserved. Diagnostics record compatibility mode, device name, hardware identity,
-and the resolved launch slot.
+Pair once for the UNO Q and console. VirtualGlove and R.O.B. Vision receive their own private credentials automatically when installed on both devices. Installing the other app later adds its access without another pairing. No SSH username or password is required.
 
-## Choose systems
+Finish the game before pairing, changing app access, or removing a connection. Each console connects to one UNO Q at a time. Connecting it to another requires a new console code and Matrix confirmation.
 
-1. Open **Setup** at the UNO Q address and choose the paired console.
-2. Under **Systems**, choose **Controller Router** or **My existing setup** beside each system. Mega Drive / Genesis, PSP, and other systems can use different choices. These choices apply to Libretro emulators.
-3. Exit the running game, then choose **Save assignments**. The selection applies to the next launch.
+1. Open **Apps > Setup > Pair console**. Both product Setup pages have an **Open Pair console** link to this same page.
+2. Open the secure address printed by the UNO Q installer, using its `.local` name or LAN IP. Pairing uses HTTPS port **8444**.
+3. Before accepting the local certificate, compare the browser's SHA-256 fingerprint with the fingerprint printed by the UNO Q installer. During confirmation, its beginning also appears after **ID** on the Matrix. Stop if they differ.
+4. Enter the console hostname or IP address and paste its complete **CR1 connection code**. The console installer prints this single-use code; it lasts five minutes.
+5. Choose **Continue**, read the six Matrix digits after **PN**, and enter them within two minutes.
+6. Choose **Connect**. Wait for **Connected** and check each app's readiness below it.
 
-Buddy's games and VirtualGlove require Controller Router enabled for NES. NES can also use **My existing setup** when you want your own controls.
+### Check or repair a connection
 
-Fresh installations enable NES only. Upgrades retain existing selections. In individual selection mode, a newly added system uses **My existing setup**. **All Libretro systems** includes newly added systems too.
+Open **Pair console > Your consoles**. **Connected** means Router has verified the console connection. **Unavailable** means it could not reach the console. **Needs attention** means the certificate, identity, or app setup needs review. App readiness is shown separately.
 
-Router uses EmulationStation button mappings for enabled systems. **My existing setup** preserves the original launch arguments and adds no Router routing overrides. Router does not rewrite saved RetroArch configuration files when you save or start a game. Player assignments are shared across enabled systems.
+Choose **Check and repair connections** after reconnecting a device or installing another app. Use **Disable** beside an app to remove only its access, or **Remove console** to remove the whole connection. Finish any game first. A certificate change requires a fresh pairing; do not ignore the mismatch.
+
+For another code, rerun the console installer or its pairing command. Existing game filenames and player assignments remain saved. Incorrect, expired, or already-used codes require a new window; five incorrect Matrix confirmations lock the current window.

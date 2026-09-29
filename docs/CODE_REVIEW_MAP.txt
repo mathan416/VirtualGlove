@@ -2,8 +2,8 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.3
-Git-visible files: 765
-Python test modules: 78
+Git-visible files: 775
+Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
 
@@ -119,7 +119,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 78 test modules. JavaScript
+Normal Python discovery currently contains 79 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-765 tracked or non-ignored files are present in this checkout. Ignored
+775 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -236,9 +236,15 @@ are intentionally omitted.
 |   |   |-- controller-router-products.service
 |   |   |-- display_runtime.py
 |   |   |-- portal-compose.yaml
-|   |   `-- products.py
+|   |   |-- products.py
+|   |   `-- routing.py
 |   |-- python
-|   |   `-- main.py
+|   |   |-- assets
+|   |   |   |-- buddy.png
+|   |   |   `-- pixel-pal.png
+|   |   |-- index.html
+|   |   |-- main.py
+|   |   `-- setup.html
 |   |-- client.py
 |   |-- display_protocol.py
 |   |-- install.py
@@ -473,6 +479,7 @@ are intentionally omitted.
 |   |-- MATRIX_GUIDE.md
 |   |-- NATIVE_EMULATION_EXPLAINED.md
 |   |-- power-glove-rom-input-audit.md
+|   |-- RELEASE_REVIEW_2026-09-28.md
 |   |-- SECURITY.md
 |   |-- super-glove-ball-native.md
 |   `-- TROUBLESHOOTING.md
@@ -856,10 +863,13 @@ are intentionally omitted.
 |   |-- router_shared
 |   |   |-- __init__.py
 |   |   |-- controller_router.py
+|   |   |-- launch.py
+|   |   |-- launch_install.py
 |   |   |-- LICENSE
 |   |   |-- merged_gamepad.py
 |   |   |-- retroarch_udev.py
 |   |   |-- storage.py
+|   |   |-- systems.py
 |   |   `-- virtual_sources.py
 |   `-- virtualglove
 |       |-- __init__.py
@@ -942,6 +952,7 @@ are intentionally omitted.
 |   |-- test_connection_doctor.py
 |   |-- test_connectivity_background.py
 |   |-- test_console_monitor.py
+|   |-- test_console_recovery.py
 |   |-- test_control_server.py
 |   |-- test_controller_protocol.py
 |   |-- test_controller_router.py

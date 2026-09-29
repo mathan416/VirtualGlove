@@ -10,6 +10,15 @@ The **VirtualGlove Controller (Arduino UNO Q)** hosts Setup, Glove Academy,
 and Help. Use **Help → This console** for addresses specific to your installation.
 The examples below use placeholders, not addresses that every build shares.
 
+## A console upgrade was interrupted
+
+1. Keep the console connected and close any running game.
+2. Rerun the same VirtualGlove installation command. A pending upgrade is recovered before software replacement begins again.
+3. Watch for **RECOVERED**. This confirms restoration of the previous managed software, configuration, and service state.
+4. If recovery fails, retain the printed backup directory and its pending journal. A checksum error means the installer has refused an unverified recovery copy; a service error leaves the journal available for another recovery attempt.
+
+Normal installation or validation errors trigger recovery immediately. Pairing credentials, registries, permissions, and ownership are preserved. Operating-system package changes are outside this recovery.
+
 ## Buster package source moved
 
 An older RetroPie image may stop during installation with a message that
@@ -40,7 +49,7 @@ pairing and settings remain intact.
 
 1. Check power and give the Controller time to finish starting.
 2. Put your browser device on the same reachable LAN. Check the router's client list for the Controller's current IP address.
-3. Try `http://CONTROLLER-IP:8100/setup`. Secure pairing uses `https://CONTROLLER-IP:8443/setup`.
+3. Try `http://CONTROLLER-IP:8100/setup`. Shared pairing uses `https://CONTROLLER-IP:8444/setup`.
 4. If the IP works but `.local` does not, investigate hostname resolution and guest-network/client isolation. With Wi-Fi and USB Ethernet connected, the Controller can have more than one address.
 
 Use the plain `/setup` address; no `?ui=2` suffix is needed. Old query-string bookmarks still open Setup.
@@ -130,72 +139,19 @@ adding a runtime setting to `device.json`.
 
 ## The hand is detected but the game does not move
 
-1. Close local Play and Glove Academy; they pause cabinet input. Finish tuning, then explicitly start controller delivery if required.
-2. Check the selected player and any request to set a fresh centre. Selecting a player loads their saved centre automatically. Use **Centre hand** if no centre is saved or the camera or playing position has changed.
-3. Select **Start controller**. Armed means delivery is permitted when a valid game session or intentional manual profile is active; it does not mean packets are always being sent.
-4. Check Setup's console-service and authenticated-response markers. A reachable service with unconfirmed authentication suggests pairing needs attention. Neither marker proves emulator input consumption.
-5. Confirm that the game has actually started in RetroArch. The exact ROM filename must be registered; `.nes`, `.zip`, and `.7z` are separate entries.
-6. Check the emulator and controller selection. For native Super Glove Ball, choose Nestopia (VirtualGlove); for its joystick fallback choose FCEUmm.
+1. Close **Play** and **Glove Academy** before playing on your console.
+2. Choose your player. Use **Centre hand** if you moved the camera or changed your playing position.
+3. Choose **Start controller** on Dashboard.
+4. Open **Setup** and check the console connection. If it asks you to pair again, complete pairing before continuing.
+5. Check that the game's filename is in your game registry. A zipped game and an unzipped game need their own entries.
+6. For Super Glove Ball's hand controls, select **Nestopia (VirtualGlove)** on your console. For joystick controls, select **FCEUmm**.
+7. After the game appears, rest your hand in the centre once, then try moving it.
 
-If Controller Router is enabled, return the hand to neutral once after the game
-appears. Router deliberately rejects directions and button gestures until that
-fresh neutral observation, while physical controls remain available
-immediately. If no physical controller responds until VirtualGlove is stopped,
-the console has an older Router build; close the game and rerun the current
-console installer.
+If you just added the game, refresh your console's game list. On Recalbox or Batocera, restart the console after registering Super Glove Ball so its special emulator choice appears.
 
-If the ROM was added after VirtualGlove was installed, refresh the frontend's
-game list before testing it. Recalbox and Batocera also need a VirtualGlove
-service restart or reboot after a newly registered Super Glove Ball ROM so the
-missing exact-ROM native choice can be created. In LaunchBox, rerun the current
-installer if an older installation still points **VirtualGlove RetroArch** at a
-batch file or leaves standard RetroArch assigned to an NES game. The current
-installer uses the Python bridge directly and migrates standard RetroArch NES
-assignments while preserving genuinely different emulator overrides.
-The bridge also ensures the managed receiver on every launch. If Dashboard
-shows **Controller connection stopped** while a LaunchBox game is active, close
-the game and LaunchBox, rerun the current installer, and relaunch the game. The
-upgrade stops duplicate receivers left by an older Python environment without
-changing ROMs, saves, pairing, or the game registry.
+If the connection stops or a required emulator is missing, close the game and rerun the console installation command. It repairs the installed software while keeping your pairing, game registry, ROMs, and saves. The [Installation Guide](INSTALL_README.md) has the command for your console.
 
-If native hand movement reaches Super Glove Ball on LaunchBox but the V-sign
-Start gesture or thumbs-up Select gesture does not, close RetroArch and rerun
-the current installer. Current builds keep native gestures on the guarded Power
-Glove channel instead of also sending ordinary RetroPad input. Dashboard recognition plus a working physical joypad does not
-by itself prove that an older Windows receiver has this correction.
-
-On generic RetroPie, confirm the separate `VirtualGlove` input device and its
-Player 1 mapping. If optional Controller Router is enabled—or on Recalbox and
-Batocera—open its Setup card or run `virtualglove-controller-router check`.
-Confirm each saved source is connected, every enabled **VirtualGlove Merged
-Player 1–4** output exists, and the current RetroArch player indexes are assigned.
-Merged devices are intentionally neutral in EmulationStation and become active
-for physical input during Libretro gameplay. VirtualGlove gesture input remains
-limited to supported FCEUmm, stock Nestopia, and native Super Glove Ball paths.
-On Recalbox, the installer check must report **Persistent Libretro routing
-override**. Its generated `retroarchcustom.cfg.overrides.cfg` is expected to be
-rewritten at launch; do not repair that temporary file manually.
-On LaunchBox, the installer must
-report `network-retropad`, a random high loopback port, and a validated isolation
-rule. A reported key conflict affects only the real-keyboard backup; VirtualGlove
-and physical XInput remain available. If gestures are recognised but FCEUmm does
-not move, rerun the current installer to restore the managed ordinary-game
-configuration and receiver route rather than changing global RetroArch settings.
-If LaunchBox reports that Nestopia (VirtualGlove) is missing or changed, rerun
-the matching VirtualGlove Windows installer. The affected game continues in
-FCEUmm joystick mode. On Batocera, an **ACTION** result for the packaged native
-core means the architecture could not be resolved or the on-console load test
-failed; leave FCEUmm selected and do not copy a core from another target.
-Verify the matching platform service from the [Installation Guide](INSTALL_README.md#3-install-the-console)
-before editing RetroArch settings.
-
-If a fresh Recalbox/Batocera update reports several possible initial Player 1 controllers,
-run the installer with `--list-player1-devices`, identify the intended pad, and
-repeat it with `--player1-device DEVICE-ID`. Two identical, non-serialized pads
-are not guessed. If the selected pad disconnects during play, only its held
-state releases; VirtualGlove remains available. Reconnect that saved pad, or
-explicitly select its replacement. Seeing no response from the merged device in
-EmulationStation is expected—it deliberately becomes active only in RetroArch.
+For platform-specific installation checks, see [Console input delivery](CONFIGURATION_REFERENCE.md#diagnose-console-input-delivery) in the technical reference.
 
 ### A gamepad does not control the game
 
@@ -206,15 +162,11 @@ an assignment, then relaunch it to use the corrected routing.
 
 ### A wireless controller falls asleep or wakes during a game
 
-Router keeps the named merged outputs connected while physical controllers
-sleep, wake, disconnect, or reconnect. A source returns to its saved player.
-RetroArch 1.19.1 receives temporary routing settings resolved immediately before
-launch; supported newer builds use strict named-device reservations.
+Wake or reconnect the pad. Router keeps its player controllers connected and returns the pad to its saved player.
 
-If Router itself restarts or loses its merged outputs, exit the game, wait for
-Router to become ready, then relaunch. The running game cannot safely recover
-its former slots after its virtual controllers have been destroyed. Changes
-made in Setup > Controller Router take effect on the next launch.
+If the Router service itself restarted, exit the game, wait until it is ready, then relaunch. Player changes saved in Setup also apply on the next launch.
+
+For a pad test, open Router **Setup > Players**, choose **Test inputs**, and press a button during the five-second check. The [Controller Router Guide](CONTROLLER_ROUTER.md) walks through changing players and systems.
 
 ### Controller Router reports an unavailable controller
 
@@ -254,38 +206,9 @@ and the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 
 ## Pairing asks for more than one code
 
-Both pairing methods need the six-digit approval PIN displayed on the Controller
-matrix and the certificate-ID comparison. **Code pairing** additionally uses the
-one-time code generated on the selected console. **Password pairing** additionally
-uses that console's SSH username and password. The two codes are not interchangeable.
+The **CR1 connection code** comes from the console installer and lasts five minutes. The **six-digit confirmation code** appears on the UNO Q Matrix after you choose Continue and lasts two minutes. Enter them in that order on Router’s **Pair console** page. No SSH password is needed.
 
-If confirmation expires, select **Start a new confirmation**. The saved console
-and method stay fixed during the two-minute window; change them after it ends.
-A failed submitted request also requires fresh confirmation. Save console edits
-with **Save settings** before pairing.
-The separate console one-time code remains valid for five minutes. Setup shows
-the correct command after RetroPie, Recalbox, Batocera, or LaunchBox is selected and saved.
-LaunchBox uses one-time-code pairing only. Run the displayed PowerShell command
-as the same Windows user who runs LaunchBox. If Windows asks about network
-access, allow the Python runtime on Private networks only. VirtualGlove's
-authenticated receiver runs in that signed-in desktop session, but ordinary
-game input reaches RetroArch through the managed loopback RetroPad and is not
-conditioned on window focus. A focus change must not release an active held
-control; tracking loss, controller timeout, game exit, or receiver shutdown does.
-If more than one console is online, run it on the exact console named in Setup;
-a code displayed by a different console cannot open the intended listener. A
-platform-mismatch error means the saved selection does not match the operating
-system detected by that console; correct and save the selection before retrying.
-When a submitted pairing attempt finishes, the matrix releases the approval PIN and resumes its normal display. When idle, the glove animation follows your On, Dim, or Off attract setting; active game and status displays still take priority. A completed attempt should not leave the old PIN scrolling for the rest of its two-minute window.
-
-Use the [pairing walkthrough](INSTALL_README.md#4-pair-the-devices); never paste
-pairing tokens, passwords, or live approval PINs into a public support report.
-
-If a saved DHCP address changes or `.local` is briefly unavailable, leave the
-pairing key in place. Both controller input and game-profile delivery can discover
-the paired peer on the same ordinary LAN and resume by authenticated unicast. Guest
-isolation, VLANs, or blocked local broadcasts can prevent discovery; enter a current
-address or repair local name resolution in that case rather than pairing repeatedly.
+If a code expires, is already used, or reaches the attempt limit, obtain a new console code and start again. If the Matrix is unavailable, wait for Controller Router to become ready; pairing cannot skip physical confirmation.
 
 ## Movement drifts or feels reversed
 
@@ -394,3 +317,12 @@ Share a short relevant error excerpt or aggregate diagnostic report. Exclude
 credentials and private video. Raw latency recordings should remain temporary
 and local unless you explicitly choose to share them. See
 [Contributing](CONTRIBUTING.md) for the project's testing and reporting workflow.
+
+## Wrong player despite correct Router assignments
+
+1. Exit the game and open **Setup** from the UNO Q’s Controller Router page.
+2. Under **Players**, check the named source assignments. Under **Systems**, confirm that the system uses **Controller Router**.
+3. Relaunch the game. Sleeping or reconnecting physical controllers should return to their saved players without removing merged devices.
+4. If only one core or game still selects the wrong player, inspect its RetroArch controller override. Core and game overrides load after the session settings and can replace them. Remove only a conflicting controller override you deliberately want Router to manage; retain unrelated game settings.
+
+The current installer removes recognised obsolete Router indexes from its old FCEUmm and Nestopia blocks after a backup. It does not rewrite saved `retroarch.cfg` files during play. If Router itself restarts, end the game and relaunch once it is ready.

@@ -79,6 +79,8 @@ PDF_EDITIONS = {
     "docs/power-glove-rom-input-audit.md": "VirtualGlove-Input-Audit.pdf",
 }
 ARCHIVED_DOCUMENTS = {
+    # Dated engineering review is evidence, not a portable player manual.
+    Path("docs/RELEASE_REVIEW_2026-09-28.md"),
     Path("docs/NATIVE_EMULATION_EXPLAINED.md"),
     Path("docs/super-glove-ball-native.md"),
     Path("docs/direction-response-benchmark.md"),
