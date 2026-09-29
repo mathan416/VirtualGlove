@@ -46,3 +46,9 @@ Checked player assignments, system selection, save/restore revision behaviour, i
 Verification: all three guide collections have no unresolved local Markdown links or heading targets; VirtualGlove's documentation audit and four Help rendering tests pass. Rebuilt 33 maintained PDF editions, rendered all pages for visual inspection, and inspected key revised player pages at reading resolution. Preserved the separate engineering journey and technical test results.
 
 Documentation standards cite Google developer documentation guidance, Microsoft procedure guidance, Diátaxis, and Xbox text/visual accessibility guidance. User instructions and technical contracts are reviewed separately to avoid exposing implementation details as player tasks.
+
+## 0.6.0 candidate review — 29 September 2026
+
+The next minor release target is 0.6.0. The stable installer links and release facts remain on the published 0.5.3 release until new candidate assets are built and accepted. The full local suite passes: 987 tests with three skips. The documentation audit passes for 25 maintained guides and the source audit passes for 298 tracked files. Shared Router files match both other projects; retired persistent RetroArch writers and the old UNO Q early-start service are removed. A tracked-filename check found no ROM, private-key, or credential files; this is not a complete security audit.
+
+Before final release, build candidate packages from the reviewed commit, update release facts and generated website/manuals together, and test clean install, both product installation orders, upgrade and rollback on staged hardware. Check camera exposure, Matrix cues, game selection, Player 1 input, hotkeys, and physical-controller sleep/wake. Download candidate assets to verify checksums, Help, and PDFs. Earlier live tests apply to their recorded builds and do not certify the next candidate.
