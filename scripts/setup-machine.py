@@ -788,6 +788,8 @@ def install_recalbox(peer, player1_device=None):
     backup_file("/recalbox/share/roms/.retroarch.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
     backup_file("/recalbox/share/system/configs/retroarch/config/Nestopia/Nestopia.cfg")
+    from router_shared.launch_install import install_recalbox as install_session_routing
+    install_session_routing()
     run("sh", service, "restart")
     controller_router_module()
     from router_shared.pairing_install import install as install_link
@@ -814,28 +816,22 @@ def check_recalbox(report):
         report.check("Physical Player 1 selected", bool(selected.get("name")))
         report.check("Physical Player 1 connected", merged.find_saved_controller(
             selected, merged.input_devices()) is not None, pending=True)
-        index = merged.merged_joypad_index()
-        report.check("Merged Player 1 gamepad available", index is not None)
-        for core in ("FCEUmm", "Nestopia"):
-            nes_text = Path(
-                "/recalbox/share/system/configs/retroarch/config/%s/%s.cfg" %
-                (core, core)).read_text()
-            report.check("%s uses merged Player 1" % core, index is not None and
-                         ('input_player1_joypad_index = "%d"' % index) in nes_text)
+        report.check("Merged Player 1 gamepad available", merged.merged_joypad_index() is not None)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Merged Player 1 configuration", False)
     try:
         router = controller_router_module()
         routed = router.load_config(root / "data/controller-router.json")
         players = router.enabled_players(routed)
-        indexes = router.output_indexes(players)
         report.check("Controller Router configuration", routed["platform"] == "recalbox")
-        report.check("Controller Router outputs available", len(indexes) == len(players))
-        overrides = Path("/recalbox/share/roms/.retroarch.cfg")
-        override_text = overrides.read_text() if overrides.is_file() else ""
-        report.check("Persistent Libretro routing override",
-                     all(('input_player%d_joypad_index = "%d"' % (player, index))
-                         in override_text for player, index in indexes.items()))
+        report.check("Controller Router outputs available",
+                     len(router.output_indexes(players)) == len(players))
+        route_root = Path('/recalbox/share/system/controller-router')
+        generator = Path((route_root / 'generator-path').read_text().strip())
+        report.check("Libretro session routing ready",
+                     (route_root / 'bin/retroarch-route').is_file() and
+                     generator.is_file() and
+                     '# Controller Router session adapter' in generator.read_text())
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         report.check("Controller Router configuration", False)
     native_manifest = root / "native/recalbox/manifest.json"

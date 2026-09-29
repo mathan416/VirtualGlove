@@ -189,3 +189,63 @@ def activate_batocera(root=Path('/userdata/system/controller-router')):
         return
     replace_owned(root / 'libretroGenerator.py', patched)
     subprocess.run(['mount', '--bind', str(root / 'libretroGenerator.py'), str(target)], check=True)
+
+
+def patch_recalbox_generator(text, adapter):
+    """Wrap Recalbox's generated Libretro command without changing saved settings."""
+    marker = '        # Controller Router session adapter\n'
+    if marker in text:
+        text = re.sub(r'(?m)^        # Controller Router session adapter\n        if .+\n            commandArray = .+\n', '', text)
+    anchor = re.compile(r'(?m)^(        return Command\(videomode=system\.VideoMode, array=commandArray, env=env, preExec=pre, postExec=post\))$')
+    if len(anchor.findall(text)) != 1:
+        raise RuntimeError('Unsupported Recalbox configgen layout; saved configuration was not changed.')
+    block = (marker +
+             '        if commandArray and str(commandArray[0]) == "/usr/bin/retroarch":\n'
+             '            commandArray = ["/usr/bin/python3", %r, "--system", system.Name] + commandArray\n' % str(adapter))
+    return anchor.sub(lambda match: block + match.group(0), text)
+
+
+def install_recalbox(root=Path('/recalbox/share/system/controller-router'), generator=None):
+    """Stage Recalbox's launch adapter in the persistent share."""
+    if generator is None:
+        candidates = list(Path('/usr/lib').glob('python*/site-packages/configgen/generators/libretro/libretroGenerator.py'))
+        if len(candidates) != 1:
+            raise RuntimeError('Cannot identify Recalbox Libretro generator; installation stopped.')
+        generator = candidates[0]
+    adapter = root / 'bin/retroarch-route'
+    patched = patch_recalbox_generator(generator.read_text(), adapter)
+    library = root / 'lib/router_shared'
+    for source in Path(__file__).parent.glob('[!.]*.py'):
+        replace_owned(library / source.name, source.read_text())
+    code = '''#!/usr/bin/python3
+import sys
+sys.path.insert(0, %r)
+from router_shared.launch import main
+system = []
+if sys.argv[1:2] == ["--system"]:
+    system = sys.argv[1:3]
+    del sys.argv[1:3]
+sys.argv = [sys.argv[0]] + system + ["--config", "/recalbox/share/system/virtualglove/data/controller-router.json",
+            "--retroarch", sys.argv[1], "--"] + sys.argv[2:]
+sys.exit(main())
+''' % str(root / 'lib')
+    replace_owned(adapter, code, 0o755)
+    replace_owned(root / 'libretroGenerator.py', patched)
+    replace_owned(root / 'generator-path', str(generator) + '\n')
+    repair_profiles(Path('/recalbox/share/system/configs/retroarch/autoconfig'))
+    return generator
+
+
+def activate_recalbox(root=Path('/recalbox/share/system/controller-router')):
+    """Bind only Recalbox's Libretro generator for this boot."""
+    import subprocess
+    target = Path((root / 'generator-path').read_text().strip())
+    if not target.is_file():
+        raise RuntimeError('Recalbox configgen changed; rerun the controller installer.')
+    mounted = any(line.split()[4] == str(target)
+                  for line in Path('/proc/self/mountinfo').read_text().splitlines())
+    if mounted:
+        return
+    replace_owned(root / 'libretroGenerator.py',
+                  patch_recalbox_generator(target.read_text(), root / 'bin/retroarch-route'))
+    subprocess.run(['mount', '--bind', str(root / 'libretroGenerator.py'), str(target)], check=True)

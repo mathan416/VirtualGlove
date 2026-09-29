@@ -115,6 +115,9 @@ stop_one() {
 
 start_all() {
     mkdir -p "$RUN" "$LOG" "$SOCKET_DIR" "$(dirname "$NATIVE_STATE")"
+    if [ -f /recalbox/share/system/controller-router/generator-path ]; then
+        PYTHONPATH="$APP/src" python3 -c 'from router_shared.launch_install import activate_recalbox; activate_recalbox()' || return 1
+    fi
     sh "$CORE_MOUNT" start || {
         echo "VirtualGlove native core overlay could not be prepared" >&2
         return 1

@@ -16,6 +16,7 @@ CORE=$(python3 "$APP/scripts/verify-recalbox-native-core.py" \
     --manifest "$MANIFEST" --arch "$ARCH" --version "$VERSION" \
     --resolve-core 2>/dev/null || true)
 STATE=/run/virtualglove-core
+[ -d /run/rob-vision-core/core-upper ] && STATE=/run/rob-vision-core
 CORE_TARGET=/usr/lib/libretro
 SYSTEM_TARGET=/recalbox/share_init/system/.emulationstation/systemlist.xml
 SYSTEM_RUNTIME="$STATE/systemlist.xml"
@@ -53,6 +54,7 @@ start_core() {
     mount_core_overlay || return 1
     python3 "$APP/scripts/configure-recalbox-super-glove-ball-core.py" \
         --core "$CORE_TARGET/nestopia_powerglove_libretro.so" \
+        --systemlist-source "$SYSTEM_TARGET" \
         --systemlist-output "$SYSTEM_RUNTIME" --apply || return 1
     python3 "$APP/scripts/configure-recalbox-super-glove-ball-core.py" \
         --core "$CORE_TARGET/nestopia_powerglove_libretro.so" --selection-only \

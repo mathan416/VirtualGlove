@@ -551,6 +551,9 @@ def stop_managed_runtime(machine, setup):
         present = service.is_file()
         if present:
             subprocess.run(["sh", str(service), "stop"], check=True)
+        link_service = Path('/recalbox/share/system/controller-router/link-service')
+        if link_service.is_file():
+            subprocess.run(['sh', str(link_service), 'stop'], check=True)
     else:
         service = Path("/userdata/system/services/VirtualGlove")
         present = service.is_file()
@@ -640,8 +643,10 @@ def console_recovery_paths(machine):
 
 
 def mounted_router_generator():
-    """Identify only Router's own Batocera bind overlay, not arbitrary mounts."""
-    record = Path('/userdata/system/controller-router/generator-path')
+    """Identify only Router's own frontend bind overlay, not arbitrary mounts."""
+    record = (Path('/recalbox/share/system/controller-router/generator-path')
+              if Path('/recalbox/recalbox.version').is_file() else
+              Path('/userdata/system/controller-router/generator-path'))
     if not record.is_file():
         return None
     target = record.read_text().strip()
@@ -655,7 +660,7 @@ def mounted_router_generator():
 
 def detach_router_generator(machine):
     """Detach an installed overlay before its backing files are replaced or restored."""
-    if machine == 'batocera':
+    if machine in ('batocera', 'recalbox'):
         target = mounted_router_generator()
         if target:
             subprocess.run(['umount', target], check=True)

@@ -31,7 +31,7 @@ def rob_operation(pairings, payload):
         elif operation == 'import':
             record = payload['record']
             valid_id(record['console_id']); valid_secret(record['token'])
-            if record['platform'] not in ('retropie', 'batocera'):
+            if record['platform'] not in ('retropie', 'batocera', 'recalbox'):
                 raise ValueError('This console is not supported by R.O.B. Vision.')
             # Identity, rather than hostname, controls replacement.
             for key, previous in list(pairings.records.items()):

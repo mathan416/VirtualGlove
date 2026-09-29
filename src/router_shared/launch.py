@@ -88,6 +88,10 @@ def prepare(config, executable, output, wait_seconds=5.0, resolver=resolve):
                      if key != "input_enable_hotkey_btn")
         if player == 1:
             lines.append('input_enable_hotkey_btn = "12"')
+            if config.get("platform") == "recalbox":
+                # Recalbox's saved quit index belongs to the physical pad.
+                # The merged output has its own stable Start index.
+                lines.append('input_exit_emulator_btn = "11"')
         if mode == "native-reservations":
             # RetroArch treats a VID:PID prefix as a wildcard for the name.
             # Reserve the unique name; resolve() separately validates VID/PID.
