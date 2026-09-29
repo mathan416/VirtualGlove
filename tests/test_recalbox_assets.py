@@ -64,8 +64,8 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn('"fceumm_libretro.so", "nestopia_libretro.so"', router)
         self.assertIn('NATIVE_CORE_NAMES = {"nestopia_powerglove_libretro.so"}', router)
         self.assertIn("return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES", router)
-        self.assertIn('config["platform"] in ("recalbox", "batocera")', router)
-        self.assertIn('global_config.parent / "nes.cfg"', router)
+        self.assertIn("without writing any RetroArch configuration", router)
+        self.assertNotIn("def managed_retroarch_configs", router)
 
     def test_recalbox_native_core_overlay_is_separate_and_reloads_frontend_once(self):
         text = (ROOT / "recalbox/virtualglove-core-mount").read_text()
@@ -95,7 +95,7 @@ class RecalboxAssetsTests(unittest.TestCase):
         self.assertIn('if [ "$emulator" = libretro ]', event)
         self.assertNotIn('if [ "$emulator" = lr-fceumm ]', event)
         router = (ROOT / "src/router_shared/controller_router.py").read_text()
-        self.assertIn("merge_batocera_config", router)
+        self.assertIn("def _install_indexes", router)
         self.assertIn('Path("/userdata/system/batocera.conf")', router)
         self.assertNotIn("systemctl", service + event)
 

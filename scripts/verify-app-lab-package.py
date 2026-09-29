@@ -176,8 +176,6 @@ REQUIRED_FILES = {
     "VirtualGlove/docs/images/web/gestures/v2/pixel-pal-safety.png",
     "VirtualGlove/docs/images/web/gestures/v2/pixel-pal-success.png",
     "VirtualGlove/docs/images/web/gestures/actions/v-sign.png",
-    "VirtualGlove/scripts/uno-q-early-start.py",
-    "VirtualGlove/uno-q/virtualglove-early-start.service",
     "VirtualGlove/scripts/flash-matrix-firmware.py",
     "VirtualGlove/firmware/matrix/manifest.json",
     "VirtualGlove/firmware/matrix/virtualglove-matrix.elf-zsk.bin",

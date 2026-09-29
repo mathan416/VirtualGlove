@@ -997,13 +997,3 @@ class GameSetupTests(unittest.TestCase):
 
             self.assertEqual(native.read_bytes(), b"existing")
             self.assertIn('default = "lr-fceumm"', system.read_text())
-
-    def test_helper_failure_is_not_silently_accepted(self):
-        setup = installer.load_setup(ROOT)
-        with tempfile.TemporaryDirectory() as directory:
-            setup.SOURCE = ROOT
-            account = SimpleNamespace(pw_dir=str(Path(directory).resolve()), pw_uid=os.getuid(), pw_gid=os.getgid())
-            with patch.object(setup.pwd, 'getpwnam', return_value=account), patch.object(setup.os, 'chown'), \
-                 patch.object(setup, 'run', side_effect=OSError('systemd unavailable')):
-                with self.assertRaisesRegex(OSError, 'systemd unavailable'):
-                    setup.install_early_start()

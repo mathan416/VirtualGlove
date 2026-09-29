@@ -409,34 +409,8 @@ def virtual_joystick_core_running(proc_root: Path = Path("/proc")) -> bool:
     return running_retroarch_core(proc_root) in JOYSTICK_CORE_NAMES
 
 
-def joystick_retroarch_configs(primary: Path) -> tuple[Path, ...]:
-    """Return core-specific overrides for every supported joystick core."""
-    primary = Path(primary)
-    if primary.name == "FCEUmm.cfg" and primary.parent.name == "FCEUmm":
-        nestopia = primary.parent.parent / "Nestopia/Nestopia.cfg"
-        return primary, nestopia
-    return (primary,)
 
 
-def managed_retroarch_configs(primary: Path, global_config: Path,
-                              config: dict[str, Any]) -> tuple[Path, ...]:
-    """Return every platform file that can override a routed Libretro player."""
-    paths = list(joystick_retroarch_configs(primary))
-    if (config.get("physical_scope") == "all"
-            and config["platform"] in ("recalbox", "batocera")):
-        # These platforms generate retroarchcustom.cfg for each launch and
-        # append the system file afterwards. Manage both so a stale NES index
-        # cannot override the current merged output for native Super Glove
-        # Ball, FCEUmm, or stock Nestopia.
-        paths.extend((global_config, global_config.parent / "nes.cfg"))
-        if config["platform"] == "recalbox":
-            # Recalbox rebuilds retroarchcustom.cfg and its generated
-            # .overrides.cfg for every launch. Its supported ROM-folder
-            # override chain loads /recalbox/share/roms/.retroarch.cfg into
-            # that generated file after controller discovery. Put the routed
-            # player assignments in the persistent source, never the output.
-            paths.append(global_config.parents[3] / "roms/.retroarch.cfg")
-    return tuple(dict.fromkeys(paths))
 
 
 class ControllerRouterDevice:
@@ -927,73 +901,10 @@ def player_one_hotkeys(config: dict[str, Any], global_config: str) -> dict[str, 
         {**player_one["sources"][0], "platform": config["platform"]}, global_config)
 
 
-def merge_retroarch_config(text: str, config: dict[str, Any], indexes: dict[int, int],
-                           global_config: str = "") -> str:
-    """Replace only the router-managed joystick-core block for enabled slots."""
-    begin, end = "# VirtualGlove Controller Router", "# End VirtualGlove Controller Router"
-    output = unmanaged_retroarch_config(text).splitlines()
-    while output and not output[-1]:
-        output.pop()
-    output.extend(["", begin])
-    hotkeys = player_one_hotkeys(config, unmanaged_retroarch_config(global_config))
-    for player in enabled_players(config):
-        if player not in indexes:
-            raise ValueError("Merged Player %d is not available." % player)
-        output.append('input_player%d_joypad_index = "%d"' % (player, indexes[player]))
-        output.extend('%s = "%s"' % item for item in _player_bindings(player).items())
-        if player == 1 and hotkeys:
-            output.extend('%s = "%s"' % item for item in hotkeys.items()
-                          if item[0] not in MERGED_RETROARCH_BINDINGS)
-    output.append(end)
-    return "\n".join(output).lstrip("\n") + "\n"
 
 
-def merge_retropie_indexes(text: str, config: dict[str, Any], indexes: dict[int, int]) -> str:
-    """Keep NES port indexes current without changing gamepad or button binds."""
-    begin, end = "# VirtualGlove Controller Router", "# End VirtualGlove Controller Router"
-    if text.count(begin) != text.count(end) or text.count(begin) > 1:
-        raise ValueError("The existing Controller Router NES block needs review.")
-    if begin in text:
-        start = text.index(begin)
-        finish = text.index(end, start) + len(end)
-        text = text[:start] + text[finish:].lstrip("\n")
-    block = "\n".join([begin] + [
-        'input_player%d_joypad_index = "%d"' % (player, indexes[player])
-        for player in enabled_players(config) if player in indexes
-    ] + [end]) + "\n"
-    include = re.search(r"(?m)^#include\b", text)
-    if include:
-        return text[:include.start()].rstrip("\n") + "\n" + block + text[include.start():]
-    return text.rstrip("\n") + "\n" + block
 
 
-def merge_batocera_config(text: str, config: dict[str, Any], indexes: dict[int, int],
-                          global_config: str = "") -> str:
-    """Persist Router bindings through Batocera's generated RetroArch config."""
-    begin = "## VirtualGlove Controller Router"
-    end = "## End VirtualGlove Controller Router"
-    output, inside = [], False
-    for line in text.splitlines():
-        if line.strip() == begin:
-            inside = True
-            continue
-        if inside:
-            if line.strip() == end:
-                inside = False
-            continue
-        output.append(line)
-    while output and not output[-1]:
-        output.pop()
-    managed = merge_retroarch_config("", config, indexes, global_config).splitlines()
-    output.extend(["", begin])
-    for line in managed:
-        if not line or line.startswith("#"):
-            continue
-        key, value = line.split("=", 1)
-        output.append("global.retroarch.%s=%s" % (
-            key.strip(), value.strip().strip('"')))
-    output.append(end)
-    return "\n".join(output).lstrip("\n") + "\n"
 
 
 def revision(config: dict[str, Any]) -> str:

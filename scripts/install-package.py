@@ -178,8 +178,7 @@ def unpack(archive, destination, machine, version):
         required += (["app.yaml", "scripts/flash-matrix-firmware.py",
                       "firmware/matrix/manifest.json", "firmware/matrix/virtualglove-matrix.elf-zsk.bin",
                       "firmware/matrix/zephyr-arduino_uno_q_stm32u585xx.elf",
-                      "firmware/matrix/flash_sketch.cfg", "scripts/uno-q-early-start.py",
-                      "uno-q/virtualglove-early-start.service",
+                      "firmware/matrix/flash_sketch.cfg",
                       "uno-q/virtualglove-wifi-status.py", "uno-q/virtualglove-wifi-status.service",
                       "uno-q/virtualglove-wifi-status.timer",
                       "uno-q/virtualglove-system-shutdown.conf", "uno-q/virtualglove-system-shutdown.path",
@@ -699,6 +698,7 @@ class ConsoleRecovery:
         """Verify recovery bytes, links and ownership without displaying private contents."""
         digest = hashlib.sha256()
         def visit(item, name):
+            """Hash one managed entry and its children, excluding preserved user data."""
             details = item.lstat()
             digest.update(json.dumps([name, stat.S_IMODE(details.st_mode),
                                       details.st_uid, details.st_gid]).encode())
@@ -721,6 +721,7 @@ class ConsoleRecovery:
 
     @staticmethod
     def remove_managed(path):
+        """Remove managed entries while retaining excluded files."""
         if path.is_symlink() or path.is_file():
             path.unlink()
         elif path.is_dir():
@@ -746,6 +747,7 @@ class ConsoleRecovery:
             os.close(fd)
 
     def write_journal(self, state):
+        """Atomically persist transaction state before changing installed files."""
         fd, temporary = tempfile.mkstemp(prefix='.console-journal-', dir=self.pending.parent)
         try:
             with os.fdopen(fd, 'w') as stream:
@@ -760,6 +762,7 @@ class ConsoleRecovery:
 
     @staticmethod
     def sync_directory(path):
+        """Flush directory metadata to make journal updates durable."""
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
         try:
             os.fsync(fd)
@@ -767,10 +770,12 @@ class ConsoleRecovery:
             os.close(fd)
 
     def clear_journal(self):
+        """Remove the completed transaction journal and persist its removal."""
         self.pending.unlink()
         self.sync_directory(self.pending.parent)
 
     def begin(self):
+        """Recover an interrupted upgrade, then snapshot files and service activation."""
         if self.pending.exists():
             self.restore()
         print('Preparing verified console recovery backup before replacing software.', flush=True)
@@ -802,6 +807,7 @@ class ConsoleRecovery:
             raise
 
     def restore(self):
+        """Validate the snapshot and restore files and prior service activation."""
         state = json.loads(self.pending.read_text())
         if (state.get('schema') != 1 or state.get('machine') != self.machine or
                 state.get('phase') not in ('preparing', 'prepared')):
@@ -840,6 +846,7 @@ class ConsoleRecovery:
         print('RECOVERED  Previous console software, configuration and service state restored.', flush=True)
 
     def commit(self):
+        """Persist installed files before clearing the recovery journal."""
         for path in self.paths:
             if path.exists() or path.is_symlink():
                 self.sync_tree(path)

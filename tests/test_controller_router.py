@@ -145,45 +145,7 @@ class ControllerRouterTests(unittest.TestCase):
                     patch.object(router, "retroarch_index_for_js", return_value=3):
                 self.assertEqual(router.output_indexes([1], sys_root, udev_root, "retropie"), {1: 3})
 
-    def test_batocera_overrides_survive_generated_retroarch_configuration(self):
-        config = {"format": 2, "platform": "batocera",
-                  "players": [{"player": 1, "sources": [source()]}],
-                  "virtualglove_player": 1, "physical_scope": "all"}
-        original = "controllers.bluetooth.enabled=1\nglobal.retroarch.video_vsync=true\n"
-        updated = router.merge_batocera_config(original, config, {1: 3})
-        self.assertIn("controllers.bluetooth.enabled=1", updated)
-        self.assertIn("global.retroarch.video_vsync=true", updated)
-        self.assertIn("## VirtualGlove Controller Router", updated)
-        self.assertIn("global.retroarch.input_player1_joypad_index=3", updated)
-        self.assertIn("global.retroarch.input_player1_start_btn=11", updated)
-        self.assertIn("global.retroarch.input_enable_hotkey_btn=12", updated)
-        replaced = router.merge_batocera_config(updated, config, {1: 1})
-        self.assertEqual(replaced.count("## VirtualGlove Controller Router"), 1)
-        self.assertIn("global.retroarch.input_player1_joypad_index=1", replaced)
-        self.assertNotIn("global.retroarch.input_player1_joypad_index=3", replaced)
 
-    def test_recalbox_and_batocera_refresh_the_late_nes_append_file(self):
-        primary = Path("/userdata/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg")
-        global_config = Path("/userdata/system/configs/retroarch/retroarchcustom.cfg")
-        config = {"platform": "batocera", "physical_scope": "all"}
-        paths = router.managed_retroarch_configs(primary, global_config, config)
-        self.assertIn(primary, paths)
-        self.assertIn(primary.parent.parent / "Nestopia/Nestopia.cfg", paths)
-        self.assertIn(global_config, paths)
-        self.assertIn(global_config.parent / "nes.cfg", paths)
-        self.assertEqual(len(paths), len(set(paths)))
-
-        recalbox = {"platform": "recalbox", "physical_scope": "all"}
-        recalbox_global = Path("/recalbox/share/system/configs/retroarch/retroarchcustom.cfg")
-        recalbox_paths = router.managed_retroarch_configs(
-            Path("/recalbox/share/system/configs/retroarch/config/FCEUmm/FCEUmm.cfg"),
-            recalbox_global, recalbox)
-        self.assertIn(
-            Path("/recalbox/share/roms/.retroarch.cfg"),
-            recalbox_paths)
-        self.assertNotIn(
-            recalbox_global.with_name("retroarchcustom.cfg.overrides.cfg"),
-            recalbox_paths)
 
     def test_retropie_launch_hook_only_reports_session(self):
         hook = (Path(__file__).resolve().parents[1] /
@@ -357,53 +319,8 @@ class ControllerRouterTests(unittest.TestCase):
         self.assertEqual(p1.desired()[0], {"a", "b", "select", "hotkey"})
         self.assertEqual(p2.desired()[0], {"a", "b", "select"})
 
-    def test_retroarch_block_manages_enabled_players_without_unrelated_changes(self):
-        config = router.validate_config({"format": 2, "platform": "batocera",
-            "players": [{"player": 1, "sources": [source()]}, {"player": 2, "sources": []}],
-            "virtualglove_player": 2})
-        text = router.merge_retroarch_config('video_driver = "gl"\ninput_player3_joypad_index = "8"\n',
-                                             config, {1: 4, 2: 5})
-        self.assertIn('input_player1_joypad_index = "4"', text)
-        self.assertIn('input_player2_joypad_index = "5"', text)
-        self.assertIn('input_player3_joypad_index = "8"', text)
-        self.assertEqual(text.count("input_enable_hotkey_btn"), 1)
 
-    def test_retropie_router_preserves_standard_exit_and_menu_combinations(self):
-        config = router.validate_config({"format": 2, "platform": "retropie",
-            "players": [{"player": 1, "sources": [source()]}],
-            "virtualglove_player": 1})
-        text = router.merge_retroarch_config("", config, {1: 4})
-        self.assertIn('input_exit_emulator_btn = "11"', text)
-        self.assertIn('input_menu_toggle_btn = "3"', text)
 
-    def test_recalbox_first_game_hotkeys_and_generated_config_refresh(self):
-        physical = source()
-        physical["mapping"] = [
-            {"name": name, "type": "button", "code": code, "value": 1}
-            for name, code in (("b", 0), ("a", 1), ("x", 2), ("y", 3), ("l1", 4),
-                               ("select", 8), ("start", 9), ("hotkey", 10))]
-        config = router.validate_config({"format": 2, "platform": "recalbox",
-            "players": [{"player": 1, "sources": [physical]}],
-            "virtualglove_player": 1})
-        first = router.merge_retroarch_config("", config, {1: 4})
-        for key, value in (("input_enable_hotkey_btn", "12"),
-                           ("input_exit_emulator_btn", "11"),
-                           ("input_menu_toggle_btn", "1"),
-                           ("input_load_state_btn", "3"),
-                           ("input_save_state_btn", "4")):
-            self.assertIn('%s = "%s"' % (key, value), first)
-        self.assertEqual(router.unmanaged_retroarch_config(first), "")
-        generated = '\n'.join(("input_enable_hotkey_btn = 10",
-            "input_exit_emulator_btn = 9", "input_menu_toggle_btn = 0",
-            "input_load_state_btn = 2", "input_save_state_btn = 3",
-            "input_screenshot_btn = 4"))
-        second = router.merge_retroarch_config(generated + '\n' + first,
-                                                config, {1: 4}, generated + '\n' + first)
-        self.assertEqual(second.count("# VirtualGlove Controller Router"), 1)
-        self.assertIn('input_screenshot_btn = "6"', second)
-        self.assertEqual(router.player_one_hotkeys(config, generated),
-                         router.player_one_hotkeys(config,
-                             router.unmanaged_retroarch_config(second)))
 
     def test_store_rejects_stale_updates_and_changes_during_fceumm(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -627,13 +544,6 @@ class ControllerRouterTests(unittest.TestCase):
             self.assertFalse(router.joystick_core_running(proc))
             self.assertFalse(router.virtual_joystick_core_running(proc))
 
-    def test_supported_core_configs_include_fceumm_and_stock_nestopia(self):
-        root = Path("/configs/retroarch/config")
-        paths = router.joystick_retroarch_configs(root / "FCEUmm/FCEUmm.cfg")
-        self.assertEqual(paths, (root / "FCEUmm/FCEUmm.cfg",
-                                 root / "Nestopia/Nestopia.cfg"))
-        custom = Path("/tmp/custom.cfg")
-        self.assertEqual(router.joystick_retroarch_configs(custom), (custom,))
 
     def test_inputs_protocol_authenticates_and_rejects_replay(self):
         class Store:

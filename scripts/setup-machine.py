@@ -407,13 +407,15 @@ def install_unoq_runtime_names():
     run("systemd-tmpfiles", "--create", "/etc/tmpfiles.d/virtualglove-camera-recovery.conf")
     run("systemctl", "enable", "--now", "virtualglove-system-shutdown.path")
     run("systemctl", "enable", "--now", "virtualglove-camera-recovery.path")
-    install_early_start()
+    user = pwd.getpwnam("arduino")
+    run("loginctl", "enable-linger", "arduino")
+    run("systemctl", "start", "user@%s.service" % user.pw_uid)
     install_wifi_status()
     retire_unoq_legacy_runtime_names()
 
 
 def install_unoq(peer):
-    """Complete the CLI-started app with networking, shutdown and early startup."""
+    """Complete the CLI-started app with networking, shutdown and shared service startup."""
     app = SOURCE
     if str(app) != UNOQ_APP:
         raise ValueError("UNO Q setup currently requires App Lab path " + UNOQ_APP)
@@ -464,30 +466,6 @@ def user_systemctl(*args):
             "systemctl", "--user"] + list(args)
 
 
-def install_early_start():
-    """Install the guarded helper and enable it for subsequent boots without an SWD write now."""
-    user = pwd.getpwnam("arduino")
-    home = Path(user.pw_dir)
-    for source, relative in (("scripts/uno-q-early-start.py", ".local/lib/virtualglove/uno-q-early-start.py"),
-                             ("uno-q/virtualglove-early-start.service", ".config/systemd/user/virtualglove-early-start.service")):
-        target = home / relative
-        if any(parent.is_symlink() for parent in [target] + list(target.parents)):
-            raise ValueError("Refusing symbolic helper path: " + str(target))
-        write_file(target, (SOURCE / source).read_bytes())
-        os.chown(str(target), user.pw_uid, user.pw_gid)
-        for parent in target.parents:
-            if parent == home:
-                break
-            os.chown(str(parent), user.pw_uid, user.pw_gid)
-    run("loginctl", "enable-linger", "arduino")
-    run("systemctl", "start", "user@%s.service" % user.pw_uid)
-    run(*user_systemctl("daemon-reload"))
-    trial = home / ".config/systemd/user/virtualglove-early-start-trial.service"
-    if trial.exists():
-        run(*user_systemctl("disable", "virtualglove-early-start-trial.service"))
-    run(*user_systemctl("enable", "virtualglove-early-start.service"))
-    run(*user_systemctl("reset-failed", "virtualglove-early-start.service"))
-    print("PASS  Early-start helper installed for the next boot; existing sketch animation preserved.")
 
 
 def wait_unoq():
@@ -1227,8 +1205,6 @@ def check_unoq(report):
         report.check("Controller Router is the startup app" if shared_matrix else "VirtualGlove is the startup app", False)
 
     report.command("Arduino user starts at boot", ["test", "-f", "/var/lib/systemd/linger/arduino"])
-    report.command("Early-start helper enabled", user_systemctl("is-enabled", "--quiet", "virtualglove-early-start.service"))
-    report.check("Early-start helper installed", Path("/home/arduino/.local/lib/virtualglove/uno-q-early-start.py").is_file())
     tls = SOURCE / "data/tls"
     authority = tls / "controller-ca-cert.pem"
     authority_key = tls / "controller-ca-key.pem"

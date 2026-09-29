@@ -35,6 +35,15 @@ ES_INPUT = """<inputList><inputConfig type="joystick" deviceName="Test Pad" devi
 
 
 class MergedGamepadTests(unittest.TestCase):
+    def test_retired_commands_cannot_write_saved_config(self):
+        from router_shared import merged_gamepad as shared
+        for module in (merged, shared):
+            with self.subTest(module=module.__name__):
+                self.assertFalse(hasattr(module, 'install_retroarch_assignment'))
+                self.assertFalse(hasattr(module, 'MergedGamepadDevice'))
+                with self.assertRaisesRegex(SystemExit, 'serve and sync-index commands are retired'):
+                    module.main()
+
     def test_reads_configured_mapping_and_stable_connected_identity(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
@@ -320,19 +329,6 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(buttons, set())
         self.assertTrue(all(value == 0 for value in axes.values()))
 
-    def test_retroarch_migration_removes_only_old_managed_keyboard_lines(self):
-        current = ('video_smooth = "false"\ninput_player1_a = "x"\n'
-                   'input_player1_b = "custom"\ninput_player1_y = "custom"\ninput_player2_a = "v"\n'
-                   'input_player1_joypad_index = "7"\n')
-        updated = merged.merge_retroarch_config(current, 2)
-        self.assertIn('video_smooth = "false"', updated)
-        self.assertIn('input_player1_y = "custom"', updated)
-        self.assertIn('input_player2_a = "v"', updated)
-        self.assertNotIn('input_player1_a = "x"', updated)
-        self.assertIn('input_player1_b = "custom"', updated)
-        self.assertIn('input_player1_joypad_index = "2"', updated)
-        self.assertIn('input_enable_hotkey_btn = "12"', updated)
-        self.assertEqual(merged.merge_retroarch_config(updated, 2), updated)
 
     def test_recalbox_hotkeys_follow_physical_controls_on_canonical_pad(self):
         mapping = [
@@ -378,11 +374,6 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(hotkeys["input_shader_prev_btn"], "8")
         self.assertEqual(hotkeys["input_shader_next_axis"], "nul")
         self.assertEqual(hotkeys["input_shader_next_btn"], "9")
-        updated = merged.merge_retroarch_config("video_smooth = true\n", 1, hotkeys)
-        self.assertEqual(updated.count('input_enable_hotkey_btn = "12"'), 1)
-        self.assertEqual(merged.merge_retroarch_config(updated, 1, hotkeys), updated)
-        self.assertIn('input_exit_emulator_btn = "11"', updated)
-        self.assertIn("# End VirtualGlove merged Player 1", updated)
 
     def test_batocera_uses_complete_hotkeys_on_the_merged_pad(self):
         saved = {"platform": "batocera", "mapping": self._mapping()}
@@ -399,60 +390,8 @@ class MergedGamepadTests(unittest.TestCase):
         self.assertEqual(hotkeys["input_exit_emulator_btn"], "11")
         self.assertEqual(hotkeys["input_menu_toggle_btn"], "3")
 
-    def test_physical_device_is_grabbed_only_during_gameplay(self):
-        device = merged.MergedGamepadDevice.__new__(merged.MergedGamepadDevice)
-        device.descriptor = 17
-        device.grabbed = False
-        with patch.object(merged.fcntl, "ioctl") as ioctl:
-            device._set_grab(True)
-            device._set_grab(True)
-            device._set_grab(False)
-        self.assertEqual(ioctl.call_args_list, [
-            call(17, merged.EVIOCGRAB, 1),
-            call(17, merged.EVIOCGRAB, 0),
-        ])
 
-    def test_gameplay_transition_neutralizes_before_and_after_exclusive_ownership(self):
-        device = merged.MergedGamepadDevice.__new__(merged.MergedGamepadDevice)
-        device.descriptor = 17
-        device.grabbed = False
-        device.state = merged.MergeState()
-        device.state.physical_buttons = {"a"}
-        device.state.physical_axes["hat_x"] = 1
-        published = []
-        device.sink = type("Sink", (), {
-            "write": lambda _self, buttons, axes: published.append(
-                (set(buttons), dict(axes)))
-        })()
-        with patch.object(merged.fcntl, "ioctl") as ioctl:
-            device._set_active(True)
-            device._set_active(True)
-            device.state.physical_buttons = {"b"}
-            device.state.physical_axes["hat_x"] = -1
-            device._set_active(False)
-            device._set_active(False)
-        self.assertEqual(ioctl.call_args_list, [
-            call(17, merged.EVIOCGRAB, 1),
-            call(17, merged.EVIOCGRAB, 0),
-        ])
-        self.assertFalse(device.state.active)
-        self.assertEqual(device.state.physical_buttons, set())
-        self.assertTrue(all(value == 0 for value in device.state.physical_axes.values()))
-        neutral_axes = {name: 0 for name in merged.AXIS_CODES}
-        self.assertEqual(published, [
-            (set(), neutral_axes),
-            (set(), neutral_axes),
-        ])
 
-    def test_batocera_assignment_clears_original_axis_bindings(self):
-        hotkeys = merged.platform_hotkey_bindings(
-            {"platform": "batocera", "mapping": self._mapping()}, "")
-        updated = merged.merge_retroarch_config(
-            'input_player1_l2_axis = "+5"\ninput_player1_up_axis = "-1"\n',
-            2, hotkeys)
-        self.assertEqual(updated.count('input_player1_l2_axis = "nul"'), 1)
-        self.assertEqual(updated.count('input_player1_up_axis = "nul"'), 1)
-        self.assertIn('input_exit_emulator_btn = "11"', updated)
 
     def test_uinput_device_has_fixed_gamepad_capabilities_and_emits_transitions(self):
         writes, ioctls = [], []

@@ -354,7 +354,6 @@ class SetupTests(unittest.TestCase):
                     patch.object(setup, "Path", side_effect=mapped), \
                     patch.object(setup, "BACKUPS", root / "backups"), \
                     patch.object(setup, "run") as command, \
-                    patch.object(setup, "install_early_start"), \
                     patch.object(setup, "install_wifi_status"), \
                     patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(
                         pw_uid=os.getuid(), pw_gid=os.getgid(),
@@ -362,6 +361,9 @@ class SetupTests(unittest.TestCase):
                     )):
                 setup.install_unoq_runtime_names()
             calls = [item.args for item in command.call_args_list]
+            self.assertIn(("loginctl", "enable-linger", "arduino"), calls)
+            self.assertIn(("systemctl", "start", "user@%s.service" % os.getuid()), calls)
+            self.assertFalse(any("virtualglove-early-start.service" in call for call in calls))
             self.assertTrue((mapped("/etc/systemd/system") /
                              "virtualglove-system-shutdown.service").is_file())
 
@@ -417,7 +419,6 @@ class SetupTests(unittest.TestCase):
                     patch.object(setup, "Path", side_effect=mapped), \
                     patch.object(setup, "BACKUPS", root / "backups"), \
                     patch.object(setup, "run") as command, \
-                    patch.object(setup, "install_early_start"), \
                     patch.object(setup, "install_wifi_status"), \
                     patch.object(setup.pwd, "getpwnam", return_value=account):
                 setup.install_unoq_runtime_names()
@@ -435,29 +436,6 @@ class SetupTests(unittest.TestCase):
             )
             command.assert_any_call(*expected_user_disable)
 
-    def test_early_start_installs_current_unit(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory).resolve()
-            home = root / "home"
-            (home / ".config/systemd/user").mkdir(parents=True)
-            account = SimpleNamespace(
-                pw_uid=os.getuid(), pw_gid=os.getgid(), pw_dir=str(home)
-            )
-            with patch.object(setup, "BACKUPS", root / "backups"), \
-                    patch.object(setup.pwd, "getpwnam", return_value=account), \
-                    patch.object(setup, "run") as command, \
-                    patch.object(setup.os, "chown"):
-                setup.install_early_start()
-                expected_enable = tuple(setup.user_systemctl(
-                    "enable", "virtualglove-early-start.service"
-                ))
-                expected_reset = tuple(setup.user_systemctl(
-                    "reset-failed", "virtualglove-early-start.service"
-                ))
-            self.assertTrue((home / ".config/systemd/user" /
-                             "virtualglove-early-start.service").is_file())
-            command.assert_any_call(*expected_enable)
-            command.assert_any_call(*expected_reset)
 
     def test_retropie_install_twice_preserves_existing_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -476,10 +454,12 @@ class SetupTests(unittest.TestCase):
             (config / "token").write_text("existing-private-token")
             (config / "launcher.json").write_text('{"uno_q":"existing.local"}')
             (config / "games.json").write_text('{"custom":"game"}')
-            with patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup.os, "chown"), patch.object(setup.grp, "getgrnam", return_value=SimpleNamespace(gr_gid=100)):
+            with patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup.os, "chown"), patch.object(setup.grp, "getgrnam", return_value=SimpleNamespace(gr_gid=100)), patch("router_shared.pairing_install.install") as install_link:
                 setup.install_retropie("new.local")
                 first = hook.read_text()
                 setup.install_retropie("new.local")
+            self.assertEqual(install_link.call_count, 2)
+            self.assertEqual(install_link.call_args.args[0], "virtualglove")
             self.assertEqual(hook.read_text(), first)
             self.assertEqual((config / "token").read_text(), "existing-private-token")
             launcher = json.loads((config / "launcher.json").read_text())
@@ -519,7 +499,7 @@ class SetupTests(unittest.TestCase):
             def mapped(value):
                 path = Path(value)
                 return root / str(path).lstrip("/") if str(path).startswith(("/etc/", "/usr/local/")) else path
-            with patch.object(setup, "SOURCE", AppPath()), patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup, "install_early_start") as early, patch.object(setup.os, "chown"), patch.object(setup.socket, "gethostname", return_value="VirtualGlove"), patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000, pw_dir=str(root / "home/arduino"))):
+            with patch.object(setup, "SOURCE", AppPath()), patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup.os, "chown"), patch.object(setup.socket, "gethostname", return_value="VirtualGlove"), patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000, pw_dir=str(root / "home/arduino"))):
                 setup.install_unoq(None)
                 first = compose.read_text()
                 setup.install_unoq(None)

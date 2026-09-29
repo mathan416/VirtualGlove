@@ -28,19 +28,25 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
-        if self.path != "/frame" or self.headers.get("X-Router-Token") != TOKEN:
+        if self.path not in ("/frame", "/ready") or self.headers.get("X-Router-Token") != TOKEN:
             self.send_error(403)
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
             if not 1 <= size <= 256:
                 raise ValueError("Invalid frame size")
-            rows = json.loads(self.rfile.read(size))["rows"]
-            if (not isinstance(rows, list) or len(rows) != 8 or
-                    any(not isinstance(row, str) or len(row) != 13 or
-                        any(pixel not in "01234567" for pixel in row) for row in rows)):
-                raise ValueError("Invalid frame")
-            delivered = Bridge.call("draw_router_frame", "".join(rows)) is True
+            document = json.loads(self.rfile.read(size))
+            if self.path == "/ready":
+                if document != {}:
+                    raise ValueError("Invalid startup acknowledgement")
+                delivered = Bridge.call("finish_router_startup") is True
+            else:
+                rows = document["rows"]
+                if (not isinstance(rows, list) or len(rows) != 8 or
+                        any(not isinstance(row, str) or len(row) != 13 or
+                            any(pixel not in "01234567" for pixel in row) for row in rows)):
+                    raise ValueError("Invalid frame")
+                delivered = Bridge.call("draw_router_frame", "".join(rows)) is True
         except (OSError, ValueError, KeyError, TypeError):
             self.send_error(400)
             return

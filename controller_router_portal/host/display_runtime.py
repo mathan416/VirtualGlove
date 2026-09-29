@@ -72,6 +72,21 @@ class MatrixScheduler:
         self.last_error = None
         self.manifests = {}
         self.pairing_override = None
+        self.startup_complete = False
+
+    def finish_startup(self):
+        """Leave the firmware hourglass only after installed products become ready."""
+        if self.startup_complete:
+            return True
+        try:
+            request = Request("http://127.0.0.1:8123/ready", b"{}",
+                              {"Content-Type": "application/json",
+                               "X-Router-Token": TOKEN.read_text().strip()}, method="POST")
+            with urlopen(request, timeout=2) as response:
+                self.startup_complete = response.status == 200 and json.load(response).get("delivered") is True
+        except (OSError, ValueError):
+            return False
+        return self.startup_complete
 
     def begin_pairing(self, identity, pin):
         if len(identity) != 7 or len(pin) != 6:

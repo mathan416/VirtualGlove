@@ -1,3 +1,13 @@
+# Project: VirtualGlove
+# File: tests/test_console_recovery.py
+# Purpose: Verify transactional console upgrade recovery in isolation.
+# Author: Iain Bennett
+# Copyright (c) 2026 Iain Bennett
+# SPDX-License-Identifier: MIT
+# Change log:
+#   2026-09-29 - Added release audit source documentation.
+# Full history: docs/CHANGELOG.md and Git history.
+
 """Exercise console upgrade recovery without modifying a host or its services."""
 import importlib.util
 from pathlib import Path

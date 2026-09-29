@@ -98,6 +98,9 @@ class ConcurrentLauncher:
     def _reconcile_games(self) -> None:
         """Follow authenticated product sessions without a browser selection."""
         health = {app: self._health(app) for app in self.apps}
+        installed = [app for app in self.apps if (self.apps[app]["path"] / "app.yaml").is_file()]
+        if all(health[app][0] for app in installed):
+            self.matrix.finish_startup()
         active = [app for app, (ready, game) in health.items() if ready and game]
         if self.selected and not health[self.selected][0]:
             self._write_leases(None)

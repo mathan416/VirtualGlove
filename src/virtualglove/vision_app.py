@@ -1014,6 +1014,7 @@ def main() -> int:
     # diagnostic trace; the normal gameplay graph remains unchanged.
     args.tracking_evidence = trace is not None
     def paired_connections():
+        """Read saved console credentials for authenticated profile requests."""
         if not args.device_config:
             return [{'token': token, 'host': args.receiver}]
         config = json.loads(args.device_config.read_text())

@@ -949,26 +949,19 @@ recording count as validated for other users.
 
 ### Matrix during startup
 
-The Arduino sketch shows an hourglass before its blocking Router Bridge setup.
-A dedicated display task owns subsequent framebuffer writes and keeps startup
-feedback moving independently of Linux and Python initialization.
+Controller Router owns the shared Matrix firmware. After the board’s protected
+boot display, its sketch animates a five-frame hourglass every 350 ms. A Zephyr
+display task keeps it moving while Router Bridge and the Linux services start.
+The hourglass indicates activity rather than a percentage of completion.
 
-The main sketch task registers the bridge endpoints; those endpoints update
-requested status/profile values, and the display task renders them. If the
-display-task stack allocation fails, the first hourglass stays visible during
-setup and the normal sketch loop takes over rendering afterward. This task
-currently uses the Zephyr API supplied by the Arduino sketch platform.
+The host acknowledges startup when all installed controller services report
+healthy. Router then shows its neutral display until an app is selected. A valid
+app display request can also finish the loading state; selected apps send named
+animation requests through Router rather than uploading their own sketches.
 
-Python requests loading before importing the web controls, then forwards normal
-worker status. The hourglass indicates activity, not measured completion. It
-does not replace the protected system boot display.
-
-The optional host user service `virtualglove-early-start.service` releases the
-installed sketch earlier using the loader release flag, after checking the
-selected app and sketch samples. It never resets, halts, or flashes the sketch.
-This brings the existing hourglass forward while App Lab continues starting.
-Failure falls back to normal App Lab startup; the cold-boot trial was confirmed
-on the physical board.
+The shared installer retires the obsolete VirtualGlove early-start service and
+helper after Router starts successfully. Arduino user lingering remains enabled
+so the shared host services can run at boot without an interactive login.
 
 ### Idle display preferences
 

@@ -8,6 +8,8 @@ Arduino_LED_Matrix matrix;
 volatile unsigned long lastFrameAt = 0;
 volatile unsigned long nextIdleAt = 0;
 volatile unsigned int idleFrame = 0;
+volatile bool startupComplete = false;
+unsigned int loadingFrame = 0;
 struct k_thread displayThread;
 k_thread_stack_t* displayStack = nullptr;
 k_tid_t displayThreadId = nullptr;
@@ -25,6 +27,28 @@ void drawIdle() {
   matrix.draw(pixels);
 }
 
+// Keep the loading display alive before Linux and Router's host service start.
+void drawLoading() {
+  static const char* frames[][8] = {
+    {"0007777777000", "0000733370000", "0000073700000", "0000007000000", "0000003000000", "0000070700000", "0000700070000", "0007777777000"},
+    {"0007777777000", "0000733370000", "0000073700000", "0000003000000", "0000007000000", "0000070700000", "0000703070000", "0007777777000"},
+    {"0007777777000", "0000703070000", "0000073700000", "0000003000000", "0000003000000", "0000073700000", "0000733370000", "0007777777000"},
+    {"0005555555000", "0000500050000", "0000050500000", "0000003000000", "0000007000000", "0000053500000", "0000533350000", "0005555555000"},
+    {"0007777777000", "0000700070000", "0000070700000", "0000007000000", "0000003000000", "0000073700000", "0000733370000", "0007777777000"},
+  };
+  uint8_t pixels[104];
+  unsigned int frame = loadingFrame++ % 5;
+  for (int y = 0; y < 8; ++y)
+    for (int x = 0; x < 13; ++x) pixels[y * 13 + x] = frames[frame][y][x] - '0';
+  matrix.draw(pixels);
+}
+
+bool finish_router_startup() {
+  startupComplete = true;
+  nextIdleAt = 0;
+  return true;
+}
+
 bool draw_router_frame(String encoded) {
   if (encoded.length() != 104) return false;
   uint8_t pixels[104];
@@ -34,6 +58,7 @@ bool draw_router_frame(String encoded) {
     pixels[i] = value - '0';
   }
   matrix.draw(pixels);
+  startupComplete = true;
   lastFrameAt = millis();
   return true;
 }
@@ -45,7 +70,8 @@ String get_router_firmware() {
 void refreshDisplay() {
   unsigned long now = millis();
   if ((lastFrameAt == 0 || now - lastFrameAt > 1800) && now >= nextIdleAt) {
-    drawIdle();
+    if (startupComplete) drawIdle();
+    else drawLoading();
     nextIdleAt = now + 350;
   }
 }
@@ -57,7 +83,7 @@ void displayTask(void*, void*, void*) {
 void setup() {
   matrix.begin();
   matrix.setGrayscaleBits(3);
-  drawIdle();
+  drawLoading();
   displayStack = k_thread_stack_alloc(2048, 0);
   if (displayStack != nullptr) {
     displayThreadId = k_thread_create(&displayThread, displayStack, 2048,
@@ -67,6 +93,7 @@ void setup() {
   Bridge.begin();
   Bridge.provide("draw_router_frame", draw_router_frame);
   Bridge.provide("get_router_firmware", get_router_firmware);
+  Bridge.provide("finish_router_startup", finish_router_startup);
 }
 
 void loop() {

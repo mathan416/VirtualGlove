@@ -168,6 +168,25 @@ def restore_services() -> None:
     command('systemctl', '--user', 'start', PRODUCT_SERVICE.name, check=False)
 
 
+def retire_early_start() -> None:
+    """Retire only the legacy VirtualGlove boot helper after Router is running."""
+    units = HOME / ".config/systemd/user"
+    removed_unit = False
+    for name in ("virtualglove-early-start.service", "virtualglove-early-start-trial.service"):
+        path = units / name
+        if not (path.exists() or path.is_symlink()):
+            continue
+        command("systemctl", "--user", "disable", "--now", name, check=False)
+        path.unlink()
+        removed_unit = True
+        command("systemctl", "--user", "reset-failed", name, check=False)
+    helper = HOME / ".local/lib/virtualglove/uno-q-early-start.py"
+    if helper.exists() or helper.is_symlink():
+        helper.unlink()
+    if removed_unit:
+        command("systemctl", "--user", "daemon-reload")
+
+
 def install() -> str:
     if os.geteuid() != 1000:
         raise RuntimeError("Install the UNO Q launcher as the arduino user.")
@@ -179,6 +198,7 @@ def install() -> str:
         command("python3", str(newer / "host/products.py"), "start-all")
         command("systemctl", "--user", "enable", "--now", SERVICE.name)
         command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
+        retire_early_start()
         return "Kept the newer Controller Router launcher and started installed controller services."
     validate_package(SOURCE)
     DEST.parent.mkdir(parents=True, exist_ok=True)
@@ -304,6 +324,7 @@ def install() -> str:
         if had_portal:
             restore_services()
         raise
+    retire_early_start()
     if LEGACY.is_dir():
         saved = DEST.with_name(DEST.name + ".app-lab-backup")
         suffix = 1

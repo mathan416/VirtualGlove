@@ -202,9 +202,9 @@ def help_index_content() -> str:
         "Start with This console for your current connections, or choose a guide below. The manuals are available offline.</p>"
         "<p><strong>Gamepad not responding in a game?</strong> On RetroPie, Recalbox, or Batocera, "
         "try another connected gamepad. The one in your hands may be assigned to Player 2 while "
-        "another is Player 1. Check <a href='/help/controller-router'>Controller Router</a> "
-        "and <a href='/help/troubleshooting'>Troubleshooting</a> before changing assignments.</p>"
-        "<p><strong>Wireless controller asleep or reconnecting?</strong> Router keeps its merged players connected and reconnects each source to its saved player. If Router itself restarts, exit and relaunch the game after it is ready. See <a href='/help/controller-router'>Controller Router</a> for legacy and modern RetroArch routing.</p>"
+        "another is Player 1. Check <a class=help-link href='/help/controller-router'>Controller Router</a> "
+        "and <a class=help-link href='/help/troubleshooting'>Troubleshooting</a> before changing assignments.</p>"
+        "<p><strong>Wireless controller asleep or reconnecting?</strong> Router keeps its merged players connected and reconnects each source to its saved player. If Router itself restarts, exit and relaunch the game after it is ready. See <a class=help-link href='/help/controller-router'>Controller Router</a> for legacy and modern RetroArch routing.</p>"
         + "".join(sections)
     )
 

@@ -655,6 +655,8 @@ class ControlStateTests(unittest.TestCase):
     def test_help_index_lists_the_public_guides(self):
         page = help_index_page()
         self.assertIn(b"Help, without leaving the glove", page)
+        self.assertEqual(page.count(b"class=help-link href="), 3)
+        self.assertIn(b".help-link{color:var(--cyan)", page)
         self.assertIn(b"try another connected gamepad", page)
         self.assertIn(b"assigned to Player 2", page)
         self.assertIn(b"/help/gameplay", page)
@@ -698,7 +700,7 @@ class ControlStateTests(unittest.TestCase):
         self.assertEqual(title, "This console")
         self.assertIn("http://10.0.2.105:8100/help", body)
         self.assertIn("http://10.0.2.105:8100/play", body)
-        self.assertIn("https://10.0.2.105:8443/setup", body)
+        self.assertIn("http://10.0.2.105/pair", body)
         self.assertIn("retropieconsole.local", body)
         self.assertIn("55355", body)
         self.assertNotIn("private-token", body)

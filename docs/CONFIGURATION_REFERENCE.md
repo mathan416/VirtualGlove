@@ -2294,7 +2294,7 @@ one option.
 
 ### Legacy standalone Matrix startup hourglass
 
-This section describes the separate VirtualGlove sketch retained for standalone maintenance. On shared installs, Router’s sketch shows neutral artwork after boot; product loading and profile animations are named manifest requests. The product does not upload its own sketch, and its saved attract preferences do not alter Router’s idle display.
+This section describes the separate VirtualGlove sketch retained for standalone maintenance. On shared installs, Router’s sketch shows a startup hourglass, then neutral artwork when the installed controller services are ready; product loading and profile animations are named manifest requests. The product does not upload its own sketch, and its saved attract preferences do not alter Router’s idle display.
 
 After the system boot display, the Arduino sketch draws a pulsing hourglass
 before connecting to Router Bridge. Its display task runs independently of the
@@ -2311,49 +2311,6 @@ display task uses the current Arduino sketch platform's thread API; if its stack
 cannot be allocated, the initial hourglass remains visible and ordinary loop
 animation resumes after bridge initialization. Verify a cold boot on the physical
 matrix, especially the transition from the system display to the hourglass.
-
-
-### Early-start host helper
-
-The helper runs on every boot as the Arduino user, separately from App Lab.
-It reduces the blank interval after the system animation by releasing the
-installed sketch early. It preserves the existing hourglass and uses no reset,
-halt, flash, or replacement of Arduino system services. The one-boot trial was
-confirmed on the physical board before enabling repeated startup.
-
-The UNO installer performs this automatically. For manual repair, install
-`scripts/uno-q-early-start.py` at
-`~/.local/lib/virtualglove/uno-q-early-start.py` and
-`uno-q/virtualglove-early-start.service` at
-`~/.config/systemd/user/virtualglove-early-start.service`. The Arduino user must
-have lingering enabled. Run `systemctl --user daemon-reload` and
-`systemctl --user enable virtualglove-early-start.service`. Disable the old
-`virtualglove-early-start-trial.service` if present. No armed marker is required.
-
-The service waits up to 30 seconds for the router and permits 20 seconds for the
-debug check and release. It verifies the VirtualGlove Controller, VirtualGlove startup app, Wait for
-App image header, and four 64-byte code samples from
-`firmware/matrix/virtualglove-matrix.elf-zsk.bin`. This is not a full integrity
-check. If the image is unavailable or differs, or the debug pins are busy, it
-fails without releasing the sketch; normal App Lab startup continues. App Lab
-may subsequently reset the sketch during its ordinary upload.
-
-Inspect `journalctl --user -b -u virtualglove-early-start.service`; disable with
-`systemctl --user disable virtualglove-early-start.service`. Review compatibility
-after platform updates: the tested loader is Arduino platform 1.0.0 with App Lab
-0.13.0. The helper writes only the startup release word `0xCAFFEEEE` at
-`0x40036400` after checking board identity, startup-app selection, the packaged
-Wait for App header, and four 64-byte samples of installed sketch memory. This
-is a bounded compatibility check, not complete firmware attestation. Do not run
-it during uploads or alongside another debugger.
-
-For validation, reboot rather than judging the user-service restart alone. A
-successful cold boot shows the Arduino logo and heart, measures the blank
-interval, starts the project hourglass, and reaches the usual glove animation
-and controls without reconnecting the camera. A service log that reports
-`released` confirms the helper action; it does not by itself prove cold-boot
-timing or application readiness. If the checks fail, leave the helper disabled
-and allow ordinary App Lab startup to remain the fallback.
 
 
 ### Matrix animation timing reference
@@ -2724,13 +2681,12 @@ the board OS or App Lab. Allow at least 3 GiB of free space in the Arduino home 
 and 512 MiB in the platform's backup area for package operations and backups.
 Larger updates may need more space.
 
-UNO installation stages files in `/home/arduino/ArduinoApps/virtualglove`,
-verifies and flashes the package's precompiled Matrix image through the factory
-OpenOCD installation, then uses `arduino-app-cli app start` as the Arduino user
-to start the Linux application without downloading a compiler. The root setup
-phase configures networking, shutdown, default startup, and the user early-start
-service. It enables Arduino user lingering; it does not issue an early SWD
-release or reboot during installation.
+UNO installation stages files in `/home/arduino/ArduinoApps/virtualglove`.
+On shared installations, Controller Router installs the sole Matrix sketch and
+starts the controller Linux services. VirtualGlove does not flash its separate
+Matrix firmware. The root setup phase configures networking, shutdown, camera
+recovery, Wi-Fi status, and Arduino user lingering. Router becomes the startup
+app and retires the old VirtualGlove early-start helper after successful startup.
 `data/`, generated caches, and the cabinet-only cheat sheet are preserved.
 
 RetroPie installation preserves controller assignments and existing launch hooks.

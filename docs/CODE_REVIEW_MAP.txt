@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.3
-Git-visible files: 775
+Git-visible files: 789
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-775 tracked or non-ignored files are present in this checkout. Ignored
+789 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -235,16 +235,30 @@ are intentionally omitted.
 |   |   |-- controller-router-portal.service
 |   |   |-- controller-router-products.service
 |   |   |-- display_runtime.py
+|   |   |-- pairing.html
+|   |   |-- pairing.py
 |   |   |-- portal-compose.yaml
 |   |   |-- products.py
-|   |   `-- routing.py
+|   |   |-- routing.py
+|   |   `-- secure_pairing.py
 |   |-- python
 |   |   |-- assets
 |   |   |   |-- buddy.png
 |   |   |   `-- pixel-pal.png
+|   |   |-- guides
+|   |   |   |-- Controller-Router-Deployment-Guide.pdf
+|   |   |   |-- Controller-Router-Integration-Guide.pdf
+|   |   |   |-- Controller-Router-Pairing-Guide.pdf
+|   |   |   |-- Controller-Router-Technical-Reference.pdf
+|   |   |   `-- Controller-Router-User-Guide.pdf
 |   |   |-- index.html
 |   |   |-- main.py
-|   |   `-- setup.html
+|   |   |-- setup.html
+|   |   `-- trust.html
+|   |-- shared
+|   |   |-- __init__.py
+|   |   |-- pairing.py
+|   |   `-- pairing_console.py
 |   |-- client.py
 |   |-- display_protocol.py
 |   |-- install.py
@@ -848,7 +862,6 @@ are intentionally omitted.
 |   |-- soak-full-vision-exposure.py
 |   |-- stamp-build-version.py
 |   |-- stamp-firmware-version.py
-|   |-- uno-q-early-start.py
 |   |-- verify-app-lab-package.py
 |   |-- verify-batocera-native-core.py
 |   |-- verify-launchbox-native-core.py
@@ -867,6 +880,10 @@ are intentionally omitted.
 |   |   |-- launch_install.py
 |   |   |-- LICENSE
 |   |   |-- merged_gamepad.py
+|   |   |-- pairing.py
+|   |   |-- pairing_adapter.py
+|   |   |-- pairing_console.py
+|   |   |-- pairing_install.py
 |   |   |-- retroarch_udev.py
 |   |   |-- storage.py
 |   |   |-- systems.py
@@ -1021,7 +1038,6 @@ are intentionally omitted.
 |   |-- virtualglove-camera-recovery.path
 |   |-- virtualglove-camera-recovery.py
 |   |-- virtualglove-camera-recovery.service
-|   |-- virtualglove-early-start.service
 |   |-- virtualglove-system-shutdown.conf
 |   |-- virtualglove-system-shutdown.path
 |   |-- virtualglove-system-shutdown.service
