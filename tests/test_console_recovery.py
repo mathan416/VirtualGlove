@@ -144,6 +144,19 @@ class ConsoleRecoveryTests(unittest.TestCase):
         self.assertEqual(os.readlink(link), 'receiver.py')
         self.assertEqual((data / 'live.json').read_text(), 'after')
 
+    def test_large_unmanaged_media_is_not_copied_or_removed(self):
+        for name in ('skyscraper', 'downloaded_media', 'gamelists'):
+            directory = self.payload / name
+            directory.mkdir()
+            (directory / 'personal.txt').write_text('before')
+        self.recovery.begin()
+        for name in ('skyscraper', 'downloaded_media', 'gamelists'):
+            self.assertFalse((self.recovery.backup / '0' / name).exists())
+            (self.payload / name / 'personal.txt').write_text('after')
+        self.recovery.restore()
+        for name in ('skyscraper', 'downloaded_media', 'gamelists'):
+            self.assertEqual((self.payload / name / 'personal.txt').read_text(), 'after')
+
     def test_exception_and_interrupt_use_outer_transaction_recovery(self):
         for failure in (ValueError('validation failed'), KeyboardInterrupt()):
             with self.subTest(failure=type(failure).__name__):

@@ -568,7 +568,10 @@ def stop_managed_runtime(machine, setup):
 
 CONSOLE_UNITS = ('virtualglove-controller-router.service', 'virtualglove-games.service',
                  'virtualglove-receiver.service', 'virtualglove-receiver.timer')
-SNAPSHOT_EXCLUDES = {'data', '.cache', '.venv', '__pycache__', '.git'}
+# These EmulationStation/Skyscraper collections can be tens of gigabytes and
+# are not modified by our installer. Keep them in place through rollback.
+SNAPSHOT_EXCLUDES = {'data', '.cache', '.venv', '__pycache__', '.git',
+                     'skyscraper', 'downloaded_media', 'gamelists'}
 
 
 def console_recovery_paths(machine):
