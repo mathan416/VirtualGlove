@@ -11,11 +11,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            if size < 1 or size > 512:
+            if size < 1 or size > 32768:
                 raise ValueError("Invalid request size")
             message = json.loads(self.rfile.read(size))
             with socket.socket(socket.AF_UNIX) as conn:
-                conn.settimeout(8)
+                conn.settimeout(20)
                 conn.connect("/broker/control.sock")
                 conn.sendall((json.dumps(message) + "\n").encode())
                 answer = bytearray()

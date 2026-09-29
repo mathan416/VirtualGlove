@@ -206,17 +206,15 @@ an assignment, then relaunch it to use the corrected routing.
 
 ### A wireless controller falls asleep or wakes during a game
 
-On RetroPie, a known Controller Router hotplug issue can shift RetroArch's
-numbered device slots when a wireless pad sleeps or reconnects during a
-Libretro game. That pad may stop controlling its merged player even though
-Setup still shows its correct saved assignment. This can affect any wireless
-controller.
+Router keeps the named merged outputs connected while physical controllers
+sleep, wake, disconnect, or reconnect. A source returns to its saved player.
+RetroArch 1.19.1 receives temporary routing settings resolved immediately before
+launch; supported newer builds use strict named-device reservations.
 
-Turn on the wireless controllers you plan to use before launching a game. If
-one sleeps or wakes during play and input stops, wait for it to reconnect,
-then exit and relaunch the game. In RetroArch, Port 1 should show
-**VirtualGlove Merged Player 1**; a different merged player indicates the
-shifted slot. A routing fix is pending.
+If Router itself restarts or loses its merged outputs, exit the game, wait for
+Router to become ready, then relaunch. The running game cannot safely recover
+its former slots after its virtual controllers have been destroyed. Changes
+made in Setup > Controller Router take effect on the next launch.
 
 ### Controller Router reports an unavailable controller
 

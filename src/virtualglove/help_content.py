@@ -40,7 +40,7 @@ HELP_GUIDES = (
     {'slug': 'cabinet', 'title': 'This console', 'file': None, 'description': 'Live VirtualGlove Controller links and the active console connection, generated for this cabinet.', 'group': 'User manuals'},
     {'slug': 'gameplay', 'title': 'Game and Gesture Guide', 'file': 'GAMEPLAY_GUIDE.md', 'description': 'Illustrated gesture instructions, program profiles, configured-game controls, and play tips.', 'group': 'User manuals'},
     {'slug': 'input-modes', 'title': 'VirtualGlove Input Modes', 'file': 'INPUT_MODES.md', 'description': 'Use launch-safe joystick mode, merged physical controls, and native Super Glove Ball input.', 'group': 'User manuals'},
-    {'slug': 'controller-router', 'title': 'Controller Router', 'file': 'CONTROLLER_ROUTER.md', 'description': 'Choose UNO Q apps, understand the shared Matrix, assign gamepads to players, and recover a wrong assignment.', 'group': 'User manuals'},
+    {'slug': 'controller-router', 'title': 'Controller Router', 'file': 'CONTROLLER_ROUTER.md', 'description': 'Choose UNO Q apps, understand the shared Matrix, assign gamepads to players, choose systems, and recover a wrong assignment.', 'group': 'User manuals'},
     {'slug': 'matrix', 'title': 'Matrix Display Guide', 'file': 'MATRIX_GUIDE.md', 'description': 'Recognise startup, glove animations, Academy letters, game profiles, pairing, and errors.', 'group': 'User manuals'},
     {'slug': 'camera', 'title': 'Camera Setup', 'file': 'CAMERA_GUIDE.md', 'description': 'Select, position, tune, and troubleshoot the camera used for gesture controls.', 'group': 'User manuals'},
     {'slug': 'installation', 'title': 'Installation and Setup', 'file': 'INSTALL_README.md', 'description': 'Install the Controller and console, pair them, centre a hand, and test a game.', 'group': 'Installation guides'},
@@ -204,6 +204,7 @@ def help_index_content() -> str:
         "try another connected gamepad. The one in your hands may be assigned to Player 2 while "
         "another is Player 1. Check <a href='/help/controller-router'>Controller Router</a> "
         "and <a href='/help/troubleshooting'>Troubleshooting</a> before changing assignments.</p>"
+        "<p><strong>Wireless controller asleep or reconnecting?</strong> Router keeps its merged players connected and reconnects each source to its saved player. If Router itself restarts, exit and relaunch the game after it is ready. See <a href='/help/controller-router'>Controller Router</a> for legacy and modern RetroArch routing.</p>"
         + "".join(sections)
     )
 

@@ -113,6 +113,19 @@ def command(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     return result
 
 
+def validate_package(source: Path) -> None:
+    """Reject incomplete bundles before replacing a working launcher."""
+    required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py",
+                "app/VERSION", "app/app.yaml", "app/python/main.py",
+                "app/sketch/sketch.ino", "app/sketch/sketch.yaml",
+                "python/main.py", "python/index.html", "python/setup.html",
+                "python/assets/pixel-pal.png", "python/assets/buddy.png")
+    missing = [name for name in required if not (source / name).is_file()
+               or (source / name).stat().st_size == 0]
+    if missing:
+        raise RuntimeError("Incomplete Controller Router launcher package: " + ", ".join(missing))
+
+
 def install() -> str:
     if os.geteuid() != 1000:
         raise RuntimeError("Install the UNO Q launcher as the arduino user.")
@@ -125,12 +138,7 @@ def install() -> str:
         command("systemctl", "--user", "enable", "--now", SERVICE.name)
         command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
         return "Kept the newer Controller Router launcher and started installed controller services."
-    required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py",
-                "app/VERSION", "app/app.yaml", "app/python/main.py",
-                "app/sketch/sketch.ino", "app/sketch/sketch.yaml")
-    missing = [name for name in required if not (SOURCE / name).is_file()]
-    if missing:
-        raise RuntimeError("Incomplete Controller Router launcher package: " + ", ".join(missing))
+    validate_package(SOURCE)
     DEST.parent.mkdir(parents=True, exist_ok=True)
     listing = app_listing()
     for app_id, app in APPS.items():

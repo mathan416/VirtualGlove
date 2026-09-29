@@ -104,10 +104,16 @@ LAUNCHER = ConcurrentLauncher()
 class Handler(socketserver.StreamRequestHandler):
     def handle(self) -> None:
         try:
-            message = json.loads(self.rfile.readline(1024))
+            message = json.loads(self.rfile.readline(32769))
             action = message.get("action")
             if action == "state":
                 result = LAUNCHER.state()
+            elif action == "routing":
+                try:
+                    from .routing import routing
+                except ImportError:
+                    from routing import routing
+                result = routing(message, LAUNCHER.state())
             elif action == "select":
                 result = LAUNCHER.select(message.get("app"))
             elif action == "display" and hasattr(LAUNCHER, "display"):

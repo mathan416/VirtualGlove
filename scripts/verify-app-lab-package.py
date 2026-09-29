@@ -246,6 +246,7 @@ REQUIRED_FILES = {
     "VirtualGlove/src/router_shared/controller_router.py",
     "VirtualGlove/src/router_shared/merged_gamepad.py",
     "VirtualGlove/src/router_shared/storage.py",
+    "VirtualGlove/src/router_shared/systems.py",
     "VirtualGlove/src/router_shared/retroarch_udev.py",
     "VirtualGlove/src/router_shared/virtual_sources.py",
     "VirtualGlove/recalbox/virtualglove-service",

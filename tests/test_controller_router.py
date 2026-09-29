@@ -185,17 +185,13 @@ class ControllerRouterTests(unittest.TestCase):
             recalbox_global.with_name("retroarchcustom.cfg.overrides.cfg"),
             recalbox_paths)
 
-    def test_retropie_launch_hook_resolves_outputs_after_joystick_selection(self):
+    def test_retropie_launch_hook_only_reports_session(self):
         hook = (Path(__file__).resolve().parents[1] /
                 "retropie/runcommand-onstart-virtualglove.sh").read_text()
-        self.assertNotIn("virtualglove-controller-router apply", hook)
-        self.assertNotIn("sudo", hook)
-        self.assertIn('lr-fceumm|lr-nestopia)', hook)
-        self.assertIn('/sys/class/input/js*', hook)
-        self.assertIn('VirtualGlove Merged Player $player', hook)
-        self.assertIn('/opt/retropie/configs/$1/retroarch.cfg', hook)
-        self.assertNotIn('/dev/shm/retroarch.cfg', hook)
-        self.assertNotIn('lr-nestopia-powerglove)', hook)
+        self.assertIn('virtualglove-retropie-hook start', hook)
+        self.assertNotIn('retroarch.cfg', hook)
+        self.assertNotIn('/sys/class/input', hook)
+        self.assertNotIn('controller-router apply', hook)
 
     def test_retropie_autoconfig_profiles_match_router_output_identities(self):
         root = Path(__file__).resolve().parents[1] / "retropie/retroarch"

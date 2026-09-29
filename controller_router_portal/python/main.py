@@ -13,7 +13,7 @@ PAGE = Path(__file__).with_name("index.html")
 
 
 def broker(message: dict) -> dict:
-    connection = HTTPConnection("portal-host-bridge", 8122, timeout=10)
+    connection = HTTPConnection("portal-host-bridge", 8122, timeout=22)
     try:
         connection.request("POST", "/request", json.dumps(message), {"Content-Type": "application/json"})
         response = connection.getresponse()
@@ -63,11 +63,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, broker({"action": "state"}))
             except (OSError, ValueError):
                 self.send_json(503, {"error": "The UNO Q launcher is unavailable."})
-        elif path == "/" or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
-            asset = PAGE if path == "/" else ASSETS / path.rsplit("/", 1)[-1]
+        elif path in ("/", "/setup", "/setup.html") or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
+            asset = PAGE if path == "/" else PAGE.with_name("setup.html") if path in ("/setup", "/setup.html") else ASSETS / path.rsplit("/", 1)[-1]
             body = asset.read_bytes()
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8" if path == "/" else "image/png")
+            self.send_header("Content-Type", "text/html; charset=utf-8" if path in ("/", "/setup", "/setup.html") else "image/png")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -76,7 +76,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self) -> None:
-        if urlsplit(self.path).path != "/api/select":
+        if urlsplit(self.path).path not in ("/api/select", "/api/routing"):
             self.send_error(404)
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
@@ -92,9 +92,17 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            if not 1 <= size <= 128:
+            if not 1 <= size <= (32768 if urlsplit(self.path).path == "/api/routing" else 128):
                 raise ValueError("Invalid request size.")
-            app = json.loads(self.rfile.read(size)).get("app")
+            incoming = json.loads(self.rfile.read(size))
+            if urlsplit(self.path).path == "/api/routing":
+                if not isinstance(incoming, dict):
+                    raise ValueError("Invalid routing request.")
+                incoming["action"] = "routing"
+                result = broker(incoming)
+                self.send_json(400 if result.get("error") else 200, result)
+                return
+            app = incoming.get("app")
             self.send_json(202, broker({"action": "select", "app": app}))
         except (OSError, ValueError, AttributeError, TypeError):
             self.send_json(400, {"error": "Invalid controller choice."})

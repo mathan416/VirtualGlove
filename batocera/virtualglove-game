@@ -18,14 +18,7 @@ case "${1:-}" in
         "$APP/batocera/VirtualGlove" network-latency
         emulator="${3:-}"
         if [ "$emulator" = libretro ]; then
-            # Batocera regenerates retroarchcustom.cfg for every launch. Apply
-            # the merged physical-controller assignment after that generation
-            # for every ordinary Libretro core, not only FCEUmm. Native Super
-            # Glove Ball owns its input path directly and remains separate.
-            if [ "${4:-}" != nestopia_powerglove ]; then
-                /usr/bin/python3 -m router_shared.controller_router apply \
-                    --platform batocera --config "$APP/data/controller-router.json" || exit 1
-            fi
+            # The shared execution adapter applies routing after configgen.
             case "${4:-}" in
                 nestopia_powerglove) emulator="lr-nestopia-powerglove" ;;
                 *) emulator="lr-${4:-}" ;;

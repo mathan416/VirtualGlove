@@ -31,6 +31,9 @@ low_latency_wifi() {
 case "${1:-}" in
     start)
         low_latency_wifi
+        if [ -f /userdata/system/controller-router/generator-path ]; then
+            PYTHONPATH=/userdata/system/controller-router/lib python3 -c 'from router_shared.launch_install import activate_batocera; activate_batocera()' || exit 1
+        fi
         exec "$service" start
         ;;
     stop)
@@ -39,12 +42,18 @@ case "${1:-}" in
         ;;
     restart)
         low_latency_wifi
+        if [ -f /userdata/system/controller-router/generator-path ]; then
+            PYTHONPATH=/userdata/system/controller-router/lib python3 -c 'from router_shared.launch_install import activate_batocera; activate_batocera()' || exit 1
+        fi
         "$service" stop
         "$core_mount" restart || echo "ACTION  Native Super Glove Ball core is unavailable; FCEUmm remains usable." >&2
         exec "$service" start
         ;;
     network-latency)
         low_latency_wifi
+        if [ -f /userdata/system/controller-router/generator-path ]; then
+            PYTHONPATH=/userdata/system/controller-router/lib python3 -c 'from router_shared.launch_install import activate_batocera; activate_batocera()' || exit 1
+        fi
         ;;
     *) exec "$service" "$@" ;;
 esac

@@ -20,6 +20,7 @@ import select
 import socket
 import struct
 import subprocess
+import sys
 import threading
 import time
 import secrets
@@ -28,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 from .storage import atomic_write
+from .systems import catalog
 from .retroarch_udev import retroarch_udev_event_nodes, retroarch_index_for_js
 from .merged_gamepad import (
     AXIS_CODES, BUTTON_NAMES, DIRECTION_NAMES, ANALOG_NAMES,
@@ -124,15 +126,14 @@ def session_mapping(saved: dict[str, Any], candidate: dict[str, Any]) -> list[di
 def validate_config(data: object) -> dict[str, Any]:
     """Validate and normalize one complete router document."""
     if not isinstance(data, dict) or set(data) - {
-            "format", "platform", "players", "virtualglove_player", "physical_scope"}:
+            "format", "platform", "players", "virtualglove_player", "physical_scope", "physical_systems"}:
         raise ValueError("Invalid Controller Router configuration.")
     if data.get("format") != FORMAT:
         raise ValueError("Unsupported Controller Router configuration version.")
     if data.get("platform") not in SUPPORTED_PLATFORMS:
         raise ValueError("Choose RetroPie, Recalbox, or Batocera.")
-    physical_scope = data.get("physical_scope", "all")
-    if physical_scope not in ("nes", "all"):
-        raise ValueError("Controller Router physical scope must be NES or all Libretro systems.")
+    from .systems import policy
+    physical_scope, physical_systems = policy(data)
     virtual_player = data.get("virtualglove_player")
     if isinstance(virtual_player, bool) or virtual_player not in (None, 1, 2, 3, 4):
         raise ValueError("VirtualGlove must be unassigned or assigned to one player.")
@@ -164,7 +165,8 @@ def validate_config(data: object) -> dict[str, Any]:
     return {"format": FORMAT, "platform": data["platform"],
             "players": sorted(normalized, key=lambda item: item["player"]),
             "virtualglove_player": data.get("virtualglove_player"),
-            "physical_scope": physical_scope}
+            "physical_scope": physical_scope,
+            **({"physical_systems": physical_systems} if "physical_systems" in data or physical_scope == "systems" else {})}
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -344,14 +346,23 @@ class _MapperState:
 
 JOYSTICK_CORE_NAMES = {"fceumm_libretro.so", "nestopia_libretro.so"}
 NATIVE_CORE_NAMES = {"nestopia_powerglove_libretro.so"}
+PHYSICAL_NES_CORE_NAMES = JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES | {
+    "rob_vision_fceumm_libretro.so", "rob_vision_nestopia_libretro.so",
+    "robvision_fceumm_libretro.so", "robvision_nestopia_libretro.so",
+}
 
 
-def running_retroarch_core(proc_root: Path = Path("/proc")) -> str | None:
-    """Return the active Libretro core filename without trusting process text."""
+def routes_physical_core(config: dict[str, Any], core: str | None, system: str | None = None) -> bool:
+    from .systems import routes
+    return routes(config, core, system, PHYSICAL_NES_CORE_NAMES)
+
+
+def running_retroarch_session(proc_root: Path = Path("/proc")) -> tuple[str | None, str | None]:
+    """Return the core and explicit system identity for the active frontend."""
     try:
         entries = tuple(proc_root.iterdir())
     except OSError:
-        return None
+        return None, None
     for entry in entries:
         if not entry.name.isdigit():
             continue
@@ -362,10 +373,25 @@ def running_retroarch_core(proc_root: Path = Path("/proc")) -> str | None:
         args = [os.fsdecode(value) for value in raw if value]
         if not args or not Path(args[0]).name.casefold().startswith("retroarch"):
             continue
+        from .systems import argument_system, system_id
+        system = argument_system(args)
+        try:
+            for item in (entry / "environ").read_bytes().split(b"\0"):
+                if item.startswith(b"CONTROLLER_ROUTER_SYSTEM="):
+                    system = system_id(os.fsdecode(item.split(b"=", 1)[1]))
+        except (OSError, ValueError):
+            pass
+        for value in args:
+            if value.startswith("--libretro="):
+                return Path(value.split("=", 1)[1]).name.casefold(), system
         for index, value in enumerate(args[:-1]):
             if value in ("-L", "--libretro"):
-                return Path(args[index + 1]).name.casefold()
-    return None
+                return Path(args[index + 1]).name.casefold(), system
+    return None, None
+
+
+def running_retroarch_core(proc_root: Path = Path("/proc")) -> str | None:
+    return running_retroarch_session(proc_root)[0]
 
 
 def retroarch_running(proc_root: Path = Path("/proc")) -> bool:
@@ -431,9 +457,25 @@ class ControllerRouterDevice:
         self.es_inputs = Path(es_inputs) if es_inputs else _paths(self.config["platform"])[1]
         self.sys_root, self.udev_root, self.dev_root = sys_root, udev_root, dev_root
         self.players = {player: PlayerState(player) for player in enabled_players(self.config)}
-        self.sinks = sinks if sinks is not None else {player: UInputMergedGamepad(
-            name=output_name(player), product=DEVICE_PRODUCT_BASE + player)
-            for player in self.players}
+        if sinks is None and running_retroarch_core(self.proc_root) is not None:
+            raise RuntimeError("Router restarted during play; exit and relaunch the game to restore merged controllers")
+        self.owner_lock = None
+        self.sinks = sinks if sinks is not None else {}
+        if sinks is None and self.sys_root == Path('/sys/class/input'):
+            # Both products can start together. Acquire ownership before
+            # creating any pad or replacing the shared socket.
+            self.owner_lock = acquire_output_owner(Path('/run/virtualglove/controller-router-owner.lock'))
+        try:
+            if sinks is None:
+                for player in self.players:
+                    self.sinks[player] = UInputMergedGamepad(
+                        name=output_name(player), product=DEVICE_PRODUCT_BASE + player)
+        except Exception:
+            for sink in self.sinks.values():
+                sink.close()
+            if self.owner_lock is not None:
+                os.close(self.owner_lock)
+            raise
         self.descriptors: dict[int, dict[str, Any]] = {}
         self.socket_path, self.socket = socket_path, None
         self.virtual_updated_at = 0.0
@@ -468,42 +510,30 @@ class ControllerRouterDevice:
                 self.socket.close()
             for sink in self.sinks.values():
                 sink.close()
+            if self.owner_lock is not None:
+                os.close(self.owner_lock)
             raise
         self.thread = threading.Thread(target=self._run, name="virtualglove-controller-router", daemon=True)
         self.thread.start()
 
     def _install_indexes(self) -> None:
-        """Wait for every output and atomically update the managed settings."""
-        for _attempt in range(40):
+        """Wait for output readiness without writing any RetroArch configuration."""
+        for _attempt in range(100):
             indexes = output_indexes(list(self.players), self.sys_root, self.udev_root,
                                      self.config["platform"])
             if len(indexes) == len(self.players):
-                global_path = self.global_config or self.retroarch_config.with_name("retroarchcustom.cfg")
-                global_text = unmanaged_retroarch_config(
-                    global_path.read_text() if global_path.exists() else "")
-                config_paths = managed_retroarch_configs(
-                    self.retroarch_config, global_path, self.config)
-                for config_path in config_paths:
-                    current = config_path.read_text() if config_path.exists() else ""
-                    updated = merge_retroarch_config(current, self.config, indexes, global_text)
-                    atomic_write(config_path, updated, 0o644)
-                if self.config["platform"] == "retropie":
-                    nes = Path("/opt/retropie/configs/nes/retroarch.cfg")
-                    if nes.is_file():
-                        current = nes.read_text()
-                        updated = merge_retropie_indexes(current, self.config, indexes)
-                        if updated != current:
-                            atomic_write(nes, updated, 0o644)
-                if self.config["platform"] == "batocera" and self.platform_config:
-                    current = (self.platform_config.read_text()
-                               if self.platform_config.exists() else "")
-                    atomic_write(self.platform_config, merge_batocera_config(
-                        current, self.config, indexes, global_text), 0o644)
                 self.installed_indexes = indexes
-                self.installed_hotkeys = player_one_hotkeys(self.config, global_text)
+                # Public runtime manifest contains output slots only, never
+                # pairing credentials or physical source configuration.
+                if self.sys_root == Path("/sys/class/input"):
+                    atomic_write(Path("/run/virtualglove/controller-router-launch.json"),
+                                 json.dumps({"schema": 1, "platform": self.config["platform"],
+                                             "outputs": list(self.players),
+                                             "physical_scope": self.config.get("physical_scope", "all"),
+                                             "physical_systems": self.config.get("physical_systems", [])}) + "\n", 0o644)
                 return
             time.sleep(0.05)
-        raise RuntimeError("Controller Router outputs did not appear in /sys/class/input")
+        raise RuntimeError("Controller Router outputs did not appear; relaunch after repairing the service")
 
     def _set_active(self, active: bool,
                     candidates: list[dict[str, Any]] | None = None,
@@ -539,28 +569,31 @@ class ControllerRouterDevice:
         self._publish()
 
     def _reload_config(self, updated: dict[str, Any]) -> None:
-        """Rebuild outputs only while idle after an atomic configuration save."""
+        """Refresh idle assignments without destroying existing output devices."""
         previous, previous_revision = self.config, self.config_revision
+        previous_players = self.players
+        created = []
         for fd in list(self.descriptors):
             self._drop(fd)
+        # Keep even a newly unassigned output neutral until service shutdown.
+        # Removing pads beneath EmulationStation can crash older SDL frontends.
         for sink in self.sinks.values():
-            sink.close()
+            sink.write(set(), {name: 0 for name in AXIS_CODES})
         try:
+            for player in enabled_players(updated):
+                if player not in self.sinks:
+                    self.sinks[player] = UInputMergedGamepad(
+                        name=output_name(player), product=DEVICE_PRODUCT_BASE + player)
+                    created.append(player)
             self.config = updated
             self.players = {player: PlayerState(player) for player in enabled_players(updated)}
-            self.sinks = {player: UInputMergedGamepad(
-                name=output_name(player), product=DEVICE_PRODUCT_BASE + player)
-                for player in self.players}
             self.config_revision = revision(updated)
             self._install_indexes()
         except Exception:
-            for sink in self.sinks.values():
-                sink.close()
+            for player in created:
+                self.sinks.pop(player).close()
             self.config, self.config_revision = previous, previous_revision
-            self.players = {player: PlayerState(player) for player in enabled_players(previous)}
-            self.sinks = {player: UInputMergedGamepad(
-                name=output_name(player), product=DEVICE_PRODUCT_BASE + player)
-                for player in self.players}
+            self.players = previous_players
             self._install_indexes()
             raise
 
@@ -704,11 +737,9 @@ class ControllerRouterDevice:
         active = virtual_allowed = False
         while not self.stop.is_set():
             with self.lock:
-                core = running_retroarch_core(self.proc_root)
-                all_libretro = self.config.get("physical_scope") == "all"
-                now_active = core is not None and (all_libretro or core in (
-                    JOYSTICK_CORE_NAMES | NATIVE_CORE_NAMES))
-                now_virtual_allowed = core in JOYSTICK_CORE_NAMES
+                core, system = running_retroarch_session(self.proc_root)
+                now_active = routes_physical_core(self.config, core, system)
+                now_virtual_allowed = now_active and core in JOYSTICK_CORE_NAMES
                 if (now_active, now_virtual_allowed) != (active, virtual_allowed):
                     # Native Super Glove Ball still needs the physical merged
                     # pad for menu/hotkey use, but its hand position arrives
@@ -793,6 +824,30 @@ class ControllerRouterDevice:
             try: self.socket_path.unlink()
             except FileNotFoundError: pass
         for sink in self.sinks.values(): sink.close()
+        if self.owner_lock is not None:
+            os.close(self.owner_lock)
+            self.owner_lock = None
+
+
+def acquire_output_owner(path: Path) -> int:
+    """Hold a process-lifetime lock so concurrent products cannot duplicate pads."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        raise RuntimeError('Controller Router already owns the merged outputs; use the running shared service')
+    except Exception:
+        os.close(fd)
+        raise
+    try:
+        os.ftruncate(fd, 0)
+        os.write(fd, str(os.getpid()).encode('ascii'))
+    except Exception:
+        os.close(fd)
+        raise
+    return fd
 
 
 def output_name(player: int) -> str:
@@ -959,26 +1014,21 @@ class RouterStore:
         self.lock = threading.Lock()
 
     def _managed_game_running(self) -> bool:
-        """Block reconfiguration while this installation owns game inputs."""
-        try:
-            config = load_config(self.path) if self.path.exists() else self._default()
-        except (OSError, ValueError, json.JSONDecodeError):
-            return joystick_core_running()
-        if config.get("physical_scope") == "all":
-            return retroarch_running()
-        return joystick_core_running()
+        """A scope edit must not activate routing halfway through any game."""
+        return retroarch_running()
 
     def _default(self) -> dict[str, Any]:
         """Return an inactive configuration for an unconfigured platform."""
         return {"format": FORMAT, "platform": self.platform, "players": [],
-                "virtualglove_player": None, "physical_scope": "all"}
+                "virtualglove_player": None, "physical_scope": "nes"}
 
     def read(self) -> dict[str, Any]:
         """Return configuration, revision, rollback state, and inventory."""
         config = load_config(self.path) if self.path.exists() else self._default()
         return {"config": config, "revision": revision(config),
                 "has_backup": self.backup.exists(),
-                "inventory": inventory(self.es_inputs, config)}
+                "inventory": inventory(self.es_inputs, config),
+                "systems": catalog(self.platform, config)}
 
     def _materialize(self, proposed: object) -> dict[str, Any]:
         """Replace public source IDs with authoritative saved mappings."""
@@ -1023,12 +1073,13 @@ class RouterStore:
             except KeyError as exc:
                 raise ValueError("A selected controller is no longer available. Refresh and try again.") from exc
             players.append({"player": entry.get("player"), "sources": sources})
-        current_scope = "all"
-        if self.path.exists():
-            current_scope = load_config(self.path).get("physical_scope", "all")
+        current = load_config(self.path) if self.path.exists() else self._default()
         return validate_config({"format": FORMAT, "platform": self.platform, "players": players,
                                 "virtualglove_player": proposed.get("virtualglove_player"),
-                                "physical_scope": current_scope})
+                                "physical_scope": proposed.get("physical_scope", current["physical_scope"]),
+                                **({"physical_systems": proposed.get("physical_systems", current.get("physical_systems", []))}
+                                   if "physical_systems" in proposed or "physical_systems" in current
+                                   or proposed.get("physical_scope") == "systems" else {})})
 
     def operate(self, operation: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Perform one bounded revision-checked router operation."""
@@ -1245,12 +1296,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="virtualglove-controller-router",
                                      description="Configure VirtualGlove Player 1-4 routing")
     parser.add_argument("command", choices=("setup", "list", "show", "configure", "check",
-                                             "apply", "rollback", "serve"))
+                                             "apply", "rollback", "serve", "prepare-launch"))
     parser.add_argument("--platform", choices=SUPPORTED_PLATFORMS,
                         help="Console platform; detected automatically when omitted")
     parser.add_argument("--config", type=Path)
     parser.add_argument("--document", type=Path, help="JSON assignment document for configure")
     parser.add_argument("--socket", type=Path)
+    parser.add_argument("--retroarch", type=Path)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     platform = args.platform or detect_platform()
     default_config, es_inputs, retroarch, global_config, platform_config = _paths(platform)
@@ -1267,14 +1320,28 @@ def main() -> int:
 
     store = RouterStore(args.config or default_config, platform, es_inputs, retroarch,
                         activate=activate_retropie if platform == "retropie" else None)
+    if args.command == "prepare-launch":
+        if args.retroarch is None or args.output is None:
+            parser.error("prepare-launch requires --retroarch and --output")
+        from .launch import prepare
+        try:
+            print(json.dumps(prepare(load_config(args.config or default_config), args.retroarch, args.output)))
+        except (OSError, ValueError, RuntimeError) as exc:
+            print('Controller Router launch blocked: %s' % exc, file=sys.stderr)
+            return 1
+        return 0
     if args.command == "setup":
         return run_setup_wizard(store)
     if args.command == "serve":
         if args.socket is None:
             parser.error("serve requires --socket")
-        device = ControllerRouterDevice(args.config or default_config, retroarch, args.socket,
-                                        es_inputs=es_inputs, global_config=global_config,
-                                        platform_config=platform_config)
+        try:
+            device = ControllerRouterDevice(args.config or default_config, retroarch, args.socket,
+                                            es_inputs=es_inputs, global_config=global_config,
+                                            platform_config=platform_config)
+        except (OSError, ValueError, RuntimeError) as exc:
+            print('Controller Router: %s' % exc, file=sys.stderr)
+            return 1
         try:
             while True: time.sleep(3600)
         except KeyboardInterrupt:
@@ -1295,37 +1362,14 @@ def main() -> int:
         current = store.read()
         print(json.dumps(store.operate("rollback", {"revision": current["revision"]}), indent=2))
     else:
+        # Compatibility command: readiness only. Routing belongs to prepare-launch.
         config = store.read()["config"]
-        if platform == "retropie":
-            was_active = subprocess.run(
-                ("systemctl", "is-active", "--quiet", "virtualglove-controller-router.service"),
-                check=False).returncode == 0
-            if not was_active:
-                if os.geteuid() != 0:
-                    raise ValueError("Controller Router service is not running; run apply as root.")
-                subprocess.run(("systemctl", "enable", "--now",
-                                "virtualglove-controller-router.service"), check=True)
-            for _attempt in range(40):
-                if len(output_indexes(enabled_players(config),
-                                      platform=config["platform"])) == len(enabled_players(config)):
-                    break
-                time.sleep(0.05)
-        indexes = output_indexes(enabled_players(config), platform=config["platform"])
-        global_text = global_config.read_text() if global_config.exists() else ""
-        config_paths = managed_retroarch_configs(retroarch, global_config, config)
-        for config_path in config_paths:
-            current = config_path.read_text() if config_path.exists() else ""
-            updated = merge_retroarch_config(current, config, indexes, global_text)
-            atomic_write(config_path, updated, 0o644)
-        if platform == "batocera" and platform_config:
-            current = platform_config.read_text() if platform_config.exists() else ""
-            atomic_write(platform_config, merge_batocera_config(
-                current, config, indexes, global_text), 0o644)
-        if platform == "retropie" and not was_active and subprocess.run(
-                ("systemctl", "cat", "virtualglove-receiver.service"),
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-            subprocess.run(("systemctl", "restart", "virtualglove-receiver.service"), check=True)
-        print("Controller Router assignments applied.")
+        from .launch import resolve
+        players = enabled_players(config)
+        if len(resolve(players)) != len(players):
+            raise RuntimeError("Controller Router outputs unavailable; check the service and relaunch")
+        print("Controller Router ready; session routing is resolved at launch.")
+
     return 0
 
 

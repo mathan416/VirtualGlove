@@ -51,7 +51,7 @@ stop_retired() {
     for pid in $pids; do retired_pid "$pid" && kill -KILL "$pid" 2>/dev/null || true; done
 }
 
-valid_pid() {
+local_pid_valid() {
     name="$1"
     pidfile="$RUN/$name.pid"
     [ -f "$pidfile" ] || return 1
@@ -59,10 +59,28 @@ valid_pid() {
     case "$pid" in *[!0-9]*|'') return 1 ;; esac
     [ -d "/proc/$pid" ] || return 1
     if [ "$name" = controller_router ]; then
-        tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "router_shared.controller_router"
+        tr '\000' ' ' < "/proc/$pid/cmdline" | grep -Eq "(router_shared|virtualglove)\.controller_router serve"
     else
         tr '\000' ' ' < "/proc/$pid/cmdline" | grep -q "virtualglove.$name"
     fi
+}
+
+
+valid_pid() {
+    local_pid_valid "$1" && return 0
+    [ "$1" = controller_router ] || return 1
+    # The other product may own the one shared Router. Never unlink its
+    # socket merely because this product has no local Router PID file.
+    owner="$SOCKET_DIR/controller-router-owner.lock"
+    [ -f "$owner" ] || return 1
+    pid="$(cat "$owner" 2>/dev/null)"
+    case "$pid" in *[!0-9]*|'') return 1 ;; esac
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    command="$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+    case " $command " in
+        *" -m router_shared.controller_router serve "*|*" -m virtualglove.controller_router serve "*) return 0 ;;
+    esac
+    return 1
 }
 
 start_one() {
@@ -82,7 +100,7 @@ start_one() {
 
 stop_one() {
     name="$1"
-    if valid_pid "$name"; then
+    if local_pid_valid "$name"; then
         pid="$(cat "$RUN/$name.pid")"
         kill "$pid" 2>/dev/null || true
         count=0

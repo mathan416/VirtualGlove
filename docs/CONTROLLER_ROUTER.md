@@ -61,3 +61,40 @@ If two physical pads share Player 1, either can control that player. A held butt
 **Buttons changed after an EmulationStation remap.** Exit and relaunch the game. Router uses the new valid mapping for the saved device without moving it to another player.
 
 For the differences between joystick and native glove input, see [Input Modes](INPUT_MODES.md). For platform-specific failures, see [Troubleshooting by Symptom](TROUBLESHOOTING.md).
+
+
+## Stable game routing
+
+The console adapter resolves each merged controller by name and vendor/product
+identity immediately before RetroArch starts. Missing or duplicate outputs stop
+the routed launch with instructions to check Router and relaunch.
+
+RetroArch 1.19.1 uses a temporary appended configuration containing its current
+udev indexes. Supported newer executables use strict device reservations. The
+installed RetroArch does not need an upgrade. Saved `retroarch.cfg` files are not
+rewritten by Router startup, game detection, or launch hooks. The installer may
+register the adapter in `emulators.cfg`; RetroPie files remain owned by `pi:pi`.
+
+Physical controllers can sleep, wake, disconnect, and reconnect while the merged
+outputs remain connected. They return to their saved players. Assignment changes
+apply on the next launch. If Router itself restarts or loses its output devices,
+end the game and relaunch after the service is ready; rebuilding outputs during
+play cannot safely restore a legacy session's slots.
+
+The same routing covers ordinary Libretro games, including PSP. Super Glove Ball
+keeps its native hand-input path, while merged pads supply physical controls and
+hotkeys. Existing core arguments, appended configurations, and cabinet hooks are
+preserved. Diagnostics record compatibility mode, device name, hardware identity,
+and the resolved launch slot.
+
+## Choose systems
+
+1. Open **Setup** at the UNO Q address and choose the paired console.
+2. Under **Systems**, choose **Controller Router** or **My existing setup** beside each system. Mega Drive / Genesis, PSP, and other systems can use different choices. These choices apply to Libretro emulators.
+3. Exit the running game, then choose **Save assignments**. The selection applies to the next launch.
+
+Buddy's games and VirtualGlove require Controller Router enabled for NES. NES can also use **My existing setup** when you want your own controls.
+
+Fresh installations enable NES only. Upgrades retain existing selections. In individual selection mode, a newly added system uses **My existing setup**. **All Libretro systems** includes newly added systems too.
+
+Router uses EmulationStation button mappings for enabled systems. **My existing setup** preserves the original launch arguments and adds no Router routing overrides. Router does not rewrite saved RetroArch configuration files when you save or start a game. Player assignments are shared across enabled systems.

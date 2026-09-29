@@ -285,6 +285,9 @@ class ArchiveTests(unittest.TestCase):
                          'src/router_shared/controller_router.py',
                          'src/router_shared/merged_gamepad.py',
                          'src/router_shared/storage.py',
+                         'src/router_shared/launch.py',
+                         'src/router_shared/launch_install.py',
+                'src/router_shared/systems.py',
                          'src/router_shared/retroarch_udev.py',
                          'src/router_shared/virtual_sources.py',
                          'config/games.json', 'config/profiles.json',
@@ -868,6 +871,7 @@ class GameSetupTests(unittest.TestCase):
             with patch.object(Path, 'is_file', side_effect=lambda path=None: True) as exists, \
                  patch.object(setup.pwd, 'getpwnam', return_value=SimpleNamespace(pw_dir='/home/pi')), \
                  patch.dict(os.environ, {'SUDO_USER': 'pi'}), \
+                 patch('router_shared.launch_install.install_retropie'), \
                  patch.object(setup, 'registered_roms', return_value=[]), patch.object(setup, 'run') as command:
                 # Core, binary missing; Setup present; each package still missing until installed.
                 exists.side_effect = [False, True] + ([False, False] if accept else []) + [False]

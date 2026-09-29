@@ -167,6 +167,9 @@ def unpack(archive, destination, machine, version):
                 "src/router_shared/controller_router.py",
                 "src/router_shared/merged_gamepad.py",
                 "src/router_shared/storage.py",
+                "src/router_shared/launch.py",
+                "src/router_shared/launch_install.py",
+                "src/router_shared/systems.py",
                 "src/router_shared/retroarch_udev.py",
                 "src/router_shared/virtual_sources.py",
             ]

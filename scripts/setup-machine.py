@@ -286,7 +286,7 @@ def install_retropie(peer):
     for player in range(1, 5):
         profile = "VirtualGlove Merged Player %d.cfg" % player
         write_file(base / "retroarch/autoconfig/udev" / profile,
-                   (SOURCE / "retropie/retroarch" / profile).read_bytes())
+                   (SOURCE / "retropie/retroarch" / profile).read_bytes(), preserve=True)
     for path, content in hooks:
         write_file(path, content, 0o755)
         path.chmod(path.stat().st_mode | 0o111)
@@ -306,6 +306,9 @@ def install_retropie(peer):
     if len(token.read_text().strip()) >= 16:
         run("systemctl", "restart", "virtualglove-receiver.service")
     run("systemctl", "enable", "--now", "virtualglove-receiver.timer")
+    controller_router_module()
+    from router_shared.launch_install import install_retropie as install_session_routing
+    install_session_routing(Path("/opt/retropie/configs"), Path("/opt/controller-router"))
 
 
 def install_wifi_status():
@@ -606,7 +609,11 @@ def configure_games(confirm):
         except (ValueError, OSError) as error:
             print("ACTION  " + str(error))
 
-    # RetroPie Setup may have created NES configuration after the install pass.
+    # Optional cores and RetroPie Setup may register commands after the base
+    # installation pass. Route those entries too, without touching saved configs.
+    controller_router_module()
+    from router_shared.launch_install import install_retropie as install_session_routing
+    install_session_routing(prefix / "configs", prefix.parent / "controller-router")
     ensure_retropie_config_ownership(prefix)
 
 
@@ -692,7 +699,9 @@ def configure_merged_player1(platform, requested=None):
             "format": router.FORMAT, "platform": platform,
             "players": [{"player": 1, "sources": [data]}],
             "virtualglove_player": 1,
-            "physical_scope": "all",
+            "physical_scope": router.load_config(router_path).get("physical_scope", "all") if router_path.exists() else "nes",
+            **({"physical_systems": router.load_config(router_path)["physical_systems"]}
+               if router_path.exists() and "physical_systems" in router.load_config(router_path) else {}),
         })
         write_file(router_path, json.dumps(routed, indent=2) + "\n")
     return data
@@ -947,6 +956,8 @@ def install_batocera(peer, player1_device=None):
     backup_file("/userdata/system/batocera.conf")
     run("batocera-services", "enable", "VirtualGlove")
     subprocess.run(["batocera-services", "stop", "VirtualGlove"], check=False)
+    from router_shared.launch_install import install_batocera as install_session_routing
+    install_session_routing()
     run("batocera-services", "start", "VirtualGlove")
 
 
