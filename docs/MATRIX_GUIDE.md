@@ -11,7 +11,7 @@ Use the pictures and quick checks below to recognise what is happening and decid
 
 After reboot, the display shows Router's neutral animation. Start a registered game and the display changes to that app's cues automatically. When the game ends, it returns to neutral.
 
-You can also open the UNO Q address to choose an app while no game is running. Finish a game before pairing or changing apps.
+You can also open the controller address to choose an app while no game is running. Finish a game before pairing or changing apps.
 
 If the display stays neutral during your game, open Dashboard and check the console connection and selected game. You do not need to reinstall just because no game is selected.
 
@@ -21,7 +21,7 @@ If the display stays neutral during your game, open Dashboard and check the cons
 | --- | --- | --- | --- |
 | Arduino boot logo | <img src="images/matrix/Boot.jpg" alt="Boot matrix display" width="104"> | The VirtualGlove Controller's system software is starting, before VirtualGlove controls the display. | Wait for the app's hourglass or normal display. |
 | System heart animation | <img src="images/matrix/Heart.jpg" alt="Heart matrix display" width="104"> | The board is progressing through system startup. | Wait for the app display. |
-| Router’s neutral animation | — | No selected product has an active Matrix request. | Start a registered game or open the UNO Q entry page to choose an app. |
+| Router’s neutral animation | — | No selected product has an active Matrix request. | Start a registered game or open the controller home page to choose an app. |
 | Pulsing hourglass | <img src="images/matrix/Hourglass.jpg" alt="Hourglass matrix display" width="104"> | VirtualGlove is starting. | Allow startup to finish. If it persists, check Dashboard. |
 | A large scanning **L** | <img src="images/matrix/L.jpg" alt="L matrix display" width="104"> | Play or Glove Academy lessons are active. L stands for local play or lessons. | Follow the game or practice moves shown in your browser; controller output is paused. |
 | A large scanning **T** | <img src="images/matrix/T.jpg" alt="T matrix display" width="104"> | Gesture tuning is active, including hand setup. | Follow the recording, preview, and save instructions in Glove Academy. Controller output is paused. |

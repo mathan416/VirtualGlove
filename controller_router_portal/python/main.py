@@ -111,15 +111,19 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length', str(len(body)))
             self.end_headers()
             self.wfile.write(body)
-        elif path in ("/", "/setup", "/setup.html", "/pair", "/pair.html") or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
-            asset = PAGE.with_name("trust.html") if path in ("/pair", "/pair.html") else PAGE if path == "/" else PAGE.with_name("setup.html") if path in ("/setup", "/setup.html") else ASSETS / path.rsplit("/", 1)[-1]
+        elif path in ("/", "/setup", "/setup.html", "/pair", "/pair.html", "/help", "/help.html") or path in ("/assets/pixel-pal.png", "/assets/buddy.png"):
+            pages = {"/": PAGE, "/setup": PAGE.with_name("setup.html"),
+                     "/setup.html": PAGE.with_name("setup.html"),
+                     "/pair": PAGE.with_name("trust.html"), "/pair.html": PAGE.with_name("trust.html"),
+                     "/help": PAGE.with_name("help.html"), "/help.html": PAGE.with_name("help.html")}
+            asset = pages.get(path, ASSETS / path.rsplit("/", 1)[-1])
             try:
                 body = asset.read_bytes()
             except OSError:
                 self.send_error(503, "Launcher asset unavailable; rerun the installer.")
                 return
             self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8" if path in ("/", "/setup", "/setup.html", "/pair", "/pair.html") else "image/png")
+            self.send_header("Content-Type", "text/html; charset=utf-8" if path in pages else "image/png")
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()

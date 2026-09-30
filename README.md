@@ -1,411 +1,118 @@
-<p align="centre">
-
-This checkout documents the current development version. The stable installer downloads the latest published final release; prerelease testing uses an explicit release tag.
+<p align="center">
   <img src="assets/virtualglove-logo.png" alt="VirtualGlove" width="760">
 </p>
 
 # VirtualGlove
 
-**Move your hand. Play the game.**
+**Move your hand. Play the game.** VirtualGlove turns hand movement and gestures into RetroArch controls using an ordinary USB camera and a controller built on the Arduino UNO Q. Wear a plain glove or use your bare hand; no sensors or electronics need to be attached to it.
 
-VirtualGlove turns hand movement and gestures into responsive RetroArch controls
-using an ordinary USB camera and a **VirtualGlove Controller** built on the
-Arduino UNO Q. Wear a plain glove or use your bare hand—there are no sensors,
-wires, or electronics to add to it.
+Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punch. The camera picture stays on the controller, while authenticated input travels to your game console. Pixel Pal guides practice and setup.
 
-Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punch.
-VirtualGlove recognises the pose, sends authenticated controller input across
-your local network, and lets RetroArch see controller input or a native
-Power Glove controller.
+## What you can do
 
-**Current stable release: v0.5.3.** Use the same installation commands for a fresh setup or an upgrade.
-
-The development branch adds a shared Controller Router entry page and Matrix service. The UNO Q address opens VirtualGlove directly when it is the sole installed product, or shows a chooser when R.O.B. Vision is installed too. Both services stay online on ports 8100 and 8101. Registered games select their controller automatically without an open browser. **Apps** returns to the chooser and appears only when both products are installed. These development changes require the matching release candidate or a source installation; the latest stable command does not select a prerelease.
-
-VirtualGlove supports RetroPie, Recalbox 10.x, Batocera 38+, and LaunchBox on
-64-bit Windows. Recalbox and Batocera use **Controller Router** to combine
-configured physical controllers and VirtualGlove as enabled merged Players 1–4.
-RetroPie can opt into the same Router while retaining its separate-gamepad
-default. LaunchBox keeps physical XInput beside VirtualGlove's managed
-RetroArch controller. Every platform keeps the physical controller usable and
-preserves unrelated controller settings.
-
-On routed RetroPie, Recalbox, and Batocera, assigned physical controllers keep
-their EmulationStation button mappings and player assignments in every
-RetroArch/Libretro system. VirtualGlove gestures remain intentionally narrower:
-ordinary joystick gestures control supported NES cores, while native Super
-Glove Ball uses its separate guarded input path.
-
-When Controller Router is enabled, a game launch always begins neutral. Physical
-controllers are available immediately; VirtualGlove joins only after the hand
-has returned to neutral once. This prevents a gesture observed in
-EmulationStation from becoming the game's first input.
-
-Ordinary NES games use FCEUmm. Super Glove Ball can also use the separately
-named Nestopia (VirtualGlove) core for native movement and glove actions without
-replacing stock Nestopia. The current installers provide a guarded upgrade from
-v0.4.2 while preserving players, calibration, tuning, pairing, device settings,
-game registrations, ROMs, saves, and controller assignments.
-
-## Why VirtualGlove?
-
-- **Camera-only play:** use a standard UVC camera rather than modifying a glove.
-- **Two styles of NES control:** ordinary joystick output through FCEUmm and
-  continuous native movement for Super Glove Ball through
-  `lr-nestopia-powerglove`.
-- **Original programs and game mappings:** Programs 1–14 and A–I, including
-  Mattel's indexed games and documented rapid-fire exceptions.
-- **Fast, direct tracking:** MediaPipe Hands processes the newest camera frame
-  and sends the latest valid hand coordinate without a settling tail.
-- **Family-friendly learning:** Pixel Pal guides players through 16 Glove
-  Academy lessons without sending accidental input to a game.
-- **Personal setup:** each player can save a hand centre, movement reach,
-  joystick centre box, gesture sensitivity, and Academy progress.
-- **Game-aware and safe:** registered games select their profile automatically;
-  stale, lost, or unauthenticated input returns to neutral.
-- **Local by design:** video stays on the Controller. Pairing and controller
-  traffic are authenticated between your own devices.
+- Play supported NES games with Programs 1–14 and A–I, including game-specific gesture mappings and rapid-fire exceptions.
+- Use FCEUmm joystick mode, or the separate Nestopia (VirtualGlove) core for Super Glove Ball’s native movement and glove actions.
+- Learn all 16 movement and gesture lessons with Pixel Pal in **Glove Academy** before sending input to a game.
+- Save each player’s hand centre, movement reach, gesture sensitivity, camera choices, and Academy progress.
+- Use **Play** for a camera-controlled Rock Paper Scissors practice game without a console session.
+- Keep physical controls alongside hand input. During a routed launch, hand input waits until the hand has returned to neutral so a menu gesture does not become the first game action.
 
 ![VirtualGlove Dashboard with camera and controller status](docs/images/debug-dashboard.png)
 
+This README describes the current development checkout. The commands below install the **latest published stable release**, which may have an earlier setup or pairing interface. For a release candidate, use its exact versioned installer and the guide packaged with it; `releases/latest` does not select prereleases. The same installer command is used for a first install and an upgrade.
+
 ## What you need
 
-- An Arduino UNO Q provisioned through Arduino App Lab
-- A supported console: RetroPie, Recalbox 10.x, Batocera 38+, or LaunchBox with
-  64-bit Windows and 64-bit RetroArch
-- A UVC-compatible USB camera and powered USB hub
-- A physical controller for RetroArch setup and recovery
-- Both devices on the same trusted local network with internet access during
-  installation
-- Your own legally obtained games—VirtualGlove includes no ROMs or BIOS files
+- A provisioned Arduino UNO Q with Arduino App Lab, a UVC USB camera, and a powered USB hub.
+- A supported game system: RetroPie, Recalbox 10.x, Batocera 38 or newer, or LaunchBox on 64-bit Windows with 64-bit RetroArch.
+- A physical gamepad already configured on the game system, and your own legally obtained games. No ROMs or BIOS files are included.
+- Both devices on the same trusted local network, with internet access during installation.
 
-New to the hardware? Start with [Build your own](docs/BUILD_YOUR_OWN.md) for the
-parts, expected cost, and difficulty.
+Start with [Build Your Own](docs/BUILD_YOUR_OWN.md) if you are choosing hardware.
 
-## Install VirtualGlove
+## Install or upgrade
 
-These steps install the latest stable release. Install the **same version on
-both devices** and close any running RetroArch game first. The scripts
-verify their downloads, ask for administrator access when needed, and preserve
-existing pairing and player settings during an update.
+Close any game before installing. Keep the backup location printed by the installer until you have checked your setup afterward. The [Installation Guide](docs/INSTALL_README.md) covers each platform's questions, checks, and recovery steps.
 
-VirtualGlove `v0.5.3` is the current stable release. The unversioned commands
-below select it through GitHub's latest stable release. To reproduce one exact
-installation later, use the pinned-version procedure in the
-[technical installation reference](docs/CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
+### Controller
 
-### 1. Prepare the Controller
-
-Finish the UNO Q's App Lab setup, connect it to your network, and attach the
-camera through the powered hub. The camera may also be connected after
-installation.
-
-### 2. Install the Controller software
-
-Open a terminal on the UNO Q and run:
+In a terminal on the controller, signed in as `arduino`:
 
 ```sh
 cd /home/arduino
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh && bash install-uno-q.sh
 ```
 
-On a first installation, the installer suggests **virtualglove** as the
-Controller name, making its usual address `virtualglove.local`. Press Enter to
-accept it or type a different family-friendly name. Updates preserve the
-existing name.
+The installer prints the controller's `.local` and IP addresses. The first shared Matrix build can take several minutes. For the current development version, Controller Router owns the entry page and display; the VirtualGlove site is on port **8100**.
 
-### 3. Check the Controller
+### RetroPie
 
-Open the Dashboard address printed by the installer—normally
-`http://virtualglove.local/dashboard`. The installer configures
-automatic startup, the matrix display, guarded camera recovery, and its required
-host helpers.
-
-### 4. Install or upgrade the console software
-
-Choose only the section for your game system. Close every running RetroArch
-game first. These are both installation and upgrade instructions: rerun the
-same command or LaunchBox installer whenever a new VirtualGlove version is
-available. Existing ROMs, saves, pairing, game registrations, controller
-assignments, and unrelated emulator settings are preserved.
-
-#### RetroPie
-
-Connect as the normal RetroPie user, not through a root shell, and run:
+In its terminal as the normal RetroPie user, with EmulationStation and games closed:
 
 ```sh
 cd "$HOME"
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-retropie.sh && bash install-retropie.sh
 ```
 
-On a first installation, enter the Controller name or address—normally
-`virtualglove.local`. The installer can add missing emulator support, the
-optional native Super Glove Ball core, and the optional calibration test. A
-normal RetroPie installation keeps VirtualGlove as a separate gamepad;
-Controller Router remains an explicit opt-in for multi-controller cabinets.
+### Recalbox 10.x
 
-#### Recalbox 10.x
-
-Connect over SSH as `root`. Do not add `sudo`. Run:
+In its terminal as `root`:
 
 ```sh
 cd /recalbox/share/system
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-recalbox.sh && bash install-recalbox.sh
 ```
 
-On a first installation, enter the Controller name or address and select the
-physical Player 1 controller when more than one configured controller is
-available. Recalbox creates **VirtualGlove Merged Player 1** initially; after
-pairing, Setup can assign configured controllers and VirtualGlove across merged
-Players 1–4.
+### Batocera 38 or newer
 
-#### Batocera 38 and newer
-
-Connect over SSH as `root`. Do not add `sudo`. Run:
+In its terminal as `root`:
 
 ```sh
 cd /userdata/system
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-batocera.sh && bash install-batocera.sh
 ```
 
-On a first installation, enter the Controller name or address and select the
-physical Player 1 controller when needed. Batocera creates **VirtualGlove
-Merged Player 1** initially and uses the same Setup-managed Player 1–4 routing
-model as Recalbox.
+### LaunchBox on Windows
 
-#### LaunchBox on Windows x86-64
+Install 64-bit Python and 64-bit RetroArch with FCEUmm first. Download `VirtualGlove-LaunchBox.zip` from the latest release and follow the [Installation Guide's LaunchBox steps](docs/INSTALL_README.md). Its managed RetroPad runs beside physical XInput and the keyboard; the shared Linux Controller Router setup described below does not replace LaunchBox's input path.
 
-Install 64-bit Python and 64-bit RetroArch with FCEUmm first. Confirm the
-physical XInput controller works, then close LaunchBox, Big Box, and RetroArch.
-Download `VirtualGlove-LaunchBox.zip` from the latest release and extract it.
-Open PowerShell as Administrator using the same Windows account that runs
-LaunchBox, enter the extracted `VirtualGlove` folder, and run:
+## Connect and play
 
-```powershell
-Set-Location "$env:USERPROFILE\Downloads\VirtualGlove"
-powershell -ExecutionPolicy Bypass -File .\launchbox\install-launchbox.ps1 `
-  -LaunchBoxRoot "C:\LaunchBox" -RetroArchRoot "C:\RetroArch" `
-  -ControllerHost "virtualglove.local"
-```
+In the current development version, Controller Router comes with VirtualGlove. Open the controller address printed by the installer. With VirtualGlove alone it opens the app; with R.O.B. Vision too, **Apps** lets you choose. Both app services stay available. Starting a registered game selects its app automatically, even when no browser is open.
 
-Change the extraction, LaunchBox, RetroArch, and Controller locations to match
-your computer. LaunchBox gains a **VirtualGlove RetroArch** NES emulator.
-Ordinary games use its managed loopback RetroPad while physical XInput and the
-real keyboard remain available; exact registered Super Glove Ball filenames
-can use Nestopia (VirtualGlove).
+Pair the console once by choosing **Pair console** from Apps. The console installer opens a short connection window and prints a one-time code. Router's secure Setup page verifies the console and asks for a confirmation code shown on the Matrix display. It provisions separate private credentials for installed apps, so adding R.O.B. Vision later does not require a second pairing. See the [Controller Router Pairing Guide](controller_router_portal/python/guides/Controller-Router-Pairing-Guide.pdf). LaunchBox follows its platform-specific pairing instructions in the Installation Guide.
 
-#### Check the console installation
+Use **Players and Systems** to put a physical pad on Player 1 and choose which Libretro systems use Router. New Router configurations enable NES; upgrades keep saved choices. **My existing setup** preserves a system's usual controls. Configure a physical pad's buttons in EmulationStation before assigning its player in Router. On RetroPie, VirtualGlove's separate gamepad path remains an option; Recalbox and Batocera use merged players for routed games.
 
-The final Linux report should show no `FAIL` entries. `ACTION` is normal for
-pairing or physical gameplay checks that still require you. After pairing:
+In VirtualGlove **Setup**, centre your hand and check the camera. **Glove Academy** teaches the gestures without sending accidental game input. Registered games select their profile automatically. FCEUmm supplies joystick-mode NES controls; the separately named **Nestopia (VirtualGlove)** path gives Super Glove Ball its native movements and actions. A physical controller remains available for menus and exit controls. See [Game and Gesture Guide](docs/GAMEPLAY_GUIDE.md) and [Input Modes](docs/INPUT_MODES.md).
 
-1. Test an ordinary registered NES game through FCEUmm with VirtualGlove and
-   the physical controller.
-2. On Recalbox, Batocera, or routed RetroPie, test one non-NES Libretro game
-   with the physical controller.
-3. Test native Super Glove Ball separately when installed.
-4. Confirm the physical hotkey can still exit the game.
+## Help and guides
 
-The complete [Installation
-Guide](docs/INSTALL_README.md#3-install-the-console) explains every installer
-question, checkpoint, later-added ROM, update, and troubleshooting path.
-
-### 5. Pair the devices
-
-Open the secure Setup address printed by the installer—normally
-`https://virtualglove.local:8443/setup`—open **Connection and startup**, choose
-RetroPie, Recalbox, Batocera, or LaunchBox, save the console hostname or IP address, and
-continue into **Pair this Controller**. Pairing stays unavailable until the
-platform and address are both saved. The guided one-time-code method is
-recommended and shows only the command for the selected platform.
-
-After confirming the browser certificate against the physical Matrix ID, the
-optional **Trust this Controller** step removes future privacy warnings on that
-phone or computer.
-
-### 6. Set up a player
-
-Choose a player, position the camera, and use **Centre hand**. Open **Glove
-Academy** to learn the gestures and adjust movement reach or sensitivity only if
-needed.
-
-### 7. Play
-
-Select **Start controller**, launch a registered game, and confirm the expected
-profile. FCEUmm uses joystick mode; Super Glove Ball can also use the optional
-native core selected per ROM on RetroPie, Recalbox, Batocera, or LaunchBox.
-
-ROMs added later do not require reinstalling VirtualGlove. Refresh the console
-frontend's game list, then open **Setup → Games** and register the exact ROM
-filename if it is not already one of the supplied aliases. RetroPie uses its
-per-ROM launch choice for native Super Glove Ball; Recalbox and Batocera apply
-their exact-ROM native choice at VirtualGlove service startup; LaunchBox's
-VirtualGlove RetroArch wrapper chooses the core on every launch. The complete
-installation guide lists the platform-specific refresh and restart steps.
-
-The complete [Installation Guide](docs/INSTALL_README.md) has first-install
-checkpoints, illustrated pairing, camera advice, native-core setup, updates,
-backups, and troubleshooting. Use it as the authoritative setup reference.
-
-## What can you play?
-
-VirtualGlove includes the original Programs 1–14, nine reusable cartridge
-Programs A–I, plus dedicated mappings for Bad Street Brawler and Super Glove
-Ball. The same recognition settings follow
-the player across games; profiles change only what the recognised movements and
-gestures send to the console.
-
-| Path | What it provides |
+| To do this | Read this |
 | --- | --- |
-| FCEUmm | The selected Programs 1–14 or A–I mapping, including positional movement, mapped A/B actions, and documented compound gestures. |
-| Super Glove Ball with FCEUmm | A complete joystick-mode fallback that can always be selected for testing or play. |
-| Super Glove Ball with Nestopia (VirtualGlove) | Continuous native X/Y and Z, Start, grab/catch, release/throw, Robo-Bullet fire, and Power Punch. The isolated core is supported on RetroPie, Recalbox, Batocera, and LaunchBox; FCEUmm remains the fallback. |
+| Install, pair, update, or recover | [Installation Guide](docs/INSTALL_README.md) |
+| Learn gestures and game controls | [Game and Gesture Guide](docs/GAMEPLAY_GUIDE.md) |
+| Choose players or keep a system's controls | [Controller Router Guide](docs/CONTROLLER_ROUTER.md) |
+| Choose and tune a camera | [Camera Guide](docs/CAMERA_GUIDE.md) |
+| Recognize Matrix display cues | [Matrix Display Guide](docs/MATRIX_GUIDE.md) |
+| Fix a symptom | [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| Print a case | [Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
+| Understand the design | [Architecture](docs/ARCHITECTURE.md) and [Engineering Journey](docs/ENGINEERING_JOURNEY.md) |
 
-Rapid A/B defaults on only where an individual program description explicitly
-identifies a pulsed button: Program 7 A, Program B A, Program H A/B, and Bad
-Street Brawler B. Every other profile defaults off. The registered Blaster
-Master, Double Dribble, Racket Attack, Ice Hockey, and Alpha Mission entries
-retain Mattel's documented off instructions. Programs 13 and 14 also support
-deliberate physical-controller and gestures-off play.
-
-Dashboard Rapid A/B switches control button repetition only; profile-owned fast
-turns, pulsed movement, turbo movement, and compound actions retain their own
-timing. Saved per-game overrides survive upgrades. Choose **Use profile
-defaults** while that game is running to remove its overrides and adopt the
-corrected defaults.
-
-The [Gameplay Guide](docs/GAMEPLAY_GUIDE.md#program-cards-1-14) shows every
-numeric Program gesture, compound action, release rule, indexed game, exception,
-objective, and practice challenge. The
-[VirtualGlove Input Modes](docs/INPUT_MODES.md) explains why the joystick and
-native emulator paths feel different and how physical Player 1 controls join
-each platform.
-
-The numeric Program section includes gesture-by-gesture controls, compound
-action timing, the complete official game index, and the five automatic
-rapid-fire exceptions. Program 13 is the mixed physical-controller option;
-Program 14 deliberately turns camera gestures off for the active game.
+The controller serves user guides, technical references, and PDFs from **Help**. Printable editions are also in [output/pdf](output/pdf/). The [public website](website/UPLOAD_README.txt) is maintained in this repository.
 
 ## How it works
 
 ![End-to-end VirtualGlove flow from camera to game](docs/images/architecture/end-to-end.png)
 
-1. The camera delivers its newest frame to the VirtualGlove Controller.
-2. MediaPipe Hands finds the palm, wrist, and finger landmarks.
-3. Shared recognition turns those landmarks into position, fingers, rolls,
-   depth motion, and menu poses.
-4. The Controller sends the newest authenticated state to the selected console.
-5. The console publishes either Player 1 input or native glove state for the
-   selected emulator core.
+1. The camera delivers its newest frame to the controller.
+2. Hand tracking recognizes palm, wrist, and finger landmarks.
+3. The selected profile turns movements and gestures into game controls.
+4. The controller sends authenticated state to its paired game system.
+5. The console publishes the appropriate RetroArch or native glove input.
 
-Pairing is tied to a private shared key rather than one permanent IP address.
-If DHCP changes an address or `.local` resolution temporarily fails, the paired
-devices can rediscover one another on the local network without broadcasting
-controller states or requiring a new pairing.
+Controller Router keeps physical player assignments stable for routed games and grants one app's input at a time. If a wireless pad sleeps and wakes, Router reconnects that source to its saved player. If Router itself restarts during a game, exit and relaunch after it is ready. See its [User Guide](controller_router_portal/python/guides/Controller-Router-User-Guide.pdf) and [Technical Reference](docs/ARCHITECTURE.md).
 
-## Meet Pixel Pal
+## Contribute and license
 
-Pixel Pal helps players learn, personalise, test, and troubleshoot without
-turning setup into an engineering exercise.
-
-- **Glove Academy** teaches all 16 movements and gestures while game output is
-  paused.
-- **Tune gestures** records guided examples and previews a conservative
-  adjustment before saving it.
-- **Find the best camera settings** compares only choices supported by the
-  attached camera and changes nothing until the player accepts a recommendation.
-- **Rock Paper Scissors** provides a camera-controlled practice game that does
-  not require a connected console.
-
-## Controller pages
-
-| Page | Purpose |
-| --- | --- |
-| Dashboard · `/dashboard` | See live controls and set per-game A/B rapid fire. |
-| Play · `/play` | Challenge Pixel Pal to Rock Paper Scissors. |
-| Glove Academy · `/learn` | Learn gestures, set movement reach, and personalise recognition safely. |
-| Setup · `/setup` | Manage players, camera choices, console pairing, games, backups, and display preferences. |
-| Help · `/help` | Read the complete manuals and printable PDFs directly on the Controller. |
-
-## Documentation
-
-### Start here
-
-| You want to… | Read… |
-| --- | --- |
-| Install, pair, and play your first game | [Installation Guide](docs/INSTALL_README.md) |
-| Learn gestures, Programs, and game controls | [Gameplay Guide](docs/GAMEPLAY_GUIDE.md) |
-| Understand joystick, merged-controller, and native modes | [VirtualGlove Input Modes](docs/INPUT_MODES.md) |
-| Choose or troubleshoot a camera | [Camera Guide](docs/CAMERA_GUIDE.md) |
-| Assemble a printed case quickly | [Enclosure Assembly Quick Reference](docs/ENCLOSURE_QUICK_REFERENCE.md) |
-| Print or customise a case | [Controller Enclosure Guide](docs/ENCLOSURE_GUIDE.md) |
-| Recognise matrix animations and messages | [Matrix Display Guide](docs/MATRIX_GUIDE.md) |
-| Find a quick command or status reminder | [Quick Reference](docs/cheatsheet.md) |
-| Solve a problem by symptom | [Troubleshooting](docs/TROUBLESHOOTING.md) |
-
-### Go deeper
-
-| You want to… | Read… |
-| --- | --- |
-| See the current components and data flow | [Architecture](docs/ARCHITECTURE.md) |
-| Look up every setting and command | [Configuration Reference](docs/CONFIGURATION_REFERENCE.md) |
-| Follow the engineering process, experiments, and movement validation | [Engineering Journey](docs/ENGINEERING_JOURNEY.md) |
-| Repeat camera, latency, trace, or native research | [Engineering Toolkit](docs/ENGINEERING_TOOLKIT.md) |
-| Review ROM-level native and joystick evidence | [Power Glove Game ROM Input Audit](docs/power-glove-rom-input-audit.md) |
-| Review security and pairing boundaries | [Security Policy](docs/SECURITY.md) |
-| Check dependencies and third-party terms | [Third-party Notices](THIRD_PARTY_NOTICES.md) |
-| Contribute code or documentation | [Contributing Guide](docs/CONTRIBUTING.md) |
-
-Printable editions of all maintained guides are available in
-[`output/pdf/`](output/pdf/). The Controller serves the same documentation from
-its local Help page.
-
-The public website is maintained with the application under [`website/`](website/).
-Its dependency-free builder reads `config/release.json`, renders five static
-pages, validates release-sensitive links and commands, and creates
-`output/website/VirtualGlove-Website.zip` for manual upload.
-
-## Project status
-
-VirtualGlove 0.5.3 keeps the proven CPU MediaPipe Hands path, Programs 1-14,
-live dead-zone visualization, and source-accurate
-rapid-fire behaviour. It extends the authenticated console integration to
-Recalbox, Batocera, and LaunchBox while retaining RetroPie. This release also
-smooths Batocera Wi-Fi input delivery and includes the revised Dock V2.1.
-It also makes Recalbox's physical joypad hotkeys available on the first game
-and allows a console receiver restart to complete during pairing.
-
-The 0.5.x release line completed physical controller and VirtualGlove acceptance
-on RetroPie, Recalbox 10.1.1, Batocera 43.1, and LaunchBox. This
-includes ordinary NES play, native Super Glove Ball, physical-controller
-coexistence, hotkeys, reboot persistence, and Controller Router remapping.
-Recalbox's all-Libretro physical path has also been exercised with Game Boy,
-ColecoVision, and Game Gear games.
-
-Recalbox and Batocera use Controller Router to publish enabled merged Players
-1–4 from configured physical sources and at most one VirtualGlove. Standard
-RetroPie keeps its separate gamepad until Router is explicitly enabled; the
-project arcade cabinet now uses Router for its two I-PAC interfaces, 8BitDo
-controllers, and VirtualGlove.
-LaunchBox uses a local RetroPad while leaving XInput and
-real keyboard controls available. Every platform supports registered FCEUmm
-games and the separately named Nestopia (VirtualGlove) path for native Super
-Glove Ball. The installers update managed files while preserving pairing,
-players, calibration, tuning, Academy progress, games, ROMs, and saves.
-
-Use Setup's **Download system report** when asking for help. It records useful
-software, camera, controller, and connection health without including video,
-pairing keys, player calibration, ROM names, or network addresses.
-
-## Contributing and licensing
-
-Issues, careful test reports, documentation improvements, and code contributions
-are welcome. Please read the [Contributing Guide](docs/CONTRIBUTING.md) before
-opening a change. Release history is kept in the [Changelog](docs/CHANGELOG.md).
-
-VirtualGlove is maintained by **Iain Bennett** and is licensed under the
-[MIT License](LICENSE). The modified Nestopia core is GPLv2 software and remains
-separate from the MIT application. Nintendo, NES, Power Glove, and the named
-games belong to their respective owners. See
-[Third-party Notices](THIRD_PARTY_NOTICES.md) for dependency, model, asset, and
-native-core licensing details.
+Issues, careful test reports, and contributions are welcome. Read the [Contributing Guide](docs/CONTRIBUTING.md), [Changelog](docs/CHANGELOG.md), and [Third-Party Notices](THIRD_PARTY_NOTICES.md). VirtualGlove is maintained by **Iain Bennett** under the [MIT License](LICENSE); the modified Nestopia core is separate GPLv2 software. Nintendo, NES, Power Glove, and named games belong to their respective owners.

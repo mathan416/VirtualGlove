@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Help · Controller Router</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #081827; color: #f4fbff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 80% 0%, #194257, transparent 44%), linear-gradient(145deg, #081827, #102b40); }
+    main { max-width: 1000px; margin: auto; padding: clamp(24px, 5vw, 64px); }
+    header { display: flex; align-items: center; gap: 17px; padding-bottom: 22px; border-bottom: 1px solid #42677a; }
+    .mark { display: grid; place-items: center; flex: none; width: 58px; height: 58px; border: 2px solid #68e6ed; border-radius: 18px; color: #68e6ed; box-shadow: 0 0 0 7px #68e6ed18; font-size: 26px; }
+    .brand { font-size: 19px; font-weight: 900; letter-spacing: .16em; }
+    .subtitle { color: #b2cbd7; font-size: 13px; letter-spacing: .13em; text-transform: uppercase; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-top: 20px; }
+    a { color: #8de8ec; text-underline-offset: .2em; }
+    a:hover { color: #c5fbff; }
+    a:focus-visible { outline: 3px solid #ffad91; outline-offset: 4px; }
+    h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.05; letter-spacing: -.04em; margin: 42px 0 12px; }
+    h2 { font-size: clamp(23px, 3vw, 29px); line-height: 1.2; margin: 0 0 12px; }
+    h3 { font-size: 19px; margin: 0 0 8px; }
+    p, li { line-height: 1.55; }
+    p { margin: 0 0 14px; }
+    .intro { color: #c4d8e1; font-size: 18px; max-width: 720px; }
+    .jump { margin: 28px 0; padding: 17px 20px; border-left: 3px solid #68e6ed; background: #17364a; }
+    .jump a { display: inline-block; margin: 4px 18px 4px 0; }
+    section { margin-top: 24px; padding: clamp(20px, 3vw, 28px); border: 1px solid #416b7d; border-radius: 16px; background: #102b40; }
+    section p, section li { color: #d0e0e7; }
+    ol { margin: 8px 0 16px; padding-left: 24px; }
+    li { padding-left: 4px; margin: 8px 0; }
+    .next { margin-top: 18px; }
+    .note { padding: 14px 16px; border-left: 3px solid #fb795d; background: #1d3546; }
+    .help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    .help-grid section { margin-top: 0; }
+    .guide-list { list-style: none; margin: 10px 0 0; padding: 0; }
+    .guide-list li { margin: 0; padding: 13px 0; border-top: 1px solid #416b7d; }
+    .guide-list small { display: block; color: #b2cbd7; font-size: 14px; margin-top: 3px; }
+    @media (max-width: 680px) { .help-grid { grid-template-columns: 1fr; } .brand { font-size: 16px; } nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><span class="mark" aria-hidden="true">🎮</span><div><div class="brand">CONTROLLER ROUTER</div><div class="subtitle">Help</div></div></header>
+    <nav aria-label="Controller Router"><a href="/">Apps</a><a href="/setup">Players and Systems</a><a href="/pair">Pair console</a><a href="/help" aria-current="page">Help</a></nav>
+    <h1>Get ready to play</h1>
+    <p class="intro">Controller Router connects to your console and puts each gamepad with the player you choose. Pick a task below to get started or fix a problem.</p>
+    <div class="jump" aria-label="On this page"><a href="#connect">Connect a console</a><a href="#players">Choose players</a><a href="#systems">Choose systems</a><a href="#test">Test a controller</a><a href="#trouble">Fix a problem</a></div>
+
+    <section id="connect">
+      <h2>Connect a console</h2>
+      <ol><li>Open <a href="/pair">Pair console</a>. Run the command shown there on your RetroPie, Batocera, or Recalbox console.</li><li>Paste the console’s connection code and choose <strong>Continue</strong>.</li><li>Enter the six digits shown after <strong>PN</strong> on the Matrix display, then choose <strong>Connect</strong>.</li></ol>
+      <p>Pair your console once. If both VirtualGlove and R.O.B. Vision are installed, they can use the same connection.</p>
+      <p class="next">More detail: <a href="/guides/Controller-Router-Pairing-Guide.pdf">Pairing Guide (PDF)</a>.</p>
+    </section>
+
+    <div class="help-grid">
+      <section id="players">
+        <h2>Choose who plays</h2>
+        <ol><li>Set up your gamepad’s buttons in EmulationStation first.</li><li>Exit the game. Open <a href="/setup">Players and Systems</a>, choose your console, and find the pad under <strong>Players</strong>.</li><li>Choose a player, select <strong>Save assignments</strong>, and launch the game again.</li></ol>
+        <p>Keep a physical pad on Player 1 for the usual game and exit controls. Buddy uses Player 2 in Gyromite.</p>
+      </section>
+      <section id="systems">
+        <h2>Choose which systems use Router</h2>
+        <ol><li>Exit the game. Open <a href="/setup">Players and Systems</a> and go to <strong>Systems</strong>.</li><li>Choose <strong>Controller Router</strong> for systems that should use your player assignments, or <strong>My existing setup</strong> to keep their usual controls.</li><li>Choose <strong>Save assignments</strong>. Your choice takes effect with the next game.</li></ol>
+        <p class="note">Buddy’s games and VirtualGlove require Controller Router enabled for NES.</p>
+      </section>
+    </div>
+
+    <section id="test">
+      <h2>Test a controller</h2>
+      <ol><li>Open <a href="/setup">Players and Systems</a> and choose the console.</li><li>Choose <strong>Test inputs</strong>, then press a button on the gamepad within five seconds.</li><li>If no input appears, wake or reconnect the pad and try again.</li></ol>
+      <p>A registered game selects VirtualGlove or R.O.B. Vision automatically. You do not need to leave a browser page open to play.</p>
+      <p class="next">More detail: <a href="/guides/Controller-Router-User-Guide.pdf">Controller Router User Guide (PDF)</a>.</p>
+    </section>
+
+    <section id="trouble">
+      <h2>Get back to your game</h2>
+      <h3>The pad works in the menu but not in the game</h3><p>Try another connected pad. Your first pad may be assigned to Player 2. Exit the game, check <a href="/setup">Players</a>, then save and relaunch.</p>
+      <h3>A wireless pad slept or woke during play</h3><p>Wake or reconnect it, then try again. If Router itself restarted, exit and relaunch the game.</p>
+      <h3>Assignments will not save</h3><p>Finish the current game. If another page changed the settings, choose <strong>Reload</strong>, make your choices again, and save.</p>
+      <h3>The console says unavailable</h3><p>Check that it is powered on and on the same network. Then open <a href="/pair">Pair console</a> and choose <strong>Check and repair connections</strong>.</p>
+    </section>
+
+    <section aria-labelledby="build-heading">
+      <h2 id="build-heading">Build with Controller Router</h2>
+      <p>These guides are for developers adding a unique controller or maintaining an installation.</p>
+      <ul class="guide-list">
+        <li><a href="/guides/Controller-Router-Integration-Guide.pdf">Integration Guide (PDF)</a><small>Connect your own controller or game input.</small></li>
+        <li><a href="/guides/Controller-Router-Deployment-Guide.pdf">Deployment Guide (PDF)</a><small>Package and install Router with an app.</small></li>
+        <li><a href="/guides/Controller-Router-Technical-Reference.pdf">Technical Reference (PDF)</a><small>Architecture, APIs, and recovery details.</small></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

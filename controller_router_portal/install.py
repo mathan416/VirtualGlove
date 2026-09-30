@@ -149,6 +149,7 @@ def validate_package(source: Path) -> None:
                 "app/VERSION", "app/app.yaml", "app/python/main.py",
                 "app/sketch/sketch.ino", "app/sketch/sketch.yaml",
                 "python/main.py", "python/index.html", "python/setup.html", "python/trust.html",
+                "python/help.html",
                 "host/pairing.py", "host/secure_pairing.py", "host/pairing.html", "shared/pairing.py",
                 "python/assets/pixel-pal.png", "python/assets/buddy.png")
     missing = [name for name in required if not (source / name).is_file()

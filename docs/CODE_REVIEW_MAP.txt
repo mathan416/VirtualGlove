@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.5.3
-Git-visible files: 789
+Git-visible files: 790
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-789 tracked or non-ignored files are present in this checkout. Ignored
+790 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -251,6 +251,7 @@ are intentionally omitted.
 |   |   |   |-- Controller-Router-Pairing-Guide.pdf
 |   |   |   |-- Controller-Router-Technical-Reference.pdf
 |   |   |   `-- Controller-Router-User-Guide.pdf
+|   |   |-- help.html
 |   |   |-- index.html
 |   |   |-- main.py
 |   |   |-- setup.html

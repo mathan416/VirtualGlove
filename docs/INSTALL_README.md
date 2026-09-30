@@ -16,7 +16,7 @@ one exact version later.
 
 The same command installs or upgrades each device. Close games first and keep the backup locations printed by the installer.
 
-Controller Router is included on the UNO Q. Open the UNO Q's address to visit VirtualGlove, or choose an app if R.O.B. Vision is installed too. Starting a registered game selects its app automatically. You do not need a browser open to play.
+Controller Router is included with the controller. Open its address to visit VirtualGlove, or choose an app if R.O.B. Vision is installed too. Starting a registered game selects its app automatically. You do not need a browser open to play.
 
 The first shared Matrix setup can take several minutes. Leave the installer open until it finishes. Upgrades keep your pairing, players, and game registrations.
 
@@ -58,7 +58,7 @@ movement and glove actions. FCEUmm remains a complete joystick-mode fallback.
 
 ### Check your player choices after pairing
 
-1. Open **Setup** from the Controller Router page at your UNO Q address.
+1. Open **Setup** from the Controller Router page at your controller address.
 2. Select the console under **Console connection**.
 3. Under **Players**, check that the pad you use is assigned to Player 1.
 4. Under **Systems**, keep NES enabled for Buddy and VirtualGlove. Choose **My existing setup** for systems where you want your normal controls.
@@ -410,13 +410,13 @@ rename, or modify the ROM.
 
 ## 4. Pair the devices
 
-Pair once for the UNO Q and console. VirtualGlove and R.O.B. Vision receive their own private credentials automatically when installed on both devices. Installing the other app later adds its access without another pairing. No SSH username or password is required.
+Pair your console once through Controller Router. VirtualGlove and R.O.B. Vision receive their own private credentials automatically when installed on both devices. Installing the other app later adds its access without another pairing. No SSH username or password is required.
 
-Finish the game before pairing, changing app access, or removing a connection. Each console connects to one UNO Q at a time. Connecting it to another requires a new console code and Matrix confirmation.
+Finish the game before pairing, changing app access, or removing a connection. Each console connects to one Controller Router installation at a time. Connecting it to another requires a new console code and Matrix confirmation.
 
 1. Open **Apps > Setup > Pair console**. Both product Setup pages have an **Open Pair console** link to this same page.
-2. Open the secure address printed by the UNO Q installer, using its `.local` name or LAN IP. Pairing uses HTTPS port **8444**.
-3. Before accepting the local certificate, compare the browser's SHA-256 fingerprint with the fingerprint printed by the UNO Q installer. During confirmation, its beginning also appears after **ID** on the Matrix. Stop if they differ.
+2. Open the secure address printed by the controller installer, using its `.local` name or LAN IP. Pairing uses HTTPS port **8444**.
+3. Before accepting the local certificate, compare the browser's SHA-256 fingerprint with the fingerprint printed by the controller installer. During confirmation, its beginning also appears after **ID** on the Matrix. Stop if they differ.
 4. Enter the console hostname or IP address and paste its complete **CR1 connection code**. The console installer prints this single-use code; it lasts five minutes.
 5. Choose **Continue**, read the six Matrix digits after **PN**, and enter them within two minutes.
 6. Choose **Connect**. Wait for **Connected** and check each app's readiness below it.

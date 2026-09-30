@@ -206,7 +206,7 @@ and the [Gameplay Guide](GAMEPLAY_GUIDE.md).
 
 ## Pairing asks for more than one code
 
-The **CR1 connection code** comes from the console installer and lasts five minutes. The **six-digit confirmation code** appears on the UNO Q Matrix after you choose Continue and lasts two minutes. Enter them in that order on Router’s **Pair console** page. No SSH password is needed.
+The **CR1 connection code** comes from the console installer and lasts five minutes. The **six-digit confirmation code** appears on the controller’s Matrix display after you choose Continue and lasts two minutes. Enter them in that order on Router’s **Pair console** page. No SSH password is needed.
 
 If a code expires, is already used, or reaches the attempt limit, obtain a new console code and start again. If the Matrix is unavailable, wait for Controller Router to become ready; pairing cannot skip physical confirmation.
 
@@ -320,7 +320,7 @@ and local unless you explicitly choose to share them. See
 
 ## Wrong player despite correct Router assignments
 
-1. Exit the game and open **Setup** from the UNO Q’s Controller Router page.
+1. Exit the game and open **Setup** from the Controller Router page.
 2. Under **Players**, check the named source assignments. Under **Systems**, confirm that the system uses **Controller Router**.
 3. Relaunch the game. Sleeping or reconnecting physical controllers should return to their saved players without removing merged devices.
 4. If only one core or game still selects the wrong player, inspect its RetroArch controller override. Core and game overrides load after the session settings and can replace them. Remove only a conflicting controller override you deliberately want Router to manage; retain unrelated game settings.
