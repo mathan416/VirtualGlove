@@ -4,12 +4,12 @@ This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
 pair them securely, centre your hand, and test the controls.
 
-VirtualGlove 0.5.3 supports RetroPie, Recalbox, Batocera, and LaunchBox on
+VirtualGlove 0.6.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-VirtualGlove `v0.5.3` is the current stable release. The unversioned commands
+VirtualGlove `v0.6.0` is the current stable release. The unversioned commands
 in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
@@ -504,22 +504,23 @@ preserve private settings and user data.
 
 ### Fresh installation checklist
 
-1. Install the Controller from `/home/arduino`, then open its printed Dashboard
-   address.
+1. Install the Controller from `/home/arduino`, then open the controller address
+   printed by the installer.
 2. Confirm a physical controller already works on the console before installing
    its VirtualGlove integration.
 3. Install the same VirtualGlove release on the selected console platform.
-4. Save the platform and console address in Setup, check the address, and pair
-   the two devices.
+4. In Controller Router, choose **Pair console**, enter the console's one-time
+   code, and confirm the code shown on the Matrix display. Check Player 1 and
+   NES in **Players and Systems**.
 5. Centre the selected player and test one ordinary registered NES game with
    both VirtualGlove and the physical controller.
 6. If installed, test native Super Glove Ball separately, then reboot both
    devices and repeat the game and exit checks.
 
-### Upgrade from v0.4.2 or later to v0.5.3
+### Upgrade from v0.4.2 or later to v0.6.0
 
-Version 0.5.3 includes a managed upgrade from the released v0.4.2 installation.
-Update the Controller and console from the same v0.5.3 release. The installers
+Version 0.6.0 includes a managed upgrade from the released v0.4.2 installation.
+Update the Controller and console from the same v0.6.0 release. The installers
 back up and remove retired application files while preserving:
 
 - players, calibration, tuning, and dead-zone settings;
@@ -539,7 +540,7 @@ Use this order for the release upgrade:
 
 1. Close every running game. On LaunchBox, also close LaunchBox, Big Box, and
    RetroArch.
-2. Install v0.5.3 on the Controller, then install the same release on the
+2. Install v0.6.0 on the Controller, then install the same release on the
    console. Run each command from the writable folder shown in its platform
    section; do not mix stable and release-candidate files.
 3. Keep every backup location printed by the installers until acceptance is

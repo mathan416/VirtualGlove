@@ -12,6 +12,20 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-30
+
+### Added
+
+- Added shared Controller Router pairing, the Apps chooser, and automatic app selection when a registered game starts. VirtualGlove and R.O.B. Vision can remain available together while one app controls the live game.
+- Added Players and Systems settings. Fresh installations use Router for NES; upgrades retain existing routing choices.
+- Added Recalbox integration and shared Matrix ownership through Controller Router. The Matrix returns to its neutral display when no game is active.
+
+### Changed
+
+- RetroArch routing now resolves merged controllers by identity for each launch, with a legacy path for older builds and native reservations where supported. Runtime routing no longer rewrites saved RetroArch configuration.
+- Camera startup restores automatic exposure when that behaviour is selected. Secure shared Setup provisions separate app access from one confirmed console connection.
+- Updated Help, installation and technical guides, and the bundled Controller Router service.
+
 ### Fixed
 
 - RetroPie installation and Super Glove Ball core selection now keep the NES

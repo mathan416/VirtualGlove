@@ -1287,7 +1287,7 @@ The sender never queues input during negotiation. It retries hello after 250 mil
 4. If you must roll back, stop controls and restore both matching application versions. Preserve device settings, calibration/player files, and the paired token; do not restore a mismatched sender/receiver combination.
 
 Existing pairing credentials and native emulator files need no format migration.
-VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.5.3. Update both machines
+VirtualGlove 0.4.2 is the oldest supported in-place upgrade to 0.6.0. Update both machines
 together. The Controller installer includes the shared Router package and its Matrix firmware. Controller Router owns the active sketch; a normal VirtualGlove installation or restart does not flash the separate VirtualGlove sketch. Keep Controller and console software compatible, and retain existing pairing and player settings. Native
 emulator cores do not require a rebuild solely for this migration.
 
@@ -2658,7 +2658,7 @@ to enter the extracted `VirtualGlove` directory before running
 `launchbox\install-launchbox.ps1`.
 
 To pin a published release, append `--version TAG` to the saved script command,
-for example `bash install-uno-q.sh --version v0.5.3`. To test a published development
+for example `bash install-uno-q.sh --version v0.6.0`. To test a published development
 prerelease, use `bash install-uno-q.sh --development dev-COMMIT` instead. Replace
 these example tags with actual published tags, and use the matching option on
 the selected Linux console. No GitHub release is created by running an installer.

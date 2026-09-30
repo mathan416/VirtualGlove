@@ -601,6 +601,7 @@ def retropie_config_recovery_paths(configs=Path('/opt/retropie/configs')):
 
 
 def retropie_software_recovery_paths():
+    """List the managed RetroPie paths saved for installer recovery."""
     return [Path(value) for value in (
             '/opt/virtualglove-src', '/opt/virtualglove/bin', '/opt/controller-router',
             '/etc/virtualglove', '/etc/modules-load.d/virtualglove.conf',
