@@ -113,6 +113,6 @@ The controller serves user guides, technical references, and PDFs from **Help**.
 
 Controller Router keeps physical player assignments stable for routed games and grants one app's input at a time. If a wireless pad sleeps and wakes, Router reconnects that source to its saved player. If Router itself restarts during a game, exit and relaunch after it is ready. See its [User Guide](controller_router_portal/python/guides/Controller-Router-User-Guide.pdf) and [Technical Reference](docs/ARCHITECTURE.md).
 
-## Contribute and license
+## Contribute and licence
 
 Issues, careful test reports, and contributions are welcome. Read the [Contributing Guide](docs/CONTRIBUTING.md), [Changelog](docs/CHANGELOG.md), and [Third-Party Notices](THIRD_PARTY_NOTICES.md). VirtualGlove is maintained by **Iain Bennett** under the [MIT License](LICENSE); the modified Nestopia core is separate GPLv2 software. Nintendo, NES, Power Glove, and named games belong to their respective owners.

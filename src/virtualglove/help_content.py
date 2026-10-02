@@ -55,7 +55,7 @@ HELP_GUIDES = (
     {'slug': 'configuration', 'title': 'Configuration Reference', 'file': 'CONFIGURATION_REFERENCE.md', 'description': 'Every public setting, template, generated file, and installed location.', 'group': 'Technical documentation'},
     {'slug': 'input-audit', 'title': 'Power Glove Game ROM Input Audit', 'file': 'power-glove-rom-input-audit.md', 'description': 'ROM-level evidence separating native Power Glove input from standard controller mappings.', 'group': 'Technical documentation'},
     {'slug': 'security', 'title': 'Security and Privacy', 'file': 'SECURITY.md', 'description': 'Pairing boundaries, safe network use, shutdown permissions, and reporting.', 'group': 'Project information'},
-    {'slug': 'components', 'title': 'Third-Party Notices', 'file': '../THIRD_PARTY_NOTICES.md', 'description': 'MediaPipe, models, emulators, licenses, checksums, modifications, and runtime provenance.', 'group': 'Project information'},
+    {'slug': 'components', 'title': 'Third-Party Notices', 'file': '../THIRD_PARTY_NOTICES.md', 'description': 'MediaPipe, models, emulators, licences, checksums, modifications, and runtime provenance.', 'group': 'Project information'},
     {'slug': 'contributing', 'title': 'Contributing', 'file': 'CONTRIBUTING.md', 'description': 'Source formatting, tests, documentation, packaging, and review expectations.', 'group': 'Project information'},
     {'slug': 'changelog', 'title': 'Changelog', 'file': 'CHANGELOG.md', 'description': 'User-visible additions, fixes, security changes, and documentation updates.', 'group': 'Project information'},
 )
@@ -80,7 +80,7 @@ HELP_PDFS = {
     "engineering-journey": "VirtualGlove-Engineering-Journey.pdf",
     "engineering-toolkit": "VirtualGlove-Engineering-Toolkit.pdf",
     "overview": "VirtualGlove-Overview.pdf",
-    "installation": "VirtualGlove-Guide.pdf",
+    "installation": "VirtualGlove-Install-Guide.pdf",
     "gameplay": "VirtualGlove-Gameplay-Guide.pdf",
     "configuration": "VirtualGlove-Configuration-Reference.pdf",
     "security": "VirtualGlove-Security.pdf",

@@ -1306,7 +1306,7 @@ project base version remains 0.3.2. This is a prerelease.
 
 - Added Setup → Joystick dead zone: a per-player size slider with automatic half-distance release, live direction indicators, and a standard-size preset. Saves update all four digital direction thresholds while preserving centre, native reach and other gestures. Advanced directional pairs remain in Glove Academy.
 
-- Added an optional UNO Q test workflow for the cabinet's installed dot core, dot-labeled guided status sessions, and a read-only native-state probe for validity, loss/recovery and coordinate ranges. MediaPipe, controller output and game defaults remain unchanged; physical comparison is pending.
+- Added an optional UNO Q test workflow for the cabinet's installed dot core, dot-labelled guided status sessions, and a read-only native-state probe for validity, loss/recovery and coordinate ranges. MediaPipe, controller output and game defaults remain unchanged; physical comparison is pending.
 
 - Benchmarked Kiyo Pro capture on UNO Q and added an opt-in 640×480 MJPEG/two-buffer/volatile-HDR-off candidate, which delivered 59.7–59.8 fps in isolated capture repeats. Higher 720p decoding costs ruled out copying the Pi resolution. Inference threads are unchanged; recognition-under-load and physical latency validation remain pending.
 
@@ -1667,7 +1667,7 @@ the completed illustrated documentation set.
   and screen position span bottom, centre, and top.
 - Added an optional RetroPie installer offer that builds the pinned GPLv2
   native core locally, registers both per-ROM launch choices without changing
-  the saved FCEUmm selection, and installs the upstream license beside the core.
+  the saved FCEUmm selection, and installs the upstream licence beside the core.
 
 ### Installation and distribution
 
@@ -1754,9 +1754,9 @@ the completed illustrated documentation set.
 - Renamed the Learn section to Glove Academy in navigation, the page heading, and current guides. Kept `/learn` links, lesson/tuning behaviour, and L/T matrix indicators unchanged.
 - Added startup stage timings for library imports, model preparation, camera initialization, and first inference.
 - Added individual gesture illustrations and Pixel Pal to the website and friendly manuals, with a smaller PNG for web use.
-- Preserved and bundled the unmodified Google Hand Landmarker model with Apache 2.0 license text, provenance, and checksum.
+- Preserved and bundled the unmodified Google Hand Landmarker model with Apache 2.0 licence text, provenance, and checksum.
 - Added offline model-cache installation and recovery from the bundled copy, with verified download fallback only when the bundle is absent.
-- Made package builds verify the model and required license files before reporting success.
+- Made package builds verify the model and required licence files before reporting success.
 
 ### Changed
 
@@ -1892,7 +1892,7 @@ profile selection, and refreshed illustrated manuals.
 ### Documentation
 
 - Documented the UNO Q matrix as an eight-level monochrome DMD/BitPixel-style design target, including silhouette, contrast, motion, pulse, and physical review guidance for future animations.
-- Standardized source headers with each file's purpose, author, copyright, SPDX license identifier, local history, and links to the complete history.
+- Standardized source headers with each file's purpose, author, copyright, SPDX licence identifier, local history, and links to the complete history.
 - Documented public interfaces and non-obvious security, lifecycle, tracking, packaging, and rendering functions.
 - Added this centralized project changelog and its print-ready PDF edition.
 - Added an automated audit for required source headers, module descriptions, and production Python interface docstrings.
@@ -1962,7 +1962,7 @@ profile selection, and refreshed illustrated manuals.
 - Added encrypted pairing with certificate comparison, a short-lived physical
   PIN, time-limited connection attempts, and private pairing files.
 - Required confirmation and a fixed host-side request path for system shutdown.
-- Added a third-party component notice covering licenses, provenance, pinned versions, checksums, and update procedure.
+- Added a third-party component notice covering licences, provenance, pinned versions, checksums, and update procedure.
 
 
 ### Neutral calibration retention

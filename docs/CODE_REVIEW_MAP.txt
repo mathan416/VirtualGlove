@@ -729,7 +729,7 @@ are intentionally omitted.
 |   |   |-- VirtualGlove-Engineering-Journey.pdf
 |   |   |-- VirtualGlove-Engineering-Toolkit.pdf
 |   |   |-- VirtualGlove-Gameplay-Guide.pdf
-|   |   |-- VirtualGlove-Guide.pdf
+|   |   |-- VirtualGlove-Install-Guide.pdf
 |   |   |-- VirtualGlove-Input-Audit.pdf
 |   |   |-- VirtualGlove-Input-Modes.pdf
 |   |   |-- VirtualGlove-Matrix-Guide.pdf

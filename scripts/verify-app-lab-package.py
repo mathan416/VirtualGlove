@@ -59,7 +59,7 @@ PUBLIC_PDF_NAMES = {
     "VirtualGlove-Configuration-Reference.pdf",
     "VirtualGlove-Contributing.pdf",
     "VirtualGlove-Gameplay-Guide.pdf",
-    "VirtualGlove-Guide.pdf",
+    "VirtualGlove-Install-Guide.pdf",
     "VirtualGlove-Overview.pdf",
     "VirtualGlove-Security.pdf",
     "VirtualGlove-Input-Audit.pdf",

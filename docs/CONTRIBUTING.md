@@ -81,10 +81,10 @@ as the first line when one is required. The header must identify:
 - `docs/CHANGELOG.md` and Git as the complete history.
 
 Imported or modified third-party source is the exception: retain its original
-header, authorship, copyright, and license language verbatim. Do not replace or
+header, authorship, copyright, and licence language verbatim. Do not replace or
 prepend those notices with the VirtualGlove header. Keep project changes
 in a separate patch and an additive component change ledger, and install or
-distribute that ledger with the upstream license and notices. If a vendor source
+distribute that ledger with the upstream licence and notices. If a vendor source
 tree is accepted later, place it under `third_party/` or `vendor/`; the source
 audit deliberately exempts those paths from project-header requirements.
 
@@ -283,7 +283,7 @@ scripts/verify-app-lab-package.py
 
 The ordinary App Lab installation ZIP must contain production source,
 configuration examples, documentation, the allowlisted public PDF guides, and the
-required custom Linux ARM64 MediaPipe wheel used by the Controller, verified Google model, Apache 2.0 license,
+required custom Linux ARM64 MediaPipe wheel used by the Controller, verified Google model, Apache 2.0 licence,
 and third-party notices. It retains the calibration and maintenance support tools
 outside the engineering inventory in `scripts/package-inventory.py`, but excludes
 that engineering inventory as well as private `data/`, tests, the cabinet
