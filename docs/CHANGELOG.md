@@ -12,6 +12,27 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.7.0] - In preparation
+
+### Added
+
+- Bundled Controller Router 0.3.0 with explicitly registered native RetroPie adapters, merged input, Daphne exit handling and the expanded Players and Systems catalogue.
+- Bundled independent UNO Q runtime 0.3.2. Older product bundles carrying runtime 0.3.1 cannot replace it during later installation or repair.
+
+### Changed
+
+- The entry page now recovers in the background without restarting Docker, product services or the Matrix app. Healthy entry containers remain running.
+- Refreshed shared Router guides and the Installation Guide filename. Installer package checks require the new shared modules.
+- Restored Python 3.7-compatible recovery tests and expanded shared Router CI. Full UNO Q host and wheel support remains distinct from scoped Python 3.7 console support.
+
+### Release status
+
+This release is prepared but unpublished. Published downloads remain on v0.6.0; the website uses `published_release_tag` until final publication. Set that field to v0.7.0 only when preparing the final publication revision and its website assets.
+
+The prior v0.4.2 upgrade acceptance is retained as historical evidence. Candidate 0.7.0 installation, upgrade from 0.6.0, rollback, and both product installation orders still require staged acceptance. Earlier gameplay and UNO Q recovery checks apply to their recorded development builds. Preserve pairing, saved players, camera choices, game registrations, settings and controls. This release does not include separate uncommitted development work.
+
+<!-- PAGEBREAK -->
+
 ## [0.6.0] - 2026-09-30
 
 ### Added

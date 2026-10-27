@@ -39,14 +39,20 @@ def values() -> dict[str, str]:
     version = facts["project_version"]
     tag = facts["release_tag"]
     stable = facts["channel"] == "stable"
+    target_tag = tag
+    tag = facts.get("published_release_tag", tag)
+    preparing = tag != target_tag
     base = f"https://github.com/mathan416/VirtualGlove/releases/download/{tag}"
     return {
-        "VERSION": version,
+        "VERSION": tag[1:] if preparing else version,
         "TAG": tag,
         "REF": tag,
-        "RELEASE_LABEL": (f"Stable release · {tag}" if stable
+        "RELEASE_LABEL": (f"Release preparation · {target_tag}" if preparing else
+                          f"Stable release · {tag}" if stable
                           else f"Release candidate · {tag}"),
         "RELEASE_NOTE": (
+            f"VirtualGlove {version} is in release preparation. Downloads remain on "
+            f"the current stable release, {tag}." if preparing else
             f"VirtualGlove {version} is the current stable release. Install the "
             "same release on the Controller and console."
             if stable else

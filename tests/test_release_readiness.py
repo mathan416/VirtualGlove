@@ -33,12 +33,22 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(facts["release_tag"], "v" + facts["project_version"])
         self.assertEqual(facts["channel"], "stable")
         self.assertEqual(facts["oldest_supported_upgrade"], "v0.4.2")
-        self.assertEqual(facts["upgrade_acceptance"], {
-            "from": "v0.4.2",
-            "status": "passed",
-            "confirmed_on": "2026-09-20",
-            "scope": "Controller and applicable consoles",
-        })
+        self.assertEqual(facts['published_release_tag'], 'v0.6.0')
+        self.assertEqual(facts['upgrade_acceptance']['from'], 'v0.6.0')
+        self.assertEqual(facts['upgrade_acceptance']['status'], 'pending')
+        self.assertEqual(facts['prior_upgrade_acceptance']['status'], 'passed')
+
+    def test_prepared_release_keeps_installer_links_on_published_assets(self):
+        import runpy
+        values = runpy.run_path(str(ROOT / 'website/build.py'))['values']()
+        self.assertIn('v0.7.0', values['RELEASE_LABEL'])
+        self.assertIn('preparation', values['RELEASE_LABEL'])
+        self.assertEqual(values['TAG'], 'v0.6.0')
+        for key in ['UNO_COMMAND', 'RETROPIE_COMMAND', 'RECALBOX_COMMAND',
+                    'BATOCERA_COMMAND', 'LAUNCHBOX_COMMAND', 'RELEASE_URL']:
+            self.assertIn('/v0.6.0', values[key])
+            self.assertNotIn('/v0.7.0', values[key])
+
 
     def test_generated_website_matches_upload_zip(self):
         release_tag = json.loads((ROOT / "config/release.json").read_text())["release_tag"]
@@ -78,7 +88,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("Iain tests Super Glove Ball while VirtualGlove recognises his hand", about)
         self.assertIn("assets/iain-virtualglove-recognition.jpg", actual)
         home = (dist / "index.html").read_text()
-        self.assertIn("Stable release · " + release_tag, home)
+        self.assertIn("Release preparation · " + release_tag, home)
         self.assertIn("current stable release", home)
         self.assertIn("Learn to play in Glove Academy", home)
         self.assertIn("how VirtualGlove recognises your hand movements and gestures", home)

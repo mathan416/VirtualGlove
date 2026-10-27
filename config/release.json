@@ -1,13 +1,12 @@
 {
-  "project_version": "0.6.0",
-  "release_tag": "v0.6.0",
+  "project_version": "0.7.0",
+  "release_tag": "v0.7.0",
   "channel": "stable",
   "oldest_supported_upgrade": "v0.4.2",
   "upgrade_acceptance": {
-    "from": "v0.4.2",
-    "status": "passed",
-    "confirmed_on": "2026-09-20",
-    "scope": "Controller and applicable consoles"
+    "from": "v0.6.0",
+    "status": "pending",
+    "scope": "Prepared 0.7.0 Controller and applicable console packages"
   },
   "supported_platforms": [
     "RetroPie",
@@ -17,5 +16,12 @@
   ],
   "removed_features": [
     "ready-to-play"
-  ]
+  ],
+  "published_release_tag": "v0.6.0",
+  "prior_upgrade_acceptance": {
+    "from": "v0.4.2",
+    "status": "passed",
+    "confirmed_on": "2026-09-20",
+    "scope": "Controller and applicable consoles"
+  }
 }

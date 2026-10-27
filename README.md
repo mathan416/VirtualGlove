@@ -19,7 +19,7 @@ Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punc
 
 ![VirtualGlove Dashboard with camera and controller status](docs/images/debug-dashboard.png)
 
-VirtualGlove `v0.6.0` is the current stable release. This README describes the current development checkout. The commands below install the **latest published stable release**, which may have an earlier setup or pairing interface. For a release candidate, use its exact versioned installer and the guide packaged with it; `releases/latest` does not select prereleases. The same installer command is used for a first install and an upgrade.
+VirtualGlove `v0.7.0` is in release preparation; it has not been published. See the [prepared release notes](docs/CHANGELOG.md#070---in-preparation). VirtualGlove `v0.6.0` remains the current stable release. This README describes the current development checkout. The commands below install the **latest published stable release**, which may have an earlier setup or pairing interface. For a release candidate, use its exact versioned installer and the guide packaged with it; `releases/latest` does not select prereleases. The same installer command is used for a first install and an upgrade.
 
 ## What you need
 
