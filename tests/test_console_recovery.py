@@ -69,7 +69,9 @@ class ConsoleRecoveryTests(unittest.TestCase):
         for target, result in [('console_service_state', self.states),
                                ('stop_managed_runtime', None),
                                ('restore_console_services', None), ('detach_router_generator', None)]:
-            mock = self.enterContext(patch.object(installer, target, return_value=result))
+            patcher = patch.object(installer, target, return_value=result)
+            mock = patcher.start()
+            self.addCleanup(patcher.stop)
             setattr(self, target, mock)
 
     def change_install(self):
@@ -297,12 +299,12 @@ class ConsoleRecoveryTests(unittest.TestCase):
     def test_restore_activation_keeps_inactive_units_stopped(self):
         with patch.object(installer.subprocess, 'run') as command:
             self.real_restore_services('retropie', self.states)
-        starts = [call.args[0][-1] for call in command.call_args_list
-                  if call.args[0][:2] == ['systemctl', 'start']]
+        starts = [call[0][0][-1] for call in command.call_args_list
+                  if call[0][0][:2] == ['systemctl', 'start']]
         self.assertEqual(starts, ['virtualglove-controller-router.service',
                                   'virtualglove-receiver.service'])
         self.assertIn(['systemctl', 'disable', 'virtualglove-receiver.service'],
-                      [call.args[0] for call in command.call_args_list])
+                      [call[0][0] for call in command.call_args_list])
 
 
 if __name__ == '__main__':
