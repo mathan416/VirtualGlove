@@ -390,6 +390,15 @@ def running_retroarch_session(proc_root: Path = Path("/proc")) -> tuple[str | No
     return None, None
 
 
+def running_game_session(proc_root=Path("/proc")):
+    """Use the same installed native-session boundary in the daemon and Setup."""
+    found = running_retroarch_session(proc_root)
+    if found[0] is not None:
+        return found
+    from .native_sessions import running_native_session
+    return running_native_session(proc_root)
+
+
 def running_retroarch_core(proc_root: Path = Path("/proc")) -> str | None:
     return running_retroarch_session(proc_root)[0]
 
@@ -431,7 +440,7 @@ class ControllerRouterDevice:
         self.es_inputs = Path(es_inputs) if es_inputs else _paths(self.config["platform"])[1]
         self.sys_root, self.udev_root, self.dev_root = sys_root, udev_root, dev_root
         self.players = {player: PlayerState(player) for player in enabled_players(self.config)}
-        if sinks is None and running_retroarch_core(self.proc_root) is not None:
+        if sinks is None and running_game_session(self.proc_root)[0] is not None:
             raise RuntimeError("Router restarted during play; exit and relaunch the game to restore merged controllers")
         self.owner_lock = None
         self.sinks = sinks if sinks is not None else {}
@@ -574,7 +583,12 @@ class ControllerRouterDevice:
     def _publish(self) -> None:
         """Write all merged player states to their independent outputs."""
         for player, state in self.players.items():
-            self.sinks[player].write(*state.desired())
+            controls = state.desired()
+            core, system = getattr(self, 'session_context', (None, None))
+            if core is not None:
+                from .native_sessions import transform_controls
+                controls = transform_controls(*controls, core, system)
+            self.sinks[player].write(*controls)
 
     def _saved_sources(self) -> list[tuple[int, dict[str, Any]]]:
         """Flatten configured physical sources with their player slot."""
@@ -711,7 +725,8 @@ class ControllerRouterDevice:
         active = virtual_allowed = False
         while not self.stop.is_set():
             with self.lock:
-                core, system = running_retroarch_session(self.proc_root)
+                core, system = running_game_session(self.proc_root)
+                self.session_context = (core, system)
                 now_active = routes_physical_core(self.config, core, system)
                 now_virtual_allowed = now_active and core in JOYSTICK_CORE_NAMES
                 if (now_active, now_virtual_allowed) != (active, virtual_allowed):
@@ -926,7 +941,8 @@ class RouterStore:
 
     def _managed_game_running(self) -> bool:
         """A scope edit must not activate routing halfway through any game."""
-        return retroarch_running()
+        from .native_sessions import running_native_session
+        return retroarch_running() or running_native_session()[0] is not None
 
     def _default(self) -> dict[str, Any]:
         """Return an inactive configuration for an unconfigured platform."""
