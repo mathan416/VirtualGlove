@@ -14,8 +14,34 @@ def wrap_commands(text, adapter="/opt/controller-router/bin/retroarch-route", sy
     from .systems import system_id
     binary = "/opt/retropie/emulators/retroarch/bin/retroarch"
     prefix = adapter + (" --system " + system_id(system) if system else "")
-    pattern = r"(?<![\w/.-])(?:" + re.escape(adapter) + r"(?: --system [a-z0-9_-]+)? )?" + re.escape(binary) + r"(?=\s)"
-    return re.sub(pattern, lambda match: prefix + " " + binary, text)
+    import shlex
+    lines = []
+    for line in text.splitlines(True):
+        match = re.match(r'^(\s*[\w-]+\s*=\s*")(.*)("\s*\n?)$', line)
+        if not match:
+            lines.append(line)
+            continue
+        command = match.group(2)
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            lines.append(line)
+            continue
+        index = 0
+        while index < len(tokens) and re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', tokens[index]):
+            index += 1
+        if index >= len(tokens):
+            lines.append(line)
+            continue
+        token = tokens[index]
+        owned_prefix = re.sub(r'^(CON:|XINIT:|XINIT-WMC:)', '', token)
+        if owned_prefix not in (binary, adapter):
+            lines.append(line)
+            continue
+        pattern = r'(?<![\w/.-])(?:' + re.escape(adapter) + r'(?: --system [a-z0-9_-]+)? )?' + re.escape(binary) + r'(?=\s|$)'
+        updated = re.sub(pattern, lambda _: prefix + ' ' + binary, command, count=1)
+        lines.append(match.group(1) + updated + match.group(3))
+    return ''.join(lines)
 
 
 def replace_owned(path, content, mode=0o644):
@@ -112,11 +138,13 @@ sys.argv = [sys.argv[0]] + system + ["--config", "/etc/virtualglove/controller-r
 sys.exit(main())
 ''' % str(root / "lib")
     replace_owned(adapter, code, 0o755)
+    native = root / "bin/native-route"
+    replace_owned(native, "#!/usr/bin/python3\nimport sys\nsys.path.insert(0, %r)\nfrom router_shared.retropie_native import main\nsys.exit(main())\n" % str(root / "lib"), 0o755)
     changed = []
-    for path in configs.glob("*/emulators.cfg"):
+    for path in list(configs.glob("*/emulators.cfg")) + list(configs.glob("ports/*/emulators.cfg")):
         if any(marker in path.parent.name for marker in (".backup", ".before", ".bak")):
             continue
-        if replace_owned(path, wrap_commands(path.read_text(), str(adapter), path.parent.name)):
+        if replace_owned(path, wrap_commands(path.read_text(), str(adapter), "ports" if path.parent.parent.name == "ports" else path.parent.name)):
             changed.append(str(path))
     profiles = configs / "all/retroarch/autoconfig"
     repair_profiles(profiles)
@@ -249,3 +277,22 @@ def activate_recalbox(root=Path('/recalbox/share/system/controller-router')):
     replace_owned(root / 'libretroGenerator.py',
                   patch_recalbox_generator(target.read_text(), root / 'bin/retroarch-route'))
     subprocess.run(['mount', '--bind', str(root / 'libretroGenerator.py'), str(target)], check=True)
+
+
+def register_native_host(providers, systems, path=Path('/etc/controller-router/native-adapters.json')):
+    """Installer-owned attestation; caller supplies qualified host providers/commands."""
+    import json
+    for provider in providers:
+        source = Path(provider['path'])
+        if not source.is_absolute() or not source.is_file():
+            raise ValueError('Native provider must be an installed absolute path')
+    from .systems import system_id
+    for config_path, row in systems.items():
+        if not Path(config_path).is_absolute():
+            raise ValueError('Native registration must have an absolute configuration path')
+        system_id(row['system'])
+        if row.get('kind') not in ('native', 'custom-libretro'):
+            raise ValueError('Unknown host adapter capability')
+        if not row.get('command_sha256') or any(not re.fullmatch('[0-9a-f]{64}', item) for item in row['command_sha256']):
+            raise ValueError('Exact installed command checksums are required')
+    replace_owned(Path(path), json.dumps({'schema': 1, 'providers': providers, 'systems': systems}, indent=2) + '\n')

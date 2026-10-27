@@ -1615,7 +1615,7 @@ def main():
         "Project overview",
     )
     build(
-        install, OUTPUT / "VirtualGlove-Guide.pdf",
+        install, OUTPUT / "VirtualGlove-Install-Guide.pdf",
         "Installation and Setup",
         "Install, pair, and play with the VirtualGlove Controller and supported consoles.",
         "Installation instructions",
@@ -1629,7 +1629,7 @@ def main():
     build(
         third_party, OUTPUT / "VirtualGlove-Third-Party-Notices.pdf",
         "Third-Party Notices",
-        "Licenses, provenance, redistribution obligations, and verified component identities.",
+        "Licences, provenance, redistribution obligations, and verified component identities.",
         "Technical notice",
     )
     build(

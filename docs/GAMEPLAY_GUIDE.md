@@ -56,10 +56,14 @@ Keep a physical pad on Player 1 for menu and exit hotkeys. VirtualGlove Select r
 
 ### Read the camera view
 
-The overlay labels the detected hand **Right** or **Left** and shows the tracker's
-confidence. Dashboard's D-pad, button, and axis readings show the controls your
-hand produces. Keep your whole hand visible and use small, comfortable movements.
-If your resting hand causes unwanted movement, recalibrate in that position.
+The camera view draws points and lines over the hand it sees. Dashboard's
+**Hand tracking** card says **Show your hand** until a hand is detected, then
+shows a percentage. That number is a model diagnostic, not a measure of how
+accurately a game recognises your gestures. Select **Show statistics** to see
+**Directions**, **Buttons**, and **Axes**; these details are hidden by default.
+Keep your whole hand visible and use small, comfortable movements. If your
+resting hand causes unwanted movement, select **Centre hand** and hold a relaxed
+open hand at your normal playing position until the centre is saved.
 
 <img src="images/gestures/v2/pixel-pal-ready.png" alt="Pixel Pal takes a ready-to-play stance" width="150">
 

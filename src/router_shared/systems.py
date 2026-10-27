@@ -64,7 +64,7 @@ def system_id(value):
 def policy(data):
     scope = data.get('physical_scope', 'all')  # Preserve released legacy behavior.
     if scope not in ('nes', 'all', 'systems'):
-        raise ValueError('Choose NES, all Libretro systems, or selected systems.')
+        raise ValueError('Choose NES, all supported systems, or selected systems.')
     selected = data.get('physical_systems', [])
     if not isinstance(selected, list) or len(selected) > 256:
         raise ValueError('Invalid selected systems.')
@@ -95,16 +95,19 @@ def argument_system(arguments):
     return None
 
 
-def catalog(platform, config, root=None, systems_file=None):
+def catalog(platform, config, root=None, systems_file=None, adapters=None):
     """Discover console-local systems; retain saved selections when absent."""
     found = {'nes': LABELS['nes']}
     native = set()
+    capabilities = {}
+    from .native_sessions import registered_systems
+    registrations = registered_systems(adapters) if platform == 'retropie' else {}
     names = retropie_names(systems_file) if platform == 'retropie' else {}
     if platform == 'retropie':
         base = Path(root or '/opt/retropie/configs')
-        for path in base.glob('*/emulators.cfg'):
+        for path in list(base.glob('*/emulators.cfg')) + list(base.glob('ports/*/emulators.cfg')):
             try:
-                ident = system_id(path.parent.name)
+                ident = system_id('ports' if path.parent.parent.name == 'ports' else path.parent.name)
             except ValueError:
                 continue
             try:
@@ -114,8 +117,12 @@ def catalog(platform, config, root=None, systems_file=None):
             entries = dict(re.findall(r'^\s*([\w-]+)\s*=\s*"([^"\n]*)"', text, re.M))
             default = entries.get('default')
             commands = [entries.get(default, '')] if default else list(entries.values())
-            if any('/retroarch' in command for command in commands):
+            import hashlib
+            registration = registrations.get(str(path), {})
+            registered = any(hashlib.sha256(command.encode()).hexdigest() in registration.get('command_sha256', []) for command in commands if command)
+            if registered or any('/retroarch' in command for command in commands):
                 found[ident] = system_label(ident, names.get(ident))
+                capabilities[ident] = registration.get('kind', 'libretro') if registered else 'libretro'
             else:
                 native.add(ident)
                 found.pop(ident, None)
@@ -138,6 +145,6 @@ def catalog(platform, config, root=None, systems_file=None):
     for ident in selected:
         if ident not in native:
             found.setdefault(ident, system_label(ident, names.get(ident)))
-    return [{'id': ident, 'name': label, 'enabled': scope == 'all' or
+    return [{'id': ident, 'name': label, 'capability': capabilities.get(ident, 'libretro'), 'qualification': 'installed-adapter' if ident in capabilities or ident not in selected else 'saved-selection', 'enabled': scope == 'all' or
              ident in (['nes'] if scope == 'nes' else selected)}
             for ident, label in sorted(found.items(), key=lambda row: row[1])]

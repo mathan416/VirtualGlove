@@ -1,3 +1,3 @@
-"""Reusable EmulationStation and RetroArch controller routing."""
+"""Reusable EmulationStation, RetroArch and registered native controller routing."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

@@ -1482,7 +1482,7 @@ Lab installation ZIP. The installation ZIP is built as:
 output/app-lab/VirtualGlove-Uno-Q.zip
 ```
 
-The installation ZIP includes the verified model at `models/hand_landmarker.task`, its Apache 2.0 license, and third-party notices. It excludes private `data/`,
+The installation ZIP includes the verified model at `models/hand_landmarker.task`, its Apache 2.0 licence, and third-party notices. It excludes private `data/`,
 caches, tests, Git metadata, and the cabinet-specific quick-reference PDF. It
 includes only the allowlisted public PDF editions used by Help. It also excludes
 engineering-only replay, protocol-trace, benchmark, GPU experiment, soak-test,
@@ -1498,7 +1498,7 @@ same complete source tree. This preserves the full repository toolset on the
 project test systems. Ordinary App Lab and RetroPie release archives omit it.
 `scripts/build-engineering-tools-package.py` creates a separate, version-matched
 source archive containing the research tools, shared Python modules, native
-source, configuration examples, licenses, and no ROMs, recordings, credentials,
+source, configuration examples, licences, and no ROMs, recordings, credentials,
 device data, cached models, or compiled cores.
 
 When an active profile first needs vision, the application installs the bundled Google Hand Landmarker model into its private cache and verifies its SHA-256 checksum. A download is attempted only if the bundle is absent.
@@ -2057,7 +2057,7 @@ they may still perform their normal work.
 | `scripts/build-batocera-native-matrix.sh` | `BATOCERA_SOURCE [DESTINATION]` | Builds all 15 Batocera 43.1 targets and safely resumes by skipping only artifacts that pass manifest, source, checksum, and ELF verification. |
 | `.github/workflows/batocera-native-cores.yml` | Manual exact reviewed Batocera source ref | Builds the 15 targets as isolated parallel jobs, verifies every artifact, and retains the binary, corresponding source, and manifest for review. It never publishes or deploys them. |
 | `scripts/build-fceumm-benchmark.sh` | Optional build-directory positional argument | Builds a pinned stock FCEUmm core in an isolated directory for the direction-response comparison. It does not install the core. |
-| `scripts/install-nestopia-powerglove.sh` | No flags or positional arguments | Run with `sudo` on RetroPie after exact-ROM validation. Resolves and load-checks the packaged core matching RetroArch's ABI, backs up a changed installed core, and replaces it atomically with its GPLv2 license and distribution note. A missing or incompatible package leaves the previous core untouched and FCEUmm available. Stock Nestopia remains untouched. |
+| `scripts/install-nestopia-powerglove.sh` | No flags or positional arguments | Run with `sudo` on RetroPie after exact-ROM validation. Resolves and load-checks the packaged core matching RetroArch's ABI, backs up a changed installed core, and replaces it atomically with its GPLv2 licence and distribution note. A missing or incompatible package leaves the previous core untouched and FCEUmm available. Stock Nestopia remains untouched. |
 | `scripts/install-recalbox-nestopia-powerglove.sh` | `CORE [SUPER_GLOVE_BALL_ROM]` | Development-only replacement path after the base Recalbox installation. Rejects a running game, verifies the core against the packaged architecture manifest, load-checks it, installs it atomically, refreshes the runtime overlays, and optionally selects only the exact ROM. Normal releases already carry verified target binaries when available. |
 | `scripts/verify-recalbox-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build in the same Recalbox major series. It verifies the exact target, size and SHA-256, ELF class and machine identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. Cross-major fallback is rejected. |
 | `scripts/verify-batocera-native-core.py` | Required `--manifest`, `--arch`, and `--version`; `--core` with optional `--load`, or `--resolve-core` | Prefers an exact release build, otherwise resolves the newest packaged build for the exact Batocera architecture. It verifies corresponding source, checksums, source revisions, build image, ELF identity, and—on the target—libretro API and `Nestopia PowerGlove` identity. |

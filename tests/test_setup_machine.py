@@ -302,7 +302,7 @@ class SetupTests(unittest.TestCase):
             with patch.object(setup, "retropie_pi_owner", return_value=(1234, 1234)), \
                     patch.object(setup.os, "chown") as chown:
                 setup.ensure_retropie_config_ownership(prefix)
-            self.assertEqual({call.args[0] for call in chown.call_args_list},
+            self.assertEqual({call[0][0] for call in chown.call_args_list},
                              {str(retroarch), str(emulators)})
             emulators.unlink()
             emulators.symlink_to(other / "retroarch.cfg")
@@ -360,7 +360,7 @@ class SetupTests(unittest.TestCase):
                         pw_dir=str(root / "home/arduino"),
                     )):
                 setup.install_unoq_runtime_names()
-            calls = [item.args for item in command.call_args_list]
+            calls = [item[0] for item in command.call_args_list]
             self.assertIn(("loginctl", "enable-linger", "arduino"), calls)
             self.assertIn(("systemctl", "start", "user@%s.service" % os.getuid()), calls)
             self.assertFalse(any("virtualglove-early-start.service" in call for call in calls))
@@ -459,7 +459,7 @@ class SetupTests(unittest.TestCase):
                 first = hook.read_text()
                 setup.install_retropie("new.local")
             self.assertEqual(install_link.call_count, 2)
-            self.assertEqual(install_link.call_args.args[0], "virtualglove")
+            self.assertEqual(install_link.call_args[0][0], "virtualglove")
             self.assertEqual(hook.read_text(), first)
             self.assertEqual((config / "token").read_text(), "existing-private-token")
             launcher = json.loads((config / "launcher.json").read_text())

@@ -145,17 +145,50 @@ class Server(socketserver.ThreadingUnixStreamServer):
     daemon_threads = True
 
 
-def start_portal() -> None:
-    for _ in range(40):
-        try:
-            if PORTAL.joinpath("host/portal-compose.yaml").is_file():
-                subprocess.run(["docker", "compose", "-p", ENTRY_PROJECT,
-                                "-f", str(PORTAL / "host/portal-compose.yaml"),
-                                "up", "-d", "--force-recreate"], check=True,
-                               capture_output=True, text=True, timeout=90)
+def portal_ready() -> bool:
+    """Check the entry page itself, rather than only Docker's container state."""
+    try:
+        with urlopen("http://127.0.0.1/api/state", timeout=2) as response:
+            state = json.load(response)
+        return response.status == 200 and isinstance(state, dict) and "apps" in state and "matrix" in state
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def ensure_portal() -> None:
+    """Start the entry page once and wait until its Router API responds."""
+    if portal_ready():
+        return
+    compose = PORTAL / "host/portal-compose.yaml"
+    if not compose.is_file():
+        raise FileNotFoundError(f"Controller Router entry configuration is missing: {compose}")
+    try:
+        subprocess.run(["docker", "compose", "-p", ENTRY_PROJECT, "-f", str(compose),
+                        "up", "-d"], check=True, capture_output=True, text=True, timeout=90)
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or "").strip().splitlines()
+        raise RuntimeError("Controller Router entry did not start: " +
+                           (detail[-1][:500] if detail else str(exc))) from exc
+    for _ in range(10):
+        if portal_ready():
             return
-        except (OSError, subprocess.SubprocessError, ValueError):
-            time.sleep(3)
+        time.sleep(1)
+    raise RuntimeError("Controller Router entry started but port 80 did not respond.")
+
+
+def start_portal() -> None:
+    """Restore only the entry page; never restart Docker while a game may be active."""
+    last_error = None
+    while True:
+        try:
+            ensure_portal()
+            last_error = None
+        except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
+            message = str(exc)
+            if message != last_error:
+                print("Controller Router entry unavailable: " + message, flush=True)
+                last_error = message
+        time.sleep(15)
 
 
 def main() -> None:

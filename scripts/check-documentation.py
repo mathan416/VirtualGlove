@@ -69,7 +69,7 @@ PDF_EDITIONS = {
     "docs/MATRIX_GUIDE.md": "VirtualGlove-Matrix-Guide.pdf",
     "docs/ARCHITECTURE.md": "VirtualGlove-Architecture.pdf",
     "README.md": "VirtualGlove-Overview.pdf",
-    "docs/INSTALL_README.md": "VirtualGlove-Guide.pdf",
+    "docs/INSTALL_README.md": "VirtualGlove-Install-Guide.pdf",
     "docs/cheatsheet.md": "VirtualGlove-Quick-Reference.pdf",
     "docs/CHANGELOG.md": "VirtualGlove-Changelog.pdf",
     "docs/CONFIGURATION_REFERENCE.md": "VirtualGlove-Configuration-Reference.pdf",

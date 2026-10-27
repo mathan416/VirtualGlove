@@ -81,7 +81,7 @@ class SuperGloveBallCoreSetupTests(unittest.TestCase):
                 patch.object(sgb.os, "fchown") as chown:
             sgb.write_file(path, 'test = "lr-fceumm"\n', owner=(1234, 1234))
         chown.assert_called_once()
-        self.assertEqual(chown.call_args.args[1:], (1234, 1234))
+        self.assertEqual(chown.call_args[0][1:], (1234, 1234))
         self.assertEqual(path.read_text(), 'test = "lr-fceumm"\n')
 
     def test_emulator_selection_refuses_symlink(self):

@@ -172,6 +172,10 @@ def unpack(archive, destination, machine, version):
                 "src/router_shared/launch.py",
                 "src/router_shared/launch_install.py",
                 "src/router_shared/systems.py",
+                "src/router_shared/native_sessions.py",
+                "src/router_shared/retropie_native.py",
+                "src/router_shared/retropie_daphne.py",
+                "src/router_shared/native_merged_input.py",
                 "src/router_shared/retroarch_udev.py",
                 "src/router_shared/virtual_sources.py",
             ]

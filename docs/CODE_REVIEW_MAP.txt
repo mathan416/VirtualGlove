@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.6.0
-Git-visible files: 790
+Git-visible files: 794
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-790 tracked or non-ignored files are present in this checkout. Ignored
+794 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -729,9 +729,9 @@ are intentionally omitted.
 |   |   |-- VirtualGlove-Engineering-Journey.pdf
 |   |   |-- VirtualGlove-Engineering-Toolkit.pdf
 |   |   |-- VirtualGlove-Gameplay-Guide.pdf
-|   |   |-- VirtualGlove-Guide.pdf
 |   |   |-- VirtualGlove-Input-Audit.pdf
 |   |   |-- VirtualGlove-Input-Modes.pdf
+|   |   |-- VirtualGlove-Install-Guide.pdf
 |   |   |-- VirtualGlove-Matrix-Guide.pdf
 |   |   |-- VirtualGlove-Overview.pdf
 |   |   |-- VirtualGlove-Quick-Reference.pdf
@@ -881,11 +881,15 @@ are intentionally omitted.
 |   |   |-- launch_install.py
 |   |   |-- LICENSE
 |   |   |-- merged_gamepad.py
+|   |   |-- native_merged_input.py
+|   |   |-- native_sessions.py
 |   |   |-- pairing.py
 |   |   |-- pairing_adapter.py
 |   |   |-- pairing_console.py
 |   |   |-- pairing_install.py
 |   |   |-- retroarch_udev.py
+|   |   |-- retropie_daphne.py
+|   |   |-- retropie_native.py
 |   |   |-- storage.py
 |   |   |-- systems.py
 |   |   `-- virtual_sources.py
