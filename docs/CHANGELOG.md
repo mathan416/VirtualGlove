@@ -21,6 +21,8 @@ result before naming the underlying mechanism.
 
 ### Changed
 
+- UNO Q installation now checks required App Lab commands and the live daemon response instead of requiring one CLI/daemon version. Compatible upgrades are accepted without an installer update.
+
 - The entry page now recovers in the background without restarting Docker, product services or the Matrix app. Healthy entry containers remain running.
 - Refreshed shared Router guides and the Installation Guide filename. Installer package checks require the new shared modules.
 - Restored Python 3.7-compatible recovery tests and expanded shared Router CI. Full UNO Q host and wheel support remains distinct from scoped Python 3.7 console support.

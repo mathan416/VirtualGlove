@@ -744,8 +744,7 @@ class PreflightTests(unittest.TestCase):
                  patch.object(Path, 'is_file', autospec=True,
                               side_effect=lambda path: str(path) == '/opt/openocd/bin/openocd'), \
                  patch.object(installer.pwd, 'getpwnam'), \
-                 patch.object(installer.subprocess, 'check_output',
-                              return_value=b'CLI version 0.13.0\ndaemon version: 0.13.0'), \
+                 patch.object(installer, 'check_app_lab_capabilities'), \
                  patch.object(installer.urllib.request, 'urlopen', side_effect=OSError('offline')), \
                  patch.object(installer, 'confirm') as confirm:
                 installer.preflight('uno-q')
@@ -762,21 +761,18 @@ class PreflightTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'close RetroArch'):
                 installer.preflight('retropie')
 
-    def test_active_unoq_denied_and_unknown_cli(self):
-        for version, message in [(b'Arduino App CLI version 0.12.0\ndaemon version: 0.12.0', 'validated'),
-                                 (b'Arduino App CLI version 0.13.0\ndaemon version: 0.13.0', 'active session')]:
-            with patch.object(installer.sys, 'platform', 'linux'), patch.object(installer.os, 'geteuid', return_value=0), \
-                 patch.object(installer.shutil, 'which', return_value='/usr/bin/command'), \
-                 patch.object(installer.shutil, 'disk_usage', return_value=SimpleNamespace(free=10 * 1024 ** 3)), \
-                 patch.object(Path, 'read_bytes', return_value=b'arduino,imola'), \
-                 patch.object(Path, 'is_file', return_value=True), patch.object(Path, 'exists', return_value=False), \
-                 patch.object(installer.pwd, 'getpwnam'), \
-                 patch.object(installer.subprocess, 'check_output', return_value=version), \
-                 patch.object(installer.urllib.request, 'urlopen', return_value=io.BytesIO(b'{"controller_enabled":true}')), \
-                 patch.object(installer, 'confirm', return_value=False):
-                with self.assertRaisesRegex(ValueError, message):
-                    installer.preflight('uno-q')
-
+    def test_active_unoq_denied_after_capability_check(self):
+        with patch.object(installer.sys, 'platform', 'linux'), patch.object(installer.os, 'geteuid', return_value=0), \
+             patch.object(installer.shutil, 'which', return_value='/usr/bin/command'), \
+             patch.object(installer.shutil, 'disk_usage', return_value=SimpleNamespace(free=10 * 1024 ** 3)), \
+             patch.object(Path, 'read_bytes', return_value=b'arduino,imola'), \
+             patch.object(Path, 'is_file', return_value=True), patch.object(Path, 'exists', return_value=False), \
+             patch.object(installer.pwd, 'getpwnam'), \
+             patch.object(installer, 'check_app_lab_capabilities'), \
+             patch.object(installer.urllib.request, 'urlopen', return_value=io.BytesIO(b'{"controller_enabled":true}')), \
+             patch.object(installer, 'confirm', return_value=False):
+            with self.assertRaisesRegex(ValueError, 'active session'):
+                installer.preflight('uno-q')
 
 class RuntimeLifecycleTests(unittest.TestCase):
     def test_retropie_publishers_stop_before_managed_files_are_replaced(self):
@@ -1001,3 +997,44 @@ class GameSetupTests(unittest.TestCase):
 
             self.assertEqual(native.read_bytes(), b"existing")
             self.assertIn('default = "lr-fceumm"', system.read_text())
+
+
+class AppLabCapabilityTests(unittest.TestCase):
+    def outputs(self, version=b"Arduino App CLI version 0.14.0\ndaemon version: 0.14.0"):
+        return [version, b"Usage: app start app_path", b"Usage: app stop app_path",
+                b"Usage: properties get default", b"Usage: properties set default app_path",
+                b'{"apps":[{"name":"Controller Router","status":"running"}]}']
+
+    def test_compatible_versions_are_not_pinned_and_probes_never_mutate(self):
+        for version in [b"CLI version 0.13.0 daemon version: 0.13.0",
+                        b"CLI version 0.14.0 daemon version: 0.14.0",
+                        b"CLI version 2.0.0 daemon version: 1.9.0"]:
+            with self.subTest(version=version), patch.object(
+                    installer.subprocess, 'check_output', side_effect=self.outputs(version)) as run:
+                installer.check_app_lab_capabilities()
+                for call in run.call_args_list:
+                    args = call[0][0][5:]
+                    self.assertTrue(args == ['version'] or '--help' in args or
+                                    args == ['app', 'list', '--format', 'json'])
+                    self.assertEqual(call[1]['timeout'], 20)
+
+    def test_empty_app_list_accepts_fresh_board_without_default(self):
+        outputs = self.outputs(); outputs[-1] = b'{"apps":[]}'
+        with patch.object(installer.subprocess, 'check_output', side_effect=outputs):
+            installer.check_app_lab_capabilities()
+
+    def test_missing_command_or_daemon_failure_is_actionable(self):
+        for index in range(6):
+            outputs = self.outputs()
+            outputs[index] = subprocess.CalledProcessError(1, ['arduino-app-cli'])
+            with self.subTest(index=index), patch.object(installer.subprocess, 'check_output', side_effect=outputs):
+                with self.assertRaisesRegex(ValueError, 'App Lab compatibility check failed'):
+                    installer.check_app_lab_capabilities()
+
+    def test_incompatible_daemon_response_is_rejected(self):
+        for response in [b'not json', b'[]', b'{}', b'{"apps":{}}',
+                         b'{"apps":[null]}', b'{"apps":[{"name":"test"}]}']:
+            outputs = self.outputs(); outputs[-1] = response
+            with self.subTest(response=response), patch.object(installer.subprocess, 'check_output', side_effect=outputs):
+                with self.assertRaisesRegex(ValueError, 'App Lab app list'):
+                    installer.check_app_lab_capabilities()

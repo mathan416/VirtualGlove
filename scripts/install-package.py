@@ -468,6 +468,42 @@ def configure_controller_hostname(setup, name):
     return name
 
 
+def check_app_lab_capabilities():
+    """Probe required App Lab interfaces without changing apps or their default.
+
+    CLI and daemon versions are diagnostics, not a compatibility whitelist.
+    Help probes check command availability; app list exercises the live daemon.
+    """
+    prefix = ["runuser", "-u", "arduino", "--", "arduino-app-cli"]
+    commands = [("version",), ("app", "start", "--help"),
+                ("app", "stop", "--help"),
+                ("properties", "get", "default", "--help"),
+                ("properties", "set", "default", "--help"),
+                ("app", "list", "--format", "json")]
+    listing = None
+    for arguments in commands:
+        try:
+            output = subprocess.check_output(prefix + list(arguments), timeout=20,
+                                             stderr=subprocess.PIPE).decode()
+        except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+            raise ValueError("App Lab compatibility check failed: " +
+                             " ".join(arguments) +
+                             "; check CLI/daemon availability and command support") from exc
+        if arguments == ("version",):
+            # Do not require a particular version or matching CLI/daemon numbers.
+            print("INFO  App Lab: " + " ".join(output.split()))
+        elif arguments[0:2] == ("app", "list"):
+            try:
+                listing = json.loads(output)
+            except ValueError as exc:
+                raise ValueError("App Lab app list did not return valid JSON") from exc
+    if (not isinstance(listing, dict) or not isinstance(listing.get("apps"), list) or
+            any(not isinstance(app, dict) or
+                not isinstance(app.get("name"), str) or
+                not isinstance(app.get("status"), str) for app in listing["apps"])):
+        raise ValueError("App Lab app list has an unsupported schema; expected apps with name and status")
+
+
 def preflight(machine):
     """Check target identity and supported prerequisites before any host changes."""
     if sys.platform != "linux" or os.geteuid() != 0 or sys.version_info < (3, 7):
@@ -493,10 +529,7 @@ def preflight(machine):
         pwd.getpwnam("arduino")
         if not shutil.which("arduino-app-cli") or not Path("/opt/openocd/bin/openocd").is_file():
             raise ValueError("Complete board provisioning with Arduino App Lab first")
-        result = subprocess.check_output(["runuser", "-u", "arduino", "--", "arduino-app-cli", "version"], timeout=20).decode()
-        versions = re.findall(r"(?:CLI version|daemon version:)\s+([0-9.]+)", result, re.IGNORECASE)
-        if versions != ["0.13.0", "0.13.0"]:
-            raise ValueError("This release is validated with App Lab CLI 0.13.0; consult its compatibility guide")
+        check_app_lab_capabilities()
         if (APP / "data/shutdown-request").exists():
             raise ValueError("Pending shutdown request; resolve it before installation")
         try:

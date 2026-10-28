@@ -2672,11 +2672,17 @@ the selected Linux console. No GitHub release is created by running an installer
 | `--check` | Use the installed shared checker. No download, package installation, service restart, or helper release. Sudo may be needed to inspect protected settings. |
 | `--help` | Show the entry point options without installing. |
 
-Supported baseline: an already provisioned VirtualGlove Controller with App Lab CLI **0.13.0**,
-Arduino sketch platform **1.0.0**, the shipped pinned libraries, and RetroPie with
-Python **3.7 or newer**, Recalbox 10.x, or Batocera 38+. The UNO installer rejects other
-App Lab CLI versions until compatibility has been validated. It does not upgrade
-the board OS or App Lab. Allow at least 3 GiB of free space in the Arduino home partition (VirtualGlove Controller) or
+Supported baseline: an already provisioned VirtualGlove Controller with Arduino
+App Lab, Arduino sketch platform **1.0.0**, the shipped pinned libraries, and
+RetroPie with Python **3.7 or newer**, Recalbox 10.x, or Batocera 38+. The UNO
+installer checks the App Lab interfaces it needs rather than pinning CLI or daemon
+versions. Read-only command-help probes cover app start/stop and default-app
+properties; a live JSON app listing checks daemon availability and its required
+name/status fields. Newer CLI and daemon versions can pass these same checks,
+including when their version numbers differ. A missing command, unreachable
+daemon or incompatible response stops installation before host changes. These
+checks do not start/stop apps or change the default app, and an unset default on
+a fresh board is allowed. The installer does not upgrade the board OS or App Lab. Allow at least 3 GiB of free space in the Arduino home partition (VirtualGlove Controller) or
 `/var/tmp` (RetroPie), `/recalbox/share` (Recalbox), or `/userdata` (Batocera),
 and 512 MiB in the platform's backup area for package operations and backups.
 Larger updates may need more space.
