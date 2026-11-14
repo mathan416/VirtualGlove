@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -15,8 +16,10 @@ from urllib.request import urlopen
 
 try:
     from .host.broker import APPS, ENTRY_PROJECT, app_listing, configure_ports
+    from .host.matrix_port import _matrix_loopback_compose, configure_loopback, matrix_port_lock
 except ImportError:  # Direct installation from a verified release package.
     from host.broker import APPS, ENTRY_PROJECT, app_listing, configure_ports
+    from host.matrix_port import _matrix_loopback_compose, configure_loopback, matrix_port_lock
 
 
 SOURCE = Path(__file__).resolve().parent
@@ -79,18 +82,12 @@ def install_matrix_app() -> tuple[Path | None, bool]:
     return (backup if backup.exists() else None), True
 
 
-def start_shared_matrix() -> None:
+
+def start_shared_matrix(lock_held=False) -> None:
     print("Building and starting the Controller Router Matrix app; the first install may take a few minutes.", flush=True)
     command("arduino-app-cli", "app", "start", str(MATRIX))
     compose = MATRIX / ".cache/app-compose.yaml"
-    original = compose.read_text()
-    replaced = original.replace("- 8123:8123", "- 127.0.0.1:8123:8123")
-    if replaced == original and "- 127.0.0.1:8123:8123" not in original:
-        raise RuntimeError("App Lab did not create the expected Matrix service port")
-    if replaced != original:
-        compose.write_text(replaced)
-        command("docker", "compose", "-p", "controller-router", "-f", str(compose),
-                "up", "-d", "--force-recreate", "main")
+    configure_loopback(compose, MATRIX_STATE / ".matrix-port.lock", lock_held=lock_held)
     command("arduino-app-cli", "properties", "set", "default", str(MATRIX))
     for _ in range(45):
         try:
@@ -132,19 +129,54 @@ def version(root: Path) -> tuple[int, ...]:
         return ()
 
 
+def _safe_command_output(output: str) -> str:
+    """Keep useful command diagnostics without echoing common credentials."""
+    output = re.sub(r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
+                    "[private key redacted]", output, flags=re.DOTALL)
+    lines = []
+    in_private_key = False
+    for line in output.splitlines():
+        if re.search(r"-----BEGIN [^-]*PRIVATE KEY-----", line):
+            in_private_key = True
+            lines.append("[private key redacted]")
+            continue
+        if in_private_key:
+            if re.search(r"-----END [^-]*PRIVATE KEY-----", line):
+                in_private_key = False
+            continue
+        if re.search(r"(?i)(token|password|passwd|passphrase|secret|authorization|bearer|credential|private.?key|pairing.?code|cookie)", line):
+            lines.append("[sensitive diagnostic redacted]")
+            continue
+        line = re.sub(r"(https?://)[^/@\s]+:[^/@\s]+@", r"\1[redacted]@", line)
+        # Tokens can also appear alone or as unlabelled command arguments.
+        line = re.sub(r"(?<![A-Za-z0-9_/-])[A-Za-z0-9_+/=-]{32,}(?![A-Za-z0-9_/-])",
+                      "[long value redacted]", line)
+        lines.append(line)
+    return "\n".join(lines).strip()[-3000:]
+
+
 def command(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     env = dict(os.environ, XDG_RUNTIME_DIR="/run/user/1000",
                DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus")
     result = subprocess.run(args, env=env, check=False, text=True, capture_output=True)
     if check and result.returncode:
-        detail = (result.stderr or result.stdout).strip()[-3000:]
-        raise RuntimeError(f"{' '.join(args[:3])} failed: {detail}")
+        # App Lab's on-board uploader sends OpenOCD diagnostics to stdout.
+        # Never expose arbitrary subprocess stdout, which may contain private data.
+        stdout = ""
+        if args[:3] == ("arduino-app-cli", "app", "start"):
+            allowed = (line for line in (result.stdout or "").splitlines()
+                       if re.match(r"(?i)^\s*(?:open on-chip debugger|openocd:|error:|warn(?:ing)?\s*:|error running openocd|\*\* programming failed)", line))
+            stdout = _safe_command_output("\n".join(allowed))
+        stderr = _safe_command_output(result.stderr or "")
+        detail = "\n".join(f"{name}: {value}" for name, value in
+                           (("stdout", stdout), ("stderr", stderr)) if value)
+        raise RuntimeError(f"{Path(args[0]).name} failed (exit {result.returncode}): {detail}")
     return result
 
 
 def validate_package(source: Path) -> None:
     """Reject incomplete bundles before replacing a working launcher."""
-    required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py",
+    required = ("host/portal-compose.yaml", "host/products.py", "host/broker.py", "host/matrix_port.py",
                 "host/controller-router-portal.service", "host/controller-router-products.service",
                 "app/VERSION", "app/app.yaml", "app/python/main.py",
                 "app/sketch/sketch.ino", "app/sketch/sketch.yaml",
@@ -268,63 +300,64 @@ def install() -> str:
         changed_rob_yaml = True
     matrix_backup = None
     changed = False
-    try:
+    with matrix_port_lock(MATRIX_STATE / ".matrix-port.lock"):
         try:
-            from .host.secure_pairing import certificates
-        except ImportError:
-            from host.secure_pairing import certificates
-        certificates(MATRIX_STATE)
-        for app_id, app in APPS.items():
-            if listing.get(app["name"]) == "running":
-                command("arduino-app-cli", "app", "stop", str(app["path"]))
-        matrix_backup, changed = install_matrix_app()
-        if changed or app_listing().get("Controller Router") != "running":
-            start_shared_matrix()
-        # Reassert this on repeat installs too: a user may have cleared or
-        # changed App Lab's startup selection since the first installation.
-        command("arduino-app-cli", "properties", "set", "default", str(MATRIX))
-        start_products()
-        command("systemctl", "--user", "daemon-reload")
-        command("systemctl", "--user", "enable", "--now", SERVICE.name)
-        command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
-        command("systemctl", "--user", "restart", SERVICE.name)
-        for _ in range(30):
             try:
-                with urlopen("http://127.0.0.1/api/state", timeout=2) as response:
-                    if response.status == 200:
-                        break
-            except OSError:
-                time.sleep(2)
-        else:
-            raise RuntimeError("Controller Router did not become available on port 80.")
-        wait_secure_setup()
-    except BaseException:
-        command("systemctl", "--user", "stop", SERVICE.name, check=False)
-        command("systemctl", "--user", "stop", PRODUCT_SERVICE.name, check=False)
-        command("arduino-app-cli", "app", "stop", str(MATRIX), check=False)
-        if changed and MATRIX.exists():
-            failed = MATRIX_STATE / "matrix-failed"
-            if failed.exists():
-                shutil.rmtree(failed)
-            os.replace(MATRIX, failed)
-        if matrix_backup and matrix_backup.exists():
-            os.replace(matrix_backup, MATRIX)
-        if changed_rob_yaml and yaml_backup.exists():
-            shutil.copy2(yaml_backup, old_rob_yaml)
-        if portal_backup.exists() or not had_portal:
-            failed_portal = DEST.with_name(DEST.name + ".failed")
-            if failed_portal.exists():
-                shutil.rmtree(failed_portal)
-            if DEST.exists():
-                os.replace(DEST, failed_portal)
-            if portal_backup.exists():
-                os.replace(portal_backup, DEST)
-        if previous_default and Path(previous_default).is_dir():
-            command("arduino-app-cli", "app", "start", previous_default, check=False)
-            command("arduino-app-cli", "properties", "set", "default", previous_default, check=False)
-        if had_portal:
-            restore_services()
-        raise
+                from .host.secure_pairing import certificates
+            except ImportError:
+                from host.secure_pairing import certificates
+            certificates(MATRIX_STATE)
+            for app_id, app in APPS.items():
+                if listing.get(app["name"]) == "running":
+                    command("arduino-app-cli", "app", "stop", str(app["path"]))
+            matrix_backup, changed = install_matrix_app()
+            if changed or app_listing().get("Controller Router") != "running":
+                start_shared_matrix(lock_held=True)
+            # Reassert this on repeat installs too: a user may have cleared or
+            # changed App Lab's startup selection since the first installation.
+            command("arduino-app-cli", "properties", "set", "default", str(MATRIX))
+            start_products()
+            command("systemctl", "--user", "daemon-reload")
+            command("systemctl", "--user", "enable", "--now", SERVICE.name)
+            command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
+            command("systemctl", "--user", "restart", SERVICE.name)
+            for _ in range(30):
+                try:
+                    with urlopen("http://127.0.0.1/api/state", timeout=2) as response:
+                        if response.status == 200:
+                            break
+                except OSError:
+                    time.sleep(2)
+            else:
+                raise RuntimeError("Controller Router did not become available on port 80.")
+            wait_secure_setup()
+        except BaseException:
+            command("systemctl", "--user", "stop", SERVICE.name, check=False)
+            command("systemctl", "--user", "stop", PRODUCT_SERVICE.name, check=False)
+            command("arduino-app-cli", "app", "stop", str(MATRIX), check=False)
+            if changed and MATRIX.exists():
+                failed = MATRIX_STATE / "matrix-failed"
+                if failed.exists():
+                    shutil.rmtree(failed)
+                os.replace(MATRIX, failed)
+            if matrix_backup and matrix_backup.exists():
+                os.replace(matrix_backup, MATRIX)
+            if changed_rob_yaml and yaml_backup.exists():
+                shutil.copy2(yaml_backup, old_rob_yaml)
+            if portal_backup.exists() or not had_portal:
+                failed_portal = DEST.with_name(DEST.name + ".failed")
+                if failed_portal.exists():
+                    shutil.rmtree(failed_portal)
+                if DEST.exists():
+                    os.replace(DEST, failed_portal)
+                if portal_backup.exists():
+                    os.replace(portal_backup, DEST)
+            if previous_default and Path(previous_default).is_dir():
+                command("arduino-app-cli", "app", "start", previous_default, check=False)
+                command("arduino-app-cli", "properties", "set", "default", previous_default, check=False)
+            if had_portal:
+                restore_services()
+            raise
     retire_early_start()
     if LEGACY.is_dir():
         saved = DEST.with_name(DEST.name + ".app-lab-backup")

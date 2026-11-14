@@ -102,6 +102,7 @@ def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
     try:
         facts = json.loads((ROOT / "config/release.json").read_text())
         project_version = str(facts["project_version"])
+        development_version = str(facts.get("development_version", project_version))
         release_tag = str(facts["release_tag"])
         oldest = str(facts["oldest_supported_upgrade"])
         platforms = list(facts["supported_platforms"])
@@ -111,8 +112,8 @@ def check_release_facts(markdown: list[Path], errors: list[str]) -> None:
         return
     project = (ROOT / "pyproject.toml").read_text()
     match = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
-    if not match or match.group(1) != project_version:
-        errors.append("pyproject version does not match config/release.json")
+    if not match or match.group(1) != development_version:
+        errors.append("pyproject version does not match the development version in config/release.json")
     readme = (ROOT / "README.md").read_text()
     install = (ROOT / "docs/INSTALL_README.md").read_text()
     for label, source in (("README", readme), ("Installation Guide", install)):

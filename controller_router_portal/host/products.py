@@ -4,11 +4,13 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import stat
 import subprocess
 from pathlib import Path
 
 ROOT = Path("/home/arduino/ArduinoApps")
 RUNTIME = Path("/home/arduino/.local/share/controller-router-portal/runtime")
+SOCKET_DIR = Path("/run/user/1000/controller-router-portal")
 PRODUCTS = ("virtualglove", "rob-vision")
 IMAGE = "ghcr.io/arduino/app-bricks/python-apps-base:0.12.0"
 
@@ -56,6 +58,23 @@ def clean_compose(name: str) -> dict:
     return {"name": name + "-runtime", "services": services}
 
 
+def ensure_socket_directory() -> None:
+    """Create the private bind source before products or the broker start."""
+    try:
+        SOCKET_DIR.mkdir(mode=0o700)
+    except FileExistsError:
+        pass
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    fd = os.open(str(SOCKET_DIR), flags)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid():
+            raise RuntimeError("Router socket directory is not owned by the current user")
+        os.fchmod(fd, 0o700)
+    finally:
+        os.close(fd)
+
+
 def product_compose(name: str) -> Path:
     if name not in PRODUCTS:
         raise ValueError("Unknown controller product")
@@ -67,6 +86,7 @@ def product_compose(name: str) -> Path:
         config = json.loads(result.stdout)
     else:
         config = clean_compose(name)
+    ensure_socket_directory()
     config["name"] = name + "-runtime"
     # Cached App Lab Compose files retain the old project's network name.
     # Give each continuously running service its own Router-managed network.
@@ -78,7 +98,7 @@ def product_compose(name: str) -> Path:
                                  if not key.startswith("cc.arduino.app")}
     main = config["services"]["main"]
     main.setdefault("volumes", []).append({"type": "bind",
-        "source": "/run/user/1000/controller-router-portal",
+        "source": str(SOCKET_DIR),
         "target": "/run/user/1000/controller-router-portal"})
     RUNTIME.mkdir(parents=True, exist_ok=True)
     target = RUNTIME / f"{name}.json"

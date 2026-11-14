@@ -213,8 +213,11 @@ class PackageContentTests(unittest.TestCase):
         self.assertIn('virtualglove-deploy.tar.gz', deploy)
         self.assertIn('-czf "${LOCAL_ARCHIVE}"', deploy)
         self.assertIn('-xzf \'${REMOTE_ARCHIVE}\'', deploy)
-        self.assertIn("configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only", deploy)
-        self.assertIn('Choose VirtualGlove at the UNO Q launcher before deploying', deploy)
+        self.assertNotIn("arduino-app-cli app start", deploy)
+        self.assertIn('Select Controller Router in App Lab before deploying VirtualGlove', deploy)
+        self.assertIn('controller-router-portal/runtime/virtualglove.json', deploy)
+        self.assertIn('docker compose -f \'${REMOTE_ROUTED_COMPOSE}\' up -d --force-recreate', deploy)
+        self.assertIn('virtualglove-runtime-${EXPECTED_SERVICE}-1', deploy)
         self.assertIn('${UNO_HEALTH_AUTHORITY}:8100/status', deploy)
         self.assertNotIn('properties set default', deploy)
 
@@ -232,6 +235,22 @@ class PackageContentTests(unittest.TestCase):
             duplicates = [error for error in errors if 'local duplicate matrix' in error]
             self.assertEqual(len(duplicates), 1)
             self.assertIn('assets/matrix/A.png', duplicates[0])
+
+    def test_app_lab_package_requires_emulator_router_modules(self):
+        spec = importlib.util.spec_from_file_location(
+            'package_verifier_emulator_modules', ROOT / 'scripts/verify-app-lab-package.py')
+        verifier = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verifier)
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / 'package.zip'
+            with zipfile.ZipFile(archive, 'w'):
+                pass
+            errors = verifier.archive_errors(archive)
+            for module in ('computer_bridge', 'computer_launch', 'emulator_hosts',
+                           'emulator_registration', 'emulator_setup', 'loader_session',
+                           'passive_exit_watcher', 'native_exit_launch', 'uno_boot_order'):
+                self.assertIn('required package file is missing: '
+                              'VirtualGlove/src/router_shared/' + module + '.py', errors)
 
     def test_engineering_tools_are_rejected_from_ordinary_package(self):
         spec = importlib.util.spec_from_file_location(
@@ -294,6 +313,15 @@ class ArchiveTests(unittest.TestCase):
                          'src/router_shared/native_merged_input.py',
                          'src/router_shared/retroarch_udev.py',
                          'src/router_shared/virtual_sources.py',
+                         'src/router_shared/computer_bridge.py',
+                         'src/router_shared/computer_launch.py',
+                         'src/router_shared/emulator_hosts.py',
+                         'src/router_shared/emulator_registration.py',
+                         'src/router_shared/emulator_setup.py',
+                         'src/router_shared/loader_session.py',
+                         'src/router_shared/passive_exit_watcher.py',
+                         'src/router_shared/native_exit_launch.py',
+                         'src/router_shared/uno_boot_order.py',
                          'config/games.json', 'config/profiles.json',
                          'THIRD_PARTY_NOTICES.md',
                          'retropie/virtualglove-receiver.service',
@@ -468,6 +496,23 @@ class ArchiveTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     installer.unpack(archive, target, 'retropie', 'dev-test')
                 self.assertFalse(target.exists())
+
+    def test_console_packages_reject_missing_emulator_router_modules(self):
+        modules = ('computer_bridge', 'computer_launch', 'emulator_hosts',
+                   'emulator_registration', 'emulator_setup', 'loader_session',
+                   'passive_exit_watcher', 'native_exit_launch')
+        for machine in ('retropie', 'recalbox', 'batocera'):
+            for module in modules:
+                with self.subTest(machine=machine, module=module), tempfile.TemporaryDirectory() as directory:
+                    archive = self.package(directory, machine=machine)
+                    stripped = Path(directory) / 'stripped.zip'
+                    missing = 'VirtualGlove/src/router_shared/' + module + '.py'
+                    with zipfile.ZipFile(archive) as original, zipfile.ZipFile(stripped, 'w') as output:
+                        for item in original.infolist():
+                            if item.filename != missing:
+                                output.writestr(item, original.read(item.filename))
+                    with self.assertRaisesRegex(ValueError, 'Incomplete package'):
+                        installer.unpack(stripped, Path(directory) / 'extract', machine, 'dev-test')
 
     def test_duplicate_and_incomplete_packages(self):
         with tempfile.TemporaryDirectory() as directory:

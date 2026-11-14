@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.7.0
-Git-visible files: 794
+Git-visible files: 804
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-794 tracked or non-ignored files are present in this checkout. Ignored
+804 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -235,6 +235,7 @@ are intentionally omitted.
 |   |   |-- controller-router-portal.service
 |   |   |-- controller-router-products.service
 |   |   |-- display_runtime.py
+|   |   |-- matrix_port.py
 |   |   |-- pairing.html
 |   |   |-- pairing.py
 |   |   |-- portal-compose.yaml
@@ -876,22 +877,31 @@ are intentionally omitted.
 |-- src
 |   |-- router_shared
 |   |   |-- __init__.py
+|   |   |-- computer_bridge.py
+|   |   |-- computer_launch.py
 |   |   |-- controller_router.py
+|   |   |-- emulator_hosts.py
+|   |   |-- emulator_registration.py
+|   |   |-- emulator_setup.py
 |   |   |-- launch.py
 |   |   |-- launch_install.py
 |   |   |-- LICENSE
+|   |   |-- loader_session.py
 |   |   |-- merged_gamepad.py
+|   |   |-- native_exit_launch.py
 |   |   |-- native_merged_input.py
 |   |   |-- native_sessions.py
 |   |   |-- pairing.py
 |   |   |-- pairing_adapter.py
 |   |   |-- pairing_console.py
 |   |   |-- pairing_install.py
+|   |   |-- passive_exit_watcher.py
 |   |   |-- retroarch_udev.py
 |   |   |-- retropie_daphne.py
 |   |   |-- retropie_native.py
 |   |   |-- storage.py
 |   |   |-- systems.py
+|   |   |-- uno_boot_order.py
 |   |   `-- virtual_sources.py
 |   `-- virtualglove
 |       |-- __init__.py

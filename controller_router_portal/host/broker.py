@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import socketserver
 import subprocess
 import threading
@@ -21,6 +22,7 @@ APPS = {
                    "url": "http://127.0.0.1:8101/api/state", "port": 8101},
 }
 PORTAL = Path("/home/arduino/.local/share/controller-router-portal")
+MATRIX_STATE = Path("/home/arduino/.local/state/controller-router")
 ENTRY_PROJECT = "uno-controller-router-entry"
 
 
@@ -95,8 +97,10 @@ def configure_ports(app_id: str) -> None:
 
 try:
     from .concurrent import ConcurrentLauncher
+    from .matrix_port import configure_loopback, matrix_port_lock
 except ImportError:  # Executed from the installed host script.
     from concurrent import ConcurrentLauncher
+    from matrix_port import configure_loopback, matrix_port_lock
 
 LAUNCHER = ConcurrentLauncher()
 PAIRING = None
@@ -191,6 +195,72 @@ def start_portal() -> None:
         time.sleep(15)
 
 
+def ensure_matrix_port() -> bool:
+    """Restore loopback access after App Lab regenerates an unexposed app."""
+    matrix = ROOT / "controller-router"
+    descriptor = matrix / "app.yaml"
+    compose = matrix / ".cache/app-compose.yaml"
+    lock = MATRIX_STATE / ".matrix-port.lock"
+    with matrix_port_lock(lock):
+        if not descriptor.is_file() or not compose.is_file():
+            return False
+        # App Lab must not itself publish this app: otherwise it can expose the
+        # port before this watchdog has a chance to patch the generated Compose.
+        if re.search(r"(?m)^ports\s*:", descriptor.read_text()):
+            raise RuntimeError("Matrix descriptor must not publish a port")
+        result = subprocess.run(
+            ["docker", "inspect", "--format", "{{.State.Running}}", "controller-router-main-1"],
+            check=False, text=True, capture_output=True, timeout=10)
+        if result.returncode or result.stdout.strip() != "true":
+            return False
+        binding = subprocess.run(
+            ["docker", "inspect", "--format", '{{json (index .NetworkSettings.Ports "8123/tcp")}}',
+             "controller-router-main-1"], check=False, text=True, capture_output=True, timeout=10)
+        if binding.returncode:
+            return False
+        try:
+            ports = json.loads(binding.stdout)
+        except ValueError as exc:
+            raise RuntimeError("Cannot inspect Matrix port binding") from exc
+        expected = [{"HostIp": "127.0.0.1", "HostPort": "8123"}]
+        if ports == expected:
+            return False
+        return configure_loopback(compose, lock, force=True, lock_held=True,
+                                  safe_to_restart=lambda: not matrix_recreation_unsafe())
+
+
+def matrix_recreation_unsafe() -> bool:
+    """Defer if any installed product cannot positively report an idle game."""
+    for app_id, app in APPS.items():
+        if not (app["path"] / "app.yaml").is_file():
+            continue
+        try:
+            with urlopen(app["url"], timeout=3) as response:
+                state = json.load(response)
+            key = "game_session_active" if app_id == "virtualglove" else "live_game_active"
+            if not isinstance(state, dict) or not isinstance(state.get(key), bool) or state[key]:
+                return True
+        except (OSError, ValueError, TypeError):
+            return True
+    return False
+
+
+def reconcile_matrix_port(game_active) -> None:
+    """Retry after boot or an App Lab restart, without interrupting gameplay."""
+    last_error = None
+    while True:
+        try:
+            if not game_active():
+                ensure_matrix_port()
+            last_error = None
+        except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+            message = str(exc)
+            if message != last_error:
+                print("Controller Router Matrix port unavailable: " + message, flush=True)
+                last_error = message
+        time.sleep(15)
+
+
 def main() -> None:
     global PAIRING
     try:
@@ -201,6 +271,8 @@ def main() -> None:
         from secure_pairing import serve as serve_pairing
     def game_active():
         return any(app.get('game_active') for app in LAUNCHER.state().get('apps', {}).values())
+    def matrix_game_active():
+        return matrix_recreation_unsafe()
     PAIRING = PairingManager(LAUNCHER.matrix, game_active)
     def reconcile():
         while True:
@@ -212,6 +284,8 @@ def main() -> None:
                 pass
             time.sleep(15)
     threading.Thread(target=reconcile, daemon=True, name='router-connections').start()
+    threading.Thread(target=reconcile_matrix_port, args=(matrix_game_active,), daemon=True,
+                     name='router-matrix-port').start()
     threading.Thread(target=serve_pairing, args=(PAIRING, STATE), daemon=True,
                      name='router-secure-setup').start()
     SOCKET_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)

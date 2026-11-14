@@ -1,5 +1,3 @@
 name: Controller Router
 description: Shared UNO Q Matrix service for VirtualGlove and R.O.B. Vision
 icon: "🎮"
-ports:
-  - 8123

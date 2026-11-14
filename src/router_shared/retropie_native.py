@@ -7,6 +7,7 @@ USER=os.environ.get('USER','pi')
 HOME=Path.home()
 UID=os.getuid()
 GID=os.getgid()
+FALLBACK_COMMAND_SCHEMA=1
 REGISTRY=Path('/opt/retropie/support/launchers/native-router-registry.json')
 SELF='/opt/controller-router/bin/native-route'
 
@@ -106,7 +107,19 @@ def expand_command(args,entry):
  return command
 
 def passthrough(args,entry):
- command=expand_command(args,entry)
+ # A bridged native command needs its independently qualified original route
+ # when Router is disabled. Legacy entries without this field retain their
+ # existing command; installers must not invent emulator-specific fallbacks.
+ fallback=entry.get('fallback_command')
+ if fallback is not None and (not isinstance(fallback,str) or not fallback.strip()):
+  raise ValueError('INVALID_NATIVE_FALLBACK_COMMAND')
+ expected=entry.get('fallback_sha256')
+ if expected is not None and (fallback is None or not isinstance(expected,str) or
+                              hashlib.sha256(fallback.encode()).hexdigest()!=expected):
+  raise ValueError('NATIVE_FALLBACK_CHECKSUM_MISMATCH')
+ effective=dict(entry)
+ if fallback is not None:effective['command']=fallback
+ command=expand_command(args,effective)
  os.execv('/bin/bash',['bash','-c',command])
 
 def prepare(args):

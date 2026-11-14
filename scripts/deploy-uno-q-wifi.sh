@@ -39,8 +39,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 Usage: scripts/deploy-uno-q-wifi.sh [user@uno-q-host]
 
 Deploy the VirtualGlove Linux application over an authenticated SSH
-connection, preserve device settings, expose ports 8100 and 8443, restart
-the selected VirtualGlove app, and verify its status. The
+connection, preserve device settings, restart its Router-managed runtime,
+and verify its status. Controller Router remains the selected App Lab app. The
 default target is:
 
   arduino@arduiain.local
@@ -48,7 +48,7 @@ default target is:
 Environment overrides:
   UNO_Q_SSH_TARGET  SSH destination
   UNO_Q_SSH_IDENTITY  Optional private-key path for this UNO Q
-  UNO_Q_APP_DIR     Remote App Lab application directory
+  UNO_Q_APP_DIR     Remote VirtualGlove application directory
   VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP  Routine payload backups to retain (default: 12)
 USAGE
   exit 0
@@ -72,7 +72,7 @@ if [[ ! "${DEPLOY_BACKUPS_KEEP}" =~ ^[0-9]+$ ]] \
 fi
 readonly DEPLOY_BACKUPS_KEEP
 readonly UNO_HOST="${UNO_TARGET#*@}"
-readonly REMOTE_COMPOSE="${REMOTE_APP_DIR}/.cache/app-compose.yaml"
+readonly REMOTE_ROUTED_COMPOSE="/home/arduino/.local/share/controller-router-portal/runtime/virtualglove.json"
 readonly REMOTE_ARCHIVE="/tmp/virtualglove-deploy.tar.gz"
 readonly LOCAL_ARCHIVE="$(mktemp)"
 readonly LOCAL_METADATA_DIR="$(mktemp -d)"
@@ -101,7 +101,8 @@ trap cleanup EXIT
 echo "Checking ${UNO_TARGET}..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" true >/dev/null
 ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "arduino-app-cli app list --format json | python3 -c 'import json,sys; apps=json.load(sys.stdin)[\"apps\"]; assert any(a.get(\"name\")==\"VirtualGlove\" and a.get(\"status\")==\"running\" for a in apps), \"Choose VirtualGlove at the UNO Q launcher before deploying\"'"
+  "arduino-app-cli app list --format json | python3 -c 'import json,sys; apps=json.load(sys.stdin)[\"apps\"]; assert any(a.get(\"name\")==\"Controller Router\" and a.get(\"status\")==\"running\" for a in apps), \"Select Controller Router in App Lab before deploying VirtualGlove\"'"
+ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" "test -f '${REMOTE_ROUTED_COMPOSE}'"
 ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "curl -fsS --max-time 4 http://127.0.0.1:8088/status | python3 -c 'import json,sys; assert not json.load(sys.stdin).get(\"game_session_active\"), \"End the current game before deploying VirtualGlove\"'"
 UNO_CONNECTION="$(ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" 'printf "%s" "$SSH_CONNECTION"' 2>/dev/null | tr -d '\r' || true)"
@@ -134,14 +135,6 @@ scp "${SSH_OPTIONS[@]}" "${LOCAL_ARCHIVE}" "${UNO_TARGET}:${REMOTE_ARCHIVE}"
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "set -eu; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xzf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
 
-echo "Preparing the VirtualGlove App Lab runtime..."
-ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "if test ! -f '${REMOTE_COMPOSE}'; then APP_HOME='${REMOTE_APP_DIR}' arduino-app-cli app start '${REMOTE_APP_DIR}'; fi"
-
-echo "Configuring browser ports and persistent local hostname resolution..."
-ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}' --project-only && { test ! -S /run/avahi-daemon/socket || python3 '${REMOTE_APP_DIR}/scripts/configure-uno-q-mdns.py' '${REMOTE_COMPOSE}'; }"
-
 if [[ "${PRIVILEGED_READY}" == true ]]; then
   echo "Updating VirtualGlove host-service names..."
   ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
@@ -158,9 +151,9 @@ echo "Checking the host helpers..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "mkdir -p '${REMOTE_APP_DIR}/data'; if systemctl is-active --quiet virtualglove-system-shutdown.path; then touch '${REMOTE_APP_DIR}/data/.shutdown-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.shutdown-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable Dashboard shutdown' >&2; fi; if systemctl is-active --quiet virtualglove-camera-recovery.path; then touch '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; else rm -f '${REMOTE_APP_DIR}/data/.camera-recovery-enabled'; echo 'warning: install scripts/install-uno-q-shutdown-helper.sh to enable guarded USB camera recovery' >&2; fi"
 
-echo "Restarting the UNO Q application..."
+echo "Restarting the Router-managed VirtualGlove service..."
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "APP_HOME='${REMOTE_APP_DIR}' docker compose -f '${REMOTE_COMPOSE}' up -d --force-recreate"
+  "APP_HOME='${REMOTE_APP_DIR}' docker compose -f '${REMOTE_ROUTED_COMPOSE}' up -d --force-recreate"
 
 echo "Waiting for the dashboard..."
 ready=false
@@ -252,9 +245,9 @@ done
 
 CONTAINERS="$(ssh "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
   "docker ps --format '{{.Names}}'")"
-for EXPECTED_CONTAINER in virtualglove-main-1 virtualglove-profile-relay-1 virtualglove-avahi-resolver-1; do
-  if [[ "${CONTAINERS}" != *"${EXPECTED_CONTAINER}"* ]]; then
-    echo "error: expected container ${EXPECTED_CONTAINER} is not running" >&2
+for EXPECTED_SERVICE in main profile-relay avahi-resolver; do
+  if [[ "${CONTAINERS}" != *"virtualglove-runtime-${EXPECTED_SERVICE}-1"* ]]; then
+    echo "error: expected VirtualGlove ${EXPECTED_SERVICE} container is not running" >&2
     exit 1
   fi
 done

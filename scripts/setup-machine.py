@@ -425,6 +425,8 @@ def install_unoq(peer):
         raise ValueError("Start the app with install-uno-q.sh before completing host setup")
     if (app / "data/shutdown-request").exists():
         raise ValueError("A pending shutdown request exists; remove it deliberately before setup")
+    # This systemd change is ordering-only: it never starts a disabled vendor service.
+    run(sys.executable, app / "src/router_shared/uno_boot_order.py")
     controller_name = socket.gethostname().split(".", 1)[0].strip().lower()
     if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", controller_name):
         raise ValueError("The UNO Q hostname is not safe for the Controller website")

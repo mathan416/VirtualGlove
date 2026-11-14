@@ -14,6 +14,8 @@
 import importlib.util
 import json
 import os
+import runpy
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -491,6 +493,25 @@ class SetupTests(unittest.TestCase):
             for original in (ROOT / "uno-q").glob("virtualglove-*"):
                 (app / "uno-q" / original.name).write_bytes(original.read_bytes())
             (app / "scripts/configure-uno-q-mdns.py").write_bytes((ROOT / "scripts/configure-uno-q-mdns.py").read_bytes())
+            helper = app / "src/router_shared/uno_boot_order.py"
+            helper.parent.mkdir(parents=True)
+            helper.write_bytes((ROOT / "src/router_shared/uno_boot_order.py").read_bytes())
+            compatible = root / "proc/device-tree/compatible"
+            compatible.parent.mkdir(parents=True)
+            compatible.write_bytes(b"arduino,imola\0")
+            (root / "etc/systemd/system").mkdir(parents=True)
+            helper_calls = []
+            def run_step(*args):
+                if len(args) == 2 and args[0] == sys.executable and args[1] == helper:
+                    def systemctl(cmd, **kwargs):
+                        helper_calls.append(cmd)
+                        if cmd[1] == "show":
+                            state = ("arduino-burn-bootloader-unoq.service network-online.target\n" if "--value" in cmd else
+                                     "LoadState=loaded\n" if cmd[2] == "arduino-app-cli.service" else
+                                     "LoadState=loaded\nType=oneshot\nUnitFileState=enabled\n")
+                            return SimpleNamespace(stdout=state)
+                        return SimpleNamespace(stdout="")
+                    runpy.run_path(str(helper))["install"](root=root, runner=systemctl)
             class AppPath:
                 def __str__(self):
                     return "/home/arduino/ArduinoApps/virtualglove"
@@ -500,6 +521,7 @@ class SetupTests(unittest.TestCase):
                 path = Path(value)
                 return root / str(path).lstrip("/") if str(path).startswith(("/etc/", "/usr/local/")) else path
             with patch.object(setup, "SOURCE", AppPath()), patch.object(setup, "Path", side_effect=mapped), patch.object(setup, "BACKUPS", root / "backups"), patch.object(setup, "run") as command, patch.object(setup.os, "chown"), patch.object(setup.socket, "gethostname", return_value="VirtualGlove"), patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=1000, pw_gid=1000, pw_dir=str(root / "home/arduino"))):
+                command.side_effect = run_step
                 setup.install_unoq(None)
                 first = compose.read_text()
                 setup.install_unoq(None)
@@ -507,6 +529,11 @@ class SetupTests(unittest.TestCase):
                 "apt-get", "install", "-y", "avahi-daemon", "libnss-mdns", "uhubctl"
             )
             command.assert_any_call("systemctl", "enable", "--now", "avahi-daemon")
+            command.assert_any_call(sys.executable, app / "src/router_shared/uno_boot_order.py")
+            ordering = root / "etc/systemd/system/arduino-app-cli.service.d/50-controller-router-boot-order.conf"
+            self.assertIn("After=arduino-burn-bootloader-unoq.service", ordering.read_text())
+            self.assertNotIn("Wants=", ordering.read_text())
+            self.assertEqual(sum(cmd[1] == "daemon-reload" for cmd in helper_calls), 1)
             self.assertEqual(first, compose.read_text())
             self.assertEqual(first.count("target: /run/avahi-daemon"), 1)
             self.assertEqual(first.count("- 8100:8088"), 1)

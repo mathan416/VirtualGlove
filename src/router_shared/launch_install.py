@@ -140,6 +140,32 @@ sys.exit(main())
     replace_owned(adapter, code, 0o755)
     native = root / "bin/native-route"
     replace_owned(native, "#!/usr/bin/python3\nimport sys\nsys.path.insert(0, %r)\nfrom router_shared.retropie_native import main\nsys.exit(main())\n" % str(root / "lib"), 0o755)
+    # Native fallback supervisor watches the existing exit chord without
+    # grabbing or forwarding physical game input.
+    watch = root / "bin/native-exit-watch"
+    watch_code = "#!/usr/bin/python3\nimport sys\nsys.path.insert(0, %r)\nfrom router_shared.passive_exit_watcher import main\nsys.exit(main())\n" % str(root / "lib")
+    replace_owned(watch, watch_code, 0o755)
+    runner = root / "bin/native-exit-run"
+    runner_code = """#!/usr/bin/python3
+import os, pwd, sys
+from pathlib import Path
+sys.path.insert(0, %r)
+from router_shared.native_exit_launch import main
+home = Path(pwd.getpwuid(os.getuid()).pw_dir)
+sys.argv = [sys.argv[0], '--watcher', %r,
+            '--config', '/etc/virtualglove/controller-router.json',
+            '--es-inputs', str(home / '.emulationstation/es_input.cfg'),
+            '--sudo'] + sys.argv[1:]
+sys.exit(main())
+""" % (str(root / "lib"), str(watch))
+    replace_owned(runner, runner_code, 0o755)
+    # An administrator may qualify exact emulator commands for automatic,
+    # non-destructive registration. No specification means no host changes.
+    if root == Path('/opt/controller-router'):
+        from .emulator_registration import register, auto_register
+        manifest = Path('/etc/controller-router/native-adapters.json')
+        auto_register(library / 'emulator_hosts.py', configs, Path('/opt/retropie/support/launchers/native-router-registry.json'), manifest)
+        register(library / 'emulator_hosts.py', Path('/etc/controller-router/emulator-qualification.json'), manifest)
     changed = []
     for path in list(configs.glob("*/emulators.cfg")) + list(configs.glob("ports/*/emulators.cfg")):
         if any(marker in path.parent.name for marker in (".backup", ".before", ".bak")):

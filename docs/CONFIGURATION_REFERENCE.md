@@ -2687,6 +2687,15 @@ a fresh board is allowed. The installer does not upgrade the board OS or App Lab
 and 512 MiB in the platform's backup area for package operations and backups.
 Larger updates may need more space.
 
+On a test UNO Q with App Lab CLI and daemon 0.14.1, the capability-based
+installer completed a repeat upgrade with Router runtime 0.3.3. Its managed
+payload, protected state and web endpoints passed readback. The paired
+VirtualGlove UNO Q separately passed a Router-only 0.3.3 upgrade and reboot,
+with the Matrix service bound to loopback. These checks do not establish a
+clean installation in both product orders, full-system rollback, new camera
+enrolment, pairing, reconnect or gameplay on the product package. A separate
+manual firmware flash timeout remains unexplained.
+
 UNO installation stages files in `/home/arduino/ArduinoApps/virtualglove`.
 On shared installations, Controller Router installs the sole Matrix sketch and
 starts the controller Linux services. VirtualGlove does not flash its separate

@@ -17,11 +17,13 @@ result before naming the underlying mechanism.
 ### Added
 
 - Bundled Controller Router 0.3.0 with explicitly registered native RetroPie adapters, merged input, Daphne exit handling and the expanded Players and Systems catalogue.
-- Bundled independent UNO Q runtime 0.3.2. Older product bundles carrying runtime 0.3.1 cannot replace it during later installation or repair.
+- Bundled independent UNO Q runtime 0.3.3. Older product bundles carrying runtime 0.3.2 or earlier cannot replace it during later installation or repair.
+- Added optional ArcEm, GSplus and SimCoupe native adapters, including portable ArcEm and GSplus source patches and a SimCoupe device bridge. Existing emulator settings are preserved.
 
 ### Changed
 
 - UNO Q installation now checks required App Lab commands and the live daemon response instead of requiring one CLI/daemon version. Compatible upgrades are accepted without an installer update.
+- App Lab startup keeps the Matrix service on a loopback-only port, including on App Lab 0.14.1, and orders first-boot App Lab startup after Arduino's bootloader writer where that unit exists.
 
 - The entry page now recovers in the background without restarting Docker, product services or the Matrix app. Healthy entry containers remain running.
 - Refreshed shared Router guides and the Installation Guide filename. Installer package checks require the new shared modules.

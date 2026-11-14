@@ -1112,7 +1112,7 @@ def _wizard_screen(state: dict[str, Any], assignments: dict[str, int | None],
         line("VirtualGlove: %s" % _assignment_label(virtual_player)),
         line("[1-%d] Assign controller   [V] VirtualGlove   [T] Test controls" %
              max(1, len(rows))),
-        line("[S] Save and verify       [R] Roll back      [Q] Quit"),
+        line("[Y] Systems              [S] Save           [R] Restore   [Q] Quit"),
         border,
     ]
     return "\n".join(lines)
@@ -1136,6 +1136,43 @@ def _wait_for_outputs(config: dict[str, Any], attempts: int = 50) -> bool:
     return False
 
 
+
+def _wizard_systems(state, current, input_fn, output_fn):
+    """Edit system policy locally, preserving selections not currently discovered."""
+    rows = state.get("systems", [])
+    scope, selected = current
+    listed = {row["id"] for row in rows}
+    selected = set(selected)
+    enabled = {row["id"] for row in rows if (scope == "all" or
+               (scope == "nes" and row["id"] == "nes") or
+               (scope == "systems" and row["id"] in selected))}
+    hidden = selected - listed
+    while True:
+        output_fn("Systems: " + ("all supported" if scope == "all" else
+                  "NES only" if scope == "nes" else "selected individually"))
+        for index, row in enumerate(rows, 1):
+            output_fn("%d. %s: %s" % (index, row["name"],
+                      "Controller Router" if row["id"] in enabled else "My existing setup"))
+        choice = input_fn("System number toggles; A=all, N=NES only, D=done: ").strip().casefold()
+        if choice == "d":
+            return scope, sorted(hidden | enabled) if scope == "systems" else sorted(selected)
+        if choice == "a":
+            scope = "all"
+            enabled = set(listed)
+        elif choice == "n":
+            scope = "nes"
+            enabled = {"nes"} & listed
+        elif choice.isdigit() and 1 <= int(choice) <= len(rows):
+            ident = rows[int(choice)-1]["id"]
+            if ident in enabled:
+                enabled.remove(ident)
+            else:
+                enabled.add(ident)
+            scope = "systems"
+        else:
+            output_fn("ACTION  Choose a listed system, A, N, or D.")
+
+
 def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
                      verify_fn=None) -> int:
     """Interactively review, test, save, or roll back local assignments."""
@@ -1145,12 +1182,18 @@ def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
         for source in state["inventory"]
     }
     virtual_player = state["config"].get("virtualglove_player")
+    system_policy = (state["config"].get("physical_scope", "all"), state["config"].get("physical_systems", []))
+    systems_changed = False
     while True:
         output_fn(_wizard_screen(state, assignments, virtual_player))
         choice = input_fn("Choice: ").strip().casefold()
         if choice == "q":
             output_fn("No Controller Router changes were saved.")
             return 0
+        if choice == "y":
+            system_policy = _wizard_systems(state, system_policy, input_fn, output_fn)
+            systems_changed = True
+            continue
         if choice == "v":
             try:
                 virtual_player = _choose_player("VirtualGlove", input_fn)
@@ -1199,8 +1242,10 @@ def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
                 _assignment_label(virtual_player)))
             if input_fn("Save these assignments? [y/N]: ").strip().casefold() != "y":
                 continue
-            state = store.operate("save", {"revision": state["revision"],
-                "config": {"players": players, "virtualglove_player": virtual_player}})
+            proposal = {"players": players, "virtualglove_player": virtual_player}
+            if systems_changed:
+                proposal.update(physical_scope=system_policy[0], physical_systems=system_policy[1])
+            state = store.operate("save", {"revision": state["revision"], "config": proposal})
             verified = (verify_fn or _wait_for_outputs)(state["config"])
             if not verified:
                 output_fn("ACTION  Assignments were saved, but the merged outputs could not be verified.")
@@ -1215,7 +1260,7 @@ def run_setup_wizard(store: RouterStore, input_fn=input, output_fn=print,
             except ValueError as exc:
                 output_fn("ACTION  " + str(exc))
             continue
-        output_fn("ACTION  Choose a listed controller, V, T, S, R, or Q.")
+        output_fn("ACTION  Choose a listed controller, V, Y, T, S, R, or Q.")
 
 
 def main() -> int:
