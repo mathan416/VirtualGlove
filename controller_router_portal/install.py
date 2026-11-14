@@ -8,6 +8,7 @@ import os
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import tempfile
 import time
@@ -129,6 +130,65 @@ def version(root: Path) -> tuple[int, ...]:
         return ()
 
 
+QUIET_UPDATE_FILES = (Path("install.py"), Path("host/products.py"))
+
+
+def matching_static_payload(source: Path, installed: Path, *, exclude_quiet_updates=False) -> bool:
+    """Check every packaged file without treating App Lab caches as package files."""
+    for file in source.rglob("*"):
+        relative = file.relative_to(source)
+        if exclude_quiet_updates and relative in QUIET_UPDATE_FILES:
+            continue
+        if (set(relative.parts) & {".cache", "__pycache__"}
+                or file.name.endswith(".pyc") or file.name.startswith("._")
+                or file.name == ".DS_Store"):
+            continue
+        if file.is_symlink():
+            return False
+        if file.is_file():
+            peer = installed / relative
+            if peer.is_symlink() or not peer.is_file() or file.read_bytes() != peer.read_bytes():
+                return False
+    return True
+
+
+def replace_static_file(path: Path, content: bytes, mode: int) -> None:
+    """Replace one code file atomically, leaving the old file on staging failure."""
+    descriptor, name = tempfile.mkstemp(prefix=".router-update-", dir=path.parent)
+    staged = Path(name)
+    try:
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(content)
+            output.flush()
+            os.fsync(output.fileno())
+        staged.chmod(mode)
+        os.replace(staged, path)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def healthy_installed_portal() -> bool:
+    """Require the private running Matrix and live chooser before a quiet install."""
+    try:
+        result = subprocess.run(
+            ["docker", "inspect", "--format",
+             "{{json .State.Running}}|{{json .HostConfig.PortBindings}}",
+             "controller-router-main-1"], text=True, capture_output=True, timeout=5)
+        if result.returncode:
+            return False
+        running, bindings = (json.loads(part) for part in result.stdout.strip().split("|", 1))
+        if running is not True or bindings != {"8123/tcp": [
+                {"HostIp": "127.0.0.1", "HostPort": "8123"}]}:
+            return False
+        for url in ("http://127.0.0.1:8123/health", "http://127.0.0.1/api/state"):
+            with urlopen(url, timeout=2) as response:
+                if response.status != 200:
+                    return False
+        return True
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return False
+
+
 def _safe_command_output(output: str) -> str:
     """Keep useful command diagnostics without echoing common credentials."""
     output = re.sub(r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
@@ -234,6 +294,38 @@ def install() -> str:
         retire_early_start()
         return "Kept the newer Controller Router launcher and started installed controller services."
     validate_package(SOURCE)
+    if (DEST.is_dir() and version(DEST) == version(SOURCE)
+            and all((SOURCE / name).is_file() and not (SOURCE / name).is_symlink()
+                    and (DEST / name).is_file() and not (DEST / name).is_symlink()
+                    for name in QUIET_UPDATE_FILES)
+            and matching_static_payload(SOURCE, DEST, exclude_quiet_updates=True)
+            and healthy_installed_portal()):
+        # Product upgrades bundle Router too. An identical, healthy Router needs
+        # only product registration. The installer and product launcher can be
+        # refreshed together without invoking App Lab or stopping Matrix.
+        with tempfile.TemporaryDirectory(prefix=".router-quiet-update-", dir=DEST.parent) as backup_dir:
+            changed = []
+            try:
+                for name in QUIET_UPDATE_FILES:
+                    source_file, installed_file = SOURCE / name, DEST / name
+                    if source_file.read_bytes() == installed_file.read_bytes():
+                        continue
+                    backup = Path(backup_dir) / name
+                    backup.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(installed_file, backup)
+                    replace_static_file(installed_file, source_file.read_bytes(),
+                                        stat.S_IMODE(source_file.stat().st_mode))
+                    changed.append((installed_file, backup))
+                command("python3", str(DEST / "host/products.py"), "start-all")
+                command("systemctl", "--user", "enable", "--now", SERVICE.name)
+                command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
+                retire_early_start()
+            except BaseException:
+                for installed_file, backup in reversed(changed):
+                    replace_static_file(installed_file, backup.read_bytes(),
+                                        stat.S_IMODE(backup.stat().st_mode))
+                raise
+        return "Kept the healthy Controller Router launcher and started installed controller services."
     DEST.parent.mkdir(parents=True, exist_ok=True)
     listing = app_listing()
     for app_id, app in APPS.items():

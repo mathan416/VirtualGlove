@@ -6,7 +6,7 @@ import subprocess
 
 UNIT = 'arduino-burn-bootloader-unoq.service'
 DROPIN = '50-controller-router-boot-order.conf'
-CONTENT = ('# Let the enabled first-boot bootloader writer finish before App Lab starts.\n'
+CONTENT = ('# If the first-boot bootloader writer is queued, finish it before App Lab starts.\n'
            '# Ordering only: do not enable, pull in, or otherwise start a disabled writer.\n'
            '[Unit]\nAfter=arduino-burn-bootloader-unoq.service\n').encode()
 
@@ -32,10 +32,10 @@ def install(root=Path('/'), runner=subprocess.run):
     result = runner(['systemctl', 'show', UNIT, '-p', 'LoadState', '-p', 'UnitFileState', '-p', 'Type'],
                     check=True, text=True, capture_output=True, timeout=10)
     fields = dict(line.split('=', 1) for line in result.stdout.splitlines() if '=' in line)
-    if fields.get('LoadState') != 'loaded':
-        return 'Bootloader writer not present; no ordering drop-in installed.'
-    if fields.get('Type') != 'oneshot':
+    if fields.get('LoadState') == 'loaded' and fields.get('Type') != 'oneshot':
         raise ValueError('Bootloader writer has unexpected unit type; no changes made')
+    if fields.get('LoadState') not in ('loaded', 'not-found'):
+        raise ValueError('Bootloader writer has unexpected load state; no changes made')
     base = root / 'etc/systemd/system'
     directory = base / 'arduino-app-cli.service.d'
     target = directory / DROPIN

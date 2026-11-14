@@ -75,6 +75,17 @@ def ensure_socket_directory() -> None:
         os.close(fd)
 
 
+def _stale_led_bind(volume: object) -> bool:
+    """Recognize an optional App Lab LED mount left behind by a kernel update."""
+    if not isinstance(volume, dict) or volume.get("type") != "bind":
+        return False
+    source, target = volume.get("source"), volume.get("target")
+    led_class = "/sys/class/leds/"
+    return (isinstance(source, str) and isinstance(target, str)
+            and source.startswith(led_class) and target.startswith(led_class)
+            and not Path(source).exists())
+
+
 def product_compose(name: str) -> Path:
     if name not in PRODUCTS:
         raise ValueError("Unknown controller product")
@@ -97,6 +108,12 @@ def product_compose(name: str) -> Path:
             service["labels"] = {key: value for key, value in labels.items()
                                  if not key.startswith("cc.arduino.app")}
     main = config["services"]["main"]
+    # App Lab writes this cache only after a successful MCU upload. If an
+    # upload fails following a kernel update, optional LED paths from the old
+    # kernel can prevent the independent product containers from starting.
+    # Filter the Router runtime copy; leave App Lab's own cache intact.
+    main["volumes"] = [volume for volume in main.get("volumes", [])
+                       if not _stale_led_bind(volume)]
     main.setdefault("volumes", []).append({"type": "bind",
         "source": str(SOCKET_DIR),
         "target": "/run/user/1000/controller-router-portal"})
