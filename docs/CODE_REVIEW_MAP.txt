@@ -2,7 +2,7 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.7.0
-Git-visible files: 805
+Git-visible files: 804
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-805 tracked or non-ignored files are present in this checkout. Ignored
+804 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -1109,7 +1109,6 @@ are intentionally omitted.
 |-- .gitattributes
 |-- .gitignore
 |-- app.yaml
-|-- Codex Image Sep 5, 2026, 01_52_57 PM.png
 |-- LICENSE
 |-- pyproject.toml
 |-- README.md
