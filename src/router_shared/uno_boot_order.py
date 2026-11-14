@@ -9,6 +9,9 @@ DROPIN = '50-controller-router-boot-order.conf'
 CONTENT = ('# If the first-boot bootloader writer is queued, finish it before App Lab starts.\n'
            '# Ordering only: do not enable, pull in, or otherwise start a disabled writer.\n'
            '[Unit]\nAfter=arduino-burn-bootloader-unoq.service\n').encode()
+PREVIOUS_CONTENT = CONTENT.replace(
+    b'# If the first-boot bootloader writer is queued, finish it before App Lab starts.\n',
+    b'# Let the enabled first-boot bootloader writer finish before App Lab starts.\n', 1)
 
 
 def _effective_order(runner):
@@ -43,7 +46,7 @@ def install(root=Path('/'), runner=subprocess.run):
         raise ValueError('Refusing symlink in systemd drop-in path')
     directory.mkdir(mode=0o755, exist_ok=True)
     if target.exists():
-        if not target.is_file() or target.read_bytes() != CONTENT:
+        if not target.is_file() or target.read_bytes() not in (CONTENT, PREVIOUS_CONTENT):
             raise ValueError('Existing Controller Router drop-in differs; no changes made')
         if not _effective_order(runner):
             runner(['systemctl', 'daemon-reload'], check=True, timeout=30)
