@@ -4,11 +4,11 @@
 
 # VirtualGlove
 
-**Move your hand. Play the game.** VirtualGlove turns hand movement and gestures into RetroArch controls using an ordinary USB camera and a controller built on the Arduino UNO Q. Wear a plain glove or use your bare hand; no sensors or electronics need to be attached to it.
+VirtualGlove is a camera-driven input system for supported RetroArch games. An Arduino UNO Q processes a USB camera feed, maps tracked hand movement and gestures to a game profile, and sends authenticated control state to a receiver on the game system. A glove may improve visibility, but it contains no electronics.
 
-Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punch. The camera picture stays on the controller, while authenticated input travels to your game console. Pixel Pal guides practice and setup.
+Camera frames stay on the controller. The game system receives control state, while Controller Router combines that state with a physical pad for routed Linux games. Pixel Pal and Glove Academy provide local calibration and gesture practice.
 
-## What you can do
+## Functional scope
 
 - Play supported NES games with Programs 1–14 and A–I, including game-specific gesture mappings and rapid-fire exceptions.
 - Use FCEUmm joystick mode, or the separate Nestopia (VirtualGlove) core for Super Glove Ball’s native movement and glove actions.
@@ -19,7 +19,18 @@ Move to steer. Curl fingers for buttons. Roll, push, pull, grab, throw, and punc
 
 ![VirtualGlove Dashboard with camera and controller status](docs/images/debug-dashboard.png)
 
-VirtualGlove `v0.7.0` is in release preparation; it has not been published. See the [prepared release notes](docs/CHANGELOG.md#070---in-preparation). VirtualGlove `v0.6.0` remains the current stable release. This README describes the current development checkout. The commands below install the **latest published stable release**, which may have an earlier setup or pairing interface. For a release candidate, use its exact versioned installer and the guide packaged with it; `releases/latest` does not select prereleases. The same installer command is used for a first install and an upgrade.
+The stable release is **v0.7.0**. The commands below select the latest published stable release; prereleases require their exact versioned assets. The same platform installer handles a first install and an upgrade. See the [0.7.0 changelog](docs/CHANGELOG.md#070---2026-11-14) and the guide included with the downloaded release.
+
+## System boundary
+
+| Stage | Runs on | Output or responsibility |
+| --- | --- | --- |
+| Camera and tracking | UNO Q | Local video capture and hand landmarks; raw frames are not sent to the console |
+| Profile and gesture engine | UNO Q | Movement and button state for the selected game or practice mode |
+| Controller Router | UNO Q and Linux console | Authenticated pairing, one active input lease, player assignment, and shared Matrix display |
+| Game receiver | RetroPie, Recalbox, Batocera, or LaunchBox | Virtual gamepad or native input for the selected emulator; physical controls remain available |
+
+The shared Router library is 0.3.0 and its UNO Q portal is 0.3.3. LaunchBox uses VirtualGlove's separate Windows input path. The release packages do not include games or BIOS files.
 
 ## What you need
 
@@ -43,7 +54,7 @@ cd /home/arduino
 curl -fLO https://github.com/mathan416/VirtualGlove/releases/latest/download/install-uno-q.sh && bash install-uno-q.sh
 ```
 
-The installer prints the controller's `.local` and IP addresses. The first shared Matrix build can take several minutes. For the current development version, Controller Router owns the entry page and display; the VirtualGlove site is on port **8100**.
+The installer prints the controller's `.local` and IP addresses. The first shared Matrix build can take several minutes. Controller Router owns the port-80 entry page and Matrix display; the VirtualGlove site is on port **8100**.
 
 ### RetroPie
 
@@ -78,7 +89,7 @@ Install 64-bit Python and 64-bit RetroArch with FCEUmm first. Download `VirtualG
 
 ## Connect and play
 
-In the current development version, Controller Router comes with VirtualGlove. Open the controller address printed by the installer. With VirtualGlove alone it opens the app; with R.O.B. Vision too, **Apps** lets you choose. Both app services stay available. Starting a registered game selects its app automatically, even when no browser is open.
+Controller Router comes with VirtualGlove. Open the controller address printed by the installer. With VirtualGlove alone it opens the app; with R.O.B. Vision too, **Apps** lets you choose. Both app services stay available. Starting a registered game selects its app automatically, even when no browser is open.
 
 Pair the console once by choosing **Pair console** from Apps. The console installer opens a short connection window and prints a one-time code. Router's secure Setup page verifies the console and asks for a confirmation code shown on the Matrix display. It provisions separate private credentials for installed apps, so adding R.O.B. Vision later does not require a second pairing. See the [Controller Router Pairing Guide](controller_router_portal/python/guides/Controller-Router-Pairing-Guide.pdf). LaunchBox follows its platform-specific pairing instructions in the Installation Guide.
 
@@ -101,7 +112,7 @@ In VirtualGlove **Setup**, centre your hand and check the camera. **Glove Academ
 
 The controller serves user guides, technical references, and PDFs from **Help**. Printable editions are also in [output/pdf](output/pdf/). The [public website](website/UPLOAD_README.txt) is maintained in this repository.
 
-## How it works
+## Runtime data flow
 
 ![End-to-end VirtualGlove flow from camera to game](docs/images/architecture/end-to-end.png)
 
@@ -112,6 +123,12 @@ The controller serves user guides, technical references, and PDFs from **Help**.
 5. The console publishes the appropriate RetroArch or native glove input.
 
 Controller Router keeps physical player assignments stable for routed games and grants one app's input at a time. If a wireless pad sleeps and wakes, Router reconnects that source to its saved player. If Router itself restarts during a game, exit and relaunch after it is ready. See its [User Guide](controller_router_portal/python/guides/Controller-Router-User-Guide.pdf) and [Technical Reference](docs/ARCHITECTURE.md).
+
+## Validation and maintenance
+
+The release packages validate their contents and print post-install checks and any actions still needed on the device. Keep the installer's backup location until the controller and console have been checked; a UNO Q payload backup is not a whole-system rollback. See the [Installation Guide](docs/INSTALL_README.md) for recovery.
+
+Run `python3 -m unittest discover -s tests` in a source checkout. CI also checks JavaScript, package composition, PDF assets, and supported Python versions. Test reports should name the controller, console platform, emulator/core, game, physical pad and camera, because a package build does not establish gameplay on every hardware combination.
 
 ## Contribute and licence
 

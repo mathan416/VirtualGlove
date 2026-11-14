@@ -12,7 +12,7 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
-## [0.7.0] - In preparation
+## [0.7.0] - 2026-11-14
 
 ### Added
 
@@ -31,9 +31,9 @@ result before naming the underlying mechanism.
 
 ### Release status
 
-This release is prepared but unpublished. Published downloads remain on v0.6.0; the website uses `published_release_tag` until final publication. Set that field to v0.7.0 only when preparing the final publication revision and its website assets.
+The final candidate runtime was installed on the paired and separate test UNO Qs and the RetroPie cabinet. Both UNO Qs passed controlled reboot checks: Router, the private Matrix endpoint, VirtualGlove and R.O.B. Vision returned, and 15 selected saved-state hashes and modes were preserved on each. The cabinet installer preserved 13 selected files and emulator configurations. The owner reported that the cabinet's requested Router, VirtualGlove and R.O.B. Vision control and exit checks passed. Final package assets, guides and CI checks passed.
 
-The prior v0.4.2 upgrade acceptance is retained as historical evidence. Candidate 0.7.0 installation, upgrade from 0.6.0, rollback, and both product installation orders still require staged acceptance. Earlier gameplay and UNO Q recovery checks apply to their recorded development builds. Preserve pairing, saved players, camera choices, game registrations, settings and controls. This release does not include separate uncommitted development work.
+The preceding v0.4.2 upgrade result remains historical. The final packages were not tested as fresh installations in both product orders, as a full UNO Q rollback, or on every supported console platform. New camera enrollment, pairing and reconnect were not repeated with this release. Keep the installer backup until the local controller and console checks pass.
 
 <!-- PAGEBREAK -->
 

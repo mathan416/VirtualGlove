@@ -4,12 +4,12 @@ This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
 pair them securely, centre your hand, and test the controls.
 
-The prepared VirtualGlove 0.7.0 source supports RetroPie, Recalbox, Batocera, and LaunchBox on
+VirtualGlove 0.7.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-VirtualGlove `v0.7.0` is prepared but unpublished. VirtualGlove `v0.6.0` remains the current stable release. The unversioned commands
+VirtualGlove `v0.7.0` is the current stable release. The unversioned commands
 in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
@@ -517,7 +517,17 @@ preserve private settings and user data.
 6. If installed, test native Super Glove Ball separately, then reboot both
    devices and repeat the game and exit checks.
 
-### Upgrade from v0.4.2 or later to v0.6.0
+### Upgrade from v0.6.0 to v0.7.0
+
+Close games on both devices, then run the v0.7.0 Controller installer and the
+matching console installer. The upgrade preserves the saved pairing, players,
+camera choices, game registrations and Router assignments. Keep the printed
+backup paths and verify the installer reports, reboot startup, physical pad,
+hand input and exit control before discarding them. The UNO Q payload backup
+does not roll back the entire operating system. New pairing, reconnect and
+camera enrollment still need checking on the target hardware.
+
+### Historical upgrade from v0.4.2 to v0.6.0
 
 Version 0.6.0 includes a managed upgrade from the released v0.4.2 installation.
 Update the Controller and console from the same v0.6.0 release. The installers
