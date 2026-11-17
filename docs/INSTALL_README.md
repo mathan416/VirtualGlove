@@ -4,12 +4,13 @@ This guide takes you from a prepared Arduino UNO Q and game system to your
 first working VirtualGlove game. You will install VirtualGlove on both devices,
 pair them securely, centre your hand, and test the controls.
 
-VirtualGlove 0.7.0 supports RetroPie, Recalbox, Batocera, and LaunchBox on
+The prepared VirtualGlove 0.7.1 source supports RetroPie, Recalbox, Batocera, and LaunchBox on
 Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-VirtualGlove `v0.7.0` is the current stable release. The unversioned commands
+VirtualGlove `v0.7.1` is prepared as release candidate `v0.7.1-rc.1` and has not
+been published as stable. VirtualGlove `v0.7.0` remains the current stable release. The unversioned commands
 in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
 one exact version later.
