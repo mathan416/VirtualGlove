@@ -48,6 +48,13 @@ DEVICE_NAME = "VirtualGlove Merged Player {}"
 DEVICE_PRODUCT_BASE = 0x5650
 CONFIG_NAME = "controller-router.json"
 DISCOVERY_INTERVAL_SECONDS = 1.0
+# Detecting a game scans every process in /proc (RetroArch, registered native
+# hosts and each installed provider), which can take a quarter second on a Pi.
+# Input stays on the fast loop. Once a second the router compares the cheap
+# list of process IDs and rescans only when a process started or exited; a
+# periodic full scan still catches a launcher that execs into its emulator.
+SESSION_CHECK_SECONDS = 1.0
+SESSION_FULL_SCAN_SECONDS = 5.0
 VIRTUAL_DRAIN_LIMIT = 256
 MAX_REQUEST = 262144
 CONTROL_TEST_MS = 10_000
@@ -390,6 +397,14 @@ def running_retroarch_session(proc_root: Path = Path("/proc")) -> tuple[str | No
     return None, None
 
 
+def process_ids(proc_root: Path = Path("/proc")) -> frozenset[str] | None:
+    """List running process IDs cheaply; None when /proc cannot be read."""
+    try:
+        return frozenset(name for name in os.listdir(proc_root) if name.isdigit())
+    except OSError:
+        return None
+
+
 def running_game_session(proc_root=Path("/proc")):
     """Use the same installed native-session boundary in the daemon and Setup."""
     found = running_retroarch_session(proc_root)
@@ -471,6 +486,10 @@ class ControllerRouterDevice:
         self.config_revision = revision(self.config)
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
+        self.session_context: tuple[str | None, str | None] = (None, None)
+        self.session_checked_at = 0.0
+        self.session_scanned_at = 0.0
+        self.session_pids: frozenset[str] | None = None
         self.installed_indexes: dict[int, int] = {}
         self.stop = threading.Event()
         self.lock = threading.Lock()
@@ -719,13 +738,25 @@ class ControllerRouterDevice:
                 self._virtual(incoming)
                 return
 
+    def _game_session(self, now: float | None = None) -> tuple[str | None, str | None]:
+        """Return the running game, rescanning /proc only when processes changed."""
+        now = time.monotonic() if now is None else now
+        if self.session_checked_at and now - self.session_checked_at < SESSION_CHECK_SECONDS:
+            return self.session_context
+        self.session_checked_at = now
+        pids = process_ids(self.proc_root)
+        if (pids is None or pids != self.session_pids or not self.session_scanned_at
+                or now - self.session_scanned_at >= SESSION_FULL_SCAN_SECONDS):
+            self.session_context = running_game_session(self.proc_root)
+            self.session_pids, self.session_scanned_at = pids, now
+        return self.session_context
+
     def _run(self) -> None:
         """Monitor routed games, configuration, hot-plug, and source events."""
         active = virtual_allowed = False
         while not self.stop.is_set():
             with self.lock:
-                core, system = running_game_session(self.proc_root)
-                self.session_context = (core, system)
+                core, system = self._game_session()
                 now_active = routes_physical_core(self.config, core, system)
                 now_virtual_allowed = now_active and core in JOYSTICK_CORE_NAMES
                 if (now_active, now_virtual_allowed) != (active, virtual_allowed):

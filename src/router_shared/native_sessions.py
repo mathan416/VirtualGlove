@@ -60,16 +60,17 @@ def launch_policy(path=Path('/run/virtualglove/controller-router-launch.json')):
 
 
 def load_provider(path):
+    """Load each installed provider once, reloading only when its file changes."""
     path = Path(path)
     info = path.stat()
-    key = (str(path), info.st_mtime_ns, info.st_size)
-    module = _PROVIDERS.get(key)
-    if module is None:
-        spec = importlib.util.spec_from_file_location('_router_native_host', str(path))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        _PROVIDERS.clear()
-        _PROVIDERS[key] = module
+    key = (info.st_mtime_ns, info.st_size)
+    cached = _PROVIDERS.get(str(path))
+    if cached is not None and cached[0] == key:
+        return cached[1]
+    spec = importlib.util.spec_from_file_location('_router_native_host', str(path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    _PROVIDERS[str(path)] = (key, module)
     return module
 
 

@@ -9,7 +9,7 @@ Windows. The normal commands below install the latest stable release. If you
 need a specific version or a development build, use the
 [technical installation reference](CONFIGURATION_REFERENCE.md#versioned-multi-platform-installation).
 
-VirtualGlove `v0.7.1` is prepared as release candidate `v0.7.1-rc.1` and has not
+VirtualGlove `v0.7.1` is prepared as release candidate `v0.7.1-rc.2` and has not
 been published as stable. VirtualGlove `v0.7.0` remains the current stable release. The unversioned commands
 in this guide select it through GitHub's latest stable release. Use the
 pinned-version procedure in the technical reference when you need to reproduce
