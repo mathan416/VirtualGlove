@@ -12,6 +12,28 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.7.1] - in preparation
+
+Release candidate `v0.7.1-rc.1` carries console pairing security fixes from the
+shared Controller Router. `v0.7.0` remains the current stable release until the
+candidate passes device checks.
+
+### Security
+
+- Bundled Controller Router 0.3.1. A console that still had an unmigrated legacy pairing can no longer be taken over by another device on the network asking the console to sign its own migration proof.
+- Secure Setup asks for the code shown on the UNO Q Matrix before it removes a console or turns an app's access off or on. Only the page that started a confirmation can cancel it.
+
+### Changed
+
+- Bundled independent UNO Q runtime 0.3.4. Product bundles carrying runtime 0.3.3 or earlier cannot replace its updated pairing pages.
+- `virtualglove.merged_gamepad` now uses the shared Router implementation instead of a separate copy. Existing imports keep working.
+
+### Fixed
+
+- A failed console connection change restores the previous connection once, without blocking pairing for two minutes.
+- Setup stays responsive while the UNO Q checks an unavailable console, and a full ten-second controller test has time to finish.
+- On Recalbox, an idle Router no longer repeats its output setup every second.
+
 ## [0.7.0] - 2026-11-14
 
 ### Added
