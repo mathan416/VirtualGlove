@@ -278,7 +278,7 @@ def main() -> None:
         while True:
             try:
                 if game_active():
-                    PAIRING.cancel()
+                    PAIRING.close_window()
                 PAIRING.reconcile()
             except (OSError, ValueError):
                 pass

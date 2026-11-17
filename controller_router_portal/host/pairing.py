@@ -72,11 +72,14 @@ class PairingManager:
             return {'consoles': consoles, 'conflicts': self.document['conflicts'],
                     'pairing': bool(self.window and self.window['expires'] > self.clock())}
 
-    def _window_available(self):
+    def _window_available(self, replace_change=False):
         if self.clock() < self.locked_until:
             raise ValueError('Too many confirmation attempts. Wait for the pairing window to expire.')
         if self.window and self.window['expires'] > self.clock():
-            raise ValueError('Finish or cancel the current pairing first.')
+            # A console's connection code outranks an unconfirmed Remove or
+            # access request, which needs only a visible console ID to open.
+            if not (replace_change and self.window.get('change')):
+                raise ValueError('Finish or cancel the current pairing first.')
 
     def _open_window(self, **details):
         """Show a one-time code on the Matrix; physical presence confirms the request."""
@@ -90,7 +93,7 @@ class PairingManager:
     def begin(self, host, code, uno_host):
         with self.lock:
             self._idle()
-            self._window_available()
+            self._window_available(replace_change=True)
             host, uno_host = normalize_host(host), normalize_host(uno_host)
             code_pin, authorization = parse_code(code)
             peer = self.peer(host, code_pin=code_pin)
@@ -113,24 +116,36 @@ class PairingManager:
             self._window_available()
             return self._open_window(change={'kind': kind, 'id': identity, 'app': app, 'enabled': enabled})
 
-    def cancel(self):
+    def close_window(self):
+        """End any confirmation, e.g. when a game starts. Not exposed to browsers."""
         with self.lock:
             self.window = None
             self.matrix.clear_pairing()
+
+    def cancel(self, session):
+        """Only the browser holding a confirmation may withdraw it."""
+        with self.lock:
+            if self.window and self.window['expires'] > self.clock() and (
+                    not isinstance(session, str) or not hmac.compare_digest(session, self.window['session'])):
+                raise ValueError('Only the page that started this confirmation can cancel it.')
+            self.close_window()
             return {'cancelled': True}
 
     def confirm(self, session, pin):
         with self.lock:
             self._idle()
             window = self.window
-            if not window or window['session'] != session or self.clock() >= window['expires']:
-                self.cancel()
+            if not window or self.clock() >= window['expires']:
+                self.close_window()
+                raise ValueError('Confirmation expired. Start pairing again.')
+            if not isinstance(session, str) or not hmac.compare_digest(session, window['session']):
+                # Another browser's stale or guessed session must not end this window.
                 raise ValueError('Confirmation expired. Start pairing again.')
             if not isinstance(pin, str) or not hmac.compare_digest(pin, window['pin']):
                 window['attempts'] += 1
                 if window['attempts'] >= 5:
                     self.locked_until = window['expires']
-                    self.cancel()
+                    self.close_window()
                 raise ValueError('Confirmation code did not match the Matrix.')
             self.window = None
             try:
@@ -393,7 +408,7 @@ class PairingManager:
         if action == 'inspect': return self.inspect()
         if action == 'begin': return self.begin(payload.get('host'), payload.get('code'), uno_host)
         if action == 'confirm': return self.confirm(payload.get('session'), payload.get('pin'))
-        if action == 'cancel': return self.cancel()
+        if action == 'cancel': return self.cancel(payload.get('session'))
         # Browser requests only open a Matrix confirmation; 'confirm' applies them.
         if action == 'remove': return self.request_change('remove', payload.get('id'))
         if action == 'access': return self.request_change('access', payload.get('id'), payload.get('app'),
