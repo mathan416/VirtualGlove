@@ -472,7 +472,6 @@ class ControllerRouterDevice:
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
         self.installed_indexes: dict[int, int] = {}
-        self.installed_hotkeys: dict[str, str] = {}
         self.stop = threading.Event()
         self.lock = threading.Lock()
         try:
@@ -757,13 +756,8 @@ class ControllerRouterDevice:
                                             self.udev_root,
                                             self.config["platform"]) != self.installed_indexes:
                             self._install_indexes()
-                        elif self.config["platform"] == "recalbox":
-                            global_path = self.global_config or self.retroarch_config.with_name(
-                                "retroarchcustom.cfg")
-                            global_text = unmanaged_retroarch_config(
-                                global_path.read_text() if global_path.exists() else "")
-                            if player_one_hotkeys(self.config, global_text) != self.installed_hotkeys:
-                                self._install_indexes()
+                        # Hotkeys are resolved per launch by prepare-launch; the
+                        # runtime writes no RetroArch configuration to refresh.
                     except (OSError, RuntimeError, ValueError, json.JSONDecodeError):
                         pass
                     self.config_checked_at = time.monotonic()

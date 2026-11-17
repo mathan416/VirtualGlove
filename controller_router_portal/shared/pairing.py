@@ -147,12 +147,12 @@ class Peer:
         self.code_pin = code_pin
         self.last_fingerprint = None
 
-    def request(self, path, payload=None, token=None):
+    def request(self, path, payload=None, token=None, timeout=10):
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE  # Explicit certificate pinning below.
         context.minimum_version = ssl.TLSVersion.TLSv1_2
-        connection = http.client.HTTPSConnection(self.address, self.port, context=context, timeout=10)
+        connection = http.client.HTTPSConnection(self.address, self.port, context=context, timeout=timeout)
         try:
             connection.connect()
             der = connection.sock.getpeercert(binary_form=True)

@@ -36,6 +36,22 @@ def remove_file(path):
         pass
 
 
+def adapter_port(descriptor):
+    """UNO Q port written for env/text adapters; 8766 keeps earlier R.O.B. Vision registrations working."""
+    port = descriptor.get('port', 8766)
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        raise ValueError('Adapter port must be between 1 and 65535.')
+    return port
+
+
+def adapter_env_key(descriptor):
+    """Environment variable an env adapter rewrites; defaults to R.O.B. Vision's for earlier registrations."""
+    key = descriptor.get('target_key', 'ROB_VISION_URL')
+    if not isinstance(key, str) or not re.fullmatch(r'[A-Z_][A-Z0-9_]*', key):
+        raise ValueError('Adapter variable names use capital letters, digits, and underscores.')
+    return key
+
+
 def default_root():
     if os.name == 'nt':
         return Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'ControllerRouter/link'
@@ -136,6 +152,10 @@ class LinkStore:
         for key in ('token_file', 'target_file'):
             if not Path(descriptor[key]).is_absolute():
                 raise ValueError('Adapter paths must be absolute.')
+        if descriptor['kind'] in ('env', 'text'):
+            adapter_port(descriptor)
+        if descriptor['kind'] == 'env':
+            adapter_env_key(descriptor)
         with self.lock:
             self.expire()
             self.public()
@@ -216,14 +236,14 @@ class LinkStore:
             document[descriptor.get('target_key', 'uno_q')] = urlsplit(url).hostname
             write_json(target, document)
         elif descriptor['kind'] == 'env':
-            import re
+            key, address = adapter_env_key(descriptor), url + ':' + str(adapter_port(descriptor))
             source = target.read_text()
-            source, count = re.subn(r'(?m)^ROB_VISION_URL=.*$', 'ROB_VISION_URL=' + url + ':8766', source)
+            source, count = re.subn(r'(?m)^' + re.escape(key) + r'=.*$', lambda _: key + '=' + address, source)
             if count != 1:
                 raise ValueError('Receiver configuration is missing its UNO Q address.')
             write_private(target, source.encode())
         else:
-            write_private(target, (url + ':8766\n').encode())
+            write_private(target, (url + ':' + str(adapter_port(descriptor)) + '\n').encode())
         if descriptor.get('identity_file'):
             write_private(Path(descriptor['identity_file']), (credential['console_id'] + '\n').encode())
 
@@ -261,7 +281,9 @@ class LinkStore:
                 write_json(self.root / 'pending.json', pending)
                 return {'connected': True, **self.public()}
             except Exception:
+                # If restoring fails too, _restore raises and the journal stays for expire() to retry.
                 self._restore(pending)
+                remove_file(self.root / 'pending.json')
                 if failed_app:
                     raise AdapterFailure([failed_app]) from None
                 raise ValueError('Connection could not be saved; the previous connection was restored.') from None
@@ -391,6 +413,26 @@ class LinkStore:
             subprocess.run(descriptor['setup'], check=True, timeout=30, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+BUDDY_SOURCE = 'R.O.B. Vision Controller 2'
+
+
+def check_buddy(router, action, config, rob_vision_paired):
+    """Saves and rollbacks alike must keep R.O.B. Vision's Buddy pad on Player 2."""
+    if not rob_vision_paired or action not in ('save', 'rollback'):
+        return
+    if action == 'save':
+        proposed = router._materialize(config)
+    elif router.backup.exists():
+        from .controller_router import load_config
+        proposed = load_config(router.backup)
+    else:
+        return  # operate() reports that no previous assignment exists
+    players = [row['player'] for row in proposed['players'] for source in row['sources']
+               if source['name'] == BUDDY_SOURCE]
+    if players != [2]:
+        raise ValueError('Buddy must remain assigned to Player 2.')
+
+
 def live_game():
     if os.name == 'nt':
         result = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq retroarch.exe'],
@@ -446,12 +488,8 @@ def serve(root, host='0.0.0.0', port=PORT):
                     from .controller_router import RouterStore, _paths
                     config, inputs, *_ = _paths(platform_name())
                     router = RouterStore(config, platform_name(), inputs)
-                    if payload.get('action') == 'save' and 'rob_vision' in store.connection.get('apps', {}):
-                        proposed = router._materialize(payload.get('config'))
-                        players = [row['player'] for row in proposed['players'] for source in row['sources']
-                                   if source['name'] == 'R.O.B. Vision Controller 2']
-                        if players != [2]:
-                            raise ValueError('Buddy must remain assigned to Player 2.')
+                    check_buddy(router, payload.get('action'), payload.get('config'),
+                                'rob_vision' in store.connection.get('apps', {}))
                     result = router.operate(payload.get('action'), payload)
                 elif self.path == '/manage':
                     operation = payload.get('operation')

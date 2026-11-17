@@ -54,6 +54,8 @@ class PairingManager:
 
     def _save(self):
         write_json(self.root / 'connections.json', self.document)
+        # Readers use this saved copy, so they never wait on reconcile's network calls.
+        self.published = copy.deepcopy(self.document)
 
     def _idle(self):
         if self.game_active():
@@ -62,15 +64,15 @@ class PairingManager:
             raise ValueError('Finish the game before changing console connections.')
 
     def inspect(self):
-        with self.lock:
-            consoles = []
-            for identity, item in self.document['consoles'].items():
-                consoles.append({'id': identity, 'host': item['host'], 'platform': item['platform'],
-                    'status': item.get('status', 'Unavailable'), 'apps': {
-                        app: {'status': value.get('status', 'Needs attention'), 'enabled': value.get('enabled', True)}
-                        for app, value in item.get('apps', {}).items()}, 'message': item.get('message', '')})
-            return {'consoles': consoles, 'conflicts': self.document['conflicts'],
-                    'pairing': bool(self.window and self.window['expires'] > self.clock())}
+        document, window = self.published, self.window
+        consoles = []
+        for identity, item in document['consoles'].items():
+            consoles.append({'id': identity, 'host': item['host'], 'platform': item['platform'],
+                'status': item.get('status', 'Unavailable'), 'apps': {
+                    app: {'status': value.get('status', 'Needs attention'), 'enabled': value.get('enabled', True)}
+                    for app, value in item.get('apps', {}).items()}, 'message': item.get('message', '')})
+        return {'consoles': consoles, 'conflicts': document['conflicts'],
+                'pairing': bool(window and window['expires'] > self.clock())}
 
     def _window_available(self, replace_change=False):
         if self.clock() < self.locked_until:
@@ -419,16 +421,19 @@ class PairingManager:
 
     def routing(self, message):
         action = message.get('operation')
+        consoles = self.published['consoles']
         if action == 'targets':
             return {'targets': [{'app': 'router', 'console_id': identity,
                 'name': record['platform'].title() + ' · ' + record['host']}
-                for identity, record in self.document['consoles'].items()], 'errors': []}
+                for identity, record in consoles.items()], 'errors': []}
         if action not in ('read', 'save', 'check', 'rollback'):
             raise ValueError('Unknown routing action.')
         if action in ('save', 'rollback'): self._idle()
-        record = self.document['consoles'].get(message.get('console_id'))
+        record = consoles.get(message.get('console_id'))
         if not record: raise ValueError('Choose a paired console.')
+        watch_ms = min(10000, max(0, int(message.get('watch_ms', 0))))
         peer = self.peer(record['host'], pin=record['fingerprint'])
+        # The console replies only after its input test, so wait that long plus the usual margin.
         return peer.request('/router', {'action': action, 'revision': message.get('revision'),
-            'config': message.get('config'), 'watch_ms': min(10000, max(0, int(message.get('watch_ms', 0))))},
-            token=record['token'])
+            'config': message.get('config'), 'watch_ms': watch_ms},
+            token=record['token'], timeout=10 + watch_ms / 1000)
