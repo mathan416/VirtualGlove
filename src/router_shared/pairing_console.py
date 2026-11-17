@@ -7,6 +7,7 @@ import json
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import ssl
 import subprocess
@@ -325,7 +326,11 @@ class LinkStore:
             return {'removed': True}
 
     def proof(self, app, nonce, cert_fingerprint):
-        if app not in self.adapters or not isinstance(nonce, str) or not 16 <= len(nonce) <= 128:
+        # Hex-only nonces keep this unauthenticated signer from producing an
+        # adopt proof: adopt signs nonce + '\n' + transcript, which always has
+        # one more newline than any message this endpoint will sign.
+        if (app not in self.adapters or not isinstance(nonce, str)
+                or not re.fullmatch(r'[0-9a-f]{16,128}', nonce)):
             raise ValueError('Invalid migration request.')
         token = Path(self.adapters[app]['token_file']).read_text().strip()
         if len(token) < 16:

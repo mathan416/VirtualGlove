@@ -41,14 +41,14 @@
 <section><h2>Your consoles</h2><p>Each console connects to one Controller Router installation at a time. You can turn off access for an individual app without removing the connection.</p><div id="consoles" aria-live="polite"></div><button id="repair" class="quiet">Check and repair connections</button></section>
 <section><h2>Trust this Setup page</h2><p>The installer prints this controller’s certificate fingerprint. Compare it with the certificate shown by your browser before accepting the local certificate. You can <a href="certificate.pem">download the certificate</a> to trust it on your own device. Do not continue if the fingerprints differ.</p><p><a id="guide" href="#">Read the Pairing Guide (PDF)</a></p></section></main>
 <script>
-const host=location.hostname, root='http://'+(host.includes(':')?'['+host+']':host)+'/';document.querySelector('#apps').href=root;document.querySelector('#routing').href=root+'setup';document.querySelector('#help').href=root+'help';document.querySelector('#guide').href=root+'guides/Controller-Router-Pairing-Guide.pdf';let session='',busy=false;
+const host=location.hostname, root='http://'+(host.includes(':')?'['+host+']':host)+'/';document.querySelector('#apps').href=root;document.querySelector('#routing').href=root+'setup';document.querySelector('#help').href=root+'help';document.querySelector('#guide').href=root+'guides/Controller-Router-Pairing-Guide.pdf';let session='',busy=false,confirmed='Connected. You’re ready to play.';
 document.querySelectorAll('.copy-command').forEach(button=>button.addEventListener('click',async()=>{
  const command=document.getElementById(button.dataset.command),status=document.getElementById('copy-feedback');
  try{await navigator.clipboard.writeText(command.textContent);status.textContent='Command copied. Paste it into your console’s terminal.';button.textContent='Copied';setTimeout(()=>button.textContent='Copy',2000);}
  catch(error){const selection=window.getSelection(),range=document.createRange();range.selectNodeContents(command);selection.removeAllRanges();selection.addRange(range);status.textContent='Select Copy from your device’s menu to copy the highlighted command.';}
 }));
 const feedback=document.querySelector('#feedback');const names={virtualglove:'VirtualGlove',rob_vision:'R.O.B. Vision'};
-async function request(data){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);feedback.textContent='Connecting…';try{const r=await fetch('/api/pairing',{method:'POST',headers:{'Content-Type':'application/json','X-Controller-Router-Action':'pairing'},body:JSON.stringify(data)});const value=await r.json();if(!r.ok)throw Error(value.error);feedback.textContent=data.operation==='confirm'?'Connected. You’re ready to play.':'';return value;}catch(e){feedback.textContent=e.message;return null;}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
+async function request(data){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);feedback.textContent='Connecting…';try{const r=await fetch('/api/pairing',{method:'POST',headers:{'Content-Type':'application/json','X-Controller-Router-Action':'pairing'},body:JSON.stringify(data)});const value=await r.json();if(!r.ok)throw Error(value.error);feedback.textContent=data.operation==='confirm'?confirmed:'';return value;}catch(e){feedback.textContent=e.message;return null;}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
 function node(tag,text){const e=document.createElement(tag);e.textContent=text;return e;}
 function labeledCell(label){const cell=node('td',''),heading=node('span',label);heading.className='cell-label';cell.append(heading);return cell;}
 function render(data){
@@ -70,20 +70,22 @@ function render(data){
     const item=node('div',''),appName=names[app]||app;item.className='application-row';
     const name=node('strong',appName),status=node('span',value.enabled?value.status:'Access off'),toggle=node('button',value.enabled?'Disable':'Enable');
     status.className='app-state';toggle.className='quiet';toggle.type='button';toggle.setAttribute('aria-label',(value.enabled?'Disable ':'Enable ')+appName+' on '+c.host);
-    toggle.onclick=async()=>render(await request({operation:'access',id:c.id,app,enabled:!value.enabled}));
+    toggle.onclick=()=>startChange({operation:'access',id:c.id,app,enabled:!value.enabled},(value.enabled?'Access turned off for ':'Access turned on for ')+appName+' on '+c.host+'.');
     item.append(name,status,toggle);list.append(item);
    }
    if(!list.children.length)list.append(node('span','No applications installed'));
    apps.append(list);row.append(apps);
    const actions=labeledCell('Actions'),remove=node('button','Remove');remove.type='button';remove.className='quiet';remove.setAttribute('aria-label','Remove '+c.host);
-   remove.onclick=async()=>{if(confirm('Remove '+c.host+' and its app access?'))render(await request({operation:'remove',id:c.id}));};
+   remove.onclick=()=>{if(confirm('Remove '+c.host+' and its app access?'))startChange({operation:'remove',id:c.id},c.host+' was removed.');};
    actions.append(remove);row.append(actions);body.append(row);
   }
   table.append(body);area.append(table);
  }
  for(const conflict of data.conflicts)area.append(node('p','Needs attention: '+conflict.message));
 }
-document.querySelector('#begin').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const data=await request({operation:'begin',host:f.get('host'),code:f.get('code')});if(data){session=data.session;e.target.hidden=true;document.querySelector('#confirm').hidden=false;document.querySelector('#identity').textContent='Matrix ID '+data.certificate_id+'. Compare this ID with the beginning of your browser certificate’s SHA-256 fingerprint, then read all six digits after PN.';}};
+function showConfirm(data,text,label){session=data.session;document.querySelector('#confirm button').textContent=label;document.querySelector('#begin').hidden=true;document.querySelector('#confirm').hidden=false;document.querySelector('#identity').textContent='Matrix ID '+data.certificate_id+'. '+text;document.querySelector('#confirm input').focus();}
+async function startChange(payload,done){const data=await request(payload);if(data){confirmed=done;showConfirm(data,'To confirm this change, read all six digits after PN on the Matrix and enter them below.','Confirm');}}
+document.querySelector('#begin').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const data=await request({operation:'begin',host:f.get('host'),code:f.get('code')});if(data){confirmed='Connected. You’re ready to play.';showConfirm(data,'Compare this ID with the beginning of your browser certificate’s SHA-256 fingerprint, then read all six digits after PN.','Connect');}};
 document.querySelector('#confirm').onsubmit=async e=>{e.preventDefault();const data=await request({operation:'confirm',session,pin:new FormData(e.target).get('pin')});if(data){e.target.reset();e.target.hidden=true;document.querySelector('#begin').reset();document.querySelector('#begin').hidden=false;render(data);}};
 document.querySelector('#cancel').onclick=async()=>{await request({operation:'cancel'});document.querySelector('#confirm').hidden=true;document.querySelector('#begin').hidden=false;};document.querySelector('#repair').onclick=async()=>render(await request({operation:'repair'}));fetch('/api/connections').then(r=>r.json()).then(render);
 </script></body></html>

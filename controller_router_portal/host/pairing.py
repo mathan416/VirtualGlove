@@ -72,13 +72,25 @@ class PairingManager:
             return {'consoles': consoles, 'conflicts': self.document['conflicts'],
                     'pairing': bool(self.window and self.window['expires'] > self.clock())}
 
+    def _window_available(self):
+        if self.clock() < self.locked_until:
+            raise ValueError('Too many confirmation attempts. Wait for the pairing window to expire.')
+        if self.window and self.window['expires'] > self.clock():
+            raise ValueError('Finish or cancel the current pairing first.')
+
+    def _open_window(self, **details):
+        """Show a one-time code on the Matrix; physical presence confirms the request."""
+        pin = f'{secrets.randbelow(1_000_000):06d}'
+        session = secrets.token_hex(16)
+        if not self.certificate_identity or not self.matrix.begin_pairing(self.certificate_identity, pin):
+            raise ValueError('The UNO Q Matrix is unavailable. Pairing needs its confirmation code.')
+        self.window = {'session': session, 'expires': self.clock() + 120, 'attempts': 0, 'pin': pin, **details}
+        return {'session': session, 'expires_in': 120, 'certificate_id': self.certificate_identity}
+
     def begin(self, host, code, uno_host):
         with self.lock:
             self._idle()
-            if self.clock() < self.locked_until:
-                raise ValueError('Too many confirmation attempts. Wait for the pairing window to expire.')
-            if self.window and self.window['expires'] > self.clock():
-                raise ValueError('Finish or cancel the current pairing first.')
+            self._window_available()
             host, uno_host = normalize_host(host), normalize_host(uno_host)
             code_pin, authorization = parse_code(code)
             peer = self.peer(host, code_pin=code_pin)
@@ -86,14 +98,20 @@ class PairingManager:
             valid_id(remote['console_id'])
             if remote.get('game_active'):
                 raise ValueError('Finish the console game before pairing.')
-            pin = f'{secrets.randbelow(1_000_000):06d}'
-            session = secrets.token_hex(16)
-            if not self.certificate_identity or not self.matrix.begin_pairing(self.certificate_identity, pin):
-                raise ValueError('The UNO Q Matrix is unavailable. Pairing needs its confirmation code.')
-            self.window = {'session': session, 'expires': self.clock() + 120, 'attempts': 0,
-                'pin': pin, 'host': host, 'uno_url': 'http://' + uno_host, 'authorization': authorization,
-                'fingerprint': peer.last_fingerprint, 'remote': remote}
-            return {'session': session, 'expires_in': 120, 'certificate_id': self.certificate_identity}
+            return self._open_window(host=host, uno_url='http://' + uno_host, authorization=authorization,
+                                     fingerprint=peer.last_fingerprint, remote=remote)
+
+    def request_change(self, kind, identity, app=None, enabled=None):
+        """Removing a console or changing app access needs the same Matrix code as pairing."""
+        with self.lock:
+            self._idle()
+            record = self.document['consoles'].get(identity) if isinstance(identity, str) else None
+            if kind not in ('remove', 'access') or not record:
+                raise ValueError('Choose a paired console.')
+            if kind == 'access' and (app not in record['apps'] or type(enabled) is not bool):
+                raise ValueError('Choose an installed app and its access setting.')
+            self._window_available()
+            return self._open_window(change={'kind': kind, 'id': identity, 'app': app, 'enabled': enabled})
 
     def cancel(self):
         with self.lock:
@@ -116,6 +134,11 @@ class PairingManager:
                 raise ValueError('Confirmation code did not match the Matrix.')
             self.window = None
             try:
+                change = window.get('change')
+                if change and change['kind'] == 'remove':
+                    return self.remove(change['id'])
+                if change:
+                    return self.access(change['id'], change['app'], change['enabled'])
                 identity = window['remote']['console_id']
                 old = self.document['consoles'].get(identity, {})
                 record = {'host': window['host'], 'platform': window['remote']['platform'],
@@ -371,8 +394,10 @@ class PairingManager:
         if action == 'begin': return self.begin(payload.get('host'), payload.get('code'), uno_host)
         if action == 'confirm': return self.confirm(payload.get('session'), payload.get('pin'))
         if action == 'cancel': return self.cancel()
-        if action == 'remove': return self.remove(payload.get('id'))
-        if action == 'access': return self.access(payload.get('id'), payload.get('app'), payload.get('enabled'))
+        # Browser requests only open a Matrix confirmation; 'confirm' applies them.
+        if action == 'remove': return self.request_change('remove', payload.get('id'))
+        if action == 'access': return self.request_change('access', payload.get('id'), payload.get('app'),
+                                                          payload.get('enabled'))
         if action == 'repair':
             self._idle(); self.reconcile(); return self.inspect()
         raise ValueError('Unknown connection action.')
