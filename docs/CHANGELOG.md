@@ -12,11 +12,17 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
-## [0.7.1] - in preparation
+## [0.7.1] - 2026-11-17
 
-Release candidate `v0.7.1-rc.3` carries console pairing security fixes and a
-console CPU fix from the shared Controller Router. `v0.7.0` remains the current stable release until the
-candidate passes device checks.
+This release carries console pairing security fixes and console CPU fixes from
+the shared Controller Router. Release candidate 3 was installed from its
+published assets on one UNO Q and one RetroPie console with every installer
+check passing, and the console Router measured 3.8% of one core while idle.
+The owner reported that the requested checks passed: turning an app's access
+off and on with the Matrix code, a VirtualGlove game and a R.O.B. Vision game,
+and unplugging and replugging a controller. Fresh installations in both product
+orders, full UNO Q rollback, new camera enrollment and other console platforms
+were not repeated with this release.
 
 ### Security
 
@@ -33,8 +39,8 @@ candidate passes device checks.
 - A failed console connection change restores the previous connection once, without blocking pairing for two minutes.
 - Setup stays responsive while the UNO Q checks an unavailable console, and a full ten-second controller test has time to finish.
 - On Recalbox, an idle Router no longer repeats its output setup every second.
-- The console Router no longer keeps a CPU core busy checking for a running game. It checks once a second and rescans processes only when one starts or exits; on the tested RetroPie console this fell from about 73% to 6% of one core. Installed native host providers are no longer re-imported for every check and input (RC2).
-- The console Router's idle work no longer re-reads every input device each second; it checks only when controllers or their settings change. Measured idle load on the tested console fell from about 19% to 5% of one core (RC3).
+- The console Router no longer keeps a CPU core busy checking for a running game. It checks once a second and rescans processes only when one starts or exits; on the tested RetroPie console this fell from about 73% to 6% of one core. Installed native host providers are no longer re-imported for every check and input.
+- The console Router's idle work no longer re-reads every input device each second; it checks only when controllers or their settings change. Together these changes took the tested console Router from about 75% of one core to under 5% while idle.
 
 ## [0.7.0] - 2026-11-14
 
