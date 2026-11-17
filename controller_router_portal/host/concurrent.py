@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -42,6 +43,7 @@ class ConcurrentLauncher:
         self.game_owned = False
         self.lock = threading.RLock()
         self.error = ""
+        self.heartbeat_error = ""
         self.busy = False
         self._write_leases(None)
         threading.Thread(target=self.matrix.run, daemon=True, name="router-matrix").start()
@@ -79,21 +81,40 @@ class ConcurrentLauncher:
                 marker.chmod(0o600)
             data = {"schema": 1, "boot_id": BOOT_ID, "active": app_id == selected,
                     "until": self.clock() + 2 if app_id == selected else 0}
-            temporary = path.with_name(".controller-router-lease.tmp")
-            temporary.write_text(json.dumps(data) + "\n")
-            temporary.chmod(0o600)
-            os.replace(temporary, path)
+            try:
+                # A unique name keeps concurrent writers apart; the file is
+                # private from creation and removed if the replace fails.
+                handle, temporary = tempfile.mkstemp(prefix=".controller-router-lease.",
+                                                     suffix=".tmp", dir=str(path.parent))
+            except FileNotFoundError:
+                continue  # An installer is replacing this app's folder; retry next beat.
+            try:
+                with os.fdopen(handle, "w") as stream:
+                    stream.write(json.dumps(data) + "\n")
+                os.replace(temporary, path)
+            except FileNotFoundError:
+                continue  # The folder was swapped mid-write; the next beat rewrites it.
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
 
     def _heartbeat(self) -> None:
         while True:
-            try:
-                with self.lock:
-                    self._reconcile_games()
-                    self._write_leases(self.selected)
-            except OSError as exc:
-                with self.lock:
-                    self.error = str(exc)
+            self._beat()
             time.sleep(.25)
+
+    def _beat(self) -> None:
+        """Refresh leases once; a later successful beat clears this beat's own error."""
+        try:
+            with self.lock:
+                self._reconcile_games()
+                self._write_leases(self.selected)
+                if self.heartbeat_error and self.error == self.heartbeat_error:
+                    self.error = ""
+                self.heartbeat_error = ""
+        except OSError as exc:
+            with self.lock:
+                self.error = self.heartbeat_error = str(exc)
 
     def _reconcile_games(self) -> None:
         """Follow authenticated product sessions without a browser selection."""

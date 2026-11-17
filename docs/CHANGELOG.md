@@ -12,6 +12,12 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-17
+
+### Fixed
+
+- Bundled Controller Router 0.3.2 and UNO Q runtime 0.3.5. Reinstalling VirtualGlove or R.O.B. Vision on the UNO Q no longer leaves a lasting "No such file or directory" error on the Apps page. If an app's folder is being replaced while the Router writes its input lease, the lease is rewritten on the next check a quarter of a second later and the message clears.
+
 ## [0.7.1] - 2026-11-17
 
 This release carries console pairing security fixes and console CPU fixes from

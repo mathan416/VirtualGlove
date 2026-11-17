@@ -1,7 +1,7 @@
 VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
-Project version: 0.7.1
+Project version: 0.7.2
 Git-visible files: 804
 Python test modules: 79
 Standalone browser checks: 5

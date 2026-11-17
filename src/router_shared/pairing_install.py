@@ -11,7 +11,7 @@ from pathlib import Path
 from .pairing_console import LinkStore, default_root, platform_name, open_window, ensure_certificate
 from .pairing import write_private
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 
 def _install(app, descriptor, *, root=None, execute=True):
