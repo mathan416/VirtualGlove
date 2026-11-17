@@ -24,3 +24,6 @@ src/virtualglove/_build_info.json
 
 # Isolated emulator source/build products, never release payloads.
 /build/
+
+# Local reference image, not part of the project
+/Codex Image Sep 5, 2026, 01_52_57 PM.png
