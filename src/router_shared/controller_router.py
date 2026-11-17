@@ -51,10 +51,17 @@ DISCOVERY_INTERVAL_SECONDS = 1.0
 # Detecting a game scans every process in /proc (RetroArch, registered native
 # hosts and each installed provider), which can take a quarter second on a Pi.
 # Input stays on the fast loop. Once a second the router compares the cheap
-# list of process IDs and rescans only when a process started or exited; a
-# periodic full scan still catches a launcher that execs into its emulator.
+# list of process IDs and rescans only when a process started or exited, then
+# once more a second later so a launcher that execs into its emulator is seen.
+# A slower periodic full scan remains as a safety net.
 SESSION_CHECK_SECONDS = 1.0
-SESSION_FULL_SCAN_SECONDS = 5.0
+SESSION_FULL_SCAN_SECONDS = 15.0
+# Controller discovery parses es_input.cfg and reads every input device, about
+# 90 ms on a Pi. Run it, and the output index check, only when the input
+# devices or controller files change (and once more a second later, while a
+# new device finishes appearing), after a controller disconnects, or on a
+# periodic full refresh.
+INPUT_FULL_REFRESH_SECONDS = 15.0
 VIRTUAL_DRAIN_LIMIT = 256
 MAX_REQUEST = 262144
 CONTROL_TEST_MS = 10_000
@@ -405,6 +412,24 @@ def process_ids(proc_root: Path = Path("/proc")) -> frozenset[str] | None:
         return None
 
 
+def input_signature(sys_root: Path, es_inputs: Path) -> tuple | None:
+    """Cheaply fingerprint input devices and controller files; None if unreadable."""
+    try:
+        # sysfs entries are recreated, with new inode numbers, when a device
+        # is replugged, even if it gets the same eventN or jsN name.
+        devices = tuple(sorted((entry.name, entry.inode()) for entry in os.scandir(sys_root)))
+    except OSError:
+        return None
+    files = []
+    for path in (es_inputs, os.environ.get("CONTROLLER_ROUTER_SOURCES_FILE")):
+        try:
+            info = os.stat(path) if path else None
+            files.append((info.st_mtime_ns, info.st_size) if info else None)
+        except OSError:
+            files.append("missing")
+    return devices, tuple(files)
+
+
 def running_game_session(proc_root=Path("/proc")):
     """Use the same installed native-session boundary in the daemon and Setup."""
     found = running_retroarch_session(proc_root)
@@ -486,10 +511,18 @@ class ControllerRouterDevice:
         self.config_revision = revision(self.config)
         self.config_checked_at = 0.0
         self.discovery_checked_at = 0.0
+        self.discovery_signature: tuple | None = None
+        self.discovery_refreshed_at = 0.0
+        self.discovery_forced = False
+        self.discovery_recheck = False
+        self.index_signature: tuple | None = None
+        self.index_refreshed_at = 0.0
+        self.index_recheck = False
         self.session_context: tuple[str | None, str | None] = (None, None)
         self.session_checked_at = 0.0
         self.session_scanned_at = 0.0
         self.session_pids: frozenset[str] | None = None
+        self.session_recheck = False
         self.installed_indexes: dict[int, int] = {}
         self.stop = threading.Event()
         self.lock = threading.Lock()
@@ -677,6 +710,8 @@ class ControllerRouterDevice:
         except OSError:
             pass
         os.close(fd); record["source"].release(); self._publish()
+        # A quick unplug and replug can reuse the same event node; rediscover.
+        self.discovery_forced = True
 
     def _virtual(self, incoming: dict[str, Any]) -> None:
         """Map one validated VirtualGlove state to its configured player."""
@@ -738,6 +773,25 @@ class ControllerRouterDevice:
                 self._virtual(incoming)
                 return
 
+    def _input_changed(self, purpose: str, now: float | None = None) -> bool:
+        """Report whether inputs may have changed since this purpose last refreshed."""
+        now = time.monotonic() if now is None else now
+        signature = input_signature(self.sys_root, self.es_inputs)
+        previous = getattr(self, purpose + "_signature")
+        refreshed = getattr(self, purpose + "_refreshed_at")
+        changed = signature is None or signature != previous
+        forced = purpose == "discovery" and self.discovery_forced
+        if (changed or forced or getattr(self, purpose + "_recheck") or not refreshed
+                or now - refreshed >= INPUT_FULL_REFRESH_SECONDS):
+            setattr(self, purpose + "_signature", signature)
+            setattr(self, purpose + "_refreshed_at", now)
+            # Look once more next second: a new device may not be readable yet.
+            setattr(self, purpose + "_recheck", changed)
+            if purpose == "discovery":
+                self.discovery_forced = False
+            return True
+        return False
+
     def _game_session(self, now: float | None = None) -> tuple[str | None, str | None]:
         """Return the running game, rescanning /proc only when processes changed."""
         now = time.monotonic() if now is None else now
@@ -745,10 +799,13 @@ class ControllerRouterDevice:
             return self.session_context
         self.session_checked_at = now
         pids = process_ids(self.proc_root)
-        if (pids is None or pids != self.session_pids or not self.session_scanned_at
+        changed = pids is None or pids != self.session_pids
+        if (changed or self.session_recheck or not self.session_scanned_at
                 or now - self.session_scanned_at >= SESSION_FULL_SCAN_SECONDS):
             self.session_context = running_game_session(self.proc_root)
             self.session_pids, self.session_scanned_at = pids, now
+            # A new launcher may exec into its emulator just after starting.
+            self.session_recheck = changed
         return self.session_context
 
     def _run(self) -> None:
@@ -783,9 +840,9 @@ class ControllerRouterDevice:
                         updated = load_config(self.config_path)
                         if revision(updated) != self.config_revision:
                             self._reload_config(updated)
-                        elif output_indexes(list(self.players), self.sys_root,
-                                            self.udev_root,
-                                            self.config["platform"]) != self.installed_indexes:
+                        elif self._input_changed("index") and output_indexes(
+                                list(self.players), self.sys_root, self.udev_root,
+                                self.config["platform"]) != self.installed_indexes:
                             self._install_indexes()
                         # Hotkeys are resolved per launch by prepare-launch; the
                         # runtime writes no RetroArch configuration to refresh.
@@ -793,10 +850,11 @@ class ControllerRouterDevice:
                         pass
                     self.config_checked_at = time.monotonic()
                 if time.monotonic() - self.discovery_checked_at >= DISCOVERY_INTERVAL_SECONDS:
-                    candidates = self._current_candidates()
-                    if not active:
-                        self._refresh_idle_mappings(candidates)
-                    self._discover(candidates)
+                    if self._input_changed("discovery"):
+                        candidates = self._current_candidates()
+                        if not active:
+                            self._refresh_idle_mappings(candidates)
+                        self._discover(candidates)
                     self.discovery_checked_at = time.monotonic()
             sources = list(self.descriptors)
             if self.socket is not None: sources.append(self.socket)

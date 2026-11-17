@@ -14,7 +14,7 @@ result before naming the underlying mechanism.
 
 ## [0.7.1] - in preparation
 
-Release candidate `v0.7.1-rc.2` carries console pairing security fixes and a
+Release candidate `v0.7.1-rc.3` carries console pairing security fixes and a
 console CPU fix from the shared Controller Router. `v0.7.0` remains the current stable release until the
 candidate passes device checks.
 
@@ -34,6 +34,7 @@ candidate passes device checks.
 - Setup stays responsive while the UNO Q checks an unavailable console, and a full ten-second controller test has time to finish.
 - On Recalbox, an idle Router no longer repeats its output setup every second.
 - The console Router no longer keeps a CPU core busy checking for a running game. It checks once a second and rescans processes only when one starts or exits; on the tested RetroPie console this fell from about 73% to 6% of one core. Installed native host providers are no longer re-imported for every check and input (RC2).
+- The console Router's idle work no longer re-reads every input device each second; it checks only when controllers or their settings change. Measured idle load on the tested console fell from about 19% to 5% of one core (RC3).
 
 ## [0.7.0] - 2026-11-14
 
