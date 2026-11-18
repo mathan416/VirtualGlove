@@ -1392,6 +1392,17 @@ non-network devices attached to it. Before the first successful camera sighting,
 there is deliberately no reset target; reconnect or power-cycle the camera once
 to let automatic enrollment complete.
 
+A camera plugged directly into the UNO Q's own USB port, with no hub chip
+between them, is enrolled as a direct connection: the allowlist records the
+camera identity and its root-port location (for example `2-1`) instead of a hub.
+Some docks pass USB 3 straight through this way even when other ports are on a
+hub. A root port cannot be power-cycled, so recovery resets only that USB device:
+a USB bus reset of the enrolled device, or, if the kernel refuses that, a brief
+de-authorization and re-authorization of the same device. It checks the camera's
+identity at that location first, and it cannot help if the camera has dropped
+off the bus entirely; reconnect it in that case. The result reports
+`device-reset` or `device-reauthorize`.
+
 Install all host helpers with `scripts/install-uno-q-shutdown-helper.sh`, or
 install/repair only camera recovery with
 `scripts/install-uno-q-camera-recovery-helper.sh`. The standard installer also

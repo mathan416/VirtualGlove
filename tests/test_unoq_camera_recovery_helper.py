@@ -298,6 +298,124 @@ class UnoQCameraRecoveryHelperTests(unittest.TestCase):
                 helper.main([])
         self.assertEqual((self.driver / "unbind").read_text(), "")
 
+    def direct_discovery(self, camera, camera_id=("1532", "0e05")):
+        return {
+            "camera": {"vendor_id": camera_id[0], "product_id": camera_id[1], "name": "Razer Kiyo Pro",
+                       "sysfs_name": camera.name},
+            "hub": None, "connection": "direct", "camera_path": camera, "hub_path": None,
+        }
+
+    def usb_node_open(self, result):
+        """Intercept only the camera's usbfs node; other files open normally."""
+        real_open, opened = helper.os.open, []
+        def fake(path, flags, *args):
+            if str(path).startswith(str(helper.USB_DEVICE_NODES)):
+                opened.append(str(path))
+                if isinstance(result, Exception):
+                    raise result
+                return result
+            return real_open(path, flags, *args)
+        return fake, opened
+
+    def install_direct_camera(self, camera, camera_id=("1532", "0e05")):
+        (camera / "idVendor").write_text(camera_id[0])
+        (camera / "idProduct").write_text(camera_id[1])
+        (camera / "bDeviceClass").write_text("ef")
+        (camera / "busnum").write_text("2")
+        (camera / "devnum").write_text("3")
+        (camera / "authorized").write_text("1")
+        (self.usb_devices / camera.name).symlink_to(camera)
+
+    def test_discovers_camera_plugged_directly_into_a_root_port(self):
+        root_hub = self.root / "sys-devices" / "usb2"
+        camera = root_hub / "2-1"
+        interface = camera / "2-1:1.0"
+        video = interface / "video4linux" / "video2"
+        video.mkdir(parents=True)
+        (camera / "idVendor").write_text("1532")
+        (camera / "idProduct").write_text("0e05")
+        (camera / "bDeviceClass").write_text("ef")
+        (video / "index").write_text("0")
+        (video / "name").write_text("Razer Kiyo Pro")
+        (video / "device").symlink_to(interface)
+        video_class = self.root / "video-class"
+        video_class.mkdir()
+        (video_class / "video2").symlink_to(video)
+        with patch.object(helper, "VIDEO_CLASS", video_class):
+            discovered = helper._discover_cameras()
+        self.assertEqual(len(discovered), 1)
+        self.assertIsNone(discovered[0]["hub"])
+        self.assertEqual(discovered[0]["connection"], "direct")
+        self.assertEqual(discovered[0]["camera"]["sysfs_name"], "2-1")
+
+    def test_direct_camera_enrolls_with_its_own_location(self):
+        camera = self.device("2-1")
+        with patch.object(helper, "_discover_cameras", return_value=[self.direct_discovery(camera)]):
+            self.assertEqual(helper.main(["--configure"]), 0)
+        saved = json.loads(self.config.read_text())
+        self.assertEqual(saved, {"schema": 3, "connection": "direct", "camera": {
+            "vendor_id": "1532", "product_id": "0e05", "name": "Razer Kiyo Pro", "sysfs_name": "2-1"}})
+        self.assertEqual(helper._load_config()["connection"], "direct")
+
+    def test_wedged_direct_camera_gets_a_usb_bus_reset_of_itself_only(self):
+        camera = self.device("2-1")
+        self.install_direct_camera(camera)
+        discovery = self.direct_discovery(camera)
+        helper._write_config(discovery)
+        self.request.write_text("recover\n")
+        resets = []
+        fake_open, opened = self.usb_node_open(4242)
+        real_close = helper.os.close
+        with patch.object(helper, "_discover_cameras", side_effect=[[discovery], [discovery]]), \
+             patch.object(helper.os, "open", side_effect=fake_open), \
+             patch.object(helper.os, "close", side_effect=lambda fd: None if fd == 4242 else real_close(fd)), \
+             patch.object(helper.fcntl, "ioctl", side_effect=lambda fd, request, arg: resets.append((fd, request))):
+            self.assertEqual(helper.main([]), 0)
+        self.assertEqual(opened, [str(helper.USB_DEVICE_NODES / "002" / "003")])
+        self.assertEqual(resets, [(4242, helper.USBDEVFS_RESET)])
+        self.assertEqual(json.loads(self.result.read_text())["method"], "device-reset")
+        self.assertEqual((self.driver / "unbind").read_text(), "")  # no hub or driver rebind
+        self.assertEqual((camera / "authorized").read_text(), "1")
+
+    def test_direct_camera_falls_back_to_reauthorizing_when_reset_is_unavailable(self):
+        camera = self.device("2-1")
+        self.install_direct_camera(camera)
+        discovery = self.direct_discovery(camera)
+        helper._write_config(discovery)
+        self.request.write_text("recover\n")
+        writes = []
+        original = Path.write_text
+        def record(path, text, *args, **kwargs):
+            if path.name == "authorized":
+                writes.append(text)
+            return original(path, text, *args, **kwargs)
+        with patch.object(helper, "_discover_cameras", side_effect=[[discovery], [discovery]]), \
+             patch.object(helper.os, "open", side_effect=self.usb_node_open(PermissionError("no usbfs"))[0]), \
+             patch.object(Path, "write_text", record):
+            self.assertEqual(helper.main([]), 0)
+        self.assertEqual(writes, ["0", "1"])
+        self.assertEqual(json.loads(self.result.read_text())["method"], "device-reauthorize")
+
+    def test_absent_direct_camera_asks_for_reconnection(self):
+        camera = self.device("2-1")
+        helper._write_config(self.direct_discovery(camera))
+        self.request.write_text("recover\n")
+        with patch.object(helper, "_discover_cameras", return_value=[]):
+            with self.assertRaisesRegex(RuntimeError, "reconnect it"):
+                helper.main([])
+
+    def test_direct_enrollment_rejects_unsafe_or_unknown_records(self):
+        for record in ({"schema": 3, "connection": "hub", "camera": {
+                            "vendor_id": "1532", "product_id": "0e05", "name": "x", "sysfs_name": "2-1"}},
+                       {"schema": 3, "connection": "direct", "camera": {
+                            "vendor_id": "1532", "product_id": "0e05", "name": "x", "sysfs_name": "2-1.3"}},
+                       {"schema": 3, "connection": "direct", "camera": {
+                            "vendor_id": "1532", "product_id": "0e05", "name": "x", "sysfs_name": "../2-1"}}):
+            with self.subTest(record=record):
+                self.config.write_text(json.dumps(record))
+                with self.assertRaises(RuntimeError):
+                    helper._load_config()
+
     def test_refuses_ambiguous_first_use(self):
         camera = self.device("2-1.4")
         hub = self.device("2-1")

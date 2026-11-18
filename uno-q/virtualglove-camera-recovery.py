@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # Project: VirtualGlove
 # File: uno-q/virtualglove-camera-recovery.py
-# Purpose: Recover the single UVC camera through its most recently observed parent USB hub.
+# Purpose: Recover the single UVC camera through its parent USB hub or, when it is
+#          connected directly to the board, by resetting that one USB device.
 # Author: Iain Bennett
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-17 - Enroll and recover a camera connected directly to a root USB port.
 #   2026-09-10 - Refuse whole-hub recovery when the enrolled hub carries networking.
 #   2026-09-09 - Added capability-gated per-port power cycling and explicit USB-action results.
 #   2026-09-08 - Reset an enrolled hub when UVC streaming fails despite USB enumeration.
@@ -40,6 +42,10 @@ STAMP = Path("/run/virtualglove-camera-recovery.stamp")
 COOLDOWN_SECONDS = 60.0
 USB_NAME = re.compile(r"^[0-9]+-[0-9]+(?:\.[0-9]+)*$")
 USB_PORT = re.compile(r"^[1-9][0-9]*$")
+ROOT_HUB = re.compile(r"^usb[0-9]+$")
+# _IO('U', 20): reset one USB device without touching any other port or device.
+USBDEVFS_RESET = (ord("U") << 8) | 20
+USB_DEVICE_NODES = Path("/dev/bus/usb")
 
 
 def _read(path: Path, default: str = "") -> str:
@@ -81,8 +87,14 @@ def _parent_hub(camera: Path) -> Path | None:
     return None
 
 
+def _on_root_port(camera: Path) -> bool:
+    """Report whether a camera is plugged directly into a root USB port (no hub)."""
+    return USB_NAME.fullmatch(camera.name) is not None and "." not in camera.name and \
+        ROOT_HUB.fullmatch(camera.parent.name) is not None
+
+
 def _discover_cameras() -> list[dict[str, object]]:
-    """Discover primary UVC video nodes with resettable parent USB hubs."""
+    """Discover primary UVC video nodes behind a resettable hub or on a root port."""
     cameras: dict[str, dict[str, object]] = {}
     if not VIDEO_CLASS.exists():
         return []
@@ -93,13 +105,30 @@ def _discover_cameras() -> list[dict[str, object]]:
         if camera is None:
             continue
         hub = _parent_hub(camera)
-        if hub is None:
-            continue
         camera_id = _identity(camera)
-        hub_id = _identity(hub)
-        if camera_id is None or hub_id is None:
+        if camera_id is None:
             continue
         key = str(camera.resolve())
+        if hub is None:
+            if not _on_root_port(camera):
+                continue
+            # No hub chip to power-cycle: recovery resets only this USB device.
+            cameras[key] = {
+                "camera": {
+                    "vendor_id": camera_id[0],
+                    "product_id": camera_id[1],
+                    "name": _read(video / "name", _read(camera / "product", "USB camera")),
+                    "sysfs_name": camera.name,
+                },
+                "hub": None,
+                "connection": "direct",
+                "camera_path": camera,
+                "hub_path": None,
+            }
+            continue
+        hub_id = _identity(hub)
+        if hub_id is None:
+            continue
         cameras[key] = {
             "camera": {
                 "vendor_id": camera_id[0],
@@ -121,6 +150,8 @@ def _discover_cameras() -> list[dict[str, object]]:
 def _public_config(discovery: dict[str, object]) -> dict[str, object]:
     """Discard transient paths and retain only the validated enrollment record."""
     camera = dict(discovery["camera"])
+    if discovery.get("hub") is None:
+        return {"schema": 3, "connection": "direct", "camera": camera}
     camera["hub_port"] = _camera_hub_port(
         discovery["camera_path"], discovery["hub_path"],
     )
@@ -174,8 +205,15 @@ def _load_config(optional: bool = False) -> dict[str, object] | None:
         document = json.loads(CONFIG.read_text())
     except (OSError, json.JSONDecodeError) as error:
         raise RuntimeError(f"cannot read camera recovery configuration: {error}") from error
-    if not isinstance(document, dict) or document.get("schema") not in (1, 2):
+    if not isinstance(document, dict) or document.get("schema") not in (1, 2, 3):
         raise RuntimeError("unsupported camera recovery configuration schema")
+    if document["schema"] == 3:
+        if document.get("connection") != "direct":
+            raise RuntimeError("camera recovery configuration has an unknown connection")
+        camera = _validate_section(document.get("camera"), ("vendor_id", "product_id", "name", "sysfs_name"))
+        if not USB_NAME.fullmatch(camera["sysfs_name"]) or "." in camera["sysfs_name"]:
+            raise RuntimeError("camera recovery configuration has an unsafe camera path")
+        return {"schema": 3, "connection": "direct", "camera": camera, "hub": None}
     camera = _validate_section(document.get("camera"), ("vendor_id", "product_id", "name"))
     hub = _validate_section(document.get("hub"), ("vendor_id", "product_id", "name", "sysfs_name"))
     if not USB_NAME.fullmatch(hub["sysfs_name"]):
@@ -208,16 +246,18 @@ def _enroll_if_present(required: bool) -> int:
         return 0
     if len(cameras) != 1:
         raise RuntimeError(
-            f"expected exactly one UVC camera with a resettable parent hub; found {len(cameras)}"
+            f"expected exactly one UVC camera behind a resettable hub or on a root port; found {len(cameras)}"
         )
     discovery = cameras[0]
     _write_config(discovery)
     camera = discovery["camera"]
     hub = discovery["hub"]
+    location = (f"  hub: {hub['name']} ({hub['vendor_id']}:{hub['product_id']}) at {hub['sysfs_name']}"
+                if hub else f"  connected directly to the board at {camera['sysfs_name']}; "
+                            "recovery resets this USB device")
     print(
         "VirtualGlove camera recovery enrolled:\n"
-        f"  camera: {camera['name']} ({camera['vendor_id']}:{camera['product_id']})\n"
-        f"  hub: {hub['name']} ({hub['vendor_id']}:{hub['product_id']}) at {hub['sysfs_name']}"
+        f"  camera: {camera['name']} ({camera['vendor_id']}:{camera['product_id']})\n" + location
     )
     return 0
 
@@ -234,8 +274,59 @@ def _approved_hub(config: dict[str, object]) -> Path:
     return hub
 
 
+def _approved_direct_camera(config: dict[str, object]) -> Path:
+    """Resolve the enrolled root-port camera only when its identity still matches."""
+    camera_config = config["camera"]
+    camera = USB_DEVICES / camera_config["sysfs_name"]
+    expected = (camera_config["vendor_id"], camera_config["product_id"])
+    if not camera.exists() or _identity(camera) != expected:
+        raise RuntimeError(
+            "the directly connected camera is absent or has changed identity; "
+            "reconnect it, because a root port cannot be power-cycled"
+        )
+    if _read(camera / "bDeviceClass").lower() == "09":
+        raise RuntimeError("the enrolled camera location is now a hub")
+    return camera
+
+
+def _reset_device(camera: Path) -> str:
+    """Reset one USB device: a bus reset when possible, otherwise re-authorize it."""
+    bus, device = _read(camera / "busnum"), _read(camera / "devnum")
+    if bus.isdigit() and device.isdigit():
+        node = USB_DEVICE_NODES / f"{int(bus):03d}" / f"{int(device):03d}"
+        try:
+            descriptor = os.open(str(node), os.O_WRONLY)
+            try:
+                fcntl.ioctl(descriptor, USBDEVFS_RESET, 0)
+                return "device-reset"
+            finally:
+                os.close(descriptor)
+        except OSError:
+            pass
+    authorized = camera / "authorized"
+    deauthorized = False
+    try:
+        authorized.write_text("0")
+        deauthorized = True
+        time.sleep(1.0)
+        authorized.write_text("1")
+        deauthorized = False
+    finally:
+        if deauthorized:
+            authorized.write_text("1")
+    return "device-reauthorize"
+
+
 def _matches_enrollment(discovery: dict[str, object], config: dict[str, object]) -> bool:
     """Require the returned camera and hub to match the allowlisted identities."""
+    if config.get("connection") == "direct" or discovery.get("hub") is None:
+        return (
+            config.get("connection") == "direct"
+            and discovery.get("hub") is None
+            and discovery["camera"]["vendor_id"] == config["camera"]["vendor_id"]
+            and discovery["camera"]["product_id"] == config["camera"]["product_id"]
+            and discovery["camera"]["sysfs_name"] == config["camera"]["sysfs_name"]
+        )
     return (
         discovery["camera"]["vendor_id"] == config["camera"]["vendor_id"]
         and discovery["camera"]["product_id"] == config["camera"]["product_id"]
@@ -399,7 +490,8 @@ def _recover() -> str:
                 _write_config(discovery)
                 print("VirtualGlove camera recovery: camera and parent hub enrollment updated")
             _keep_awake(discovery["camera_path"])
-            _keep_awake(discovery["hub_path"])
+            if discovery["hub_path"] is not None:
+                _keep_awake(discovery["hub_path"])
             if reason != "recover":
                 print("VirtualGlove camera recovery: camera present; autosuspend disabled")
                 return "enrollment"
@@ -413,6 +505,13 @@ def _recover() -> str:
         if _within_cooldown(now):
             print("VirtualGlove camera recovery: request ignored during cooldown")
             return "cooldown"
+        if config.get("connection") == "direct":
+            camera = _approved_direct_camera(config)
+            STAMP.write_text(str(now))
+            method = _reset_device(camera)
+            hub_name = camera.name
+            print(f"VirtualGlove camera recovery: reset the directly connected camera at {hub_name}")
+            return _await_camera(config, method, hub_name)
         hub = _approved_hub(config)
         hub_name = hub.name
         _keep_awake(hub)
@@ -431,27 +530,32 @@ def _recover() -> str:
                 )
             method = "hub-driver-rebind"
             _rebind_hub(hub)
+        return _await_camera(config, method, hub_name)
 
-        deadline = time.monotonic() + 12.0
-        while time.monotonic() < deadline:
-            cameras = _discover_cameras()
-            if len(cameras) == 1:
-                discovery = cameras[0]
-                if not _matches_enrollment(discovery, config):
-                    raise RuntimeError(
-                        "a different camera or hub appeared after recovery; refusing enrollment"
-                    )
-                _write_config(discovery)
-                _keep_awake(discovery["camera_path"])
-                _keep_awake(discovery["hub_path"])
-                print(
-                    f"VirtualGlove camera recovery: {method} completed; camera enumerated"
+
+def _await_camera(config: dict[str, object], method: str, location: str) -> str:
+    """Wait for the enrolled camera to return after a USB action, then re-enroll it."""
+    deadline = time.monotonic() + 12.0
+    while time.monotonic() < deadline:
+        cameras = _discover_cameras()
+        if len(cameras) == 1:
+            discovery = cameras[0]
+            if not _matches_enrollment(discovery, config):
+                raise RuntimeError(
+                    "a different camera or hub appeared after recovery; refusing enrollment"
                 )
-                return method
-            if len(cameras) > 1:
-                raise RuntimeError(f"hub reset returned {len(cameras)} UVC cameras; refusing enrollment")
-            time.sleep(0.25)
-        raise RuntimeError(f"reset {hub_name}, but the enrolled camera did not return")
+            _write_config(discovery)
+            _keep_awake(discovery["camera_path"])
+            if discovery["hub_path"] is not None:
+                _keep_awake(discovery["hub_path"])
+            print(
+                f"VirtualGlove camera recovery: {method} completed; camera enumerated"
+            )
+            return method
+        if len(cameras) > 1:
+            raise RuntimeError(f"USB recovery returned {len(cameras)} UVC cameras; refusing enrollment")
+        time.sleep(0.25)
+    raise RuntimeError(f"reset {location}, but the enrolled camera did not return")
 
 
 def main(argv: list[str] | None = None) -> int:
