@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-11-18 - Reported an unanswered UNO Q as an action instead of a failed install.
 #   2026-09-19 - Kept RetroPie Controller Router available before receiver startup.
 #   2026-09-11 - Adopted the virtualglove App Lab directory and conditional legacy repair.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
@@ -1095,6 +1096,29 @@ def check_inventory(report, root):
                      pending=issue.startswith(("Locally modified:", "No installation manifest;")))
 
 
+def check_uno_q_address(report, launcher):
+    """Require a valid UNO Q address; an unanswered name is an action, not a failure.
+
+    The controller may be switched off or halted while the console is installed,
+    so only a missing or malformed launcher configuration blocks installation.
+    """
+    try:
+        host = json.loads(launcher.read_text())["uno_q"]
+        valid = isinstance(host, str) and bool(host.strip())
+    except (OSError, ValueError, KeyError, TypeError):
+        valid = False
+    report.check("UNO Q address configured", valid)
+    if not valid:
+        return
+    try:
+        socket.getaddrinfo(host, 55356)
+        resolved = True
+    except (OSError, UnicodeError):
+        resolved = False
+    report.check("Configured UNO Q answers (turn the controller on, then test a game)",
+                 resolved, pending=True)
+
+
 def check_retropie(report):
     """Inspect boot configuration, receiver prerequisites and launch integration."""
     check_inventory(report, Path("/opt/virtualglove-src"))
@@ -1122,13 +1146,7 @@ def check_retropie(report):
         path = Path("/opt/retropie/configs/all/runcommand-on" + action + ".sh")
         text = path.read_text() if path.exists() else ""
         report.check(action + " launch hook installed", "runcommand-on" + action + "-virtualglove.sh" in text)
-    launcher = Path("/etc/virtualglove/launcher.json")
-    try:
-        config = json.loads(launcher.read_text())
-        socket.getaddrinfo(config["uno_q"], 55356)
-        report.check("Configured UNO Q hostname resolves", True)
-    except (OSError, ValueError, KeyError):
-        report.check("Configured UNO Q hostname resolves", False)
+    check_uno_q_address(report, Path("/etc/virtualglove/launcher.json"))
     report.check("RetroArch installed", Path("/opt/retropie/emulators/retroarch/bin/retroarch").is_file(), pending=True)
     report.check("FCEUmm installed for supported NES games", Path("/opt/retropie/libretrocores/lr-fceumm/fceumm_libretro.so").is_file(), pending=True)
     native = Path("/opt/retropie/libretrocores/lr-nestopia-powerglove/nestopia_powerglove_libretro.so")

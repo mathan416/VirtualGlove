@@ -12,6 +12,12 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-11-18
+
+### Fixed
+
+- A RetroPie console installation no longer fails and restores the previous version when the UNO Q is switched off or halted. If the configured controller does not answer, the installer finishes and lists an action to turn the controller on and test a game. A missing or unreadable controller address still stops the installation.
+
 ## [0.8.1] - 2026-11-18
 
 ### Fixed

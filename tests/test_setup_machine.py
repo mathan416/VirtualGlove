@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-18 - Verified an offline UNO Q is an action item, not a failure.
 #   2026-09-11 - Verified the virtualglove Compose project-name migration.
 #   2026-09-11 - Verified that the host identity reaches the containerized website.
 #   2026-09-03 - Added isolated filesystem installation tests.
@@ -33,6 +34,29 @@ compose_spec.loader.exec_module(compose_config)
 
 
 class SetupTests(unittest.TestCase):
+    def test_unanswered_uno_q_is_an_action_but_missing_address_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            launcher = Path(temporary) / "launcher.json"
+            launcher.write_text(json.dumps({"uno_q": "virtualglove.local"}))
+            report = setup.Report()
+            with patch.object(setup.socket, "getaddrinfo",
+                              side_effect=setup.socket.gaierror("Name or service not known")):
+                setup.check_uno_q_address(report, launcher)
+            self.assertEqual((report.failures, report.pending), (0, 1))
+            report = setup.Report()
+            with patch.object(setup.socket, "getaddrinfo", return_value=[()]):
+                setup.check_uno_q_address(report, launcher)
+            self.assertEqual((report.failures, report.pending), (0, 0))
+            for content in ("{}", '{"uno_q": "  "}', "not json"):
+                launcher.write_text(content)
+                report = setup.Report()
+                setup.check_uno_q_address(report, launcher)
+                self.assertEqual((report.failures, report.pending), (1, 0), content)
+            launcher.unlink()
+            report = setup.Report()
+            setup.check_uno_q_address(report, launcher)
+            self.assertEqual(report.failures, 1)
+
     def test_batocera_wifi_latency_check_distinguishes_connected_power_save(self):
         def response(_command, **_kwargs):
             command = _command[1:]

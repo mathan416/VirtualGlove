@@ -33,21 +33,21 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(facts["release_tag"], "v" + facts["project_version"])
         self.assertEqual(facts["channel"], "stable")
         self.assertEqual(facts["oldest_supported_upgrade"], "v0.4.2")
-        self.assertEqual(facts['published_release_tag'], 'v0.8.1')
-        self.assertEqual(facts['upgrade_acceptance']['from'], 'v0.8.0')
+        self.assertEqual(facts['published_release_tag'], 'v0.8.2')
+        self.assertEqual(facts['upgrade_acceptance']['from'], 'v0.8.1')
         self.assertEqual(facts['upgrade_acceptance']['status'], 'pending')
         self.assertEqual(facts['prior_upgrade_acceptance']['status'], 'passed')
 
     def test_stable_release_links_use_current_assets(self):
         import runpy
         values = runpy.run_path(str(ROOT / 'website/build.py'))['values']()
-        self.assertIn('v0.8.1', values['RELEASE_LABEL'])
+        self.assertIn('v0.8.2', values['RELEASE_LABEL'])
         self.assertIn('Stable release', values['RELEASE_LABEL'])
-        self.assertEqual(values['TAG'], 'v0.8.1')
+        self.assertEqual(values['TAG'], 'v0.8.2')
         for key in ['UNO_COMMAND', 'RETROPIE_COMMAND', 'RECALBOX_COMMAND',
                     'BATOCERA_COMMAND', 'LAUNCHBOX_COMMAND', 'RELEASE_URL']:
-            self.assertIn('/v0.8.1', values[key])
-            self.assertNotIn('/v0.8.0', values[key])
+            self.assertIn('/v0.8.2', values[key])
+            self.assertNotIn('/v0.8.1', values[key])
 
 
     def test_generated_website_matches_upload_zip(self):
