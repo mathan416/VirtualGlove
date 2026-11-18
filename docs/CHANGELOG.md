@@ -12,11 +12,15 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
-## [0.8.0] - in preparation
+## [0.8.0] - 2026-11-17
 
-Release candidate `v0.8.0-rc.1` adds halting the controller when a RetroPie
-console shuts down. `v0.7.2` remains the current stable release until the
-candidate passes device checks.
+This release can halt the controller when a RetroPie console shuts down. On one
+RetroPie console and one UNO Q, choosing Shutdown System halted the controller
+cleanly through the new helper, and with the setting off the request was
+refused and the controller kept running. Release candidate 1 was installed
+from its published assets on both devices with every installer check passing.
+Batocera, Recalbox, fresh installations in both product orders and full UNO Q
+rollback were not repeated with this release.
 
 ### Added
 
