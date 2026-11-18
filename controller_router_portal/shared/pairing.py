@@ -181,6 +181,15 @@ class Peer:
             connection.close()
 
 
+HALT_LABEL = 'controller-router-halt/1'
+
+
+def halt_proof(token, uno_id, console_id, nonce):
+    """Sign one controller halt challenge. The label keeps it distinct from other token uses."""
+    message = '\n'.join([HALT_LABEL, uno_id, console_id, nonce]).encode()
+    return hmac.new(token.encode(), message, hashlib.sha256).hexdigest()
+
+
 def legacy_proof(token, nonce, console_id, cert_fingerprint):
     """Authenticate a migrated peer without sending its existing secret."""
     message = '\n'.join([nonce, console_id, cert_fingerprint]).encode()

@@ -1,8 +1,8 @@
 VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
-Project version: 0.7.2
-Git-visible files: 804
+Project version: 0.8.0
+Git-visible files: 805
 Python test modules: 79
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-804 tracked or non-ignored files are present in this checkout. Ignored
+805 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -902,6 +902,7 @@ are intentionally omitted.
 |   |   |-- storage.py
 |   |   |-- systems.py
 |   |   |-- uno_boot_order.py
+|   |   |-- uno_halt.py
 |   |   `-- virtual_sources.py
 |   `-- virtualglove
 |       |-- __init__.py

@@ -42,7 +42,7 @@
 <body>
   <main>
     <header><span class="mark" aria-hidden="true">🎮</span><div><div class="brand">CONTROLLER ROUTER</div><div class="subtitle">Help</div></div></header>
-    <nav aria-label="Controller Router"><a href="/">Apps</a><a href="/setup">Players and Systems</a><a href="/pair">Pair console</a><a href="/help" aria-current="page">Help</a></nav>
+    <nav aria-label="Controller Router"><a href="/">Apps</a><a href="/setup">Players and Systems</a><a href="/pair">Pair console</a><a class="console-setup-link" href="/pair">Console setup</a><a href="/help" aria-current="page">Help</a></nav><script>document.querySelector('.console-setup-link').href='https://'+(location.hostname.includes(':')?'['+location.hostname+']':location.hostname)+':8444/setup';</script>
     <h1>Get ready to play</h1>
     <p class="intro">Controller Router connects to your console and puts each gamepad with the player you choose. Pick a task below to get started or fix a problem.</p>
     <div class="jump" aria-label="On this page"><a href="#connect">Connect a console</a><a href="#players">Choose players</a><a href="#systems">Choose systems</a><a href="#test">Test a controller</a><a href="#trouble">Fix a problem</a></div>

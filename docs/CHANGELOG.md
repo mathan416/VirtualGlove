@@ -12,6 +12,18 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.8.0] - in preparation
+
+Release candidate `v0.8.0-rc.1` adds halting the controller when a RetroPie
+console shuts down. `v0.7.2` remains the current stable release until the
+candidate passes device checks.
+
+### Added
+
+- Bundled Controller Router 0.4.0 and UNO Q runtime 0.4.0. Each paired console has a **Halt this controller when the console shuts down** setting in secure Setup, off by default and confirmed with the Matrix code. When it is on, choosing Shutdown System in EmulationStation on a RetroPie console halts the controller cleanly; Quit and Restart choices never do. The controller stays running while a game is active on it or another paired console is connected.
+- UNO Q setup installs the fixed-purpose controller halt helper alongside the boot-order helper. VirtualGlove's own Shutdown button is unchanged.
+- Every UNO Q portal page links to Console setup.
+
 ## [0.7.2] - 2026-11-17
 
 ### Fixed

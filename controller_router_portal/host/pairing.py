@@ -11,11 +11,15 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 try:
-    from ..shared.pairing import Peer, load_json, write_json, secret, parse_code, normalize_host, valid_id, legacy_proof
+    from ..shared.pairing import Peer, load_json, write_json, secret, parse_code, normalize_host, valid_id, legacy_proof, halt_proof
 except ImportError:
-    from shared.pairing import Peer, load_json, write_json, secret, parse_code, normalize_host, valid_id, legacy_proof
+    from shared.pairing import Peer, load_json, write_json, secret, parse_code, normalize_host, valid_id, legacy_proof, halt_proof
 
 STATE = Path('/home/arduino/.local/state/controller-router')
+# A paired console proves a shutdown request by signing a one-time challenge
+# with its Router connection token (shared.pairing.halt_proof).
+HALT_CHALLENGE_SECONDS = 30
+HALT_DELAY_SECONDS = 2.0
 PRODUCTS = {'virtualglove': (8100, 'virtualglove'), 'rob_vision': (8101, 'rob-vision')}
 
 
@@ -50,6 +54,8 @@ class PairingManager:
         self.window = None
         self.locked_until = 0
         self.certificate_identity = None
+        self.halt_challenges = {}
+        self.halt_scheduled = False
         self._save()
 
     def _save(self):
@@ -70,9 +76,11 @@ class PairingManager:
             consoles.append({'id': identity, 'host': item['host'], 'platform': item['platform'],
                 'status': item.get('status', 'Unavailable'), 'apps': {
                     app: {'status': value.get('status', 'Needs attention'), 'enabled': value.get('enabled', True)}
-                    for app, value in item.get('apps', {}).items()}, 'message': item.get('message', '')})
+                    for app, value in item.get('apps', {}).items()}, 'message': item.get('message', ''),
+                'halt_on_shutdown': bool(item.get('halt_on_shutdown')), 'halt_message': item.get('halt_message', '')})
         return {'consoles': consoles, 'conflicts': document['conflicts'],
-                'pairing': bool(window and window['expires'] > self.clock())}
+                'pairing': bool(window and window['expires'] > self.clock()),
+                'halt_helper': (self.root / '.halt-enabled').is_file()}
 
     def _window_available(self, replace_change=False):
         if self.clock() < self.locked_until:
@@ -107,14 +115,18 @@ class PairingManager:
                                      fingerprint=peer.last_fingerprint, remote=remote)
 
     def request_change(self, kind, identity, app=None, enabled=None):
-        """Removing a console or changing app access needs the same Matrix code as pairing."""
+        """Removing a console or changing its access or halt setting needs the Matrix code."""
         with self.lock:
             self._idle()
             record = self.document['consoles'].get(identity) if isinstance(identity, str) else None
-            if kind not in ('remove', 'access') or not record:
+            if kind not in ('remove', 'access', 'halt') or not record:
                 raise ValueError('Choose a paired console.')
             if kind == 'access' and (app not in record['apps'] or type(enabled) is not bool):
                 raise ValueError('Choose an installed app and its access setting.')
+            if kind == 'halt' and type(enabled) is not bool:
+                raise ValueError('Choose whether this console may halt the controller.')
+            if kind == 'halt' and enabled and not (self.root / '.halt-enabled').is_file():
+                raise ValueError('Install the controller halt helper first; see the Deployment Guide.')
             self._window_available()
             return self._open_window(change={'kind': kind, 'id': identity, 'app': app, 'enabled': enabled})
 
@@ -154,6 +166,8 @@ class PairingManager:
                 change = window.get('change')
                 if change and change['kind'] == 'remove':
                     return self.remove(change['id'])
+                if change and change['kind'] == 'halt':
+                    return self.set_halt(change['id'], change['enabled'])
                 if change:
                     return self.access(change['id'], change['app'], change['enabled'])
                 identity = window['remote']['console_id']
@@ -161,6 +175,8 @@ class PairingManager:
                 record = {'host': window['host'], 'platform': window['remote']['platform'],
                     'fingerprint': window['fingerprint'], 'token': secret(), 'uno_url': window['uno_url'],
                     'apps': copy.deepcopy(old.get('apps', {}))}
+                if old.get('halt_on_shutdown'):
+                    record['halt_on_shutdown'] = True  # re-pairing keeps the owner's choice
                 available = set(window['remote']['apps']) & self.adapters.installed()
                 for app in available:
                     if record['apps'].get(app, {}).get('enabled') is False:
@@ -172,6 +188,86 @@ class PairingManager:
                 return self.inspect()
             finally:
                 self.matrix.clear_pairing()
+
+    def set_halt(self, identity, enabled):
+        """Record whether this console's shutdown may halt the controller."""
+        with self.lock:
+            record = self.document['consoles'][identity]
+            record['halt_on_shutdown'] = bool(enabled)
+            record['halt_message'] = ''
+            self._save()
+            return self.inspect()
+
+    def halt_challenge(self, identity):
+        """Issue a single-use, short-lived challenge to a console allowed to halt."""
+        with self.lock:
+            record = self.document['consoles'].get(identity) if isinstance(identity, str) else None
+            if not record or not record.get('halt_on_shutdown'):
+                raise ValueError('This console may not halt the controller.')
+            now = self.clock()
+            self.halt_challenges = {nonce: item for nonce, item in self.halt_challenges.items()
+                                    if item['expires'] > now}
+            if len(self.halt_challenges) >= 16:
+                raise ValueError('Too many halt requests. Try again shortly.')
+            nonce = secrets.token_hex(16)
+            self.halt_challenges[nonce] = {'console': identity, 'expires': now + HALT_CHALLENGE_SECONDS}
+            return {'nonce': nonce, 'uno_id': self.document['uno_id']}
+
+    def halt_request(self, identity, nonce, proof):
+        """Halt the controller for a verified console shutdown when nothing else needs it."""
+        with self.lock:
+            record = self.document['consoles'].get(identity) if isinstance(identity, str) else None
+            challenge = self.halt_challenges.pop(nonce, None) if isinstance(nonce, str) else None
+            if (not record or not challenge or challenge['console'] != identity
+                    or challenge['expires'] <= self.clock() or not isinstance(proof, str)
+                    or not hmac.compare_digest(proof, halt_proof(record['token'], self.document['uno_id'],
+                                                                 identity, nonce))):
+                raise ValueError('Halt request was not verified.')
+            refusal = None
+            if not record.get('halt_on_shutdown'):
+                refusal = 'Halting is turned off for this console.'
+            elif not (self.root / '.halt-enabled').is_file():
+                refusal = 'The controller halt helper is not installed.'
+            elif self.game_active():
+                refusal = 'A game was running on the controller.'
+            elif any(other != identity and item.get('status') == 'Connected'
+                     for other, item in self.document['consoles'].items()):
+                refusal = 'Another paired console was connected.'
+            when = time.strftime('%Y-%m-%d %H:%M', time.localtime())
+            record['halt_message'] = ('Not halted at ' + when + ': ' + refusal) if refusal else (
+                'Halt requested at ' + when + ' when the console shut down.')
+            self._save()
+            if refusal:
+                raise ValueError(refusal)
+            if not self.halt_scheduled:
+                self.halt_scheduled = True
+                timer = threading.Timer(HALT_DELAY_SECONDS, self._write_halt_request)
+                timer.daemon = True
+                timer.start()
+            return {'halting': True}
+
+    def _write_halt_request(self):
+        """Hand the request to the root helper once the console has its reply."""
+        import os, tempfile
+        handle, temporary = tempfile.mkstemp(prefix='.halt-request.', dir=str(self.root))
+        try:
+            with os.fdopen(handle, 'w') as stream:
+                stream.write('halt\n')
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.root / 'halt-request')
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def console_halt(self, message):
+        """Port-80 entry point: challenge or request, with no browser involvement."""
+        operation = message.get('operation')
+        if operation == 'challenge':
+            return self.halt_challenge(message.get('console_id'))
+        if operation == 'request':
+            return self.halt_request(message.get('console_id'), message.get('nonce'), message.get('proof'))
+        raise ValueError('Unknown halt operation.')
 
     def _payload(self, record):
         return {'uno_id': self.document['uno_id'], 'uno_url': record['uno_url'], 'token': record['token'],
@@ -415,6 +511,7 @@ class PairingManager:
         if action == 'remove': return self.request_change('remove', payload.get('id'))
         if action == 'access': return self.request_change('access', payload.get('id'), payload.get('app'),
                                                           payload.get('enabled'))
+        if action == 'halt': return self.request_change('halt', payload.get('id'), enabled=payload.get('enabled'))
         if action == 'repair':
             self._idle(); self.reconcile(); return self.inspect()
         raise ValueError('Unknown connection action.')

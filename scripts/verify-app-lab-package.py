@@ -260,6 +260,7 @@ REQUIRED_FILES = {
     "VirtualGlove/src/router_shared/passive_exit_watcher.py",
     "VirtualGlove/src/router_shared/native_exit_launch.py",
     "VirtualGlove/src/router_shared/uno_boot_order.py",
+    "VirtualGlove/src/router_shared/uno_halt.py",
     "VirtualGlove/src/router_shared/retroarch_udev.py",
     "VirtualGlove/src/router_shared/virtual_sources.py",
     "VirtualGlove/recalbox/virtualglove-service",

@@ -530,6 +530,7 @@ class SetupTests(unittest.TestCase):
             )
             command.assert_any_call("systemctl", "enable", "--now", "avahi-daemon")
             command.assert_any_call(sys.executable, app / "src/router_shared/uno_boot_order.py")
+            command.assert_any_call(sys.executable, app / "src/router_shared/uno_halt.py")
             ordering = root / "etc/systemd/system/arduino-app-cli.service.d/50-controller-router-boot-order.conf"
             self.assertIn("After=arduino-burn-bootloader-unoq.service", ordering.read_text())
             self.assertNotIn("Wants=", ordering.read_text())

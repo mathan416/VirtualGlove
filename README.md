@@ -19,7 +19,7 @@ Camera frames stay on the controller. The game system receives control state, wh
 
 ![VirtualGlove Dashboard with camera and controller status](docs/images/debug-dashboard.png)
 
-The stable release is **v0.7.2**. The commands below select the latest published stable release; prereleases require their exact versioned assets. The same platform installer handles a first install and an upgrade. See the [0.7.2 changelog](docs/CHANGELOG.md#072---2026-11-17) and the guide included with the downloaded release.
+The stable release is **v0.7.2**. The commands below select the latest published stable release; prereleases require their exact versioned assets. The same platform installer handles a first install and an upgrade. See the [0.7.2 changelog](docs/CHANGELOG.md#072---2026-11-17) and the guide included with the downloaded release. Release candidate **v0.8.0-rc.1** can halt the controller when a RetroPie console shuts down; see the [0.8.0 changelog](docs/CHANGELOG.md#080---in-preparation).
 
 ## System boundary
 

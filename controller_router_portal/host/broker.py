@@ -115,6 +115,9 @@ class Handler(socketserver.StreamRequestHandler):
                 result = LAUNCHER.state()
             elif action == 'connections' and PAIRING is not None:
                 result = PAIRING.inspect()
+            elif action == 'console-halt' and PAIRING is not None:
+                # A paired console's signed shutdown request; PairingManager verifies it.
+                result = PAIRING.console_halt(message)
             elif action == 'pairing-certificate':
                 try:
                     from .secure_pairing import public_certificate

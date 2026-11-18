@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .pairing import (APPS, MAX_BODY, PORT, BoundedServer, connection_code, fingerprint, legacy_proof,
+from .pairing import (APPS, MAX_BODY, PORT, BoundedServer, connection_code, fingerprint, halt_proof, legacy_proof,
                       load_json, secret, valid_id, valid_secret, write_json, write_private)
 
 
@@ -554,11 +554,59 @@ def open_window(root, timeout=300):
     return code
 
 
+def notify_shutdown(root, timeout=2.0, opener=None):
+    """Ask the paired controller to halt because this console is shutting down.
+
+    Best effort and bounded: the console always continues its own shutdown.
+    The connection token never leaves the console; it signs a one-time challenge.
+    """
+    import urllib.error
+    import urllib.request
+    root = Path(root)
+    connection = load_json(root / 'connection.json')
+    base, token, uno_id = connection.get('uno_url'), connection.get('token'), connection.get('uno_id')
+    if not (isinstance(base, str) and isinstance(token, str) and isinstance(uno_id, str)):
+        return 'This console is not paired with a controller.'
+    parsed = urlsplit(base)
+    if parsed.scheme != 'http' or not parsed.hostname or parsed.path or parsed.port:
+        return 'The paired controller address is invalid.'
+    console_id = valid_id((root / 'console-id').read_text().strip())
+    open_url = opener or urllib.request.build_opener(urllib.request.ProxyHandler({})).open
+
+    def post(payload):
+        request = urllib.request.Request(base + '/api/console-halt', json.dumps(payload).encode(),
+                                         {'Content-Type': 'application/json'}, method='POST')
+        try:
+            with open_url(request, timeout=timeout) as response:
+                return json.loads(response.read(4097))
+        except urllib.error.HTTPError as error:
+            try:
+                return json.loads(error.read(4097))
+            except ValueError:
+                return {'error': 'The controller rejected the halt request.'}
+
+    try:
+        challenge = post({'operation': 'challenge', 'console_id': console_id})
+        if challenge.get('error') or challenge.get('uno_id') != uno_id or not isinstance(challenge.get('nonce'), str):
+            return 'Controller not halted: ' + str(challenge.get('error', 'unexpected controller reply'))
+        proof = halt_proof(token, uno_id, console_id, challenge['nonce'])
+        result = post({'operation': 'request', 'console_id': console_id,
+                       'nonce': challenge['nonce'], 'proof': proof})
+    except (OSError, ValueError) as error:
+        return 'Controller not halted: it could not be reached (' + type(error).__name__ + ').'
+    if result.get('halting'):
+        return 'The controller will halt.'
+    return 'Controller not halted: ' + str(result.get('error', 'unexpected controller reply'))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('serve', 'pair'))
+    parser.add_argument('action', choices=('serve', 'pair', 'notify-shutdown'))
     parser.add_argument('--root', type=Path, default=default_root())
     args = parser.parse_args()
+    if args.action == 'notify-shutdown':
+        print(notify_shutdown(args.root), flush=True)
+        return
     serve(args.root) if args.action == 'serve' else open_window(args.root)
 
 

@@ -132,7 +132,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self) -> None:
-        if urlsplit(self.path).path not in ("/api/select", "/api/routing"):
+        if urlsplit(self.path).path not in ("/api/select", "/api/routing", "/api/console-halt"):
             self.send_error(404)
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
@@ -152,9 +152,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            if not 1 <= size <= (32768 if urlsplit(self.path).path == "/api/routing" else 128):
+            path = urlsplit(self.path).path
+            if not 1 <= size <= {"/api/routing": 32768, "/api/console-halt": 512}.get(path, 128):
                 raise ValueError("Invalid request size.")
             incoming = json.loads(self.rfile.read(size))
+            if path == "/api/console-halt":
+                # Signed by a paired console; the host service verifies the proof.
+                if not isinstance(incoming, dict):
+                    raise ValueError("Invalid halt request.")
+                fields = {key: incoming.get(key) for key in ("operation", "console_id", "nonce", "proof")}
+                result = broker({"action": "console-halt", **fields})
+                self.send_json(400 if result.get("error") else 200, result)
+                return
             if urlsplit(self.path).path == "/api/routing":
                 if not isinstance(incoming, dict):
                     raise ValueError("Invalid routing request.")

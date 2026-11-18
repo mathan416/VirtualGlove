@@ -13,6 +13,7 @@
 .application-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(90px,auto) auto;align-items:center;gap:8px}
 .application-row strong{overflow-wrap:anywhere}
 .app-state{color:#bfd0dc}
+.halt-setting{display:grid;gap:6px;margin-top:12px;font-size:14px;color:#bfd0dc}.halt-note{font-size:13px;color:#a9becf}
 .application-row button,.console-table td:last-child button{margin:0;padding:8px 12px;font-size:14px;min-height:40px;white-space:nowrap}
 .cell-label{display:none}
 @media(max-width:760px){
@@ -75,6 +76,14 @@ function render(data){
    }
    if(!list.children.length)list.append(node('span','No applications installed'));
    apps.append(list);row.append(apps);
+   const halt=node('div',''),haltLabel=node('span','Halt this controller when the console shuts down: '+(c.halt_on_shutdown?'On':'Off')),haltToggle=node('button',c.halt_on_shutdown?'Turn off':'Turn on');
+   halt.className='halt-setting';haltToggle.type='button';haltToggle.className='quiet';haltToggle.setAttribute('aria-label',(c.halt_on_shutdown?'Turn off':'Turn on')+' halting this controller when '+c.host+' shuts down');
+   haltToggle.disabled=!c.halt_on_shutdown&&!data.halt_helper;
+   haltToggle.onclick=()=>startChange({operation:'halt',id:c.id,enabled:!c.halt_on_shutdown},'Halting this controller when '+c.host+' shuts down is now '+(c.halt_on_shutdown?'off':'on')+'.');
+   halt.append(haltLabel,haltToggle);
+   if(!data.halt_helper&&!c.halt_on_shutdown)halt.append(node('span','Install the controller halt helper to use this setting.'));
+   if(c.halt_message){const note=node('span',c.halt_message);note.className='halt-note';halt.append(note);}
+   apps.append(halt);
    const actions=labeledCell('Actions'),remove=node('button','Remove');remove.type='button';remove.className='quiet';remove.setAttribute('aria-label','Remove '+c.host);
    remove.onclick=()=>{if(confirm('Remove '+c.host+' and its app access?'))startChange({operation:'remove',id:c.id},c.host+' was removed.');};
    actions.append(remove);row.append(actions);body.append(row);

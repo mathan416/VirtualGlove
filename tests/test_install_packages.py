@@ -248,7 +248,7 @@ class PackageContentTests(unittest.TestCase):
             errors = verifier.archive_errors(archive)
             for module in ('computer_bridge', 'computer_launch', 'emulator_hosts',
                            'emulator_registration', 'emulator_setup', 'loader_session',
-                           'passive_exit_watcher', 'native_exit_launch', 'uno_boot_order'):
+                           'passive_exit_watcher', 'native_exit_launch', 'uno_boot_order', 'uno_halt'):
                 self.assertIn('required package file is missing: '
                               'VirtualGlove/src/router_shared/' + module + '.py', errors)
 

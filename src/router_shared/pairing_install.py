@@ -11,7 +11,32 @@ from pathlib import Path
 from .pairing_console import LinkStore, default_root, platform_name, open_window, ensure_certificate
 from .pairing import write_private
 
-VERSION = '0.3.2'
+VERSION = '0.4.0'
+
+
+RETROPIE_ES_SCRIPTS = Path('/opt/retropie/configs/all/emulationstation/scripts')
+RETROPIE_SHUTDOWN_HOOK = RETROPIE_ES_SCRIPTS / 'shutdown/controller-router-halt.sh'
+
+
+def _install_retropie_shutdown_hook(notifier, hook=None):
+    """Run the notifier from EmulationStation's Shutdown System event only.
+
+    EmulationStation fires 'shutdown' only for Shutdown System; Quit and
+    Restart EmulationStation fire 'quit', and Restart System fires 'reboot'.
+    """
+    import pwd
+    hook = Path(hook or RETROPIE_SHUTDOWN_HOOK)
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text('#!/bin/sh\n# Controller Router: ask the paired controller to halt when this console\n'
+                    '# shuts down, if allowed in its secure Setup. Bounded; never blocks shutdown.\n'
+                    'sudo -n ' + _quote(str(notifier)) + ' 2>&1 | logger -t controller-router-halt || true\n')
+    hook.chmod(0o755)
+    try:
+        account = pwd.getpwnam('pi')
+    except KeyError:
+        return
+    for path in (hook.parent, hook):
+        os.chown(path, account.pw_uid, account.pw_gid)
 
 
 def _install(app, descriptor, *, root=None, execute=True):
@@ -60,6 +85,16 @@ def _install(app, descriptor, *, root=None, execute=True):
     write_private(launcher, content.encode())
     launcher.chmod(0o755)
     platform = platform_name()
+    if platform != 'launchbox':
+        # Bounded, root-only notifier the console's shutdown hook calls; the
+        # controller decides whether to halt and the console never waits long.
+        notifier = root.parent / 'notify-shutdown'
+        write_private(notifier, ('#!/bin/sh\nif [ "$(id -u)" != 0 ]; then exec sudo -n -- "$0" "$@"; fi\ncd ' +
+            _quote(str(software)) + '\nexec timeout 8 ' + _quote(sys.executable) +
+            ' -m router_shared.pairing_console notify-shutdown --root ' + _quote(str(root)) + '\n').encode())
+        notifier.chmod(0o755)
+    if platform == 'retropie' and RETROPIE_ES_SCRIPTS.parent.is_dir():
+        _install_retropie_shutdown_hook(root.parent / 'notify-shutdown')
     if execute:
         ensure_certificate(root)
     command = _quote(sys.executable) + ' -m router_shared.pairing_console serve --root ' + _quote(str(root))
@@ -142,9 +177,10 @@ def install(app, descriptor, *, root=None, execute=True):
     root = Path(root or default_root())
     root.parent.mkdir(parents=True, exist_ok=True)
     platform = platform_name()
-    paths = [root / 'adapters.json', root.parent / 'software', root.parent / 'pair-console']
+    paths = [root / 'adapters.json', root.parent / 'software', root.parent / 'pair-console',
+             root.parent / 'notify-shutdown']
     if platform == 'retropie':
-        paths.append(Path('/etc/systemd/system/controller-router-link.service'))
+        paths.extend([Path('/etc/systemd/system/controller-router-link.service'), RETROPIE_SHUTDOWN_HOOK])
         restart = ['systemctl', 'restart', 'controller-router-link.service']
     elif platform == 'batocera':
         paths.append(Path('/userdata/system/services/ControllerRouterLink'))
