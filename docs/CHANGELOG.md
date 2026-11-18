@@ -12,6 +12,12 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-18
+
+### Fixed
+
+- Automatic camera recovery now works when the camera is plugged directly into the UNO Q instead of through a USB hub. Enrollment previously refused this setup. Recovery now resets only the enrolled camera after checking that it is still the same model at the same USB location; cameras behind a hub are recovered as before. On one UNO Q with a Razer Kiyo Pro plugged into its own USB port, enrollment succeeded and the camera kept streaming; a live recovery reset was exercised only in automated tests.
+
 ## [0.8.0] - 2026-11-17
 
 This release can halt the controller when a RetroPie console shuts down. On one

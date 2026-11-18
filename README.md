@@ -19,7 +19,7 @@ Camera frames stay on the controller. The game system receives control state, wh
 
 ![VirtualGlove Dashboard with camera and controller status](docs/images/debug-dashboard.png)
 
-The stable release is **v0.8.0**. The commands below select the latest published stable release; prereleases require their exact versioned assets. The same platform installer handles a first install and an upgrade. See the [0.8.0 changelog](docs/CHANGELOG.md#080---2026-11-17) and the guide included with the downloaded release.
+The stable release is **v0.8.1**. The commands below select the latest published stable release; prereleases require their exact versioned assets. The same platform installer handles a first install and an upgrade. See the [0.8.1 changelog](docs/CHANGELOG.md#081---2026-11-18) and the guide included with the downloaded release.
 
 ## System boundary
 
