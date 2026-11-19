@@ -2653,8 +2653,10 @@ its matching package and shared `install-package.py`, verifies SHA-256 checksums
 and invokes the shared `setup-machine.py` with sudo. Downloads use GitHub HTTPS;
 checksums detect damaged or mismatched assets, not a compromised release account.
 The entry scripts themselves must come from the trusted project release.
-The installation guide uses GitHub's `/releases/latest/download/` asset links
-and omits version flags. Each script resolves the latest stable release once,
+The installation guide and the stable website use GitHub's
+`/releases/latest/download/` asset links and omit version flags. Website
+builds for a release candidate, or while a release is in preparation, pin the
+commands to that page's published tag with `--version`. Each script resolves the latest stable release once,
 then uses that exact tag for the checksum list, shared installer and package.
 Drafts and prereleases are excluded from automatic selection. A failed `curl`
 download prevents the chained `bash` command from running; saving the script

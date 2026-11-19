@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-19 - Checked stable install commands follow the latest release.
 #   2026-09-20 - Added 0.5.0 documentation and public-site release checks.
 # Full history: docs/CHANGELOG.md and Git history.
 """Test release-sensitive public artifacts without contacting external services."""
@@ -44,10 +45,34 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn('v0.8.2', values['RELEASE_LABEL'])
         self.assertIn('Stable release', values['RELEASE_LABEL'])
         self.assertEqual(values['TAG'], 'v0.8.2')
+        self.assertIn('/v0.8.2', values['RELEASE_URL'])
         for key in ['UNO_COMMAND', 'RETROPIE_COMMAND', 'RECALBOX_COMMAND',
-                    'BATOCERA_COMMAND', 'LAUNCHBOX_COMMAND', 'RELEASE_URL']:
-            self.assertIn('/v0.8.2', values[key])
-            self.assertNotIn('/v0.8.1', values[key])
+                    'BATOCERA_COMMAND', 'LAUNCHBOX_COMMAND']:
+            self.assertIn('/releases/latest/download/', values[key])
+            self.assertNotIn('--version', values[key])
+            self.assertNotIn('/releases/download/', values[key])
+
+    def test_candidate_and_preparation_install_commands_stay_pinned(self):
+        import json
+        import runpy
+        from unittest.mock import patch
+        build = runpy.run_path(str(ROOT / 'website/build.py'))
+        facts = json.loads((ROOT / 'config/release.json').read_text())
+        cases = [
+            dict(facts, channel='candidate', release_tag='v0.9.0-rc.1',
+                 published_release_tag='v0.9.0-rc.1'),
+            dict(facts, channel='stable', release_tag='v0.9.0',
+                 published_release_tag='v0.8.2'),
+        ]
+        for case in cases:
+            pinned = case['published_release_tag']
+            with patch('pathlib.Path.read_text', return_value=json.dumps(case)):
+                values = build['values']()
+            for key in ['UNO_COMMAND', 'RETROPIE_COMMAND', 'RECALBOX_COMMAND',
+                        'BATOCERA_COMMAND']:
+                self.assertIn(f'/releases/download/{pinned}/', values[key])
+                self.assertIn(f'--version {pinned}', values[key])
+                self.assertNotIn('/latest/', values[key])
 
 
     def test_generated_website_matches_upload_zip(self):

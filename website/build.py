@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-19 - Pointed stable install commands at the latest GitHub release.
 #   2026-09-21 - Added the Engineering page to the tracked release website.
 #   2026-09-20 - Added the tracked four-page release website build.
 # Full history: docs/CHANGELOG.md and Git history.
@@ -42,7 +43,12 @@ def values() -> dict[str, str]:
     target_tag = tag
     tag = facts.get("published_release_tag", tag)
     preparing = tag != target_tag
-    base = f"https://github.com/mathan416/VirtualGlove/releases/download/{tag}"
+    # Stable pages follow GitHub's latest release so commands stay current between
+    # website uploads; candidates and preparation pages stay pinned to their tag.
+    latest = stable and not preparing
+    base = ("https://github.com/mathan416/VirtualGlove/releases/latest/download" if latest
+            else f"https://github.com/mathan416/VirtualGlove/releases/download/{tag}")
+    pin = "" if latest else f" --version {tag}"
     return {
         "VERSION": tag[1:] if preparing else version,
         "TAG": tag,
@@ -60,9 +66,9 @@ def values() -> dict[str, str]:
             "Install the same candidate on the Controller and console."
         ),
         "INSTALL_RELEASE_NOTE": (
-            f"These commands are pinned to {tag} so the Controller and console use "
-            "the same stable release."
-            if stable else
+            "These commands always install the latest stable release, so the "
+            "Controller and console get the same version."
+            if latest else
             f"These commands are pinned to {tag} rather than the latest stable release."
         ),
         "RELEASE_URL": f"https://github.com/mathan416/VirtualGlove/releases/tag/{tag}",
@@ -71,22 +77,22 @@ def values() -> dict[str, str]:
         "UNO_COMMAND": command(
             "cd /home/arduino\n"
             f"curl -fLO {base}/install-uno-q.sh\n"
-            f"bash install-uno-q.sh --version {tag}"
+            f"bash install-uno-q.sh{pin}"
         ),
         "RETROPIE_COMMAND": command(
             "cd \"$HOME\"\n"
             f"curl -fLO {base}/install-retropie.sh\n"
-            f"bash install-retropie.sh --version {tag}"
+            f"bash install-retropie.sh{pin}"
         ),
         "RECALBOX_COMMAND": command(
             "cd /recalbox/share/system\n"
             f"curl -fLO {base}/install-recalbox.sh\n"
-            f"bash install-recalbox.sh --version {tag}"
+            f"bash install-recalbox.sh{pin}"
         ),
         "BATOCERA_COMMAND": command(
             "cd /userdata/system\n"
             f"curl -fLO {base}/install-batocera.sh\n"
-            f"bash install-batocera.sh --version {tag}"
+            f"bash install-batocera.sh{pin}"
         ),
         "LAUNCHBOX_COMMAND": command(
             "$destination = Join-Path $env:USERPROFILE \"Downloads\\VirtualGlove-LaunchBox\"\n"
