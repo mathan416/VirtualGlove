@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-11-24 - Run the worker from the release's bundled wheels without PyPI.
 #   2026-09-10 - Reaped the complete uv/Python/camera worker process group on restart.
 #   2026-09-10 - Allowed opt-in process isolation with OpenCV capture.
 #   2026-09-10 - Prefer the retained worker cache while preserving first-install online fallback.
@@ -101,19 +102,35 @@ def load_device_config() -> dict:
     return settings
 
 
+def bundled_worker_wheels() -> bool:
+    """Report whether the release carries every wheel the worker lock names."""
+    lock = APP_ROOT / "python" / "worker-requirements.txt"
+    try:
+        names = [line[len("# wheel: "):].strip()
+                 for line in lock.read_text().splitlines()
+                 if line.startswith("# wheel: ")]
+    except OSError:
+        return False
+    wheels = APP_ROOT / "python" / "worker-wheels"
+    return bool(names) and all((wheels / name).is_file() for name in names)
+
+
 def worker_runtime_prefix() -> list[str]:
     """Build the uv prefix shared by worker launches and the offline probe."""
-    wheel = next(
-        (APP_ROOT / "python" / "worker-wheels").glob(
-            "mediapipe-0.10.35+powerglove*.whl"
-        )
-    )
-    return [
-        # The repository supports the RetroPie receiver on Python 3.7, while
-        # MediaPipe requires a newer interpreter. Keep the worker resolution
-        # independent of project-wide Python compatibility metadata.
-        "uv", "run", "--no-project", "--python", "3.12", "--with", str(wheel),
-    ]
+    wheels = APP_ROOT / "python" / "worker-wheels"
+    wheel = next(wheels.glob("mediapipe-0.10.35+powerglove*.whl"))
+    # The repository supports the RetroPie receiver on Python 3.7, while
+    # MediaPipe requires a newer interpreter. Keep the worker resolution
+    # independent of project-wide Python compatibility metadata.
+    prefix = ["uv", "run", "--no-project", "--python", "3.12"]
+    if bundled_worker_wheels():
+        # Release packages carry the locked wheels: resolve from them alone,
+        # so a first start, a uv upgrade or a cleared cache never needs PyPI.
+        # The installer verifies the package checksum; uv does not recheck
+        # the lock's hashes here.
+        prefix += ["--no-index", "--find-links", str(wheels),
+                   "--with-requirements", str(APP_ROOT / "python" / "worker-requirements.txt")]
+    return prefix + ["--with", str(wheel)]
 
 
 def worker_command(settings: dict, model_path: Path, controller_enabled: bool = False) -> list[str]:
@@ -206,7 +223,16 @@ def worker_command(settings: dict, model_path: Path, controller_enabled: bool = 
 
 
 def prefer_retained_worker_cache(environment: dict[str, str]) -> dict[str, str]:
-    """Use the complete local uv cache, or retain online resolution for first install."""
+    """Prune the uv cache, then use it offline when it can start the worker."""
+    # A uv upgrade in the App Lab base image leaves cache buckets the new uv
+    # cannot read; drop them rather than keep both copies on the UNO Q's small
+    # disk. Prune before the worker starts: a running `uv run` holds the cache
+    # and would make the prune wait.
+    try:
+        subprocess.run(["uv", "cache", "prune"], cwd=APP_ROOT, env=environment, check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        pass
     offline = dict(environment)
     offline["UV_OFFLINE"] = "1"
     try:
@@ -221,17 +247,7 @@ def prefer_retained_worker_cache(environment: dict[str, str]) -> dict[str, str]:
         )
     except (OSError, subprocess.SubprocessError):
         return environment
-    if completed.returncode == 0:
-        return offline
-    # A newer uv in the App Lab base image cannot read an older uv's cache
-    # buckets, so the worker resolves online again. Drop the unreadable
-    # buckets now rather than keep both copies on the UNO Q's small disk.
-    try:
-        subprocess.run(["uv", "cache", "prune"], cwd=APP_ROOT, env=environment, check=False,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return environment
+    return offline if completed.returncode == 0 else environment
 
 
 def main() -> int:

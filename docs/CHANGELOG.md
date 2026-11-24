@@ -14,7 +14,8 @@ result before naming the underlying mechanism.
 
 ### Changed
 
-- The UNO Q runs VirtualGlove, R.O.B. Vision and the Controller Router portal on the same App Lab base image (python-apps-base 0.13.2). Older copies of that image are removed when the products start, which frees about 900 MB on the UNO Q's small system disk. After the upgrade, the first start needs internet once while the vision worker downloads its packages again. The worker then clears the package copies it can no longer use.
+- The UNO Q runs VirtualGlove, R.O.B. Vision and the Controller Router portal on the same App Lab base image (python-apps-base 0.13.2). Older copies of that image are removed when the products start, which frees about 900 MB on the UNO Q's small system disk. The vision worker clears package copies it can no longer use each time the Controller starts.
+- The UNO Q installation ZIP now carries every Python wheel the vision worker needs, locked to tested versions. The worker starts without internet access after an update, an App Lab change, or a cleared package cache. The package is about 73 MB larger.
 
 ## [0.8.2] - 2026-11-18
 

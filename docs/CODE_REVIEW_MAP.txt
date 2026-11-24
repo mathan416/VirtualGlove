@@ -2,8 +2,8 @@ VIRTUALGLOVE - FILE HIERARCHY AND CODE REVIEW MAP
 ===================================================
 Source: repository root
 Project version: 0.8.2
-Git-visible files: 805
-Python test modules: 79
+Git-visible files: 808
+Python test modules: 80
 Standalone browser checks: 5
 JavaScript browser harnesses: 7
 
@@ -119,7 +119,7 @@ tracked release inputs and must not be treated as disposable caches.
 
 TEST MAP
 --------
-Normal Python discovery currently contains 79 test modules. JavaScript
+Normal Python discovery currently contains 80 test modules. JavaScript
 harnesses are invoked by their Python wrappers. The browser_*.py files are
 standalone physical/browser acceptance checks and are not discovered by
 unittest. Platform-specific hardware acceptance remains necessary after the
@@ -182,7 +182,7 @@ stable individual-download paths.
 
 COMPLETE GIT-VISIBLE INVENTORY
 ------------------------------
-805 tracked or non-ignored files are present in this checkout. Ignored
+808 tracked or non-ignored files are present in this checkout. Ignored
 virtual environments, private data, generated installers, and build products
 are intentionally omitted.
 
@@ -745,7 +745,8 @@ are intentionally omitted.
 |   |-- worker-wheels
 |   |   `-- mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl
 |   |-- main.py
-|   `-- ssh_pair.py
+|   |-- ssh_pair.py
+|   `-- worker-requirements.txt
 |-- recalbox
 |   |-- virtualglove-core-mount
 |   `-- virtualglove-service
@@ -869,7 +870,8 @@ are intentionally omitted.
 |   |-- verify-launchbox-native-core.py
 |   |-- verify-recalbox-native-core.py
 |   |-- verify-retropie-native-core.py
-|   `-- virtualglove-controller-router
+|   |-- virtualglove-controller-router
+|   `-- worker-wheels.py
 |-- sketch
 |   |-- firmware_version.h
 |   |-- sketch.ino
@@ -1048,7 +1050,8 @@ are intentionally omitted.
 |   |-- test_unoq_camera_recovery_helper.py
 |   |-- test_versioning.py
 |   |-- test_vision_benchmark_tools.py
-|   `-- test_web_features.py
+|   |-- test_web_features.py
+|   `-- test_worker_wheels.py
 |-- uno-q
 |   |-- virtualglove-camera-recovery.conf
 |   |-- virtualglove-camera-recovery.path

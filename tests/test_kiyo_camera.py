@@ -231,26 +231,52 @@ class KiyoTests(unittest.TestCase):
                 self.assertIs(selected, environment)
                 self.assertNotIn('UV_OFFLINE', selected)
 
-    def test_unreadable_worker_cache_is_pruned_before_online_resolution(self):
+    def test_worker_cache_is_pruned_before_the_offline_probe(self):
         # A base-image uv upgrade leaves cache buckets the new uv cannot read.
+        # Pruning waits while a worker's uv run holds the cache, so it runs first.
         root=Path(__file__).resolve().parents[1]
         namespace=runpy.run_path(str(root/'python/main.py'))
         environment={'UV_CACHE_DIR':'/cache'}
+        for probe_result, offline in ((0, True), (1, False)):
+            with self.subTest(probe_result=probe_result):
+                with patch.object(namespace['subprocess'], 'run',
+                                  return_value=SimpleNamespace(returncode=probe_result)) as run:
+                    selected=namespace['prefer_retained_worker_cache'](environment)
+                self.assertEqual(run.call_count, 2)
+                prune, probe = run.call_args_list
+                self.assertEqual(prune[0][0], ['uv', 'cache', 'prune'])
+                self.assertNotIn('UV_OFFLINE', prune[1]['env'])
+                self.assertEqual(prune[1]['env']['UV_CACHE_DIR'], '/cache')
+                self.assertEqual(probe[1]['env']['UV_OFFLINE'], '1')
+                self.assertEqual('UV_OFFLINE' in selected, offline)
         with patch.object(namespace['subprocess'], 'run',
-                          return_value=SimpleNamespace(returncode=1)) as run:
-            selected=namespace['prefer_retained_worker_cache'](environment)
-        self.assertIs(selected, environment)
-        self.assertEqual(run.call_count, 2)
-        self.assertEqual(run.call_args[0][0], ['uv', 'cache', 'prune'])
-        self.assertNotIn('UV_OFFLINE', run.call_args[1]['env'])
-        self.assertEqual(run.call_args[1]['env']['UV_CACHE_DIR'], '/cache')
-        with patch.object(namespace['subprocess'], 'run',
-                          side_effect=[SimpleNamespace(returncode=1), OSError('uv')]):
-            self.assertIs(namespace['prefer_retained_worker_cache'](environment), environment)
-        with patch.object(namespace['subprocess'], 'run',
-                          return_value=SimpleNamespace(returncode=0)) as run:
-            namespace['prefer_retained_worker_cache'](environment)
-        run.assert_called_once()
+                          side_effect=[OSError('uv'), SimpleNamespace(returncode=0)]):
+            self.assertEqual(namespace['prefer_retained_worker_cache'](environment)['UV_OFFLINE'], '1')
+
+    def test_worker_resolves_only_from_bundled_wheels_when_the_release_has_them(self):
+        import tempfile
+        root=Path(__file__).resolve().parents[1]
+        prefix=runpy.run_path(str(root/'python/main.py'))['worker_runtime_prefix']
+        with tempfile.TemporaryDirectory() as directory:
+            wheels=Path(directory)/'python/worker-wheels'; wheels.mkdir(parents=True)
+            lock=Path(directory)/'python/worker-requirements.txt'
+            (wheels/'mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl').write_bytes(b'')
+            lock.write_text('# wheel: a-1-py3-none-any.whl\na==1 --hash=sha256:' + '0'*64 + '\n'
+                            '# wheel: b-2-py3-none-any.whl\nb==2 --hash=sha256:' + '1'*64 + '\n')
+            with patch.dict(prefix.__globals__, {'APP_ROOT': Path(directory)}):
+                (wheels/'a-1-py3-none-any.whl').write_bytes(b'')
+                partial=prefix()
+                (wheels/'b-2-py3-none-any.whl').write_bytes(b'')
+                bundled=prefix()
+                lock.unlink()
+                unlocked=prefix()
+        for command in (partial, unlocked):
+            self.assertNotIn('--no-index', command)
+            self.assertEqual(command[:5], ['uv', 'run', '--no-project', '--python', '3.12'])
+        self.assertEqual(bundled[5:10], ['--no-index', '--find-links', str(wheels),
+                                         '--with-requirements', str(lock)])
+        self.assertEqual(bundled[-2], '--with')
+        self.assertTrue(bundled[-1].endswith('linux_aarch64.whl'))
 
     def test_manual_exposure_test_requires_valid_pair_and_direct_capture(self):
         root=Path(__file__).resolve().parents[1]

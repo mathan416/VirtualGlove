@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Download and package the locked vision-worker wheels.
 #   2026-09-11 - Build and package pinned precompiled Matrix firmware.
 #   2026-09-05 - Refreshed the tracked SHA-256 companion after every successful build.
 #   2026-09-02 - Added to VirtualGlove.
@@ -32,7 +33,8 @@ trap cleanup EXIT
 mkdir -p "${OUTPUT_DIR}" "${PACKAGE_TMP}/VirtualGlove"
 python3 "${SCRIPT_DIR}/build-enclosure-packages.py"
 python3 "${SCRIPT_DIR}/build-matrix-firmware.py"
-python3 "${SCRIPT_DIR}/application-payload.py" "${PACKAGE_TMP}/VirtualGlove" --precompiled-matrix
+python3 "${SCRIPT_DIR}/worker-wheels.py" fetch
+python3 "${SCRIPT_DIR}/application-payload.py" "${PACKAGE_TMP}/VirtualGlove" --precompiled-matrix --worker-wheels
 
 cd "${PACKAGE_TMP}"
 zip -qr "${PACKAGE_TMP}/verified-package.zip" VirtualGlove

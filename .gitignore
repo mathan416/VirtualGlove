@@ -27,3 +27,6 @@ src/virtualglove/_build_info.json
 
 # Local reference image, not part of the project
 /Codex Image Sep 5, 2026, 01_52_57 PM.png
+
+# Worker wheels downloaded by scripts/worker-wheels.py fetch for the App Lab package.
+/output/worker-wheels/

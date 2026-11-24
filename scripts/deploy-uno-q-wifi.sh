@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-11-24 - Deploy the locked vision-worker wheels like a release.
 #   2026-09-16 - Skip privileged maintenance safely when sudo needs an unseen password and print the follow-up commands.
 #   2026-09-11 - Adopted the virtualglove App Lab directory with one-time local data migration.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
@@ -128,8 +129,9 @@ fi
 readonly PRIVILEGED_READY
 
 echo "Uploading VirtualGlove over Wi-Fi..."
+python3 "${SCRIPT_DIR}/worker-wheels.py" fetch
 python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" \
-  --include-engineering --precompiled-matrix
+  --include-engineering --precompiled-matrix --worker-wheels
 COPYFILE_DISABLE=1 tar -C "${LOCAL_METADATA_DIR}" -czf "${LOCAL_ARCHIVE}" .
 scp "${SSH_OPTIONS[@]}" "${LOCAL_ARCHIVE}" "${UNO_TARGET}:${REMOTE_ARCHIVE}"
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \

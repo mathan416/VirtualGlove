@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-11-24 - Require exactly the locked vision-worker wheels with their checksums.
 #   2026-09-11 - Require verified precompiled Matrix firmware and exclude sketch sources.
 #   2026-09-11 - Required the Engineering Toolkit PDF exposed by Controller Help.
 #   2026-09-09 - Required validated MediaPipe 0.10.35 as the sole runtime wheel.
@@ -454,17 +455,38 @@ def archive_errors(path: Path) -> list[str]:
             license_path = "VirtualGlove/licenses/Apache-2.0.txt"
             if license_path in names and hashlib.sha256(archive.read(license_path)).hexdigest() != "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30":
                 errors.append("Apache 2.0 license text is missing or altered")
+            mediapipe_wheel = "mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl"
+            wheel_root = "VirtualGlove/python/worker-wheels/"
             wheels = {
                 PurePosixPath(name).name for name in names
-                if "/python/worker-wheels/mediapipe-" in name and name.endswith(".whl")
+                if name.startswith(wheel_root) and name.endswith(".whl")
             }
-            required_wheels = {
-                "mediapipe-0.10.35+powerglove.cpu1-cp312-cp312-linux_aarch64.whl"
-            }
-            if wheels != required_wheels:
-                errors.append(
-                    "expected validated UNO Q MediaPipe 0.10.35 wheel only"
-                )
+            if not {name for name in wheels if name.startswith("mediapipe-")} == {mediapipe_wheel}:
+                errors.append("expected validated UNO Q MediaPipe 0.10.35 wheel only")
+            # Every other worker wheel must be exactly the locked set, so the
+            # worker starts without PyPI and runs only reviewed packages.
+            lock_name = "VirtualGlove/python/worker-requirements.txt"
+            locked = {}
+            if lock_name in names:
+                wheel = None
+                for line in archive.read(lock_name).decode().splitlines():
+                    if line.startswith("# wheel: "):
+                        wheel = line[len("# wheel: "):].strip()
+                    elif line and not line.startswith("#"):
+                        digest = line.rsplit("--hash=sha256:", 1)[-1].strip()
+                        if wheel:
+                            locked[wheel] = digest
+                        wheel = None
+            if not locked:
+                errors.append("worker wheel lock is missing or empty")
+            others = wheels - {mediapipe_wheel}
+            for wheel in sorted(set(locked) - others):
+                errors.append("locked worker wheel missing from package: " + wheel)
+            for wheel in sorted(others - set(locked)):
+                errors.append("unlocked worker wheel in package: " + wheel)
+            for wheel in sorted(set(locked) & others):
+                if hashlib.sha256(archive.read(wheel_root + wheel)).hexdigest() != locked[wheel]:
+                    errors.append("worker wheel checksum mismatch: " + wheel)
     except (BadZipFile, FileNotFoundError) as exc:
         errors.append(str(exc))
     return errors

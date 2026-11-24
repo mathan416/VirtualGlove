@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Added the locked vision-worker wheels for offline worker starts.
 #   2026-09-11 - Included the transparent Controller-web logo.
 #   2026-09-11 - Added release staging for precompiled Matrix firmware.
 #   2026-09-09 - Excluded research tools from ordinary packages while retaining a development overlay.
@@ -55,7 +56,7 @@ def selected_files(root, include_engineering=False):
     return sorted(selected)
 
 
-def stage(root, destination, include_engineering=False, precompiled_matrix=False):
+def stage(root, destination, include_engineering=False, precompiled_matrix=False, worker_wheels=False):
     """Copy the selected files and stamp identity without exporting Git metadata."""
     subprocess.run(["python3", str(root / "scripts/stamp-firmware-version.py"), "--check"], check=True)
     names = selected_files(root, include_engineering=include_engineering)
@@ -79,6 +80,18 @@ def stage(root, destination, include_engineering=False, precompiled_matrix=False
         target.mkdir(parents=True, exist_ok=True)
         for name in sorted(required):
             shutil.copy2(str(firmware / name), str(target / name))
+    if worker_wheels:
+        # Downloaded by scripts/worker-wheels.py fetch; checked against the lock
+        # so the package carries exactly the reviewed wheels.
+        wheels = runpy.run_path(str(root / "scripts/worker-wheels.py"))
+        folder = root / "output/worker-wheels"
+        problems = wheels["problems"](folder, root / "python/worker-requirements.txt")
+        if problems:
+            raise ValueError("Run scripts/worker-wheels.py fetch first: " + "; ".join(problems))
+        target = destination / "python/worker-wheels"
+        target.mkdir(parents=True, exist_ok=True)
+        for wheel in sorted(folder.glob("*.whl")):
+            shutil.copy2(str(wheel), str(target / wheel.name))
     subprocess.run(["python3", str(root / "scripts/stamp-build-version.py"),
                     str(destination / "src/virtualglove/_build_info.json")], check=True)
 
@@ -91,11 +104,13 @@ def main():
                         help="retain repository research and maintainer tools for a development deployment")
     parser.add_argument("--precompiled-matrix", action="store_true",
                         help="include verified Matrix firmware alongside sketch sources")
+    parser.add_argument("--worker-wheels", action="store_true",
+                        help="include the locked vision-worker wheels from output/worker-wheels")
     args = parser.parse_args()
     if args.destination.exists() and any(args.destination.iterdir()):
         parser.error("Use an empty staging directory")
     stage(ROOT, args.destination, include_engineering=args.include_engineering,
-          precompiled_matrix=args.precompiled_matrix)
+          precompiled_matrix=args.precompiled_matrix, worker_wheels=args.worker_wheels)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ scanned game artwork, or publisher assets.
 | --- | --- | --- |
 | MediaPipe 0.10.35 | Hand landmark recognition on the Controller | Modified ARM64/Python 3.12 wheel included; Apache License 2.0 |
 | Google Hand Landmarker | Model used by MediaPipe | Unmodified model included; Apache License 2.0 |
+| MediaPipe's Python dependencies (NumPy, OpenCV contrib headless, Matplotlib, Pillow and 16 more) | The Controller's recognition worker, started without PyPI | 20 unmodified ARM64/Python 3.12 wheels included; licenses listed under [Vision worker wheels](#vision-worker-wheels) |
 | Arduino Zephyr loader and flash configuration | Loads Matrix firmware on Arduino UNO Q | Two unmodified platform files included; Apache License 2.0 |
 | Modified Nestopia libretro core | Native Super Glove Ball input | GPLv2 binary and exact corresponding source included for RetroPie, Recalbox, Batocera, and LaunchBox |
 | NumPy and headless OpenCV | Numerical and camera support | Installed as Python dependencies; BSD-3-Clause and Apache License 2.0 respectively |
@@ -94,6 +95,45 @@ into private persistent storage. A damaged cache is replaced from the bundle;
 a damaged bundle is rejected. The pinned official download is used only when
 no bundled model is available. **Gestures off** does not open or install the
 model.
+
+### Vision worker wheels
+
+The UNO Q installation ZIP also carries every wheel MediaPipe needs, so the
+Controller's recognition worker starts without PyPI after an update, a uv
+upgrade in App Lab, or a cleared package cache. The wheels are unmodified
+PyPI releases for CPython 3.12 on Linux ARM64.
+`python/worker-requirements.txt` names each wheel with its SHA-256, and the
+package build refuses any other set.
+
+| Package | Version | Upstream license |
+| --- | --- | --- |
+| absl-py | 2.5.1 | Apache License 2.0 |
+| attrs | 26.1.0 | MIT |
+| cffi | 2.1.1 | MIT-0 |
+| contourpy | 1.3.3 | BSD-3-Clause |
+| cycler | 0.12.1 | BSD-3-Clause |
+| flatbuffers | 25.12.19 | Apache License 2.0 |
+| fonttools | 4.68.0 | MIT |
+| kiwisolver | 1.5.1 | BSD-3-Clause |
+| Matplotlib | 3.11.2 | Matplotlib License (PSF-based) |
+| NumPy | 1.26.4 | BSD-3-Clause |
+| OpenCV contrib headless | 4.11.0.86 | Apache License 2.0, plus the bundled libraries below |
+| packaging | 26.4 | Apache License 2.0 or BSD-2-Clause |
+| Pillow | 13.0.0 | MIT-CMU |
+| protobuf | 4.25.9 | BSD-3-Clause |
+| pycparser | 3.12 | BSD-3-Clause |
+| pyparsing | 3.3.3 | MIT |
+| python-dateutil | 4.0.0 | BSD-3-Clause and Apache License 2.0 |
+| sentencepiece | 0.2.3 | Apache License 2.0 |
+| sounddevice | 0.5.6 | MIT |
+| tzdata | 2026.6 | Apache License 2.0 |
+
+Each wheel keeps its upstream license files in its `.dist-info` folder. The
+flatbuffers and sentencepiece wheels carry none, and their Apache License 2.0
+text is at `licenses/Apache-2.0.txt`. The OpenCV wheel bundles FFmpeg
+(LGPL-2.1 or later), OpenSSL, libvpx, libpng, OpenBLAS and libgfortran as
+shared libraries, as published by the opencv-python project. Their notices are
+in `cv2/LICENSE-3RD-PARTY.txt` inside the wheel.
 
 ### Python runtime dependencies
 
@@ -333,6 +373,11 @@ Before publishing a third-party update:
    license requires it.
 5. Run package, installer, runtime, security, and hardware acceptance checks.
 6. Update this document and rebuild the published Third-party Notices PDF.
+
+For a vision worker wheel update, run `python3 scripts/worker-wheels.py lock`
+(with `--upgrade` to allow newer versions), then `fetch`. Update the table
+above from each wheel's metadata, and test a cold worker start without network
+access on an UNO Q.
 
 For a MediaPipe wheel or model update, also test offline installation, checksum
 failure, camera start, recognition, tracking loss, and thermal behaviour. For a

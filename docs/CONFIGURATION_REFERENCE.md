@@ -1472,9 +1472,10 @@ several complete loops is the preferred review artifact for later refinements.
 | `app.yaml` | Arduino App Lab application metadata and exposed ports |
 | `sketch/sketch.yaml` | VirtualGlove Controller sketch platform and pinned Arduino library dependencies |
 | `pyproject.toml` | Python package metadata, supported interpreter range, and optional dependencies |
-| `python/worker-wheels/` | Sole validated MediaPipe 0.10.35 ARM64 runtime supplied by the App Lab installation ZIP |
+| `python/worker-wheels/` | Sole validated MediaPipe 0.10.35 ARM64 runtime, plus the locked wheels it needs, supplied by the App Lab installation ZIP |
+| `python/worker-requirements.txt` | Lock of the worker's wheels with SHA-256 checksums; when every wheel is present the worker starts without PyPI |
 | `data/models/hand_landmarker.task` | Checksum-verified cached model, installed from the bundle when vision is first activated |
-| `data/uv-cache/` and `data/uv-python/` | Generated private worker runtime and package cache |
+| `data/uv-cache/` and `data/uv-python/` | Generated private worker runtime and package cache; the cache is pruned each time the Controller starts |
 | `data/tls/controller-ca-cert.pem` | Public per-Controller authority offered by secure Setup for optional local trust |
 | `data/tls/controller-ca-key.pem` | Private authority key; mode `0600`, never downloadable, and never copyable between Controllers |
 | `data/tls/pairing-cert.pem` and `pairing-key.pem` | Automatically renewed HTTPS website leaf and its private key |
