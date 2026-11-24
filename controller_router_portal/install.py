@@ -322,6 +322,29 @@ def retire_early_start() -> None:
 
 
 def install() -> str:
+    """Install or update the Router, refusing to overlap another install.
+
+    R.O.B. Vision and VirtualGlove both run this installer, and each swaps the
+    portal folder and its .previous copy; two at once can interleave those swaps.
+    """
+    import fcntl
+    if os.geteuid() != 1000:
+        raise RuntimeError("Install the UNO Q launcher as the arduino user.")
+    DEST.parent.mkdir(parents=True, exist_ok=True)
+    lock = os.open(DEST.parent / ".controller-router-install.lock",
+                   os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError("Another Controller Router installation is already running on this UNO Q; "
+                               "let it finish, then rerun this command if needed.") from None
+        return _install()
+    finally:
+        os.close(lock)
+
+
+def _install() -> str:
     if os.geteuid() != 1000:
         raise RuntimeError("Install the UNO Q launcher as the arduino user.")
     newer = next((root for root in (DEST, LEGACY)

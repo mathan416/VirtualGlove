@@ -6,7 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
-#   2026-11-24 - Rotated UNO Q install backups, now kept on /home, to the newest one.
+#   2026-11-24 - Kept UNO Q install backups on /home (newest only); refused overlapping installs.
 #   2026-09-29 - Recover console software, configuration and service activation across failed upgrades.
 #   2026-09-19 - Restart Controller Router safely across RetroPie upgrades.
 #   2026-09-11 - Made virtualglove the canonical App Lab directory and added recoverable legacy migration.
@@ -956,10 +956,22 @@ class ConsoleRecovery:
 @contextmanager
 def console_install_transaction(machine, setup):
     """Hold an exclusive installer lock until validation succeeds or recovery finishes."""
-    if machine == 'uno-q':
-        yield
-        return
     import fcntl
+    if machine == 'uno-q':
+        # No console snapshot here, but two UNO Q installs must never overlap:
+        # each stops the runtime and swaps the shared Controller Router files.
+        setup.BACKUPS.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(setup.BACKUPS.parent / '.uno-q-install.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        try:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise ValueError('Another VirtualGlove installation is already running on this UNO Q; '
+                                 'let it finish, then rerun this command if needed') from None
+            yield
+        finally:
+            os.close(fd)
+        return
     lock = setup.BACKUPS.parent / '.console-upgrade.lock'
     fd = os.open(lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     recovery = ConsoleRecovery(machine, setup)

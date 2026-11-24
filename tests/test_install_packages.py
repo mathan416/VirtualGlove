@@ -90,6 +90,17 @@ class PackageContentTests(unittest.TestCase):
             backups = runpy.run_path(str(ROOT / 'scripts/setup-machine.py'))['BACKUPS']
         self.assertEqual(backups.parent, Path('/home/arduino/virtualglove-install-backups'))
 
+    def test_second_uno_q_install_is_refused_while_one_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            setup = SimpleNamespace(BACKUPS=Path(directory) / 'install-backups/20261124-200000-1')
+            with installer.console_install_transaction('uno-q', setup):
+                with self.assertRaisesRegex(ValueError, 'already running on this UNO Q'):
+                    with installer.console_install_transaction('uno-q', setup):
+                        self.fail('second install must not start')
+            # Released afterwards: the next install proceeds.
+            with installer.console_install_transaction('uno-q', setup):
+                pass
+
     def test_direct_setup_run_keeps_only_its_newest_backup(self):
         module = runpy.run_path(str(ROOT / 'scripts/setup-machine.py'))
         keep = module['keep_newest_backup']

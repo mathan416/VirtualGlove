@@ -21,6 +21,7 @@ Development version 0.8.3, bundling Controller Router 0.4.1.
 - The Controller Router page warns when the UNO Q's system disk has less than 1 GB free, and its Help explains how to free space.
 - UNO Q installs and upgrades download and unpack under `/home/arduino` instead of `/tmp`, which is a RAM disk on the UNO Q. Release-install backups move from the small system disk to `/home/arduino/virtualglove-install-backups`.
 - Installs, upgrades and Wi-Fi deployments keep only the newest routine backup instead of up to five or twelve. Named backups, and any marked `.virtualglove-keep`, are still never removed.
+- A second UNO Q installation started while one is running now stops straight away with a message, instead of running alongside it. Overlapping runs could swap the shared Controller Router files out of order.
 
 ## [0.8.2] - 2026-11-18
 
