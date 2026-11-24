@@ -238,7 +238,7 @@ Setup links to Router’s shared HTTPS Pair console page on port 8444. Enter the
 The Controller authority is stable across ordinary upgrades and website-leaf
 renewals. The leaf is renewed before expiry and regenerated if the Controller
 hostname changes. The release installer offers a Controller name only on first
-installation, recommends `virtualglove`, and preserves that choice on every
+installation, suggests the name given in Arduino App Lab, and preserves that choice on every
 upgrade. Because a renamed leaf is signed by the same authority, an intentional
 later hostname change does not replace the trusted authority—but saved links
 and the RetroPie destination must use the new name. Trust must be installed once

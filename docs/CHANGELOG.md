@@ -17,6 +17,11 @@ result before naming the underlying mechanism.
 ### Fixed
 
 - A RetroPie console installation no longer fails and restores the previous version when the UNO Q is switched off or halted. If the configured controller does not answer, the installer finishes and lists an action to turn the controller on and test a game. A missing or unreadable controller address still stops the installation.
+- Updated 2026-11-24: installing on the UNO Q no longer stops when flashing the Controller Router Matrix sketch to the board fails once ("Upload port detection failed"). The installer now tries the flash up to three times. Upgrades keep App Lab's sketch build folder, so a changed Matrix sketch recompiles only what changed, and a rerun after a failed first install reuses that attempt's build.
+
+### Changed
+
+- Updated 2026-11-24: on a first installation, the VirtualGlove Controller installer suggests the name the UNO Q was given in Arduino App Lab, so pressing Enter keeps its current address, such as `arduiain.local`. The prompt shows real example addresses instead of `NAME.local`. If the current name can't be used, it suggests `virtualglove`.
 
 ## [0.8.1] - 2026-11-18
 
