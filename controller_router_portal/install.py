@@ -172,6 +172,41 @@ def version(root: Path) -> tuple[int, ...]:
 
 
 QUIET_UPDATE_FILES = (Path("install.py"), Path("host/products.py"))
+# Files the Router package no longer ships, and local backup copies such as
+# install.py.before-preflight-20260927. A product's copy of this package can
+# still hold them from older installs, because product installers keep files
+# they never managed. Never install them, never let them force a full
+# install, and remove them from the installed portal.
+RETIRED = (Path("app.yaml"), Path("bricks"))
+LOCAL_BACKUP = re.compile(r"\.before-[\w.-]+$")
+
+
+def packaged(relative: Path) -> bool:
+    """Report whether a path inside the portal is part of the Router package."""
+    if any(relative == retired or retired in relative.parents for retired in RETIRED):
+        return False
+    return LOCAL_BACKUP.search(relative.name) is None
+
+
+def ignore_unpackaged(directory: str, names: list[str]) -> set[str]:
+    """copytree filter: build caches, macOS files and anything not packaged."""
+    root = Path(directory)
+    ignored = set(shutil.ignore_patterns("__pycache__", "*.pyc", ".cache", "._*", ".DS_Store")(directory, names))
+    return ignored | {name for name in names
+                      if not packaged((root / name).relative_to(SOURCE))}
+
+
+def remove_unpackaged(installed: Path) -> None:
+    """Delete retired files and local backup copies left in the installed portal."""
+    for retired in RETIRED:
+        path = installed / retired
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        elif path.exists() or path.is_symlink():
+            path.unlink()
+    for path in list(installed.rglob("*")):
+        if LOCAL_BACKUP.search(path.name) and (path.is_file() or path.is_symlink()):
+            path.unlink()
 
 
 def matching_static_payload(source: Path, installed: Path, *, exclude_quiet_updates=False) -> bool:
@@ -179,6 +214,8 @@ def matching_static_payload(source: Path, installed: Path, *, exclude_quiet_upda
     for file in source.rglob("*"):
         relative = file.relative_to(source)
         if exclude_quiet_updates and relative in QUIET_UPDATE_FILES:
+            continue
+        if not packaged(relative):
             continue
         if (set(relative.parts) & {".cache", "__pycache__"}
                 or file.name.endswith(".pyc") or file.name.startswith("._")
@@ -380,6 +417,7 @@ def _install() -> str:
                     replace_static_file(installed_file, source_file.read_bytes(),
                                         stat.S_IMODE(source_file.stat().st_mode))
                     changed.append((installed_file, backup))
+                remove_unpackaged(DEST)
                 command("python3", str(DEST / "host/products.py"), "start-all")
                 command("systemctl", "--user", "enable", "--now", SERVICE.name)
                 command("systemctl", "--user", "enable", "--now", PRODUCT_SERVICE.name)
@@ -430,8 +468,7 @@ def _install() -> str:
     had_portal = DEST.exists()
     with tempfile.TemporaryDirectory(prefix=".controller-router-portal-", dir=DEST.parent) as directory:
         staged = Path(directory) / DEST.name
-        shutil.copytree(SOURCE, staged, ignore=shutil.ignore_patterns(
-            "__pycache__", "*.pyc", ".cache", "._*", ".DS_Store"))
+        shutil.copytree(SOURCE, staged, ignore=ignore_unpackaged)
         portal_backup = DEST.with_name(DEST.name + ".previous")
         if portal_backup.exists():
             shutil.rmtree(portal_backup)
