@@ -12,6 +12,10 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+### Changed
+
+- On a first installation, the VirtualGlove Controller installer now suggests the name the UNO Q was given in Arduino App Lab, so pressing Enter keeps its current address, such as `arduiain.local`. The prompt shows real example addresses instead of `NAME.local`. If the current name can't be used, it suggests `virtualglove`.
+
 ## [0.8.2] - 2026-11-18
 
 ### Fixed

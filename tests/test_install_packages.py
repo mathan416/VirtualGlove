@@ -89,11 +89,25 @@ class PackageContentTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(Exception):
                 installer.valid_controller_hostname(value)
 
-    def test_fresh_interactive_install_suggests_and_confirms_virtualglove(self):
+    def test_fresh_interactive_install_defaults_to_the_app_lab_name(self):
         with patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+                patch.object(installer.socket, 'gethostname', return_value='ArduIain.local'), \
+                patch('sys.stdout', new_callable=io.StringIO) as output, \
+                patch('builtins.input', side_effect=['', '']) as prompt:
+            self.assertEqual(installer.select_controller_hostname(None, False), 'arduiain')
+        self.assertEqual(prompt.call_count, 2)
+        self.assertEqual(prompt.call_args_list[0].args[0], 'Controller name [arduiain]: ')
+        shown = output.getvalue()
+        self.assertIn('Press Enter to keep arduiain, so it is reached at arduiain.local', shown)
+        self.assertNotIn('NAME.local', shown)
+
+    def test_fresh_install_falls_back_to_virtualglove_for_an_unusable_name(self):
+        with patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+                patch.object(installer.socket, 'gethostname', return_value='localhost'), \
+                patch('sys.stdout', new_callable=io.StringIO), \
                 patch('builtins.input', side_effect=['', '']) as prompt:
             self.assertEqual(installer.select_controller_hostname(None, False), 'virtualglove')
-        self.assertEqual(prompt.call_count, 2)
+        self.assertEqual(prompt.call_args_list[0].args[0], 'Controller name [virtualglove]: ')
 
     def test_existing_install_is_never_renamed(self):
         with patch('builtins.input') as prompt:

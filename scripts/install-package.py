@@ -402,10 +402,15 @@ def select_controller_hostname(requested, existing_install):
     if not sys.stdin.isatty():
         print("ACTION  Non-interactive first install: preserving Controller name " + current + ".")
         return None
+    try:
+        default = valid_controller_hostname(current)  # the name given in App Lab setup
+    except argparse.ArgumentTypeError:
+        default = "virtualglove"
     print("\nName this VirtualGlove Controller.")
-    print("Its local address will be NAME.local. Press Enter for the recommended name.")
-    chosen = valid_controller_hostname(input("Controller name [virtualglove]: ").strip()
-                                       or "virtualglove")
+    print("Press Enter to keep " + default + ", so it is reached at " + default + ".local,")
+    print("or type another name, such as glove-den for glove-den.local.")
+    chosen = valid_controller_hostname(input("Controller name [" + default + "]: ").strip()
+                                       or default)
     answer = input("Use " + chosen + ".local? [Y/n] ").strip().lower()
     if answer not in ("", "y", "yes"):
         raise ValueError("No changes made; Controller name was not confirmed")

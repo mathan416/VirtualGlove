@@ -95,8 +95,8 @@ camera-recovery and shutdown helpers used by the Controller.
 
 ### Questions the installer asks
 
-On a first installation, the installer shows the UNO Q's current name and
-suggests **virtualglove**. Press Enter to use `virtualglove.local`, or enter a
+On a first installation, the installer suggests the name you gave the UNO Q in
+Arduino App Lab. Press Enter to keep it (for example `arduiain.local`), or enter a
 different short name such as `games-room`. Confirm the displayed address before
 continuing. Updates keep the established name and do not ask again.
 
@@ -112,9 +112,9 @@ creates.
 
 ### Controller checkpoint
 
-Open the Dashboard address printed by the installer, normally:
+Open the Dashboard address printed by the installer, for example:
 
-`http://virtualglove.local:8100/dashboard`
+`http://arduiain.local:8100/dashboard`
 
 The Dashboard should load. With gestures off, a closed camera is normal. Open
 **Play** or **Glove Academy** to confirm that the camera can show your whole
@@ -131,7 +131,7 @@ unstable, use **Find the best camera settings** in Setup. The
 
 Choose only the section for your game system. Close RetroArch first. On a new
 installation, the console installer asks for the Controller name or IP address;
-enter the name selected above, normally `virtualglove.local`.
+enter the name selected above, such as `arduiain.local`.
 
 Each section uses the same latest-release installer as future updates. The
 installer preserves ROMs, saves, pairing, game registrations, and unrelated
