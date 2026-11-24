@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Allowed keeping only the newest backup, now the default.
 #   2026-09-11 - Deferred annotations for Python 3.7 runtime compatibility.
 #   2026-09-10 - Added conservative post-deployment payload-backup rotation.
 # Full history: docs/CHANGELOG.md and Git history.
@@ -36,10 +37,10 @@ def _routine_backups(root: Path) -> list[Path]:
     return [path for _key, path in sorted(found, reverse=True)]
 
 
-def rotate(root: Path, keep: int = 12, *, dry_run: bool = False) -> list[Path]:
+def rotate(root: Path, keep: int = 1, *, dry_run: bool = False) -> list[Path]:
     """Remove old routine backups only; return the selected paths."""
-    if not 2 <= keep <= 100:
-        raise ValueError("keep must be between 2 and 100")
+    if not 1 <= keep <= 100:
+        raise ValueError("keep must be between 1 and 100")
     root = root.absolute()
     if root == Path(root.anchor) or root == Path.home() or root.is_symlink():
         raise ValueError("refusing unsafe backup root")
@@ -60,7 +61,7 @@ def main() -> int:
     """Parse rotation policy, remove selected routine backups, and report it."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
-    parser.add_argument("--keep", type=int, default=12)
+    parser.add_argument("--keep", type=int, default=1)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     removed = rotate(args.root, args.keep, dry_run=args.dry_run)

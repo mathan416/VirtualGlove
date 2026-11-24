@@ -7,6 +7,8 @@
 # SPDX-License-Identifier: MIT
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
+#   2026-11-24 - Kept UNO Q install backups on /home instead of the small system disk.
+#   2026-11-24 - Kept only the newest routine backup after a successful run.
 #   2026-11-18 - Reported an unanswered UNO Q as an action instead of a failed install.
 #   2026-09-19 - Kept RetroPie Controller Router available before receiver startup.
 #   2026-09-11 - Adopted the virtualglove App Lab directory and conditional legacy repair.
@@ -49,6 +51,11 @@ if Path("/recalbox/recalbox.version").is_file():
                datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
 elif Path("/usr/share/batocera/batocera.version").is_file():
     BACKUPS = (Path("/userdata/system/virtualglove-backups") /
+               datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+elif Path(UNOQ_APP).parent.is_dir():
+    # The UNO Q system disk is small and holds App Lab's images; keep root-only
+    # install backups on /home, apart from the arduino-owned Wi-Fi deploy backups.
+    BACKUPS = (Path(UNOQ_APP).parents[1] / "virtualglove-install-backups" /
                datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
 
 
@@ -1309,10 +1316,12 @@ def main():
             return 0
         if args.wifi_status_only:
             install_wifi_status()
+            keep_newest_backup()
             print("Wi-Fi status sampler installed; backups: " + str(BACKUPS))
             return 0
         if args.runtime_names_only:
             install_unoq_runtime_names()
+            keep_newest_backup()
             print("VirtualGlove host helpers installed; backups: " + str(BACKUPS))
             return 0
         if not args.check:
@@ -1339,6 +1348,7 @@ def main():
                 {"retropie": install_retropie, "uno-q": install_unoq}[args.machine](args.peer)
                 if args.machine == "uno-q":
                     wait_unoq()
+            keep_newest_backup()
             print("Managed-file backups, when changed: " + str(BACKUPS))
         report = Report()
         {"retropie": check_retropie, "recalbox": check_recalbox,
@@ -1348,6 +1358,20 @@ def main():
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         print("FAIL  Setup stopped: " + str(error), file=sys.stderr)
         return 1
+
+
+def keep_newest_backup():
+    """After a successful run, keep only the newest routine backup beside this one.
+
+    Named backups and those marked .virtualglove-keep are never removed.
+    """
+    if not BACKUPS.is_dir():
+        return
+    result = subprocess.run([sys.executable, str(SOURCE / "scripts/rotate-deployment-backups.py"),
+                             str(BACKUPS.parent), "--keep", "1"], check=False,
+                            stdout=subprocess.DEVNULL)
+    if result.returncode:
+        print("ACTION  Older backups in " + str(BACKUPS.parent) + " could not all be removed.")
 
 
 if __name__ == "__main__":

@@ -2761,11 +2761,15 @@ Glove Ball ROMs are selected automatically only when no explicit per-ROM core is
 present. Selecting FCEUmm for the same ROM is the explicit rollback.
 
 Updates replace managed files and save replaced versions under
-`/var/backups/virtualglove/TIMESTAMP/` on Debian hosts,
+`/var/backups/virtualglove/TIMESTAMP/` on Debian consoles,
+`/home/arduino/virtualglove-install-backups/TIMESTAMP/` on the UNO Q (whose
+system disk is small),
 `/recalbox/share/system/virtualglove-backups/TIMESTAMP/` on Recalbox, or
 `/userdata/system/virtualglove-backups/TIMESTAMP/` on Batocera, with a
 `RESTORE.txt`. Backups created
-by the package installer are root-only. Resolve failures before continuing;
+by the package installer are root-only. After a successful install or upgrade,
+only the newest routine backup is kept; named backups, and folders containing a
+`.virtualglove-keep` file, are never removed. Resolve failures before continuing;
 the installer stops rather than claiming success. Rerunning is supported.
 A failed firmware update may require rerunning the previous release through
 App Lab's normal sketch upload; restoring Linux files alone does not restore

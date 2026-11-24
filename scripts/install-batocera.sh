@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Download the UNO Q package to /home/arduino; its /tmp is a RAM disk.
 #   2026-09-11 - Added first-install Controller naming and an unattended hostname option.
 #   2026-09-04 - Added versioned multi-machine installation.
 # Full history: docs/CHANGELOG.md and Git history.
@@ -57,7 +58,11 @@ try:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", tag):
         raise ValueError("Use a published release tag, not a branch, URL, or path")
     base = "https://github.com/mathan416/VirtualGlove/releases/download/" + tag + "/"
-    temporary_root = ({"recalbox": "/recalbox/share/system",
+    # On the UNO Q, /tmp is a RAM disk and the system disk is small; download
+    # the package to /home, where install-package.py also unpacks it.
+    arduino_home = os.path.expanduser("~arduino")
+    temporary_root = ({"uno-q": arduino_home if os.path.isdir(arduino_home) else None,
+                       "recalbox": "/recalbox/share/system",
                        "batocera": "/userdata/system"}.get("batocera"))
     with tempfile.TemporaryDirectory(prefix="virtualglove-download-",
                                      dir=temporary_root) as temporary:

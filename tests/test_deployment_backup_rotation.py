@@ -75,9 +75,19 @@ class DeploymentBackupRotationTests(unittest.TestCase):
     def test_rejects_unsafe_roots_and_retention_values(self):
         with self.assertRaises(ValueError):
             self.module["rotate"](Path("/"), keep=12)
-        for value in (0, 1, 101):
+        for value in (0, 101):
             with self.assertRaises(ValueError):
                 self.module["rotate"](self.root, keep=value)
+
+    def test_default_keeps_only_the_newest_routine_backup(self):
+        for name in ("payload-20261124-182156-1", "20261124-190219-2", "payload-20261124-200040-3",
+                     "shared-pairing-20260929"):
+            (self.root / name).mkdir()
+        removed = self.module["rotate"](self.root)
+        self.assertEqual(sorted(path.name for path in removed),
+                         ["20261124-190219-2", "payload-20261124-182156-1"])
+        self.assertEqual(sorted(path.name for path in self.root.iterdir()),
+                         ["payload-20261124-200040-3", "shared-pairing-20260929"])
 
 
 if __name__ == "__main__":

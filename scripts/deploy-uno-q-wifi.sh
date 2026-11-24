@@ -8,6 +8,8 @@
 # Full history: docs/CHANGELOG.md and Git history.
 # Change log:
 #   2026-11-24 - Deploy the locked vision-worker wheels like a release.
+#   2026-11-24 - Stage the upload under the UNO Q home; its /tmp is a RAM disk.
+#   2026-11-24 - Keep only the newest routine payload backup by default.
 #   2026-09-16 - Skip privileged maintenance safely when sudo needs an unseen password and print the follow-up commands.
 #   2026-09-11 - Adopted the virtualglove App Lab directory with one-time local data migration.
 #   2026-09-11 - Migrated App Lab containers to the virtualglove Compose project.
@@ -50,7 +52,7 @@ Environment overrides:
   UNO_Q_SSH_TARGET  SSH destination
   UNO_Q_SSH_IDENTITY  Optional private-key path for this UNO Q
   UNO_Q_APP_DIR     Remote VirtualGlove application directory
-  VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP  Routine payload backups to retain (default: 12)
+  VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP  Routine payload backups to retain (default: 1, the newest)
 USAGE
   exit 0
 fi
@@ -65,16 +67,17 @@ if [[ $# -eq 1 ]]; then
 fi
 
 readonly UNO_TARGET REMOTE_APP_DIR
-DEPLOY_BACKUPS_KEEP="${VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP:-12}"
+DEPLOY_BACKUPS_KEEP="${VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP:-1}"
 if [[ ! "${DEPLOY_BACKUPS_KEEP}" =~ ^[0-9]+$ ]] \
-    || (( DEPLOY_BACKUPS_KEEP < 2 || DEPLOY_BACKUPS_KEEP > 100 )); then
-  echo "error: VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP must be an integer from 2 to 100" >&2
+    || (( DEPLOY_BACKUPS_KEEP < 1 || DEPLOY_BACKUPS_KEEP > 100 )); then
+  echo "error: VIRTUALGLOVE_DEPLOY_BACKUPS_KEEP must be an integer from 1 to 100" >&2
   exit 2
 fi
 readonly DEPLOY_BACKUPS_KEEP
 readonly UNO_HOST="${UNO_TARGET#*@}"
 readonly REMOTE_ROUTED_COMPOSE="/home/arduino/.local/share/controller-router-portal/runtime/virtualglove.json"
-readonly REMOTE_ARCHIVE="/tmp/virtualglove-deploy.tar.gz"
+# Relative to the arduino home on /home: the UNO Q's /tmp is a RAM disk.
+readonly REMOTE_ARCHIVE=".virtualglove-deploy.tar.gz"
 readonly LOCAL_ARCHIVE="$(mktemp)"
 readonly LOCAL_METADATA_DIR="$(mktemp -d)"
 SSH_OPTIONS=(
@@ -135,7 +138,7 @@ python3 "${SCRIPT_DIR}/application-payload.py" "${LOCAL_METADATA_DIR}" \
 COPYFILE_DISABLE=1 tar -C "${LOCAL_METADATA_DIR}" -czf "${LOCAL_ARCHIVE}" .
 scp "${SSH_OPTIONS[@]}" "${LOCAL_ARCHIVE}" "${UNO_TARGET}:${REMOTE_ARCHIVE}"
 ssh -tt "${SSH_OPTIONS[@]}" "${UNO_TARGET}" \
-  "set -eu; stage=\$(mktemp -d /tmp/virtualglove-payload.XXXXXX); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xzf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
+  "set -eu; stage=\$(mktemp -d \"\$HOME/.virtualglove-payload.XXXXXX\"); trap 'rm -rf \"\$stage\"' EXIT; tar --warning=no-unknown-keyword -C \"\$stage\" -xzf '${REMOTE_ARCHIVE}'; python3 \"\$stage/scripts/installation-manifest.py\" '${REMOTE_APP_DIR}' --source \"\$stage\" --backup \"\$HOME/virtualglove-backups/payload-\$(date +%Y%m%d-%H%M%S)-\$\$\"; python3 \"\$stage/scripts/rotate-deployment-backups.py\" \"\$HOME/virtualglove-backups\" --keep '${DEPLOY_BACKUPS_KEEP}' || echo 'warning: routine deployment-backup rotation did not complete' >&2; rm -f '${REMOTE_ARCHIVE}'"
 
 if [[ "${PRIVILEGED_READY}" == true ]]; then
   echo "Updating VirtualGlove host-service names..."

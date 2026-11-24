@@ -67,7 +67,46 @@ class PackageContentTests(unittest.TestCase):
                 images = set(re.findall(r'^\s*image:\s*(\S+)\s*$', compose.read_text(), re.M))
                 self.assertEqual(images, {image})
 
-    def test_completed_console_upgrade_rotates_only_routine_backups(self):
+    def test_uno_q_installs_stage_and_back_up_on_home_not_tmp_or_root(self):
+        # The UNO Q's /tmp is a RAM disk and its system disk holds App Lab images.
+        download = (ROOT / 'scripts/install-uno-q.sh').read_text()
+        self.assertIn('arduino_home = os.path.expanduser("~arduino")', download)
+        self.assertIn('{"uno-q": arduino_home if os.path.isdir(arduino_home) else None,', download)
+        self.assertIn('.get("uno-q"))', download)
+        deploy = (ROOT / 'scripts/deploy-uno-q-wifi.sh').read_text()
+        self.assertIn('readonly REMOTE_ARCHIVE=".virtualglove-deploy.tar.gz"', deploy)
+        self.assertIn('mktemp -d \\"\\$HOME/.virtualglove-payload.XXXXXX\\"', deploy)
+        self.assertNotIn('/tmp/virtualglove', deploy)
+        import pathlib
+        real_is_file, real_is_dir = pathlib.Path.is_file, pathlib.Path.is_dir
+        def uno_q_is_file(path):
+            if str(path) in ('/recalbox/recalbox.version', '/usr/share/batocera/batocera.version'):
+                return False
+            return real_is_file(path)
+        def uno_q_is_dir(path):
+            return True if str(path) == '/home/arduino/ArduinoApps' else real_is_dir(path)
+        with patch.object(pathlib.Path, 'is_file', uno_q_is_file), \
+                patch.object(pathlib.Path, 'is_dir', uno_q_is_dir):
+            backups = runpy.run_path(str(ROOT / 'scripts/setup-machine.py'))['BACKUPS']
+        self.assertEqual(backups.parent, Path('/home/arduino/virtualglove-install-backups'))
+
+    def test_direct_setup_run_keeps_only_its_newest_backup(self):
+        module = runpy.run_path(str(ROOT / 'scripts/setup-machine.py'))
+        keep = module['keep_newest_backup']
+        with tempfile.TemporaryDirectory() as directory:
+            backups = Path(directory) / 'virtualglove-backups'
+            with patch.dict(keep.__globals__, {'BACKUPS': backups / '20261124-200000-1'}), \
+                    patch.object(keep.__globals__['subprocess'], 'run',
+                                 return_value=SimpleNamespace(returncode=0)) as run:
+                keep()
+                run.assert_not_called()  # nothing was backed up this run
+                (backups / '20261124-200000-1').mkdir(parents=True)
+                keep()
+            command = run.call_args[0][0]
+            self.assertEqual(command[1:], [str(ROOT / 'scripts/rotate-deployment-backups.py'),
+                                           str(backups), '--keep', '1'])
+
+    def test_completed_upgrade_rotates_only_routine_backups(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "source"
@@ -79,9 +118,11 @@ class PackageContentTests(unittest.TestCase):
                               return_value=SimpleNamespace(returncode=0)) as command:
                 installer.rotate_console_backups(source, setup, "recalbox")
                 installer.rotate_console_backups(source, setup, "uno-q")
-            command.assert_called_once_with(
+            # UNO Q install backups now live on /home and are bounded too.
+            self.assertEqual(command.call_count, 2)
+            command.assert_called_with(
                 [installer.sys.executable, str(script), str(root / "backups"),
-                 "--keep", "5"], check=False)
+                 "--keep", "1"], check=False)
 
     def test_retropie_upgrade_recognises_current_launcher_only(self):
         with tempfile.TemporaryDirectory() as directory:

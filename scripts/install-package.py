@@ -6,6 +6,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Rotated UNO Q install backups, now kept on /home, to the newest one.
 #   2026-09-29 - Recover console software, configuration and service activation across failed upgrades.
 #   2026-09-19 - Restart Controller Router safely across RetroPie upgrades.
 #   2026-09-11 - Made virtualglove the canonical App Lab directory and added recoverable legacy migration.
@@ -1026,10 +1027,8 @@ def preserve_active_rob(machine, shared_matrix=False):
         app_lab_as_arduino("properties", "set", "default", rob)
 
 
-def rotate_console_backups(source, setup, machine, keep=5):
-    """Bound completed console-upgrade backups without touching named recovery sets."""
-    if machine == "uno-q":
-        return
+def rotate_console_backups(source, setup, machine, keep=1):
+    """Bound completed upgrade backups without touching named recovery sets."""
     script = source / "scripts/rotate-deployment-backups.py"
     result = subprocess.run(
         [sys.executable, str(script), str(setup.BACKUPS.parent), "--keep", str(keep)],
