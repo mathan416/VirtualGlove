@@ -30,7 +30,9 @@ class ReleaseReadinessTests(unittest.TestCase):
         project = (ROOT / "pyproject.toml").read_text()
         version = re.search(r'^version\s*=\s*"([^"]+)"', project, re.MULTILINE)
         self.assertIsNotNone(version)
-        self.assertEqual(version.group(1), facts["project_version"])
+        # Between releases the package carries the next version; the published
+        # release facts stay on the current stable tag until it ships.
+        self.assertEqual(version.group(1), facts.get("development_version", facts["project_version"]))
         self.assertEqual(facts["release_tag"], "v" + facts["project_version"])
         self.assertEqual(facts["channel"], "stable")
         self.assertEqual(facts["oldest_supported_upgrade"], "v0.4.2")

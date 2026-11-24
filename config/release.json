@@ -1,5 +1,6 @@
 {
   "project_version": "0.8.2",
+  "development_version": "0.8.3",
   "release_tag": "v0.8.2",
   "channel": "stable",
   "oldest_supported_upgrade": "v0.4.2",

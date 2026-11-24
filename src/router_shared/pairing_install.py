@@ -11,7 +11,7 @@ from pathlib import Path
 from .pairing_console import LinkStore, default_root, platform_name, open_window, ensure_certificate
 from .pairing import write_private
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 
 RETROPIE_ES_SCRIPTS = Path('/opt/retropie/configs/all/emulationstation/scripts')
