@@ -98,6 +98,7 @@ def wheel_score(filename: str) -> tuple | None:
 
 
 def pypi_files(name: str, version: str) -> list[dict]:
+    """Return PyPI's file records for one released version."""
     url = f"https://pypi.org/pypi/{name}/{version}/json"
     with urllib.request.urlopen(url, timeout=60) as response:
         return json.load(response)["urls"]
@@ -114,6 +115,7 @@ def choose(name: str, version: str, hashes: set[str]) -> dict:
 
 
 def lock(uv: str, upgrade: bool, constraints: Path | None = None) -> None:
+    """Resolve the worker's dependencies with uv and write one UNO Q wheel per package."""
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)
         (work / "in.txt").write_text(f"{MEDIAPIPE}\n")
@@ -143,6 +145,7 @@ def lock(uv: str, upgrade: bool, constraints: Path | None = None) -> None:
 
 
 def sha256(path: Path) -> str:
+    """Return a file's SHA-256, read in bounded blocks."""
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1 << 20), b""):
@@ -162,6 +165,7 @@ def problems(folder: Path, lock_file: Path = LOCK) -> list[str]:
 
 
 def fetch(destination: Path) -> None:
+    """Download the locked wheels, verify each SHA-256, and drop wheels no longer locked."""
     destination.mkdir(parents=True, exist_ok=True)
     wanted = entries()
     for item in wanted:
@@ -190,6 +194,7 @@ def fetch(destination: Path) -> None:
 
 
 def main() -> int:
+    """Run the lock, fetch or check command."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
     locking = commands.add_parser("lock", help="resolve the lock with uv")

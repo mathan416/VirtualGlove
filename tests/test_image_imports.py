@@ -16,6 +16,7 @@ only while it uses the standard library and App Lab's Bridge, never packages
 the image happens to carry. The vision worker runs in its own locked uv
 environment and is not covered here.
 """
+from __future__ import annotations
 
 import ast
 import sys
@@ -84,8 +85,10 @@ def image_imports(entries, roots):
                 continue
             elif isinstance(node, ast.ImportFrom):
                 names = [node.module]
-                queue.extend(found_path for alias in node.names
-                             if (found_path := local_module(f"{node.module}.{alias.name}", search)))
+                for alias in node.names:
+                    submodule = local_module(f"{node.module}.{alias.name}", search)
+                    if submodule is not None:
+                        queue.append(submodule)
             else:
                 continue
             for name in names:
@@ -101,6 +104,9 @@ def image_imports(entries, roots):
     return found
 
 
+# sys.stdlib_module_names arrived in Python 3.10; the image runs 3.13, so
+# older test interpreters (console jobs) skip this guard.
+@unittest.skipIf(sys.version_info < (3, 10), "needs sys.stdlib_module_names")
 class ImageImportTests(unittest.TestCase):
     def test_image_side_code_uses_only_the_standard_library_and_bridge(self):
         found = image_imports(ENTRY_POINTS, SEARCH_ROOTS)

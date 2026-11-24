@@ -109,7 +109,7 @@ class PackageContentTests(unittest.TestCase):
                 patch('builtins.input', side_effect=['', '']) as prompt:
             self.assertEqual(installer.select_controller_hostname(None, False), 'arduiain')
         self.assertEqual(prompt.call_count, 2)
-        self.assertEqual(prompt.call_args_list[0].args[0], 'Controller name [arduiain]: ')
+        self.assertEqual(prompt.call_args_list[0][0][0], 'Controller name [arduiain]: ')
         shown = output.getvalue()
         self.assertIn('Press Enter to keep arduiain, so it is reached at arduiain.local', shown)
         self.assertNotIn('NAME.local', shown)
@@ -120,7 +120,7 @@ class PackageContentTests(unittest.TestCase):
                 patch('sys.stdout', new_callable=io.StringIO), \
                 patch('builtins.input', side_effect=['', '']) as prompt:
             self.assertEqual(installer.select_controller_hostname(None, False), 'virtualglove')
-        self.assertEqual(prompt.call_args_list[0].args[0], 'Controller name [virtualglove]: ')
+        self.assertEqual(prompt.call_args_list[0][0][0], 'Controller name [virtualglove]: ')
 
     def test_existing_install_is_never_renamed(self):
         with patch('builtins.input') as prompt:

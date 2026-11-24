@@ -8,6 +8,9 @@
 #   2026-11-24 - Added with the bundled worker wheels.
 # Full history: docs/CHANGELOG.md and Git history.
 
+"""Check the worker wheel lock, the wheel set the package carries, and the build wiring."""
+from __future__ import annotations
+
 import hashlib
 import importlib.util
 import runpy
