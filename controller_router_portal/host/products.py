@@ -13,6 +13,15 @@ RUNTIME = Path("/home/arduino/.local/share/controller-router-portal/runtime")
 SOCKET_DIR = Path("/run/user/1000/controller-router-portal")
 PRODUCTS = ("virtualglove", "rob-vision")
 IMAGE = "ghcr.io/arduino/app-bricks/python-apps-base:0.13.2"
+BASE_REPOSITORY = IMAGE.rsplit(":", 1)[0]
+APP_LAB_PROJECTS = ("virtualglove", "rob-vision")
+
+
+def _base_version(tag: str) -> tuple[int, ...] | None:
+    try:
+        return tuple(int(part) for part in tag.split("."))
+    except ValueError:
+        return None
 
 
 def clean_compose(name: str) -> dict:
@@ -103,6 +112,11 @@ def product_compose(name: str) -> Path:
     # Give each continuously running service its own Router-managed network.
     config.setdefault("networks", {}).setdefault("default", {})["name"] = name + "-runtime_default"
     for service in config["services"].values():
+        # App Lab's cache keeps the base image of the App Lab release that
+        # wrote it. Run every product service on the Router's one base image so
+        # an App Lab update never leaves a second ~900 MB image in use.
+        if str(service.get("image", "")).startswith(BASE_REPOSITORY + ":"):
+            service["image"] = IMAGE
         labels = service.get("labels", {})
         if isinstance(labels, dict):
             service["labels"] = {key: value for key, value in labels.items()
@@ -146,6 +160,42 @@ def start(name: str) -> None:
                     "up", "-d", "--remove-orphans"], check=True)
 
 
+def retire_old_base_images() -> list[str]:
+    """Remove older python-apps-base tags that no running container still uses.
+
+    Exited containers of the products' own App Lab projects are removed first,
+    since App Lab recreates them on its next start. Docker refuses an image a
+    container still uses, and nothing is forced: a refused tag stays for the
+    next start. Newer tags belong to App Lab and are always kept.
+    """
+    current = _base_version(IMAGE.rsplit(":", 1)[1])
+
+    def docker(*arguments: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["docker", *arguments], text=True, capture_output=True,
+                              check=False, timeout=120)
+
+    try:
+        tags = docker("image", "ls", BASE_REPOSITORY, "--format", "{{.Tag}}").stdout.split()
+        removed = []
+        for tag in tags:
+            version = _base_version(tag)
+            if current is None or version is None or version >= current:
+                continue
+            image = f"{BASE_REPOSITORY}:{tag}"
+            exited = docker("ps", "-a", "--filter", f"ancestor={image}",
+                            "--filter", "status=exited", "--filter", "status=created",
+                            "--format", '{{.ID}} {{.Label "com.docker.compose.project"}}').stdout
+            stale = [line.split()[0] for line in exited.splitlines()
+                     if len(line.split()) == 2 and line.split()[1] in APP_LAB_PROJECTS]
+            if stale:
+                docker("rm", *stale)
+            if docker("image", "rm", image).returncode == 0:
+                removed.append(image)
+        return removed
+    except (OSError, subprocess.SubprocessError):
+        return []
+
+
 def stop(name: str) -> None:
     compose = RUNTIME / f"{name}.json"
     if compose.is_file():
@@ -163,6 +213,9 @@ if __name__ == "__main__":
         for product in PRODUCTS:
             if (ROOT / product / "app.yaml").is_file():
                 (start if options.action == "start-all" else stop)(product)
+        if options.action == "start-all":
+            for image in retire_old_base_images():
+                print(f"Removed unused base image {image}", flush=True)
     elif options.product:
         (start if options.action == "start" else stop)(options.product)
     else:
