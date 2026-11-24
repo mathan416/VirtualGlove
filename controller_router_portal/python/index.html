@@ -32,6 +32,9 @@
     button:disabled { opacity: .55; cursor: not-allowed; }
     #message { min-height: 28px; margin-top: 23px; color: #8de8ec; }
     #message.error { color: #ffad9f; }
+    .disk { margin: 26px 0 0; padding: 14px 16px; border: 1px solid #ffad9f; border-radius: 8px; background: #3a1f24; color: #ffd6cf; line-height: 1.45; max-width: 760px; }
+    .disk strong { color: #fff; }
+    .disk a { color: #ffd6cf; }
     @media (max-width: 720px) { .cards { grid-template-columns: 1fr; } .card { min-height: 425px; } .art { width: 58%; height: 195px; } .card.virtualglove .art { height: 195px; } }
     @media (prefers-reduced-motion: no-preference) { button { transition: background .15s ease; } }
   </style>
@@ -42,6 +45,7 @@
     <nav style="margin-top:20px"><a href="/setup" style="color:#8de8ec">Players and Systems</a> · <a class="pair-console-link" href="#" style="color:#8de8ec">Pair console</a> · <a class="console-setup-link" href="#" style="color:#8de8ec">Console setup</a> · <a href="/help" style="color:#8de8ec">Help</a></nav>
     <h1>Who’s playing?</h1>
     <p class="intro">Choose your companion. Both are ready in the background; opening one gives it control when no game is in progress.</p>
+    <p class="disk" id="disk" role="alert" hidden></p>
     <div class="cards" id="cards"></div>
     <p id="message" role="status" aria-live="polite"></p>
   </main>
@@ -52,6 +56,7 @@
     };
     const cards = document.getElementById('cards');
     const message = document.getElementById('message');
+    const disk = document.getElementById('disk');
     let navigating = false;
     let singleAutoAttempted = false;
 
@@ -65,6 +70,18 @@
       window.location.assign(window.location.protocol + '//' + window.location.hostname + ':' + port + path);
     }
     function error(text) { message.className = 'error'; message.textContent = text; }
+    function size(bytes) {
+      return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(1) + ' GB' : Math.round(bytes / 1048576) + ' MB';
+    }
+    function showDisk(state) {
+      const low = Boolean(state.disk && state.disk.low);
+      disk.hidden = !low;
+      // Rewrite only on change: keeps focus on the link and stops the alert
+      // from being announced again on every poll.
+      const text = low ? '<strong>The UNO Q’s system disk is almost full</strong>: ' + size(state.disk.free) + ' free of ' + size(state.disk.total) + '. Installs and App Lab updates can fail until you free some space. <a href="/help#space">How to free space</a>' : '';
+      if (disk.dataset.text !== text) { disk.dataset.text = text; disk.innerHTML = text; }
+      return low;
+    }
 
     async function openController(key, port, alreadySelected = false) {
       if (navigating) return;
@@ -88,13 +105,15 @@
       try {
         const state = await request('/api/state');
         if (state.error) throw new Error(state.error);
+        // Stay on this page while the disk is low, so the warning is seen.
+        const lowDisk = showDisk(state);
         const installed = Object.keys(names).filter(key => state.apps[key]?.installed);
         if (!installed.length) {
           cards.innerHTML = '';
           message.textContent = 'Install VirtualGlove or R.O.B. Vision to get started.';
           return;
         }
-        if (installed.length === 1 && !navigating && !singleAutoAttempted && state.apps[installed[0]].ready) {
+        if (installed.length === 1 && !lowDisk && !navigating && !singleAutoAttempted && state.apps[installed[0]].ready) {
           singleAutoAttempted = true;
           const key = installed[0];
           openController(key, state.apps[key].port, state.apps[key].selected);

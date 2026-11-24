@@ -104,6 +104,21 @@ except ImportError:  # Executed from the installed host script.
     from matrix_port import configure_loopback, matrix_port_lock
     from products import entry_environment
 
+# App Lab images, updates and installs all land on the UNO Q's ~10 GB system
+# disk. Below this, an install or App Lab update can fail part-way.
+LOW_DISK_BYTES = 1024 ** 3
+
+
+def system_disk(path: str = "/") -> dict | None:
+    """Report free space on the system disk, as the arduino user can use it."""
+    try:
+        info = os.statvfs(path)
+    except OSError:
+        return None
+    free = info.f_bavail * info.f_frsize
+    return {"free": free, "total": info.f_blocks * info.f_frsize, "low": free < LOW_DISK_BYTES}
+
+
 LAUNCHER = ConcurrentLauncher()
 PAIRING = None
 
@@ -115,6 +130,9 @@ class Handler(socketserver.StreamRequestHandler):
             action = message.get("action")
             if action == "state":
                 result = LAUNCHER.state()
+                disk = system_disk()
+                if disk is not None:
+                    result = dict(result, disk=disk)
             elif action == 'connections' and PAIRING is not None:
                 result = PAIRING.inspect()
             elif action == 'console-halt' and PAIRING is not None:

@@ -45,7 +45,7 @@
     <nav aria-label="Controller Router"><a href="/">Apps</a><a href="/setup">Players and Systems</a><a href="/pair">Pair console</a><a class="console-setup-link" href="/pair">Console setup</a><a href="/help" aria-current="page">Help</a></nav><script>document.querySelector('.console-setup-link').href='https://'+(location.hostname.includes(':')?'['+location.hostname+']':location.hostname)+':8444/setup';</script>
     <h1>Get ready to play</h1>
     <p class="intro">Controller Router connects to your console and puts each gamepad with the player you choose. Pick a task below to get started or fix a problem.</p>
-    <div class="jump" aria-label="On this page"><a href="#connect">Connect a console</a><a href="#players">Choose players</a><a href="#systems">Choose systems</a><a href="#test">Test a controller</a><a href="#trouble">Fix a problem</a></div>
+    <div class="jump" aria-label="On this page"><a href="#connect">Connect a console</a><a href="#players">Choose players</a><a href="#systems">Choose systems</a><a href="#test">Test a controller</a><a href="#trouble">Fix a problem</a><a href="#space">Free up space</a></div>
 
     <section id="connect">
       <h2>Connect a console</h2>
@@ -80,6 +80,14 @@
       <h3>A wireless pad slept or woke during play</h3><p>Wake or reconnect it, then try again. If Router itself restarted, exit and relaunch the game.</p>
       <h3>Assignments will not save</h3><p>Finish the current game. If another page changed the settings, choose <strong>Reload</strong>, make your choices again, and save.</p>
       <h3>The console says unavailable</h3><p>Check that it is powered on and on the same network. Then open <a href="/pair">Pair console</a> and choose <strong>Check and repair connections</strong>.</p>
+    </section>
+
+    <section id="space">
+      <h2>Free up space on the UNO Q</h2>
+      <p>The UNO Q keeps its system files, App Lab and every App Lab image on a system disk of about 10 GB. Your controllers' own data is stored separately. When the system disk has less than 1 GB free, installs and App Lab updates can fail part-way.</p>
+      <h3>Restart the UNO Q</h3><p>Each time it starts, Controller Router removes older App Lab base images that nothing uses any more. A restart after an App Lab update is often enough.</p>
+      <h3>Clear Docker's build cache</h3><p>Building an image on the UNO Q leaves cached steps that can keep an old image on the disk. Docker reports them as using no space. Over SSH, run <code>docker builder prune -a -f</code>. It removes only cached build steps; apps and their data stay.</p>
+      <h3>Check what is left</h3><p>Over SSH, <code>df -h /</code> shows free space and <code>docker image ls</code> lists the images. Remove apps you no longer use from App Lab.</p>
     </section>
 
     <section aria-labelledby="build-heading">
