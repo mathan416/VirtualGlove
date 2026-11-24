@@ -98,9 +98,11 @@ def configure_ports(app_id: str) -> None:
 try:
     from .concurrent import ConcurrentLauncher
     from .matrix_port import configure_loopback, matrix_port_lock
+    from .products import entry_environment
 except ImportError:  # Executed from the installed host script.
     from concurrent import ConcurrentLauncher
     from matrix_port import configure_loopback, matrix_port_lock
+    from products import entry_environment
 
 LAUNCHER = ConcurrentLauncher()
 PAIRING = None
@@ -171,7 +173,8 @@ def ensure_portal() -> None:
         raise FileNotFoundError(f"Controller Router entry configuration is missing: {compose}")
     try:
         subprocess.run(["docker", "compose", "-p", ENTRY_PROJECT, "-f", str(compose),
-                        "up", "-d"], check=True, capture_output=True, text=True, timeout=90)
+                        "up", "-d"], env=entry_environment(), check=True,
+                       capture_output=True, text=True, timeout=90)
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or "").strip().splitlines()
         raise RuntimeError("Controller Router entry did not start: " +

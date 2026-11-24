@@ -12,9 +12,18 @@ ROOT = Path("/home/arduino/ArduinoApps")
 RUNTIME = Path("/home/arduino/.local/share/controller-router-portal/runtime")
 SOCKET_DIR = Path("/run/user/1000/controller-router-portal")
 PRODUCTS = ("virtualglove", "rob-vision")
+# Fallback only: the runtimes follow the base image App Lab runs Controller
+# Router on (base_image), so an App Lab update needs no Router release.
 IMAGE = "ghcr.io/arduino/app-bricks/python-apps-base:0.13.2"
 BASE_REPOSITORY = IMAGE.rsplit(":", 1)[0]
+# The oldest base image these runtimes have been run on.
+OLDEST_BASE = (0, 12, 0)
+APP_LAB_ROUTER = "controller-router-main-1"
 APP_LAB_PROJECTS = ("virtualglove", "rob-vision")
+ENTRY_PROJECT = "uno-controller-router-entry"
+ENTRY_MAIN = ENTRY_PROJECT + "-main-1"
+ENTRY_COMPOSE = RUNTIME.parent / "host/portal-compose.yaml"
+IMAGE_VARIABLE = "CONTROLLER_ROUTER_BASE_IMAGE"
 
 
 def _base_version(tag: str) -> tuple[int, ...] | None:
@@ -24,7 +33,46 @@ def _base_version(tag: str) -> tuple[int, ...] | None:
         return None
 
 
-def clean_compose(name: str) -> dict:
+def _container_image(name: str) -> str:
+    try:
+        result = subprocess.run(["docker", "inspect", "--format", "{{.Config.Image}}", name],
+                                text=True, capture_output=True, check=False, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def base_image() -> str:
+    """Return the base image App Lab runs Controller Router on, else IMAGE.
+
+    App Lab picks python-apps-base for its own release and already keeps that
+    image on the board. Using the same one keeps a single ~900 MB copy.
+    """
+    image = _container_image(APP_LAB_ROUTER)
+    repository, _, tag = image.rpartition(":")
+    version = _base_version(tag)
+    if repository == BASE_REPOSITORY and version is not None and version >= OLDEST_BASE:
+        return image
+    return IMAGE
+
+
+def entry_environment(image: str | None = None) -> dict[str, str]:
+    """Environment for Compose to start the Router entry on the base image."""
+    return dict(os.environ, **{IMAGE_VARIABLE: image or base_image()})
+
+
+def refresh_entry(image: str) -> bool:
+    """Move a running Router entry onto image; leave a stopped entry to the broker."""
+    current = _container_image(ENTRY_MAIN)
+    if not current or current == image or not ENTRY_COMPOSE.is_file():
+        return False
+    subprocess.run(["docker", "compose", "-p", ENTRY_PROJECT, "-f", str(ENTRY_COMPOSE),
+                    "up", "-d"], env=entry_environment(image), check=True,
+                   capture_output=True, text=True, timeout=90)
+    return True
+
+
+def clean_compose(name: str, image: str = IMAGE) -> dict:
     """Compose a first install without asking App Lab to flash a product sketch."""
     root = ROOT / name
     addresses = subprocess.check_output(["hostname", "-I"], text=True).split()
@@ -36,7 +84,7 @@ def clean_compose(name: str) -> dict:
                {"type": "bind", "source": "/dev", "target": "/dev"},
                {"type": "bind", "source": "/run/udev", "target": "/run/udev", "read_only": True},
                {"type": "bind", "source": "/run/arduino-router.sock", "target": "/run/arduino-router.sock"}]
-    main = {"image": IMAGE, "entrypoint": "/run.sh", "restart": "unless-stopped",
+    main = {"image": image, "entrypoint": "/run.sh", "restart": "unless-stopped",
             "user": "1000:1000", "group_add": ["44", "29", "991", "20", "1001"],
             "device_cgroup_rules": ["c 226:* rmw", "c 251:* rmw", "c 505:* rmw",
                                     "c 81:* rmw", "c 116:* rmw"],
@@ -46,7 +94,7 @@ def clean_compose(name: str) -> dict:
                             "HOST_IP": host_ip,
                             "MODELS_PATH": "/var/lib/arduino-app-cli/models",
                             "XDG_RUNTIME_DIR": "/run/user/1000"}}
-    resolver = {"image": IMAGE, "entrypoint": ["python3", "/resolver_service.py"],
+    resolver = {"image": image, "entrypoint": ["python3", "/resolver_service.py"],
                 "restart": "unless-stopped", "user": "1000:1000", "network_mode": "none",
                 "read_only": True, "cap_drop": ["ALL"],
                 "security_opt": ["no-new-privileges:true"],
@@ -58,7 +106,7 @@ def clean_compose(name: str) -> dict:
     if name == "virtualglove":
         main["depends_on"] = {"avahi-resolver": {"condition": "service_started"},
                               "profile-relay": {"condition": "service_started"}}
-        services["profile-relay"] = {"image": IMAGE, "entrypoint": ["python3", "/profile-relay.py"],
+        services["profile-relay"] = {"image": image, "entrypoint": ["python3", "/profile-relay.py"],
             "restart": "unless-stopped", "user": "1000:1000", "ports": ["55356:55356/udp"],
             "volumes": [{"type": "bind", "source": str(root / "scripts/profile-relay.py"),
                          "target": "/profile-relay.py", "read_only": True}]}
@@ -95,9 +143,10 @@ def _stale_led_bind(volume: object) -> bool:
             and not Path(source).exists())
 
 
-def product_compose(name: str) -> Path:
+def product_compose(name: str, image: str | None = None) -> Path:
     if name not in PRODUCTS:
         raise ValueError("Unknown controller product")
+    image = image or base_image()
     source = ROOT / name / ".cache/app-compose.yaml"
     if source.is_file():
         env = dict(os.environ, APP_HOME=str(ROOT / name))
@@ -105,7 +154,7 @@ def product_compose(name: str) -> Path:
                                 env=env, check=True, text=True, capture_output=True)
         config = json.loads(result.stdout)
     else:
-        config = clean_compose(name)
+        config = clean_compose(name, image)
     ensure_socket_directory()
     config["name"] = name + "-runtime"
     # Cached App Lab Compose files retain the old project's network name.
@@ -113,10 +162,10 @@ def product_compose(name: str) -> Path:
     config.setdefault("networks", {}).setdefault("default", {})["name"] = name + "-runtime_default"
     for service in config["services"].values():
         # App Lab's cache keeps the base image of the App Lab release that
-        # wrote it. Run every product service on the Router's one base image so
+        # wrote it. Run every product service on the one current base image so
         # an App Lab update never leaves a second ~900 MB image in use.
         if str(service.get("image", "")).startswith(BASE_REPOSITORY + ":"):
-            service["image"] = IMAGE
+            service["image"] = image
         labels = service.get("labels", {})
         if isinstance(labels, dict):
             service["labels"] = {key: value for key, value in labels.items()
@@ -140,7 +189,7 @@ def product_compose(name: str) -> Path:
     return target
 
 
-def start(name: str) -> None:
+def start(name: str, image: str | None = None) -> None:
     data = ROOT / name / 'data'
     if (ROOT / name / 'app.yaml').exists():
         data.mkdir(parents=True, exist_ok=True)
@@ -155,20 +204,21 @@ def start(name: str) -> None:
     if not marker.exists():
         marker.write_text("1\n")
         marker.chmod(0o600)
-    compose = product_compose(name)
+    compose = product_compose(name, image)
     subprocess.run(["docker", "compose", "-p", name + "-runtime", "-f", str(compose),
                     "up", "-d", "--remove-orphans"], check=True)
 
 
-def retire_old_base_images() -> list[str]:
-    """Remove older python-apps-base tags that no running container still uses.
+def retire_old_base_images(image: str | None = None) -> list[str]:
+    """Remove python-apps-base tags older than image that no running container uses.
 
     Exited containers of the products' own App Lab projects are removed first,
-    since App Lab recreates them on its next start. Docker refuses an image a
-    container still uses, and nothing is forced: a refused tag stays for the
-    next start. Newer tags belong to App Lab and are always kept.
+    since App Lab recreates them on its next start. A tag whose image any other
+    container still uses, running or not, is kept, and nothing is forced: a kept
+    tag is retried at the next start. Newer tags belong to App Lab and are
+    always kept.
     """
-    current = _base_version(IMAGE.rsplit(":", 1)[1])
+    current = _base_version((image or base_image()).rsplit(":", 1)[1])
 
     def docker(*arguments: str) -> subprocess.CompletedProcess:
         return subprocess.run(["docker", *arguments], text=True, capture_output=True,
@@ -189,6 +239,12 @@ def retire_old_base_images() -> list[str]:
                      if len(line.split()) == 2 and line.split()[1] in APP_LAB_PROJECTS]
             if stale:
                 docker("rm", *stale)
+            # Docker only untags an image that still has another tag, even one
+            # a container runs on, so check for users here instead of relying
+            # on Docker to refuse.
+            users = docker("ps", "-a", "-q", "--filter", f"ancestor={image}")
+            if users.returncode != 0 or users.stdout.strip():
+                continue
             if docker("image", "rm", image).returncode == 0:
                 removed.append(image)
         return removed
@@ -209,13 +265,23 @@ if __name__ == "__main__":
     parser.add_argument("action", choices=("start", "stop", "start-all", "stop-all"))
     parser.add_argument("product", nargs="?", choices=PRODUCTS)
     options = parser.parse_args()
-    if options.action.endswith("-all"):
+    if options.action == "start-all":
+        image = base_image()
+        print(f"Controller Router base image: {image}", flush=True)
         for product in PRODUCTS:
             if (ROOT / product / "app.yaml").is_file():
-                (start if options.action == "start-all" else stop)(product)
-        if options.action == "start-all":
-            for image in retire_old_base_images():
-                print(f"Removed unused base image {image}", flush=True)
+                start(product, image)
+        try:
+            if refresh_entry(image):
+                print("Moved the Controller Router entry to that image", flush=True)
+        except (OSError, subprocess.SubprocessError) as exc:
+            print(f"Controller Router entry kept its image: {exc}", flush=True)
+        for retired in retire_old_base_images(image):
+            print(f"Removed unused base image {retired}", flush=True)
+    elif options.action == "stop-all":
+        for product in PRODUCTS:
+            if (ROOT / product / "app.yaml").is_file():
+                stop(product)
     elif options.product:
         (start if options.action == "start" else stop)(options.product)
     else:

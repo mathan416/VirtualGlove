@@ -1,6 +1,6 @@
 services:
   main:
-    image: ghcr.io/arduino/app-bricks/python-apps-base:0.13.2
+    image: ${CONTROLLER_ROUTER_BASE_IMAGE:-ghcr.io/arduino/app-bricks/python-apps-base:0.13.2}
     entrypoint: [python3, /app/python/main.py]
     restart: unless-stopped
     user: "1000:1000"
@@ -15,7 +15,7 @@ services:
         target: /app/python
         read_only: true
   portal-host-bridge:
-    image: ghcr.io/arduino/app-bricks/python-apps-base:0.13.2
+    image: ${CONTROLLER_ROUTER_BASE_IMAGE:-ghcr.io/arduino/app-bricks/python-apps-base:0.13.2}
     entrypoint: [python3, /bridge.py]
     restart: unless-stopped
     user: "1000:1000"

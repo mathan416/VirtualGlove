@@ -154,6 +154,16 @@ def start_products() -> None:
             start(product)
 
 
+def retire_base_images() -> None:
+    """Drop base images older than the one the Router now runs on; best-effort."""
+    try:
+        from .host.products import retire_old_base_images
+    except ImportError:
+        from host.products import retire_old_base_images
+    for image in retire_old_base_images():
+        print(f"Removed unused base image {image}", flush=True)
+
+
 def version(root: Path) -> tuple[int, ...]:
     try:
         return tuple(int(part) for part in (root / "VERSION").read_text().strip().split("."))
@@ -453,6 +463,9 @@ def install() -> str:
                     time.sleep(2)
             else:
                 raise RuntimeError("Controller Router did not become available on port 80.")
+            # The entry and products now run on the current base image, so an
+            # older copy left by a previous Router or App Lab release can go.
+            retire_base_images()
             wait_secure_setup()
         except BaseException:
             command("systemctl", "--user", "stop", SERVICE.name, check=False)
