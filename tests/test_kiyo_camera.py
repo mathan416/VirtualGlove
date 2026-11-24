@@ -231,6 +231,27 @@ class KiyoTests(unittest.TestCase):
                 self.assertIs(selected, environment)
                 self.assertNotIn('UV_OFFLINE', selected)
 
+    def test_unreadable_worker_cache_is_pruned_before_online_resolution(self):
+        # A base-image uv upgrade leaves cache buckets the new uv cannot read.
+        root=Path(__file__).resolve().parents[1]
+        namespace=runpy.run_path(str(root/'python/main.py'))
+        environment={'UV_CACHE_DIR':'/cache'}
+        with patch.object(namespace['subprocess'], 'run',
+                          return_value=SimpleNamespace(returncode=1)) as run:
+            selected=namespace['prefer_retained_worker_cache'](environment)
+        self.assertIs(selected, environment)
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(run.call_args[0][0], ['uv', 'cache', 'prune'])
+        self.assertNotIn('UV_OFFLINE', run.call_args[1]['env'])
+        self.assertEqual(run.call_args[1]['env']['UV_CACHE_DIR'], '/cache')
+        with patch.object(namespace['subprocess'], 'run',
+                          side_effect=[SimpleNamespace(returncode=1), OSError('uv')]):
+            self.assertIs(namespace['prefer_retained_worker_cache'](environment), environment)
+        with patch.object(namespace['subprocess'], 'run',
+                          return_value=SimpleNamespace(returncode=0)) as run:
+            namespace['prefer_retained_worker_cache'](environment)
+        run.assert_called_once()
+
     def test_manual_exposure_test_requires_valid_pair_and_direct_capture(self):
         root=Path(__file__).resolve().parents[1]
         command=runpy.run_path(str(root/'python/main.py'))['worker_command']

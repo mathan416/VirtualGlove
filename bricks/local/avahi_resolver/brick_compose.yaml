@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 services:
   avahi-resolver:
-    image: ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
+    image: ghcr.io/arduino/app-bricks/python-apps-base:0.13.2
     entrypoint: [python3, /resolver_service.py]
     restart: unless-stopped
     user: "1000:1000"

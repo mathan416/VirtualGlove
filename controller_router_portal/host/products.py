@@ -12,7 +12,7 @@ ROOT = Path("/home/arduino/ArduinoApps")
 RUNTIME = Path("/home/arduino/.local/share/controller-router-portal/runtime")
 SOCKET_DIR = Path("/run/user/1000/controller-router-portal")
 PRODUCTS = ("virtualglove", "rob-vision")
-IMAGE = "ghcr.io/arduino/app-bricks/python-apps-base:0.12.0"
+IMAGE = "ghcr.io/arduino/app-bricks/python-apps-base:0.13.2"
 
 
 def clean_compose(name: str) -> dict:

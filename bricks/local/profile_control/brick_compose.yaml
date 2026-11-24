@@ -9,7 +9,7 @@
 # Full history: docs/CHANGELOG.md and Git history.
 services:
   profile-relay:
-    image: ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
+    image: ghcr.io/arduino/app-bricks/python-apps-base:0.13.2
     entrypoint: [python3, /profile-relay.py]
     restart: unless-stopped
     user: "1000:1000"

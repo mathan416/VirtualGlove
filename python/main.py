@@ -221,7 +221,17 @@ def prefer_retained_worker_cache(environment: dict[str, str]) -> dict[str, str]:
         )
     except (OSError, subprocess.SubprocessError):
         return environment
-    return offline if completed.returncode == 0 else environment
+    if completed.returncode == 0:
+        return offline
+    # A newer uv in the App Lab base image cannot read an older uv's cache
+    # buckets, so the worker resolves online again. Drop the unreadable
+    # buckets now rather than keep both copies on the UNO Q's small disk.
+    try:
+        subprocess.run(["uv", "cache", "prune"], cwd=APP_ROOT, env=environment, check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return environment
 
 
 def main() -> int:

@@ -54,6 +54,19 @@ class PackageContentTests(unittest.TestCase):
                     self.assertIn(
                         f'source: ${{APP_HOME:-{app_home}}}/{source}', compose)
 
+    def test_bricks_use_the_controller_router_base_image(self):
+        # Each extra python-apps-base tag costs about 900 MB on the UNO Q.
+        import re
+        root = Path(__file__).resolve().parents[1]
+        products = (root / 'controller_router_portal/host/products.py').read_text()
+        image = re.search(r'^IMAGE = "([^"]+)"$', products, re.M).group(1)
+        composes = sorted((root / 'bricks').rglob('brick_compose.yaml'))
+        self.assertTrue(composes)
+        for compose in composes:
+            with self.subTest(compose=compose.relative_to(root)):
+                images = set(re.findall(r'^\s*image:\s*(\S+)\s*$', compose.read_text(), re.M))
+                self.assertEqual(images, {image})
+
     def test_completed_console_upgrade_rotates_only_routine_backups(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
