@@ -16,6 +16,10 @@ result before naming the underlying mechanism.
 
 - On a first installation, the VirtualGlove Controller installer now suggests the name the UNO Q was given in Arduino App Lab, so pressing Enter keeps its current address, such as `arduiain.local`. The prompt shows real example addresses instead of `NAME.local`. If the current name can't be used, it suggests `virtualglove`.
 
+### Fixed
+
+- Installing on the UNO Q no longer stops when flashing the Controller Router Matrix sketch to the board fails once ("Upload port detection failed"). The installer now tries the flash up to three times. Upgrades also keep App Lab's sketch build folder, so a changed Matrix sketch recompiles only what changed instead of rebuilding from scratch. A rerun after a failed first install reuses that attempt's build.
+
 ## [0.8.2] - 2026-11-18
 
 ### Fixed

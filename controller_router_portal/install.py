@@ -66,6 +66,17 @@ def install_matrix_app() -> tuple[Path | None, bool]:
     if staged.exists():
         shutil.rmtree(staged)
     shutil.copytree(source, staged)
+    # Carry App Lab's sketch build folder forward so an upgrade compiles only what
+    # changed; after a failed first install, reuse the failed attempt's build.
+    # arduino-cli discards it by itself when the build options differ.
+    build_cache = next((path for path in (MATRIX / ".cache/sketch",
+                                          MATRIX_STATE / "matrix-failed/.cache/sketch")
+                        if path.is_dir() and not path.is_symlink()), None)
+    if build_cache:
+        try:
+            shutil.copytree(build_cache, staged / ".cache/sketch", symlinks=True)
+        except OSError:
+            shutil.rmtree(staged / ".cache/sketch", ignore_errors=True)
     (staged / "data").mkdir(exist_ok=True)
     token = staged / "data/matrix-token"
     old_token = MATRIX / "data/matrix-token"
@@ -84,9 +95,29 @@ def install_matrix_app() -> tuple[Path | None, bool]:
 
 
 
+MATRIX_START_ATTEMPTS = 3
+# Flashing the board's microcontroller sometimes fails once and then works; the
+# compiled sketch stays in App Lab's build cache, so a retry only flashes again.
+FLASH_FAILURE = re.compile(r"(?i)failed uploading|upload port detection failed|programming failed")
+
+
+def start_matrix_app() -> None:
+    for attempt in range(1, MATRIX_START_ATTEMPTS + 1):
+        try:
+            command("arduino-app-cli", "app", "start", str(MATRIX))
+            return
+        except RuntimeError as error:
+            if attempt == MATRIX_START_ATTEMPTS or not FLASH_FAILURE.search(str(error)):
+                raise
+            print(f"Flashing the Matrix sketch failed (attempt {attempt} of "
+                  f"{MATRIX_START_ATTEMPTS}); trying again.", flush=True)
+            command("arduino-app-cli", "app", "stop", str(MATRIX), check=False)
+            time.sleep(5)
+
+
 def start_shared_matrix(lock_held=False) -> None:
     print("Building and starting the Controller Router Matrix app; the first install may take a few minutes.", flush=True)
-    command("arduino-app-cli", "app", "start", str(MATRIX))
+    start_matrix_app()
     compose = MATRIX / ".cache/app-compose.yaml"
     configure_loopback(compose, MATRIX_STATE / ".matrix-port.lock", lock_held=lock_held)
     command("arduino-app-cli", "properties", "set", "default", str(MATRIX))
