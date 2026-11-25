@@ -14,6 +14,7 @@ import socket
 import ssl
 import tempfile
 import threading
+import time
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -60,10 +61,41 @@ def valid_id(value):
     return value
 
 
+# mkstemp names are "." + target name + "." + 8 characters from this set.
+TEMPORARY_SUFFIX = re.compile(r'\.[a-z0-9_]{8}$')
+STALE_TEMPORARY_SECONDS = 60
+
+
+def remove_stale_temporaries(path: Path, older_than=STALE_TEMPORARY_SECONDS):
+    """Delete temporaries a killed writer left beside path.
+
+    A process stopped by a signal (for example docker stop) never runs the
+    writer's cleanup, so each write first clears the old leftovers. Recent
+    ones are kept because another process may still be writing them.
+    """
+    path = Path(path)
+    prefix = '.' + path.name
+    cutoff = time.time() - older_than
+    try:
+        candidates = list(path.parent.iterdir())
+    except OSError:
+        return
+    for candidate in candidates:
+        name = candidate.name
+        if not name.startswith(prefix) or not TEMPORARY_SUFFIX.fullmatch(name[len(prefix):]):
+            continue
+        try:
+            if candidate.is_file() and not candidate.is_symlink() and candidate.stat().st_mtime < cutoff:
+                candidate.unlink()
+        except OSError:
+            pass
+
+
 def write_private(path: Path, content: bytes):
     """Replace atomically, preserving an existing file's owner and permissions."""
     path = Path(path)
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    remove_stale_temporaries(path)
     previous = path.stat() if path.exists() else None
     fd, name = tempfile.mkstemp(prefix='.' + path.name + '.', dir=path.parent)
     try:

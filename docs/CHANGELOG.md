@@ -12,6 +12,10 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
+### Fixed
+
+- Controller Router no longer leaves hidden `.connections.json.*` temporary files on the UNO Q. A write cut short when the portal stopped left one behind; the next write now removes any older than a minute.
+
 ## [0.8.3] - 2026-11-24
 
 Bundles Controller Router 0.4.1.
