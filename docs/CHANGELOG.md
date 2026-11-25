@@ -12,7 +12,9 @@ result before naming the underlying mechanism.
 
 ## [Unreleased]
 
-Development version 0.8.3, bundling Controller Router 0.4.1.
+## [0.8.3] - 2026-11-24
+
+Bundles Controller Router 0.4.1.
 
 ### Changed
 
