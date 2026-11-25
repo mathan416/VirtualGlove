@@ -5,6 +5,7 @@
 # Copyright (c) 2026 Iain Bennett
 # SPDX-License-Identifier: MIT
 # Change log:
+#   2026-11-24 - Published the verified draft by release ID, retrying a missed draft lookup.
 #   2026-09-11 - Build pinned Matrix firmware for compiler-free Controller installation.
 #   2026-09-11 - Required an extracted Engineering Toolkit setup and workflow smoke test.
 #   2026-09-09 - Installed the image-array dependencies required by pipeline tests.
@@ -95,4 +96,19 @@ jobs:
           gh release download "$RELEASE_VERSION" --dir "$RUNNER_TEMP/published-assets"
           cd "$RUNNER_TEMP/published-assets"
           sha256sum --check SHA256SUMS
-          gh release edit "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --draft=false
+          # GitHub can briefly fail to find a new draft by its tag. Publish the
+          # verified draft by its release ID, retrying before giving up.
+          for attempt in 1 2 3 4 5 6; do
+            release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+              --jq ".[] | select(.draft and .tag_name == \"$RELEASE_VERSION\") | .id" | head -n 1)
+            if [ -n "$release_id" ] && gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+                -F draft=false --silent; then
+              echo "Published $RELEASE_VERSION"
+              break
+            fi
+            if [ "$attempt" = 6 ]; then
+              echo "Could not publish the verified draft $RELEASE_VERSION" >&2
+              exit 1
+            fi
+            sleep 10
+          done

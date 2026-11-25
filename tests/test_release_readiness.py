@@ -167,8 +167,12 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn('gh release create "$RELEASE_VERSION" "${release_assets[@]}" --draft', workflow)
         self.assertLess(workflow.index('gh release download "$RELEASE_VERSION"'),
                         workflow.index('sha256sum --check SHA256SUMS'))
-        self.assertLess(workflow.index('sha256sum --check SHA256SUMS'),
-                        workflow.index('gh release edit "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --draft=false'))
+        publish = workflow.index('gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id"')
+        self.assertLess(workflow.index('sha256sum --check SHA256SUMS'), publish)
+        # A new draft is published by release ID, retried if GitHub misses it.
+        self.assertIn('select(.draft and .tag_name == \\"$RELEASE_VERSION\\")', workflow)
+        self.assertIn('for attempt in 1 2 3 4 5 6; do', workflow)
+        self.assertIn('-F draft=false', workflow[publish:])
 
     def test_enclosure_manifest_covers_every_public_print_file(self):
         root = ROOT / "hardware/enclosures"
